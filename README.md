@@ -9,7 +9,9 @@ backend. The build spec is [`SPEC (2).md`](<SPEC (2).md>).
 | Milestone | Hosted copy | Status |
 | --- | --- | --- |
 | 1: Model ready (bare dual-LOD viewer) | https://ajmarr04-ux.github.io/SkeletonViewer/m1/ | Live (frozen at `b1392fa`) |
-| 2: Viewer (camera, URL state, phone frame rate) | https://ajmarr04-ux.github.io/SkeletonViewer/m2/ | Built, awaiting merge to `main`: [`docs/PLAN-milestone-2.md`](docs/PLAN-milestone-2.md) |
+| 2: Viewer (camera, URL state, phone frame rate) | https://ajmarr04-ux.github.io/SkeletonViewer/m2/ | Live (snapshot rebuilt from `main` until Milestone 3 freezes it at `eb3e8ff`) |
+
+Known issues and requested changes for later milestones: [`docs/BACKLOG.md`](docs/BACKLOG.md).
 
 The latest build is always at https://ajmarr04-ux.github.io/SkeletonViewer/.
 
