@@ -14,7 +14,7 @@ Out of scope until Milestone 4: tiers 1 and 2 (Show related, Expand region), joi
 | --- | --- | --- |
 | G | 0 (Milestone 2 handover), 1 (fixed orbit pivot), 2 (selection state and URL), 3 (picking, drag vs click, hit proxies) | **Done.** See "Session G notes" below. Needs the user: a hand check of the new orbit |
 | H | 4 (highlight and outline), 5 (tier-0 isolation: ghost and hide), 6 (hover tooltip) | **Done.** See "Session H notes" below. Needs the user: the outline choice, and a look on a real device |
-| I | 7 (info panel and breadcrumb), 8 (keyboard, Back and a11y announcements), 9 (performance check), 10 (tests, including all 234 on a 390 px viewport), 11 (hosted copy) | Not started |
+| I | 6b (session H feedback: lighter accent, ghost opacity 10%), 7 (info panel and breadcrumb), 8 (keyboard, Back and a11y announcements), 9 (performance check), 10 (tests, including all 234 on a 390 px viewport), 11 (hosted copy) | Not started |
 
 Triggers: "begin session G", "begin session H" and "begin session I". Each session starts by reading this file and ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models` and `npm run e2e` passing, then a commit and push to the session branch. No Blender work is planned, so `scripts/setup-blender.sh` is only needed if the models have to be rebuilt.
 
@@ -72,6 +72,7 @@ Triggers: "begin session G", "begin session H" and "begin session I". Each sessi
   - Is the hull outline good enough, or should the selection use `OutlineEffect`?
   - The selection's outline is the same blue as the bone. It shows as a rim but doesn't contrast with the bone. A lighter outline (for example `#cfe3ff`) would separate the two more clearly for colour-blind users; say if you'd prefer that.
   - Ghost look and default opacity (0.15) on a real screen.
+  - *Answered after PR #6:* functionality is good. Make the accent lighter (`#a7caf2`) and the default ghost opacity 10%: step 6b, done in session I. The outline method wasn't questioned, so the hull stays.
 
 ## Step 1: Fixed orbit pivot (backlog 1, approved by the user on 2026-11-19)
 
@@ -127,6 +128,14 @@ Triggers: "begin session G", "begin session H" and "begin session I". Each sessi
 ## Step 6: Hover tooltip
 
 - Desktop only: after the pointer rests on a bone for 150 ms, a small tooltip near the pointer shows the bone's name (with side, for example "Femur (left)"). It hides on drag, leave or wheel. Not shown for the selected bone while the panel is open.
+
+## Step 6b: Session H feedback (the user, after testing PR #6; do first in session I)
+
+The user checked session H on the live site: "looks good functionality wise". Two changes:
+- **Lighter accent on the selected bone.** The current `#3d8bfd` "feels too aggressive on the white bone". Aim for **`#a7caf2`** (`ACCENT_COLOUR` in `src/scene/material.ts`). The tint is the accent divided by ivory, so check on a screenshot that the lit, AO-shaded bone actually reads close to `#a7caf2`. If it comes out greyish, adjust the tint (not the lighting) until it does.
+  - Selection must still show by outline **and** colour (spec §10). A pale blue on ivory is harder to tell apart for colour-blind users, so keep the selection outline a stronger blue (the current `#3d8bfd`, `OUTLINE.selected`) and check it with a deuteranopia/protanopia simulation of the screenshot. Note the result here.
+  - Update the colour test in `tests/batch.test.ts` if it hard-codes the old value (it uses the constant, so it should follow).
+- **Default ghost opacity 10%:** `GHOST_OPACITY.default` 0.15 → 0.10 in `src/state/store.ts` (the range stays 0.05 to 0.5). People who moved the slider keep their stored value.
 
 ## Step 7: Info panel and breadcrumb (spec §7)
 
