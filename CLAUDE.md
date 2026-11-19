@@ -53,7 +53,7 @@ When milestone N is merged and milestone N+1 begins:
 2. **Confirm that milestone N's hosted copy is live** at `https://ajmarr04-ux.github.io/SkeletonViewer/m<N>/`. The container can't reach `github.io`, so ask the user (or check the latest Deploy run with the GitHub tools). Then tick "Hosted copy is live" in that milestone's plan and update its row in `README.md`.
 3. Write the new milestone's plan as `docs/PLAN-milestone-<N+1>.md`, following the spec's §11 phase.
 
-Status: Milestone 1 is frozen at `b1392fa` (`current` is 2), and `/m1/` is live (confirmed by the user). Milestone 2 (spec Phase 2, viewer) is planned in `docs/PLAN-milestone-2.md`, split into sessions D, E and F (triggers: "begin session D" and so on). Milestone 2 is done: merged in PR #4 (merge commit `eb3e8ff`), and `/m2/` is live (confirmed by the user, smooth on PC and iPhone). Next: start Milestone 3 with the handover above (freeze `"m2": "eb3e8ff…"`, the full SHA from `git log origin/main`, and set `current` to 3). Read `docs/BACKLOG.md` when planning: it holds user-requested fixes, including the orbit-pivot change, which touches the spec's camera rules.
+Status: Milestone 1 is frozen at `b1392fa` and Milestone 2 at `eb3e8ff` (`current` is 3); `/m1/` and `/m2/` are live (confirmed by the user). Milestone 3 (spec Phase 3, select and isolate, plus the fixed orbit pivot from `docs/BACKLOG.md` entry 1, approved by the user) is planned in `docs/PLAN-milestone-3.md`, split into sessions G, H and I (triggers: "begin session G" and so on).
 
 ## Environment notes
 - The cloud container is temporary, so **run `bash scripts/setup-blender.sh` first in every session**. It takes about a minute and is safe to re-run.

@@ -4,6 +4,8 @@ Feedback that isn't part of the current milestone. Each entry says where it came
 
 ## 1. Orbit pivot should stay at the skeleton's centre (user, 2026-11-19, after `/m2/`)
 
+**Status: planned for Milestone 3, step 1 of `docs/PLAN-milestone-3.md`.** Decided by the user on 2026-11-19: the pivot stays at the skeleton's centre while panning and zooming; selecting a bone, double-click / double-tap and `F` move it to that bone; Home resets it. `cam=` gains an optional focal offset.
+
 **Reported:** "Orbit feels wrong when zoomed. Orbit should scale with the zoom, similarly to how CAD software would. I think the issue is that the orbit centre moves with panning and zooming; the orbit should always revolve around the centre of the skeleton, regardless of panning and zooming."
 
 **Why it happens now (Milestone 2 behaviour):** the orbit pivot is camera-controls' *target*, and three things move it:
