@@ -37,7 +37,7 @@
 - Z-Anatomy: **CC BY-SA 4.0** (Gauthier Kervyn and Marcin Zielinski).
 - Its meshes come from **BodyParts3D, © The Database Center for Life Science, CC BY-SA 2.1 Japan**. Note that the spec lists BodyParts3D as CC BY 4.0, but Z-Anatomy credits it as CC BY-SA 2.1 JP. The attribution will credit both.
 
-## Questions for review before step 3
-1. **Third molars:** ship Milestone 1 with 234 meshes and the four wisdom-tooth IDs marked "no model"? (Recommended.) Or look for third molars in another source later?
-2. **Sternum:** join the three parts into a single `sternum` object? (Recommended; it matches the 206 count.)
-3. **Costal cartilages:** excluded, as the spec says. Without them, the ribs end short of the sternum. That's worth a look in phase 5, when the spec asks whether the joints still read clearly without cartilage.
+## Decisions (agreed with the user after the audit)
+1. **Third molars:** not included. Milestone 1 ships 234 meshes, and the four wisdom-tooth IDs stay in the data marked "no model".
+2. **Sternum:** joined into a single `sternum` object.
+3. **Costal cartilages:** stay excluded. They may be added if the project later grows beyond the skeleton.

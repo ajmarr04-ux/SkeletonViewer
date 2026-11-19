@@ -10,8 +10,8 @@ Get one clean skeleton model into the repo: 238 separate objects (206 bones and 
 
 | Session | Steps | Status |
 | --- | --- | --- |
-| A | 1 (audit) and 2 (ID list and mapping) | **Done.** See `assets/audit/REPORT.md`, which ends with three questions for review |
-| B | 3 (Blender pipeline) and 4 (compression and checks) | Not started |
+| A | 1 (audit) and 2 (ID list and mapping) | **Done.** See `assets/audit/REPORT.md`, the decisions are recorded there |
+| B | 3 (Blender pipeline) and 4 (compression and checks) | Not started. Start with "begin session B" (see `CLAUDE.md`) |
 | C | 5 (bare viewer) and 6 (Pages deploy) | Not started |
 
 To resume in a fresh session, run `bash scripts/setup-blender.sh`, then read this file and `assets/audit/REPORT.md`.
