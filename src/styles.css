@@ -89,8 +89,9 @@ dialog.attribution pre { white-space: pre-wrap; font: 13px/1.5 ui-monospace, mon
 @media (max-width: 599px) {
   .tool-label { display: none; }
   .tool { padding: 0; }
-  .popover { left: auto; right: -4px; transform: none; }
-  .popover-anchor:first-of-type .popover { left: -4px; right: auto; }
+  /* Popovers span the toolbar (its own containing block), so they stay on screen whichever button opens them. */
+  .popover-anchor { position: static; }
+  .popover { left: 0; right: 0; transform: none; min-width: 0; }
 }
 
 /* Hover tooltip (spec §6): the bone's name near the pointer, desktop only. */
