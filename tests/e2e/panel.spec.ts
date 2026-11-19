@@ -31,7 +31,7 @@ test.describe("desktop panel", () => {
     for (const h of ["Summary", "Functions", "Articulations", "Key landmarks", "Major muscle attachments", "Clinical note"]) {
       await expect(panel.getByRole("heading", { level: 3, name: h })).toBeVisible();
     }
-    await expect(panel.getByRole("button", { name: "Show related" })).toBeDisabled();
+    await expect(panel.getByRole("button", { name: "Show related" })).toBeEnabled();
     await expect(panel.getByRole("button", { name: "Expand region" })).toBeDisabled();
     await expect(page.getByTestId("breadcrumb")).toHaveText(/Skeleton\s*›\s*Lower limb\s*›\s*Femur/);
     await expect(page.getByTestId("announcer")).toHaveText("Femur, left, selected. Isolated.");

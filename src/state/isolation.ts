@@ -5,9 +5,9 @@
 //   Full skeleton  ── select ──►  tier 0  ── related ──►  tier 1  ── region ──►  tier 2
 //                  ◄── back ────          ◄── back ──────          ◄── back ──────
 //
-// Clicking another bone switches focus and returns to tier 0. Clicking empty
-// space or pressing Esc is `back`. Tiers 1 and 2 arrive in Milestone 4; the
-// reducer already knows them so the history rules are settled once.
+// Clicking another (solid) bone makes it the new focus at tier 0; clicking the
+// focus itself changes nothing. Clicking empty space or pressing Esc is `back`.
+// The side toggle (`switchSide`) jumps to the other side at the same tier.
 
 export type Tier = 0 | 1 | 2;
 export type Isolation = { sel: string | null; tier: Tier };
@@ -16,6 +16,7 @@ export const FULL_SKELETON: Isolation = { sel: null, tier: 0 };
 
 export type IsolationAction =
   | { type: "select"; id: string }
+  | { type: "switchSide"; id: string }
   | { type: "related" }
   | { type: "region" }
   | { type: "back" };
@@ -37,12 +38,17 @@ export function levelOf(s: Isolation): number {
 export function isolationStep(s: Isolation, a: IsolationAction): { state: Isolation; history: HistoryStep } {
   switch (a.type) {
     case "select": {
-      if (s.sel === a.id && s.tier === 0) return { state: s, history: "none" };
+      if (s.sel === a.id) return { state: s, history: "none" };
       const state: Isolation = { sel: a.id, tier: 0 };
       if (s.sel === null) return { state, history: "push" };
       // A switch of focus at tier 0 stays at that level; from tier 1 or 2 it is a new focus at tier 0 (a new entry).
       return { state, history: s.tier === 0 ? "replace" : "push" };
     }
+    case "switchSide":
+      // The same level on the other side (plan decision 8): replace the entry.
+      if (s.sel === null) return isolationStep(s, { type: "select", id: a.id });
+      if (s.sel === a.id) return { state: s, history: "none" };
+      return { state: { sel: a.id, tier: s.tier }, history: "replace" };
     case "related":
       if (s.sel === null || s.tier !== 0) return { state: s, history: "none" };
       return { state: { sel: s.sel, tier: 1 }, history: "push" };

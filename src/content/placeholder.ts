@@ -89,14 +89,44 @@ export function panelModel(id: string): PanelModel | null {
   };
 }
 
-/**
- * What a screen reader hears on selection (spec §10, aria-live): "Femur, left,
- * selected. Isolated." Teeth name their side already.
- */
-export function announcement(id: string | null): string {
-  if (id === null) return "Full skeleton";
-  const e = BY_ID.get(id);
-  if (!e) return "Full skeleton";
+type Isolated = { sel: string | null; tier: 0 | 1 | 2 };
+
+/** "Femur, left" (teeth name their side already). */
+function spoken(e: IdEntry): string {
   const side = e.side === "midline" || e.kind === "tooth" ? "" : `, ${e.side}`;
-  return `${e.name}${side}, selected. ${e.meshAvailable ? "Isolated." : "No 3D model."}`;
+  return `${e.name}${side}`;
+}
+
+/** A related bone's name in a list: no side when it matches the focus's, and lower case unless it starts with a code ("T4 vertebra"). */
+function listed(id: string, focusSide: Side): string {
+  const e = BY_ID.get(id);
+  if (!e) return id;
+  const name = /^[A-Z][a-z]/.test(e.name) ? e.name[0]!.toLowerCase() + e.name.slice(1) : e.name;
+  return e.side === "midline" || e.kind === "tooth" || e.side === focusSide ? name : `${name} (${e.side})`;
+}
+
+/**
+ * What a screen reader hears when the isolation changes (spec §10, aria-live):
+ * "Femur, left, selected. Isolated."; at tier 1 "Femur, left: related bones
+ * shown. Hip bone, patella, tibia."; at tier 2 "Femur, left: region shown, 8
+ * bones."; back at tier 0 from a higher tier "Femur, left, isolated.".
+ * `related` gives the tier-1 IDs, `visible` the number of solid bones.
+ */
+export function announcement(
+  now: Isolated,
+  prev: Isolated | null = null,
+  related: (id: string) => string[] = () => [],
+  visible: number = 0,
+): string {
+  if (now.sel === null) return "Full skeleton";
+  const e = BY_ID.get(now.sel);
+  if (!e) return "Full skeleton";
+  if (now.tier === 1) {
+    const names = related(now.sel).map((id) => listed(id, e.side));
+    const list = names.length ? ` ${names.join(", ")}.` : " None.";
+    return `${spoken(e)}: related bones shown.${list.replace(/^ ([a-z])/, (_, c: string) => ` ${c.toUpperCase()}`)}`;
+  }
+  if (now.tier === 2) return `${spoken(e)}: region shown, ${visible} bones.`;
+  if (prev && prev.sel === now.sel && prev.tier > 0) return `${spoken(e)}, ${e.meshAvailable ? "isolated" : "no 3D model"}.`;
+  return `${spoken(e)}, selected. ${e.meshAvailable ? "Isolated." : "No 3D model."}`;
 }

@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { NO_PANEL } from "../camera/math";
 import { panelModel, type PanelModel } from "../content/placeholder";
-import { goBack, selectObject } from "../state/selection";
+import { expandRegion, goBack, showRelated, switchSide } from "../state/selection";
 import { useViewer } from "../state/store";
 import { focusCanvas } from "./canvasFocus";
 import { PHONE_QUERY, useMedia } from "./useMedia";
@@ -231,6 +231,7 @@ function Title({ model }: { model: PanelModel }) {
 
 function Body({ model }: { model: PanelModel }) {
   const [summary, ...rest] = model.sections;
+  const tier = useViewer((s) => s.tier);
   return (
     <>
       <p className="common">
@@ -258,10 +259,24 @@ function Body({ model }: { model: PanelModel }) {
         </Section>
       ))}
       <div className="panel-actions">
-        <button type="button" className="button" disabled title="Arrives in Milestone 4">
+        <button
+          type="button"
+          className="button"
+          data-testid="show-related"
+          disabled={tier !== 0}
+          title={tier === 0 ? "Show the bones it articulates with" : "Related bones are shown"}
+          onClick={showRelated}
+        >
           Show related
         </button>
-        <button type="button" className="button" disabled title="Arrives in Milestone 4">
+        <button
+          type="button"
+          className="button"
+          data-testid="expand-region"
+          disabled={tier !== 1}
+          title={tier === 1 ? "Show the surrounding region" : tier === 2 ? "The region is shown" : "Show related first"}
+          onClick={expandRegion}
+        >
           Expand region
         </button>
         <button type="button" className="button primary" data-testid="panel-back" onClick={back}>
@@ -282,7 +297,7 @@ function Section({ title, text, children }: { title: string; text: string; child
   );
 }
 
-/** Paired bones (spec §6): jump to the other side; the pivot follows, the view stays. */
+/** Paired bones (spec §6): jump to the other side at the same tier; the pivot follows, the view stays. */
 function SideToggle({ pair, current }: { pair: { left: string; right: string }; current: string }) {
   return (
     <div className="side-toggle" role="group" aria-label="Side">
@@ -292,7 +307,7 @@ function SideToggle({ pair, current }: { pair: { left: string; right: string }; 
           type="button"
           aria-pressed={pair[side] === current}
           data-testid={`side-${side}`}
-          onClick={() => pair[side] !== current && selectObject(pair[side])}
+          onClick={() => pair[side] !== current && switchSide(pair[side])}
         >
           {side === "left" ? "Left" : "Right"}
         </button>

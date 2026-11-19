@@ -4,6 +4,7 @@
 // Only visibility and colours change. No geometry moves or reloads (spec §12).
 
 import { Color } from "three";
+import { relations } from "../content/relations";
 import type { Tier } from "../state/isolation";
 import type { GhostMode } from "../state/url";
 import type { BatchedSkeleton } from "./batchSkeleton";
@@ -23,12 +24,17 @@ export type IsolationView = {
 export const FULL_VIEW: IsolationView = { isolated: false, focus: null, solid: null, ghosts: false };
 
 /**
- * The view for a selection. Tier 0 isolates the selected bone alone; tiers 1
- * and 2 (Milestone 4) will add related bones and the region to `solid`.
+ * The view for a selection (spec §6). Tier 0 isolates the selected bone alone,
+ * tier 1 adds the bones it articulates with (and a tooth's neighbours), tier 2
+ * adds its region set (`content/relations.ts`). Objects without a mesh are left
+ * out: a wisdom tooth isolates nothing at tier 0, and at tiers 1 and 2 shows its
+ * related bones with no focus.
  */
-export function isolationView(sel: string | null, _tier: Tier, ghostMode: GhostMode, hasMesh: (id: string) => boolean): IsolationView {
-  if (sel === null || !hasMesh(sel)) return FULL_VIEW;
-  return { isolated: true, focus: sel, solid: new Set([sel]), ghosts: ghostMode === "ghost" };
+export function isolationView(sel: string | null, tier: Tier, ghostMode: GhostMode, hasMesh: (id: string) => boolean): IsolationView {
+  if (sel === null) return FULL_VIEW;
+  const solid = new Set(relations.visibleAt(sel, tier).filter(hasMesh));
+  if (solid.size === 0) return FULL_VIEW;
+  return { isolated: true, focus: hasMesh(sel) ? sel : null, solid, ghosts: ghostMode === "ghost" };
 }
 
 /** Can this bone be picked (clicked, tapped, hovered)? Ghosts and hidden bones cannot. */

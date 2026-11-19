@@ -17,6 +17,14 @@ import { ensureBoundsTrees, type BatchedSkeleton } from "../scene/batchSkeleton"
 import { PROXY_RADIUS_PX, pickWithProxies, tinyObjects, type Proxy, type RealHit } from "../scene/pick";
 import { goBack, hasMesh, selectObject } from "../state/selection";
 import { isPickable, isolationView } from "../scene/isolation";
+
+/** The box around everything solid in the current isolation (tiers 1 and 2: the focus and its related bones). */
+function isolationBox(boneBoxes: Map<string, Box>, sel: string | null, tier: 0 | 1 | 2): Box | undefined {
+  const view = isolationView(sel, tier, "ghost", hasMesh);
+  if (!view.solid) return undefined;
+  const boxes = [...view.solid].map((id) => boneBoxes.get(id)).filter((b): b is Box => b !== undefined);
+  return boxes.length ? unionBoxes(boxes) : undefined;
+}
 import { BENCH_DURATION_MS, BENCH_WARMUP_MS, benchAzimuth, summariseFrames } from "../scene/bench";
 import type { Lod } from "../scene/lod";
 import { useViewer, type CameraCommand } from "../state/store";
@@ -481,8 +489,10 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
           cam = defaultView(g.box, camera.fov, asp, hf);
           break;
         case "frame": {
-          // The selection is framed beside the info panel; the skeleton (nothing selected) as before.
-          const box = boneBox(useViewer.getState().sel);
+          // The isolation (the selection, plus its related bones at tiers 1 and 2) is framed beside the info
+          // panel; the skeleton (nothing selected) as before.
+          const st = useViewer.getState();
+          const box = g ? isolationBox(g.boneBoxes, st.sel, st.tier) : undefined;
           const dir = sub(now.position, now.target);
           cam = box ? frameBeside(box, dir, camera.fov, sz.width, sz.height, hf, inset) : frameFrom(g.box, dir, camera.fov, asp, hf);
           break;
@@ -695,8 +705,8 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     if (!c || !geometry || !limits || framed.current) return;
     framed.current = true;
     const url = parseUrlState(window.location.search);
-    const sel = useViewer.getState().sel;
-    const selBox = sel && hasMesh(sel) ? geometry.boneBoxes.get(sel) : undefined;
+    const st = useViewer.getState();
+    const selBox = isolationBox(geometry.boneBoxes, st.sel, st.tier);
     const home = defaultView(geometry.box, camera.fov, aspect, heightFraction);
     const inset = useViewer.getState().panelInset;
     const start = url.cam ?? (selBox ? frameBeside(selBox, sub(home.position, home.target), camera.fov, size.width, size.height, heightFraction, inset) : home);

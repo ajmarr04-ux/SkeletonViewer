@@ -13,7 +13,7 @@ Out of scope until Milestone 5: the sidebar (search and hierarchy tree, includin
 | Session | Steps | Status |
 | --- | --- | --- |
 | (planning) | 0 (Milestone 3 handover) | **Done.** See step 0 |
-| J | 1 (content schema and `validate-content`), 2 (relationship data: articulations, regions, hierarchy), 3 (tiers 1 and 2) | Not started |
+| J | 1 (content schema and `validate-content`), 2 (relationship data: articulations, regions, hierarchy), 3 (tiers 1 and 2) | **Done.** See "Session J notes" below. Needs the user: `content/QUESTIONS.md` (articulation and region choices), and tiers 1 and 2 on a device |
 | K | 4 (content compile and real info panel), 5 (content drafting, part 1: axial skeleton and teeth) | Not started |
 | L | 6 (content drafting, part 2: appendicular skeleton), 7 (joint highlighting), 8 (Explode), 9 (performance check), 10 (tests), 11 (hosted copy) | Not started |
 
@@ -21,8 +21,8 @@ Triggers: "begin session J", "begin session K" and "begin session L". Each sessi
 
 ## Exit criteria (from spec §11, Phase 4)
 
-- [ ] `articulations.json`, `regions.json` and `hierarchy.json` are complete. (Session J.)
-- [ ] Tiers 1 and 2, joint highlighting and the Explode slider work. (Tiers in session J; joints and Explode in session L.)
+- [x] `articulations.json`, `regions.json` and `hierarchy.json` are complete. (Session J: 357 articulations, 238 region sets, the hierarchy; the open choices are in `content/QUESTIONS.md`.)
+- [ ] Tiers 1 and 2, joint highlighting and the Explode slider work. (Tiers done in session J; joints and Explode in session L.)
 - [ ] All 238 content files are drafted from standard anatomical references, with `reviewed: false`. (Sessions K and L.)
 - [ ] `validate-content` passes, and runs in CI and before `build`. (Written in session J, green with all files in session L.)
 - [ ] Click → highlight and draw calls stay within spec §8 at tiers 1 and 2, and with Explode in use. (Session L, step 9.)
@@ -52,6 +52,29 @@ These fill gaps the spec leaves open. Each is the smallest choice that fits the 
 9. **Joint highlighting without landmark positions:** no `surfaces` landmark has a position in this milestone, so hovering (or focusing) a joint name highlights **both bones**, as spec §6 allows: the hover outline on the partner bone and a brief brighter tint on both. No landmark positions are derived from the mesh in this milestone; every `position` stays `null`, and the landmarks toggle stays disabled with "No positions yet".
 10. **Explode axis:** there is no joint-axis data, so each tier-1 bone moves along the line from the focus bone's box centre to its own box centre (the focus stays still). At the slider's end each moves by its own bounding radius × 0.5, eased; on release it eases back to exactly zero. It only changes the solid batch's instance matrices for those bones, and only while the slider is held: the debug bounds check must pass again after release (the bones are restored to the stored matrices, not recomputed). Picking is off while exploded. Available at tiers 1 and 2; tier-2-only bones don't move. *This is the one place a bone moves at all; spec §6 asks for it explicitly and it snaps back, so it doesn't break §12's rule. If the user would rather leave Explode out, say so.*
 11. **Content sources:** drafted from standard references (Gray's Anatomy, Terminologia Anatomica's Latin terms) from Claude's own knowledge; the container can't browse the references, so nothing is checked against them line by line. That is why every file is `reviewed: false` and the panel says so. `ta2` stays `null` everywhere (no reference to hand, spec §5).
+
+## Session J notes (steps 1 to 3, done)
+
+- **Relationship data** (drafted with a one-off script, then committed as data; the JSON files are the record and are edited by hand from now on):
+  - `content/articulations.json`: **357 pairs**, one entry per pair, `{ a, b, joint, name }`, no `surfaces` yet (no landmark files exist; validation checks them once they do). Skull sutures and the TMJ (by each bone's standard list of neighbours), ossicles (incudomallear, incudostapedial, and the stapes to the temporal bone as the tympanostapedial syndesmosis), the vertebral column (atlanto-occipital, atlanto-axial, one "intervertebral joints" pair per level, lumbosacral, sacrococcygeal), ribs (head with T(n−1) and T(n) for ribs 2 to 9, one vertebra for ribs 1, 10, 11, 12; ribs 1 to 7 with the sternum "through costal cartilage"), sternoclavicular, the upper and lower limbs bone by bone (carpals, CMC, intermetacarpal 2–5, MCP, IP; tarsals, TMT, intermetatarsal 2–5, MTP, IP), sacroiliac, pubic symphysis, and every tooth's gomphosis with its alveolar bone (decision 4). Every object appears except the hyoid (allowlisted). The femur gives exactly the spec's worked example.
+  - `content/regions.json`: **238 sets**, rule-based first drafts (spec: "curated"), the femur exactly as the spec. The rules are listed in `content/QUESTIONS.md` 17 to 25 for the user to check.
+  - `content/hierarchy.json`: written by `npm run content:hierarchy` from `ids.json`'s groups; limbs split into left and right. Labels from `src/content/labels.ts`.
+  - `content/QUESTIONS.md` (new): 9 pairs left out (cuboid–navicular, MT1–MT2, MC1–MC2, sphenoid–maxilla, rib 10–T9, ulna–triquetrum, interchondral, clavicle–rib 1, hyoid), 7 recorded but worth checking (sternocostal rule, stapes, lunate–hamate, lateral cuneiform–MT4, spheno-occipital, descriptive joint names, combined pairs), and the region rules.
+- **Schema and validation:** `src/content/schema.ts` (zod 4: front matter, articulations, regions, hierarchy, the 40 to 80 word rule), `src/content/validate.ts` (pure rules, every problem listed at once), `scripts/validate-content.ts` (`npm run validate-content`, in `npm run check` and `prebuild`; reads the model node names straight from the `.glb` JSON chunk). `--allow-missing-content` is on in the npm script until session L. Warnings (not failures) for a region entry that repeats a tier-1 bone, and for an allowlisted object that has an articulation.
+- **Mirror:** `src/content/frontmatter.ts` (split, side-word swap, `mirrorFile`) and `npm run content:mirror` (writes `<id>_right.md` and teeth in quadrants 1 and 4 from their left twins, with a "Generated from …" comment as the first front-matter line). Validation fails if a right-side file differs from the mirror of its left file, or has no left file.
+- **Relations:** `src/content/relations.ts`: `articulationsOf`, `tier1` (partners from either side plus `adjacentTeeth`, in `ids.json` order), `regionOf`, `visibleAt(id, tier)`.
+- **Tiers in the app:**
+  - Reducer: `select` of the current focus is a no-op at any tier (it used to drop a tier-1 view to tier 0); new `switchSide` (replace, keeps the tier). `selection.ts`: `showRelated`, `expandRegion`, `switchSide`.
+  - `isolationView` uses `relations.visibleAt`, filtered to objects with a mesh. A wisdom tooth at tier 0 still isolates nothing; at tiers 1 and 2 it shows its related bones with no focus (and no outline).
+  - Panel: Show related enabled at tier 0, Expand region at tier 1 (disabled otherwise, with a title saying why); the side toggle keeps the tier. Toolbar: one "Related" / "Region" button for the next tier, shown with a selection (also for a wisdom tooth). Breadcrumb ends with "› Related" or "› Region".
+  - Announcer: "Femur, left: related bones shown. Hip bone, patella, tibia.", "Femur, left: region shown, 8 bones.", and "Femur, left, isolated." on stepping back to tier 0. Names in the list drop the side when it matches the focus's.
+  - Camera: Show related and Expand region don't move it; `F`, and opening a link with `sel` (any tier) and no `cam`, frame the whole solid set beside the panel.
+  - Clicks: a related (solid) bone selects it as the new focus at tier 0 (pushed); a ghost or empty space steps back one level; double-click also centres.
+- **Tests:** Vitest 228 (new `tests/content.test.ts`: every validation rule on fixtures, mirror, word count; new `tests/relations.test.ts`: the femur example, spot checks per region, teeth, symmetry, left/right mirror of tier 1 and regions; tier views in `tests/scene-isolation.test.ts`; `switchSide` and same-focus cases in `tests/isolation.test.ts`; tier announcements). Playwright 64 (new `tests/e2e/related.spec.ts`: femur → Show related → Expand region → Back ×3 with solid counts, announcer, breadcrumb, draw calls and the bounds check; a `tier=2` link stepped back by Esc; clicking a related bone; side toggle at tier 2 without a new history entry; `F` at tier 1; a tooth's tiers (4 and 50 solid) and a wisdom tooth at tier 1). The panel test now expects Show related enabled.
+- **Not done here:** `marked` is installed with the content compiler in session K (step 4), not now.
+- **Needs the user:**
+  - Work through `content/QUESTIONS.md` (or say who will). Nothing there blocks the next session.
+  - Try tiers 1 and 2 on the live site once this is merged: do the region sets feel like the right "regions"?
 
 ## Step 1: Content schema and `validate-content` (spec §5, §9)
 

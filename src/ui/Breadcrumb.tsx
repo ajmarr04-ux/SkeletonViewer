@@ -5,14 +5,19 @@ import { focusCanvas } from "./canvasFocus";
 
 /**
  * Breadcrumb (spec §7): `Skeleton › Lower limb › Femur`, top left (one line on
- * a phone), shown while something is selected. "Skeleton" goes back to the
- * full skeleton; the group levels become links with Expand region (Milestone 4).
+ * a phone), shown while something is selected, with the tier at the end
+ * ("› Related", "› Region"). "Skeleton" goes back to the full skeleton. The
+ * group levels stay plain text until the hierarchy tree (Milestone 5).
  */
+export const TIER_CRUMBS = ["", "Related", "Region"] as const;
+
 export function Breadcrumb() {
   const sel = useViewer((s) => s.sel);
+  const tier = useViewer((s) => s.tier);
   const model = sel === null ? null : panelModel(sel);
   if (!model) return null;
-  const last = model.trail.length - 1;
+  const trail = tier > 0 ? [...model.trail, TIER_CRUMBS[tier]] : model.trail;
+  const last = trail.length - 1;
   return (
     <nav className="breadcrumb" aria-label="Breadcrumb" data-testid="breadcrumb">
       <ol>
@@ -28,7 +33,7 @@ export function Breadcrumb() {
             Skeleton
           </button>
         </li>
-        {model.trail.map((label, i) => (
+        {trail.map((label, i) => (
           <li key={`${i}-${label}`} aria-current={i === last ? "location" : undefined}>
             <span aria-hidden="true" className="crumb-sep">
               ›
