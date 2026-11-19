@@ -12,7 +12,7 @@ Out of scope until Milestone 3: hover, selection, isolation, ghosting and the in
 
 | Session | Steps | Status |
 | --- | --- | --- |
-| D | 0 (Milestone 1 handover), 1 (state store), 2 (BatchedMesh scene), 3 (lighting), 4 (LOD choice) | Not started |
+| D | 0 (Milestone 1 handover), 1 (state store), 2 (BatchedMesh scene), 3 (lighting), 4 (LOD choice) | **Done.** See "Session D notes" below |
 | E | 5 (camera rig), 6 (input mapping), 7 (presets, reset, re-centre), 8 (URL sync) | Not started |
 | F | 9 (toolbar and settings), 10 (performance check), 11 (tests), 12 (hosted copy) | Not started |
 
@@ -28,11 +28,20 @@ Triggers: "begin session D", "begin session E" and "begin session F". Each sessi
 
 ---
 
-## Step 0: Finish the Milestone 1 handover
+## Step 0: Finish the Milestone 1 handover (done)
 
 - `deploy/pages.json` already freezes `m1` at `b1392fa` with `current: 2`, and Deploy run #4 (merge of PR #3, `0cf32a3`) succeeded.
-- **Needs the user:** confirm that https://ajmarr04-ux.github.io/SkeletonViewer/m1/ loads (the container can't reach `github.io`). Then tick "Hosted copy is live" in `docs/PLAN-milestone-1.md` and change the Milestone 1 row in `README.md` to "Live".
+- ~~**Needs the user:** confirm that https://ajmarr04-ux.github.io/SkeletonViewer/m1/ loads~~ Confirmed by the user on 2026-11-19. Then tick "Hosted copy is live" in `docs/PLAN-milestone-1.md` and change the Milestone 1 row in `README.md` to "Live".
 - Add a Milestone 2 row to `README.md` pointing at `/m2/`, marked "In progress".
+
+## Session D notes (steps 0 to 4, done)
+
+- **Draw calls: 1** for the skeleton (was 234). `?lod=low&debug` and `?lod=high&debug` both report 234 instances, and every instance's exact world bounds (each vertex through its instance matrix) match `assets/build/manifest.json`: max difference 0.014 mm, the same as `check-models`. The vertices are copied still quantised (`Uint16` positions, `Int8` normals, `Uint8` RGBA AO), since all 234 meshes share one attribute layout, so nothing had to be decoded. Instance matrices are float32 on the GPU (well under 1 µm of rounding).
+- **BVH:** three-mesh-bvh's `BatchedMesh` raycast runs each instance through an internal `Mesh`, so `Mesh.prototype.raycast` must be its `acceleratedRaycast` too (done once in `batchSkeleton.ts`). The BVH is built in an idle callback once the final LOD is on screen.
+- **LOD swap:** the old `BatchedMesh` is disposed in an effect cleanup, after the commit that swapped in the new one. Disposing it from a timer let three.js draw it once more with freed textures.
+- **Lighting:** key light 2.2 from upper front-left (−2.5, 3, 2), `RoomEnvironment` at 0.25, bone colour `#d8cdb8`, roughness 0.6, `AO_FLOOR` 0.4. A first try with the environment at 0.55 washed out the form; these values keep the shading readable (checked in front-view screenshots). The skull close-up for the mandible's sockets waits for session E, when `?cam=` can place the camera.
+- **LOD choice:** `?lod=both` was added (forces low then high) because the container's Chromium uses SwiftShader, which `chooseLod` correctly sends to low. Tests use `?lod=both&debug`.
+- **Debug:** the bounds check (and the 270 kB manifest, loaded as its own chunk) only runs with `?debug`. The overlay itself is still always visible until step 9 hides it behind `?debug`.
 
 ## Step 1: State store (`src/state/`)
 
@@ -60,7 +69,7 @@ The bare viewer issues one draw call per bone (234). The spec's budget is < 20, 
 
 - One soft key light plus an environment map, with no real-time shadows. Use three's built-in `RoomEnvironment` through `PMREMGenerator`, so no HDR file has to be downloaded or hosted.
 - AO remap from `assets/build/REPORT.md`: `mix(0.4, 1.0, ao)`, applied with `onBeforeCompile` on the shared material, so that inner surfaces (the mandible's sockets, the inner ear) don't render pure black. The 0.4 floor is a constant in one place and can be tuned.
-- Before/after screenshots at `deviceScaleFactor: 2` (front, and a close-up of the skull) go in the session D commit message or PR, for the user to judge by eye.
+- Before/after screenshots at `deviceScaleFactor: 2` (front, and a close-up of the skull), for the user to judge by eye.
 
 ## Step 4: Choose the starting LOD (spec §8)
 

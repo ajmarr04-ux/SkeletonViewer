@@ -33,8 +33,11 @@ A static browser app: a 3D atlas of the adult human skeleton (bones and teeth on
 | `scripts/build-models.sh` | All of the above in one go: `npm run build-models` (about 45 s, after setup). |
 | `assets/build/REPORT.md` | Build results: triangle counts, sizes, AO method, leftover non-manifold geometry. |
 | `public/models/skeleton-{high,low}.glb` | The committed, compressed models. Named nodes = bones; each has an unnamed child holding the quantised mesh. |
-| `src/scene/BareViewer.tsx`, `src/scene/lod.ts` | Milestone 1 bare viewer: low then high LOD, `?lod=` override, debug overlay. Pure helpers in `lod.ts`. |
-| `tests/e2e/smoke.spec.ts` | Playwright smoke test (`npm run e2e`): both LODs load, 234 meshes + 4 known-missing. |
+| `src/scene/Viewer.tsx`, `src/scene/lod.ts` | The viewer (replaced M1's `BareViewer.tsx`): low then high LOD, automatic LOD choice, `?lod=low|high|both` override, debug overlay behind `?debug` checks. Pure helpers in `lod.ts`. |
+| `src/scene/batchSkeleton.ts` | Packs the 234 bones into one `BatchedMesh` (instance matrix = the glTF mesh's world matrix, vertices untouched), ID ↔ instance tables, three-mesh-bvh raycasting. |
+| `src/scene/material.ts`, `src/scene/Lighting.tsx` | Shared bone material with the AO remap (`AO_FLOOR`), key light and `RoomEnvironment`. |
+| `src/state/store.ts`, `src/state/url.ts` | zustand store; pure URL parse/serialise helpers (`cam=`). |
+| `tests/e2e/smoke.spec.ts` | Playwright smoke test (`npm run e2e`): both LODs load, 234 batched bones + 4 known-missing, < 20 draw calls, every bone's bounds match the manifest (`?debug`). |
 | `scripts/build-pages.sh`, `deploy/pages.json` | Pages build: live site plus `/m<N>/` milestone snapshots. Deployed by `.github/workflows/deploy.yml` on push to `main`. |
 
 ## Milestone handover (do this at the start of every new milestone)
