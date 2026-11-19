@@ -275,3 +275,7 @@ dialog.attribution pre { white-space: pre-wrap; font: 13px/1.5 ui-monospace, mon
   :root[data-sidebar][data-panel="side"] .tool-label { display: none; }
   :root[data-sidebar][data-panel="side"] .tool { padding: 0; }
 }
+/* Narrow window with the side panel: tighter spacing so the toolbar (with Search) still fits beside it. */
+@media (max-width: 899px) {
+  :root[data-panel="side"] .toolbar { gap: 0; padding: 2px; }
+}
