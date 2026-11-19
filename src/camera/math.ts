@@ -219,7 +219,9 @@ export function clampCamera(cam: CameraState, limits: Limits): CameraState {
   const dist = clamp(length(offset), limits.minDistance, limits.maxDistance);
   const { azimuth, polar } = anglesFromDirection(length(offset) > 0 ? offset : [0, 0, 1]);
   const dir = directionFromAngles(azimuth, clamp(polar, MIN_POLAR, MAX_POLAR));
-  return { position: add(target, scale(dir, dist)), target };
+  const out: CameraState = { position: add(target, scale(dir, dist)), target };
+  const off = clampOffset(target, dir, offsetOf(cam), limits.boundary);
+  return off[0] === 0 && off[1] === 0 ? out : { ...out, offset: off };
 }
 
 // --- dolly toward the cursor -------------------------------------------------
@@ -264,13 +266,170 @@ export function worldPerPixel(distance: number, fovDeg: number, heightPx: number
  * about 3 mm) don't clip and the depth buffer keeps its precision. The far
  * plane always reaches past the whole skeleton.
  */
-export function clipPlanes(cam: CameraState, skeletonCentre: Vec3, skeletonRadius: number): { near: number; far: number } {
-  const distance = length(sub(cam.position, cam.target));
+export function clipPlanes(
+  cam: CameraState,
+  skeletonCentre: Vec3,
+  skeletonRadius: number,
+  focusDepth = Infinity,
+): { near: number; far: number } {
+  // The pivot can be far off screen (zoomed in on the feet with the pivot at
+  // the pelvis), so the near plane follows whichever is closer: the pivot's
+  // depth or the depth of the last point zoomed toward.
+  const distance = Math.min(length(sub(cam.position, cam.target)), focusDepth);
   const near = clamp(distance * 0.02, 1e-4, 0.05);
-  const far = length(sub(cam.position, skeletonCentre)) + skeletonRadius * 1.5 + 0.1;
+  const far = length(sub(eyeOf(cam), skeletonCentre)) + skeletonRadius * 1.5 + 0.1;
   return { near, far: Math.max(far, near * 10) };
 }
 
 export function sameCamera(a: CameraState, b: CameraState, tol = 1e-4): boolean {
-  return length(sub(a.position, b.position)) <= tol && length(sub(a.target, b.target)) <= tol;
+  const oa = offsetOf(a);
+  const ob = offsetOf(b);
+  return (
+    length(sub(a.position, b.position)) <= tol &&
+    length(sub(a.target, b.target)) <= tol &&
+    Math.hypot(oa[0] - ob[0], oa[1] - ob[1]) <= tol
+  );
+}
+
+// --- fixed orbit pivot (backlog 1, Milestone 3) -------------------------------
+//
+// The orbit pivot is camera-controls' target. Panning and zooming never move
+// it: they move the eye within the view plane instead, as a focal offset. A
+// pose is { position, target, offset }: `position` is the orbit position
+// (target + distance × direction, as before), and the eye sits at
+//   eye = position + offset[0] × right + offset[1] × up
+// looking along the same direction. Orbiting turns the eye about the pivot and
+// keeps the pivot's place on screen. (camera-controls' own focal offset uses
+// the opposite sign for y: setFocalOffset(offset[0], -offset[1], 0).)
+
+export type Offset = [number, number];
+
+export function offsetOf(cam: CameraState): Offset {
+  return cam.offset ?? [0, 0];
+}
+
+/** Unit vector from the pivot toward the orbit position (the view direction, reversed). */
+export function viewDirection(cam: CameraState): Vec3 {
+  return normalise(sub(cam.position, cam.target));
+}
+
+/** Where the eye really is, focal offset included. */
+export function eyeOf(cam: CameraState): Vec3 {
+  const [ox, oy] = offsetOf(cam);
+  if (ox === 0 && oy === 0) return cam.position;
+  const { right, up } = viewBasis(viewDirection(cam));
+  return add(cam.position, add(scale(right, ox), scale(up, oy)));
+}
+
+/** Depth of a point in front of the eye, along the view axis. */
+export function depthOf(cam: CameraState, p: Vec3): number {
+  return dot(sub(p, eyeOf(cam)), scale(viewDirection(cam), -1));
+}
+
+function withOffset(position: Vec3, target: Vec3, offset: Offset): CameraState {
+  return offset[0] === 0 && offset[1] === 0 ? { position, target } : { position, target, offset };
+}
+
+/**
+ * The pose with this eye and view direction that orbits about `pivot`. The
+ * picture is exactly the same; only the pivot (and so the offset) changes.
+ * The pivot must be in front of the eye.
+ */
+export function poseFromEye(eye: Vec3, dir: Vec3, pivot: Vec3): CameraState {
+  const d = normalise(dir);
+  const { right, up } = viewBasis(d);
+  const rel = sub(eye, pivot);
+  const r = dot(rel, d);
+  return withOffset(add(pivot, scale(d, r)), pivot, [dot(rel, right), dot(rel, up)]);
+}
+
+/**
+ * Pan by a pointer drag of (dx, dy) CSS pixels (y down): the picture follows
+ * the pointer at the pivot's depth. `worldPerPx` is the size of a pixel there.
+ * The pivot doesn't move.
+ */
+export function panPose(cam: CameraState, dxPx: number, dyPx: number, worldPerPx: number): CameraState {
+  const [ox, oy] = offsetOf(cam);
+  return withOffset(cam.position, cam.target, [ox - dxPx * worldPerPx, oy + dyPx * worldPerPx]);
+}
+
+/**
+ * Zoom by `f` toward `point` (the surface under the cursor, or a point on the
+ * pivot's plane): the eye moves along the line to `point`, so `point` keeps
+ * its place on screen, and the view direction is unchanged. The pivot stays
+ * where it is, unless the eye would get closer to it than half the depth of
+ * `point` (zooming past the pivot's plane, say toward the feet from above):
+ * then the pivot slides along the view axis to the depth of `point`, so the
+ * orbit stays in front of the camera. Use `clampDollyFactor` first.
+ */
+export function dollyPose(cam: CameraState, point: Vec3, f: number): CameraState {
+  const eye = eyeOf(cam);
+  const dir = viewDirection(cam);
+  const newEye = add(point, scale(sub(eye, point), f));
+  const forward = scale(dir, -1);
+  const pivotDepth = dot(sub(cam.target, newEye), forward);
+  const pointDepth = dot(sub(point, newEye), forward);
+  let pivot = cam.target;
+  if (pivotDepth < 0.5 * pointDepth) pivot = add(pivot, scale(forward, pointDepth - pivotDepth));
+  return poseFromEye(newEye, dir, pivot);
+}
+
+/**
+ * The zoom factor allowed toward `point`: never closer to it than the minimum
+ * distance, and never so far out that the pivot is beyond the maximum.
+ */
+export function clampDollyFactor(cam: CameraState, point: Vec3, f: number, limits: Pick<Limits, "minDistance" | "maxDistance">): number {
+  const pointDepth = depthOf(cam, point);
+  if (!(pointDepth > 0)) return 1;
+  const forward = scale(viewDirection(cam), -1);
+  // Depth of the pivot after a zoom by f: a + f × pointDepth.
+  const a = dot(sub(cam.target, point), forward);
+  let lo = limits.minDistance / pointDepth;
+  const hi = (limits.maxDistance - a) / pointDepth;
+  lo = Math.min(lo, Math.max(f, 1)); // already closer than the minimum: allow zooming out only
+  return clamp(f, lo, Math.max(hi, Math.min(f, 1)));
+}
+
+/**
+ * Move the pivot to `pivot` without moving the picture (selecting a bone).
+ * If the new pivot would be closer to the eye than `minDepth`, it slides along
+ * the line of sight to that depth, keeping its place on screen.
+ */
+export function repivot(cam: CameraState, pivot: Vec3, minDepth: number): CameraState {
+  const dir = viewDirection(cam);
+  const eye = eyeOf(cam);
+  const forward = scale(dir, -1);
+  const depth = dot(sub(pivot, eye), forward);
+  let p = pivot;
+  if (depth < minDepth) {
+    // Along the line from the eye through the pivot, so it keeps its place on
+    // screen; straight ahead if it is behind the eye.
+    p = depth > 1e-12 ? add(eye, scale(sub(pivot, eye), minDepth / depth)) : add(eye, scale(forward, minDepth));
+  }
+  return poseFromEye(eye, dir, p);
+}
+
+/** Orbit about `pivot` with it in the middle of the view: same direction and distance, no offset (double-click). */
+export function centreOn(cam: CameraState, pivot: Vec3): CameraState {
+  const r = length(sub(cam.position, cam.target));
+  return { position: add(pivot, scale(viewDirection(cam), r)), target: pivot };
+}
+
+/**
+ * Keep the skeleton reachable: the point at the centre of the view, on the
+ * pivot's plane (pivot + offset), must stay inside `boundary`. The offset is
+ * shortened along its own line until it is. `pivot` is inside `boundary`.
+ */
+export function clampOffset(pivot: Vec3, dir: Vec3, offset: Offset, boundary: Box): Offset {
+  if (offset[0] === 0 && offset[1] === 0) return offset;
+  const { right, up } = viewBasis(normalise(dir));
+  const step = add(scale(right, offset[0]), scale(up, offset[1]));
+  let t = 1;
+  for (let i = 0; i < 3; i++) {
+    const s = step[i]!;
+    if (s === 0) continue;
+    const limit = s > 0 ? boundary.max[i]! : boundary.min[i]!;
+    t = Math.min(t, Math.max(0, (limit - pivot[i]!) / s));
+  }
+  return t >= 1 ? offset : [offset[0] * t, offset[1] * t];
 }

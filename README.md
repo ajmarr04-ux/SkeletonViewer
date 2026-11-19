@@ -9,7 +9,10 @@ backend. The build spec is [`SPEC (2).md`](<SPEC (2).md>).
 | Milestone | Hosted copy | Status |
 | --- | --- | --- |
 | 1: Model ready (bare dual-LOD viewer) | https://ajmarr04-ux.github.io/SkeletonViewer/m1/ | Live (frozen at `b1392fa`) |
-| 2: Viewer (camera, URL state, phone frame rate) | https://ajmarr04-ux.github.io/SkeletonViewer/m2/ | Built, awaiting merge to `main`: [`docs/PLAN-milestone-2.md`](docs/PLAN-milestone-2.md) |
+| 2: Viewer (camera, URL state, phone frame rate) | https://ajmarr04-ux.github.io/SkeletonViewer/m2/ | Live (frozen at `eb3e8ff`) |
+| 3: Select and isolate (picking, tier-0 isolation, info panel, fixed orbit pivot) | https://ajmarr04-ux.github.io/SkeletonViewer/m3/ | In progress ([plan](docs/PLAN-milestone-3.md)) |
+
+Known issues and requested changes for later milestones: [`docs/BACKLOG.md`](docs/BACKLOG.md).
 
 The latest build is always at https://ajmarr04-ux.github.io/SkeletonViewer/.
 
@@ -25,7 +28,8 @@ npm run e2e          # Playwright smoke test against a production build
 Viewer URL options: `?lod=low` or `?lod=high` loads only that model
 (`?lod=both` forces low then high); `?debug` shows the debug overlay;
 `?bench` orbits the skeleton once over 10 s and reports FPS, frame times and
-draw calls; `?cam=px,py,pz,tx,ty,tz` sets the camera; `?nowebgl` shows the
+draw calls; `?cam=px,py,pz,tx,ty,tz[,ox,oy]` sets the camera (orbit position,
+pivot, and an optional view shift); `?sel=<id>` selects an object; `?nowebgl` shows the
 WebGL 2 fallback.
 
 The models in `public/models/` are built from the Z-Anatomy source by the

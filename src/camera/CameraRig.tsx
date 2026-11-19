@@ -13,7 +13,9 @@ import {
   Vector4,
   type PerspectiveCamera,
 } from "three";
-import type { BatchedSkeleton } from "../scene/batchSkeleton";
+import { ensureBoundsTrees, type BatchedSkeleton } from "../scene/batchSkeleton";
+import { PROXY_RADIUS_PX, pickWithProxies, tinyObjects, type Proxy, type RealHit } from "../scene/pick";
+import { goBack, hasMesh, selectObject } from "../state/selection";
 import { BENCH_DURATION_MS, BENCH_WARMUP_MS, benchAzimuth, summariseFrames } from "../scene/bench";
 import type { Lod } from "../scene/lod";
 import { useViewer, type CameraCommand } from "../state/store";
@@ -34,19 +36,27 @@ import {
   boxCentre,
   boxRadius,
   cameraLimits,
+  centreOn,
   clampCamera,
-  clampDollyRatio,
+  clampDollyFactor,
   clipPlanes,
   defaultView,
-  dollyToPoint,
+  depthOf,
+  dollyPose,
+  eyeOf,
   frameFrom,
   framedHeightFraction,
   length,
+  offsetOf,
+  panPose,
   pointOnTargetPlane,
   presetView,
+  repivot,
   sameCamera,
+  scale,
   sub,
   unionBoxes,
+  viewDirection,
   worldPerPixel,
   type Box,
 } from "./math";
@@ -60,7 +70,7 @@ export const SMOOTH_TIME = 0.12;
 export const DRAGGING_SMOOTH_TIME = 0.06;
 
 /** World-space boxes for the skeleton and each of its bones. */
-export type SkeletonGeometry = { box: Box; boneBoxes: Map<string, Box>; radii: number[] };
+export type SkeletonGeometry = { box: Box; boneBoxes: Map<string, Box>; radii: number[]; radiusOf: Map<string, number> };
 
 const toBox = (b: Box3): Box => ({ min: b.min.toArray(), max: b.max.toArray() });
 
@@ -79,7 +89,8 @@ export function skeletonGeometry(s: BatchedSkeleton): SkeletonGeometry {
     boneBoxes.set(id, toBox(b.applyMatrix4(m)));
   });
   const boxes = [...boneBoxes.values()];
-  return { box: unionBoxes(boxes), boneBoxes, radii: boxes.map(boxRadius) };
+  const radiusOf = new Map([...boneBoxes].map(([id, box]) => [id, boxRadius(box)] as const));
+  return { box: unionBoxes(boxes), boneBoxes, radii: boxes.map(boxRadius), radiusOf };
 }
 
 const v = (a: Vec3) => new Vector3(a[0], a[1], a[2]);
@@ -87,11 +98,19 @@ const arr = (x: Vector3): Vec3 => [x.x, x.y, x.z];
 
 /** Hooks for the Playwright tests, only with `?debug`. */
 export type ViewerDebugApi = {
-  /** Camera pose now (not rounded). */
+  /** Camera pose now (not rounded), with the focal offset. */
   camera: () => CameraState;
+  /** Where the eye really is. */
+  eye: () => Vec3;
   /** A bone's box centre and where it is on screen, in client pixels. */
   bone: (id: string) => { centre: Vec3; client: { x: number; y: number } } | null;
+  /** Where a world point is on screen, in client pixels. */
+  project: (p: Vec3) => { x: number; y: number };
+  /** What a click (or a tap, with `touch`) at these client pixels would pick. */
+  pick: (x: number, y: number, touch?: boolean) => string | null;
   command: (c: CameraCommand) => void;
+  select: (id: string) => void;
+  state: () => { sel: string | null; tier: number; hovered: string | null };
 };
 declare global {
   interface Window {
@@ -106,11 +125,20 @@ type Props = {
   bench?: Lod | null;
 };
 
+/** Mouse buttons (PointerEvent.button) that pan: middle and right. Shift + left pans too. */
+const PAN_BUTTONS = new Set([1, 2]);
+
 /**
- * The camera (spec §6), built on camera-controls: orbit around a focus point,
- * dolly toward the cursor, pan, zoom and pole clamps, damping, presets, reset,
- * re-centre on double-click or double-tap, the keyboard map, and the `cam=`
- * URL parameter.
+ * The camera (spec §6), built on camera-controls, with a fixed orbit pivot
+ * (backlog 1): camera-controls' target is the pivot, and only rotation goes
+ * through camera-controls' own input. Pan (right, middle or Shift + left drag,
+ * two-finger drag, Shift + arrows) and zoom toward the cursor (wheel, pinch,
+ * + / -) move the eye with a focal offset, worked out by the pure functions in
+ * `math.ts`, so the pivot stays where it is. Selecting a bone moves the pivot
+ * to it without moving the picture; double-click / double-tap and `F` bring
+ * it to the middle. Also: clicks and taps (select, empty click = back),
+ * hover, hit proxies for tiny objects, damping, presets, reset, the keyboard
+ * map and the `cam=` URL parameter.
  */
 export function CameraRig({ skeleton, debug, bench = null }: Props) {
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
@@ -118,6 +146,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
   const size = useThree((s) => s.size);
   const reducedMotion = useViewer((s) => s.reducedMotion);
   const geometry = useMemo(() => (skeleton ? skeletonGeometry(skeleton) : null), [skeleton]);
+  const tiny = useMemo(() => (geometry ? tinyObjects(geometry.radiusOf) : new Set<string>()), [geometry]);
   const aspect = size.width / Math.max(1, size.height);
   const heightFraction = framedHeightFraction(size.height);
   const limits = useMemo(
@@ -127,82 +156,214 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
 
   const controlsRef = useRef<CameraControls | null>(null);
   // Everything the event handlers need, read fresh each time.
-  const live = useRef({ skeleton, geometry, limits, aspect, heightFraction, reducedMotion });
-  live.current = { skeleton, geometry, limits, aspect, heightFraction, reducedMotion };
+  const live = useRef({ skeleton, geometry, tiny, limits, aspect, heightFraction, reducedMotion });
+  live.current = { skeleton, geometry, tiny, limits, aspect, heightFraction, reducedMotion };
   /** URL writes start with the first move the user (or a command) makes. */
   const armed = useRef(false);
   const framed = useRef(false);
+  /** Depth of the last point zoomed toward (for the near plane); Infinity after a reset. */
+  const focusDepth = useRef(Infinity);
+  /** Latest mouse position over the canvas for hover, picked once per frame. */
+  const hoverAt = useRef<{ x: number; y: number } | null>(null);
+  const userMoving = useRef(false);
+  const pickRef = useRef<(x: number, y: number, touch: boolean) => string | null>(() => null);
 
   // --- create the controls and wire up every input --------------------------
   useEffect(() => {
     const el = gl.domElement;
     const controls = new CameraControls(camera, el);
     controlsRef.current = controls;
-    controls.dollyToCursor = true;
+    controls.dollyToCursor = false;
     controls.minPolarAngle = MIN_POLAR;
     controls.maxPolarAngle = MAX_POLAR;
+    // camera-controls only rotates; pan and zoom are handled below.
     controls.mouseButtons.left = ACTION.ROTATE;
-    controls.mouseButtons.right = ACTION.TRUCK;
-    controls.mouseButtons.middle = ACTION.DOLLY;
-    // The wheel is classified below (mouse wheel, pinch or two-finger drag).
+    controls.mouseButtons.right = ACTION.NONE;
+    controls.mouseButtons.middle = ACTION.NONE;
     controls.mouseButtons.wheel = ACTION.NONE;
     controls.touches.one = ACTION.TOUCH_ROTATE;
-    controls.touches.two = ACTION.TOUCH_DOLLY_TRUCK;
-    controls.touches.three = ACTION.TOUCH_TRUCK;
+    controls.touches.two = ACTION.NONE;
+    controls.touches.three = ACTION.NONE;
 
     el.tabIndex = 0;
     el.setAttribute("role", "img");
     el.setAttribute(
       "aria-label",
-      "3D skeleton. Arrow keys orbit, Shift and arrows pan, plus and minus zoom, H resets the view, F frames the skeleton.",
+      "3D skeleton. Click a bone to select it, Escape to go back. Arrow keys orbit, Shift and arrows pan, plus and minus zoom, H resets the view, F frames the selection.",
     );
     el.style.touchAction = "none";
 
     const animate = () => !live.current.reducedMotion;
-    const current = (end = true): CameraState => ({
-      position: arr(controls.getPosition(new Vector3(), end)),
-      target: arr(controls.getTarget(new Vector3(), end)),
-    });
+    /** The pose camera-controls is heading for (end = true) or showing now. */
+    const pose = (end = true): CameraState => {
+      const o = controls.getFocalOffset(new Vector3(), end);
+      const cam: CameraState = {
+        position: arr(controls.getPosition(new Vector3(), end)),
+        target: arr(controls.getTarget(new Vector3(), end)),
+      };
+      return o.x === 0 && o.y === 0 ? cam : { ...cam, offset: [o.x, -o.y] };
+    };
     const go = (cam: CameraState, transition = animate()) => {
       armed.current = true;
       controls.normalizeRotations();
+      const [ox, oy] = offsetOf(cam);
       void controls.setLookAt(...cam.position, ...cam.target, transition);
+      void controls.setFocalOffset(ox, -oy, 0, transition);
     };
-    const distance = () => length(sub(current().position, current().target));
-
-    // Shift + left-drag pans: decide per press, before camera-controls sees it.
-    const parent = el.parentElement ?? el;
-    const onPointerDownCapture = (e: PointerEvent) => {
-      if (e.target !== el) return;
-      controls.mouseButtons.left = e.shiftKey ? ACTION.TRUCK : ACTION.ROTATE;
+    const clamped = (cam: CameraState) => {
+      const lim = live.current.limits;
+      return lim ? clampCamera(cam, lim) : cam;
     };
-    parent.addEventListener("pointerdown", onPointerDownCapture, { capture: true });
-    controls.addEventListener("controlstart", () => {
-      armed.current = true;
-    });
+    const pivotDepth = () => length(sub(pose().position, pose().target));
 
-    // Wheel: zoom toward the cursor for a wheel or a pinch, pan for a two-finger drag.
-    let wheelMemory = NO_WHEEL_MEMORY;
+    // A camera at the pose camera-controls is heading for, with this camera's
+    // projection (view offset included), for rays that match the settled view.
+    const probe = camera.clone();
+    const placeProbe = (cam: CameraState) => {
+      probe.copy(camera);
+      probe.position.copy(v(eyeOf(cam)));
+      probe.lookAt(v(sub(eyeOf(cam), viewDirection(cam))));
+      probe.updateMatrixWorld();
+      return probe;
+    };
     const ndc = (clientX: number, clientY: number) => {
       const r = el.getBoundingClientRect();
       return new Vector2(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
     };
+
+    const raycaster = new Raycaster();
+    (raycaster as Raycaster & { firstHitOnly?: boolean }).firstHitOnly = true;
+    /** Nearest bone surface under a client point, seen from `cam` (default: what is on screen). */
+    const surfaceAt = (clientX: number, clientY: number, cam: PerspectiveCamera = camera, needBvh = false) => {
+      const sk = live.current.skeleton;
+      if (!sk) return null;
+      if (needBvh && !(sk.mesh.boundsTrees && sk.mesh.boundsTrees.every(Boolean))) return null;
+      raycaster.setFromCamera(ndc(clientX, clientY), cam);
+      const hit = raycaster.intersectObject(sk.mesh, false)[0];
+      if (!hit || hit.batchId === undefined) return null;
+      const id = sk.boneIds[hit.batchId];
+      return id ? { id, point: arr(hit.point) } : null;
+    };
+
+    // --- zoom toward the cursor (wheel, pinch, + / -) ---------------------------
     const dollyAt = (clientX: number, clientY: number, factor: number) => {
       const lim = live.current.limits;
       if (!lim) return;
-      const cam = current();
-      const s = clampDollyRatio(distance(), factor, lim);
-      if (Math.abs(s - 1) < 1e-9) return;
-      // The cursor ray, from the camera as it will be once the move settles.
-      const probe = camera.clone();
-      probe.position.copy(v(cam.position));
-      probe.lookAt(v(cam.target));
-      probe.updateMatrixWorld();
-      const ray = new Raycaster();
-      ray.setFromCamera(ndc(clientX, clientY), probe);
-      const point = pointOnTargetPlane(cam, arr(ray.ray.direction));
-      go(clampCamera(dollyToPoint(cam, point, s), lim));
+      const cam = pose();
+      const p = placeProbe(cam);
+      // Toward the bone under the cursor (once the BVH is built), else the pivot's plane.
+      const surface = surfaceAt(clientX, clientY, p, true);
+      let point = surface?.point;
+      if (!point) {
+        raycaster.setFromCamera(ndc(clientX, clientY), p);
+        point = pointOnTargetPlane({ position: eyeOf(cam), target: sub(eyeOf(cam), scale(viewDirection(cam), length(sub(cam.position, cam.target)))) }, arr(raycaster.ray.direction));
+      }
+      const f = clampDollyFactor(cam, point, factor, lim);
+      if (Math.abs(f - 1) < 1e-9) return;
+      const next = clamped(dollyPose(cam, point, f));
+      focusDepth.current = depthOf(next, point);
+      go(next);
     };
+    const centreClient = () => {
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    };
+
+    // --- pan: the picture follows the pointer at the depth of what was grabbed ---
+    /** World size of one CSS pixel at the depth of the bone under the pointer (or the pivot's). */
+    const grabScale = (clientX: number, clientY: number) => {
+      const cam = pose();
+      const surface = surfaceAt(clientX, clientY, placeProbe(cam), true);
+      const depth = surface ? depthOf(cam, surface.point) : length(sub(cam.position, cam.target));
+      return worldPerPixel(Math.max(depth, live.current.limits?.minDistance ?? 0), camera.fov, el.clientHeight);
+    };
+    const panBy = (dxPx: number, dyPx: number, k: number) => {
+      if (dxPx === 0 && dyPx === 0) return;
+      go(clamped(panPose(pose(), dxPx, dyPx, k)));
+    };
+    const dragging = (on: boolean) => {
+      userMoving.current = on;
+      const reduced = live.current.reducedMotion;
+      controls.smoothTime = reduced ? 0 : on ? DRAGGING_SMOOTH_TIME : SMOOTH_TIME;
+    };
+
+    // Mouse pan drags (right, middle, Shift + left) and two-finger touch (pan + pinch).
+    let mousePan: { id: number; x: number; y: number; k: number } | null = null;
+    const touches = new Map<number, { x: number; y: number }>();
+    let twoFinger: { k: number; mid: { x: number; y: number }; spread: number } | null = null;
+    const midSpread = () => {
+      const [a, b] = [...touches.values()];
+      return { mid: { x: (a!.x + b!.x) / 2, y: (a!.y + b!.y) / 2 }, spread: Math.hypot(a!.x - b!.x, a!.y - b!.y) };
+    };
+    const onPointerDownCapture = (e: PointerEvent) => {
+      if (e.target !== el) return;
+      if (e.pointerType === "mouse") {
+        // Shift + left-drag pans: decide per press, before camera-controls sees it.
+        controls.mouseButtons.left = e.shiftKey ? ACTION.NONE : ACTION.ROTATE;
+        if (PAN_BUTTONS.has(e.button) || (e.button === 0 && e.shiftKey)) {
+          mousePan = { id: e.pointerId, x: e.clientX, y: e.clientY, k: grabScale(e.clientX, e.clientY) };
+          armed.current = true;
+          dragging(true);
+        }
+        return;
+      }
+      if (e.pointerType === "touch") {
+        touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (touches.size === 2) {
+          const { mid, spread } = midSpread();
+          twoFinger = { k: grabScale(mid.x, mid.y), mid, spread };
+          armed.current = true;
+          dragging(true);
+        } else twoFinger = null;
+      }
+    };
+    const onWindowPointerMove = (e: PointerEvent) => {
+      if (mousePan && e.pointerId === mousePan.id) {
+        panBy(e.clientX - mousePan.x, e.clientY - mousePan.y, mousePan.k);
+        mousePan.x = e.clientX;
+        mousePan.y = e.clientY;
+        return;
+      }
+      if (!touches.has(e.pointerId)) return;
+      touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (!twoFinger || touches.size !== 2) return;
+      const { mid, spread } = midSpread();
+      // Pinch toward the fingers' midpoint, then follow the midpoint.
+      if (twoFinger.spread > 0 && spread > 0) dollyAt(twoFinger.mid.x, twoFinger.mid.y, twoFinger.spread / spread);
+      twoFinger.k *= twoFinger.spread > 0 && spread > 0 ? twoFinger.spread / spread : 1;
+      panBy(mid.x - twoFinger.mid.x, mid.y - twoFinger.mid.y, twoFinger.k);
+      twoFinger.mid = mid;
+      twoFinger.spread = spread;
+    };
+    const onWindowPointerEnd = (e: PointerEvent) => {
+      if (mousePan && e.pointerId === mousePan.id) {
+        mousePan = null;
+        dragging(false);
+      }
+      if (touches.delete(e.pointerId)) {
+        if (twoFinger) dragging(false);
+        twoFinger = null;
+      }
+    };
+    const parent = el.parentElement ?? el;
+    parent.addEventListener("pointerdown", onPointerDownCapture, { capture: true });
+    window.addEventListener("pointermove", onWindowPointerMove);
+    window.addEventListener("pointerup", onWindowPointerEnd);
+    window.addEventListener("pointercancel", onWindowPointerEnd);
+    // Right-drag pans, so no context menu over the canvas.
+    const onContextMenu = (e: MouseEvent) => e.preventDefault();
+    el.addEventListener("contextmenu", onContextMenu);
+    controls.addEventListener("controlstart", () => {
+      armed.current = true;
+      userMoving.current = true;
+    });
+    controls.addEventListener("controlend", () => {
+      userMoving.current = false;
+    });
+
+    // Wheel: zoom toward the cursor for a wheel or a pinch, pan for a two-finger drag.
+    let wheelMemory = NO_WHEEL_MEMORY;
+    let wheelPan: { k: number; at: number } | null = null;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       const legacy = (e as WheelEvent & { wheelDeltaY?: number }).wheelDeltaY;
@@ -212,9 +373,11 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       );
       wheelMemory = memory;
       if (kind === "pan") {
-        const k = worldPerPixel(distance(), camera.fov, el.clientHeight);
+        // A trackpad scroll moves the picture the other way to a drag (as in Milestone 2).
+        if (!wheelPan || e.timeStamp - wheelPan.at > 120) wheelPan = { k: grabScale(e.clientX, e.clientY), at: e.timeStamp };
+        wheelPan.at = e.timeStamp;
         armed.current = true;
-        void controls.truck(e.deltaX * k, e.deltaY * k, animate());
+        panBy(-e.deltaX, -e.deltaY, wheelPan.k);
       } else {
         dollyAt(e.clientX, e.clientY, zoomFactor(kind, e));
       }
@@ -246,13 +409,17 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
           void controls.rotate(a.azimuth, a.polar, animate());
           break;
         case "pan": {
-          const d = distance();
-          void controls.truck(a.x * d, a.y * d, animate());
+          // As in Milestone 2: 2% of the distance per press.
+          const d = pivotDepth();
+          const [ox, oy] = offsetOf(pose());
+          go(clamped({ ...pose(), offset: [ox + a.x * d, oy - a.y * d] }));
           break;
         }
-        case "dolly":
-          void controls.dollyTo(distance() * a.factor, animate());
+        case "dolly": {
+          const c = centreClient();
+          dollyAt(c.x, c.y, a.factor);
           break;
+        }
         case "reset":
           runCommand({ kind: "reset" });
           break;
@@ -264,6 +431,11 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented) return;
       if (e.target !== el && e.target !== document.body && e.target !== document.documentElement) return;
+      if (e.key === "Escape" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        goBack();
+        return;
+      }
       const a = keyAction(e);
       if (!a) return;
       e.preventDefault();
@@ -271,18 +443,52 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     };
     window.addEventListener("keydown", onKeyDown);
 
-    // Presets, reset and frame.
+    const writeCam = (cam: CameraState) => {
+      useViewer.getState().setCamera(cam);
+      const search = serialiseUrlState({ cam }, window.location.search);
+      if (search !== window.location.search) {
+        window.history.replaceState(window.history.state, "", `${window.location.pathname}${search}${window.location.hash}`);
+      }
+    };
+    const boneBox = (id: string | null) => (id && hasMesh(id) ? live.current.geometry?.boneBoxes.get(id) : undefined);
+
+    // Presets, reset, frame, repivot, centre and goto.
     const runCommand = (c: CameraCommand) => {
       const { geometry: g, limits: lim, aspect: asp, heightFraction: hf } = live.current;
       if (!g || !lim) return;
+      const now = pose();
       let cam: CameraState;
-      if (c.kind === "preset") cam = presetView(c.preset, g.box, camera.fov, asp, hf);
-      else if (c.kind === "reset") cam = defaultView(g.box, camera.fov, asp, hf);
-      else {
-        const now = current();
-        cam = frameFrom(g.box, sub(now.position, now.target), camera.fov, asp, hf);
+      focusDepth.current = Infinity;
+      switch (c.kind) {
+        case "preset":
+          cam = presetView(c.preset, g.box, camera.fov, asp, hf);
+          break;
+        case "reset":
+          cam = defaultView(g.box, camera.fov, asp, hf);
+          break;
+        case "frame":
+          cam = frameFrom(boneBox(useViewer.getState().sel) ?? g.box, sub(now.position, now.target), camera.fov, asp, hf);
+          break;
+        case "goto":
+          cam = c.cam ?? defaultView(g.box, camera.fov, asp, hf);
+          break;
+        case "centre": {
+          const box = boneBox(c.id);
+          if (!box) return;
+          cam = centreOn(now, boxCentre(box));
+          break;
+        }
+        case "repivot": {
+          const box = boneBox(c.id);
+          if (!box) return;
+          // The picture doesn't move, so no transition: only the pivot changes.
+          const next = clamped(repivot(now, boxCentre(box), lim.minDistance));
+          go(next, false);
+          writeCam(next);
+          return;
+        }
       }
-      go(clampCamera(cam, lim));
+      go(clamped(cam));
     };
     let lastSeq = useViewer.getState().cameraRequest?.seq ?? 0;
     const unsubscribe = useViewer.subscribe((s) => {
@@ -292,29 +498,57 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       runCommand(r.command);
     });
 
-    // Double-click or double-tap re-centres the orbit on the bone underneath.
+    // --- picking: clicks and taps select, double-click / double-tap centres ------
+    const pick = (clientX: number, clientY: number, touch: boolean): string | null => {
+      const { skeleton: sk, geometry: g, tiny: tinyIds } = live.current;
+      if (!sk || !g) return null;
+      ensureBoundsTrees(sk.mesh); // normally already built in an idle callback
+      camera.updateMatrixWorld();
+      const now: CameraState = { position: arr(camera.position), target: arr(camera.position.clone().add(camera.getWorldDirection(new Vector3()))) };
+      const surface = surfaceAt(clientX, clientY);
+      const real: RealHit | null = surface ? { id: surface.id, depth: depthOf(now, surface.point) } : null;
+      const r = el.getBoundingClientRect();
+      const tanHalf = Math.tan((camera.fov * Math.PI) / 360);
+      const proxies: Proxy[] = [];
+      for (const id of tinyIds) {
+        const box = g.boneBoxes.get(id);
+        const radius = g.radiusOf.get(id);
+        if (!box || radius === undefined) continue;
+        const centre = boxCentre(box);
+        const depth = depthOf(now, centre);
+        if (!(depth > 0)) continue;
+        const p = v(centre).project(camera);
+        proxies.push({
+          id,
+          x: r.left + ((p.x + 1) / 2) * r.width,
+          y: r.top + ((1 - p.y) / 2) * r.height,
+          depth,
+          radius,
+          radiusPx: (radius / (depth * tanHalf)) * (r.height / 2),
+        });
+      }
+      const hitPx = touch ? PROXY_RADIUS_PX.touch : PROXY_RADIUS_PX.mouse;
+      return pickWithProxies(real, proxies, { x: clientX, y: clientY }, hitPx, (id) => tinyIds.has(id));
+    };
+    pickRef.current = pick;
+
     let taps = INITIAL_TAP_STATE;
-    const raycaster = new Raycaster();
-    (raycaster as Raycaster & { firstHitOnly?: boolean }).firstHitOnly = true;
-    const boneAt = (clientX: number, clientY: number): string | null => {
-      const sk = live.current.skeleton;
-      if (!sk) return null;
-      raycaster.setFromCamera(ndc(clientX, clientY), camera);
-      const hit = raycaster.intersectObject(sk.mesh, false)[0];
-      return hit?.batchId !== undefined ? (sk.boneIds[hit.batchId] ?? null) : null;
-    };
-    const recentre = (clientX: number, clientY: number) => {
-      const id = boneAt(clientX, clientY);
-      const box = id ? live.current.geometry?.boneBoxes.get(id) : undefined;
-      if (!box) return; // empty space: nothing happens
-      armed.current = true;
-      const c = boxCentre(box);
-      void controls.moveTo(c[0], c[1], c[2], animate());
-    };
+    let lastPointerType = "mouse";
     const onPointer = (type: PointerSample["type"]) => (e: PointerEvent) => {
+      // Only the primary button selects (a right or middle press pans).
+      if (type === "down" && e.pointerType === "mouse" && e.button !== 0) return;
+      if (type === "down") lastPointerType = e.pointerType;
       const r = tapStep(taps, { type, id: e.pointerId, x: e.clientX, y: e.clientY, t: e.timeStamp });
       taps = r.state;
-      if (r.doubleTap) recentre(r.doubleTap.x, r.doubleTap.y);
+      if (r.tap) {
+        const id = pick(r.tap.x, r.tap.y, lastPointerType !== "mouse");
+        if (id) selectObject(id);
+        else goBack(); // empty space (spec §6)
+      }
+      if (r.doubleTap) {
+        const id = pick(r.doubleTap.x, r.doubleTap.y, lastPointerType !== "mouse");
+        if (id) runCommand({ kind: "centre", id }); // empty space: nothing more happens
+      }
     };
     const pointerHandlers = [
       ["pointerdown", onPointer("down")],
@@ -327,43 +561,53 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     const onDblClick = (e: MouseEvent) => e.preventDefault();
     el.addEventListener("dblclick", onDblClick);
 
+    // Hover (mouse only): remember where the pointer is; it is picked once per frame.
+    const onHoverMove = (e: PointerEvent) => {
+      hoverAt.current = e.pointerType === "mouse" && e.buttons === 0 ? { x: e.clientX, y: e.clientY } : null;
+      if (!hoverAt.current) useViewer.getState().setHovered(null);
+    };
+    const onLeave = () => {
+      hoverAt.current = null;
+      useViewer.getState().setHovered(null);
+    };
+    el.addEventListener("pointermove", onHoverMove);
+    el.addEventListener("pointerleave", onLeave);
+
     // Write the camera to the store and the URL when it comes to rest.
     const onRest = () => {
       if (!armed.current) return;
-      const cam = current(false);
+      const cam = pose(false);
       const prev = useViewer.getState().camera;
       if (prev && sameCamera(prev, cam, 5e-5)) return;
-      useViewer.getState().setCamera(cam);
-      const search = serialiseUrlState({ cam }, window.location.search);
-      if (search !== window.location.search) {
-        window.history.replaceState(window.history.state, "", `${window.location.pathname}${search}${window.location.hash}`);
-      }
+      writeCam(cam);
     };
     controls.addEventListener("rest", onRest);
     // An instant cut never "rests" (it never moves slowly); it goes straight to sleep.
     controls.addEventListener("sleep", onRest);
 
-    // Back and Forward (used by Milestone 3's isolation levels) re-read the URL.
-    const onPopState = () => {
-      const { geometry: g, limits: lim, aspect: asp, heightFraction: hf } = live.current;
-      if (!g || !lim) return;
-      const cam = parseUrlState(window.location.search).cam;
-      go(clampCamera(cam ?? defaultView(g.box, camera.fov, asp, hf), lim));
-    };
-    window.addEventListener("popstate", onPopState);
-
     if (debug) {
+      const project = (p: Vec3) => {
+        const q = v(p).project(camera);
+        const r = el.getBoundingClientRect();
+        return { x: r.left + ((q.x + 1) / 2) * r.width, y: r.top + ((1 - q.y) / 2) * r.height };
+      };
       window.__viewer = {
-        camera: () => current(false),
+        camera: () => pose(false),
+        eye: () => arr(camera.position),
         bone: (id) => {
           const box = live.current.geometry?.boneBoxes.get(id);
           if (!box) return null;
           const centre = boxCentre(box);
-          const p = v(centre).project(camera);
-          const r = el.getBoundingClientRect();
-          return { centre, client: { x: r.left + ((p.x + 1) / 2) * r.width, y: r.top + ((1 - p.y) / 2) * r.height } };
+          return { centre, client: project(centre) };
         },
+        project,
+        pick: (x, y, touch = false) => pick(x, y, touch),
         command: (c) => useViewer.getState().requestCamera(c),
+        select: (id) => selectObject(id),
+        state: () => {
+          const s = useViewer.getState();
+          return { sel: s.sel, tier: s.tier, hovered: s.hovered };
+        },
       };
     }
 
@@ -371,13 +615,18 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       controls.dispose();
       controlsRef.current = null;
       parent.removeEventListener("pointerdown", onPointerDownCapture, { capture: true });
+      window.removeEventListener("pointermove", onWindowPointerMove);
+      window.removeEventListener("pointerup", onWindowPointerEnd);
+      window.removeEventListener("pointercancel", onWindowPointerEnd);
+      el.removeEventListener("contextmenu", onContextMenu);
       el.removeEventListener("wheel", onWheel);
       el.removeEventListener("gesturestart", onGestureStart);
       el.removeEventListener("gesturechange", onGestureChange);
       for (const [name, fn] of pointerHandlers) el.removeEventListener(name, fn);
       el.removeEventListener("dblclick", onDblClick);
+      el.removeEventListener("pointermove", onHoverMove);
+      el.removeEventListener("pointerleave", onLeave);
       window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("popstate", onPopState);
       unsubscribe();
       if (debug) delete window.__viewer;
     };
@@ -400,15 +649,21 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     c.setBoundary(new Box3(v(limits.boundary.min), v(limits.boundary.max)));
   }, [limits]);
 
-  // --- first view: the URL's cam if valid, else the default framing ------------
+  // --- first view: the URL's cam if valid, else the selection, else the default framing ---
   useEffect(() => {
     const c = controlsRef.current;
     if (!c || !geometry || !limits || framed.current) return;
     framed.current = true;
-    const fromUrl = parseUrlState(window.location.search).cam;
-    const cam = clampCamera(fromUrl ?? defaultView(geometry.box, camera.fov, aspect, heightFraction), limits);
+    const url = parseUrlState(window.location.search);
+    const sel = useViewer.getState().sel;
+    const selBox = sel && hasMesh(sel) ? geometry.boneBoxes.get(sel) : undefined;
+    const home = defaultView(geometry.box, camera.fov, aspect, heightFraction);
+    const start = url.cam ?? (selBox ? frameFrom(selBox, sub(home.position, home.target), camera.fov, aspect, heightFraction) : home);
+    const cam = clampCamera(start, limits);
+    const [ox, oy] = offsetOf(cam);
     void c.setLookAt(...cam.position, ...cam.target, false);
-    if (fromUrl) useViewer.getState().setCamera(cam);
+    void c.setFocalOffset(ox, -oy, 0, false);
+    if (url.cam) useViewer.getState().setCamera(cam);
   }, [geometry, limits, camera, aspect, heightFraction]);
 
   // --- keep the framed area above the toolbar: move the projection centre up ---
@@ -423,7 +678,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     };
   }, [camera, size, heightFraction]);
 
-  // --- per frame: advance the controls, keep the clip planes snug -------------
+  // --- per frame: advance the controls, keep the clip planes snug, hover -------
   const centreRadius = useMemo(() => (geometry ? { c: boxCentre(geometry.box), r: boxRadius(geometry.box) } : null), [geometry]);
   // `?bench`: orbit 360° about the vertical axis over 10 s, timing every frame.
   const benchRun = useRef<{ lod: Lod; start: number; azimuth: number; last: number; frames: number[]; drawCalls: number } | null>(null);
@@ -452,9 +707,20 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       }
     }
     c.update(delta);
+    // Hover: one pick per frame at most, never while the camera is being moved.
+    const at = hoverAt.current;
+    if (at && skeleton?.mesh.boundsTrees?.every(Boolean)) {
+      hoverAt.current = null;
+      useViewer.getState().setHovered(userMoving.current ? null : pickRef.current(at.x, at.y, false));
+    }
     if (!centreRadius) return;
-    const target = c.getTarget(new Vector3(), false);
-    const { near, far } = clipPlanes({ position: arr(camera.position), target: arr(target) }, centreRadius.c, centreRadius.r);
+    const o = c.getFocalOffset(new Vector3(), false);
+    const now: CameraState = {
+      position: arr(c.getPosition(new Vector3(), false)),
+      target: arr(c.getTarget(new Vector3(), false)),
+      offset: [o.x, -o.y],
+    };
+    const { near, far } = clipPlanes(now, centreRadius.c, centreRadius.r, focusDepth.current);
     if (Math.abs(camera.near - near) > near * 0.01 || Math.abs(camera.far - far) > far * 0.01) {
       camera.near = near;
       camera.far = far;
@@ -464,4 +730,3 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
 
   return null;
 }
-

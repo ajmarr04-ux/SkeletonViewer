@@ -14,7 +14,7 @@ Out of scope until Milestone 3: hover, selection, isolation, ghosting and the in
 | --- | --- | --- |
 | D | 0 (Milestone 1 handover), 1 (state store), 2 (BatchedMesh scene), 3 (lighting), 4 (LOD choice) | **Done.** See "Session D notes" below |
 | E | 5 (camera rig), 6 (input mapping), 7 (presets, reset, re-centre), 8 (URL sync) | **Done.** See "Session E notes" below |
-| F | 9 (toolbar and settings), 10 (performance check), 11 (tests), 12 (hosted copy) | **Code done.** See "Session F notes" below. Waiting on the user: real-device bench numbers (step 10) and the merge to `main` (step 12) |
+| F | 9 (toolbar and settings), 10 (performance check), 11 (tests), 12 (hosted copy) | **Done.** See "Session F notes" below. Merged (PR #4), `/m2/` live |
 
 Triggers: "begin session D", "begin session E" and "begin session F". Each session starts by reading this file and ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models` and `npm run e2e` passing, then a commit and push to the session branch. No Blender work is planned, so `scripts/setup-blender.sh` is only needed if the models have to be rebuilt.
 
@@ -22,9 +22,9 @@ Triggers: "begin session D", "begin session E" and "begin session F". Each sessi
 
 - [x] Orbit, pan, zoom, presets and reset work on mouse, trackpad, touch and keyboard. (Home button and Views menu added in session F and tested with mouse, keyboard and touch. Still worth a hand check of the trackpad heuristic on a real Mac.)
 - [x] Camera state is synced to the URL.
-- [ ] The phone frame-rate budget is met (≥ 30 FPS while orbiting, checked with Chrome DevTools mobile emulation and CPU throttling, plus one real device if one is available).
+- [x] The phone frame-rate budget is met (≥ 30 FPS while orbiting, checked with Chrome DevTools mobile emulation and CPU throttling, plus one real device if one is available). Measured with `?bench` on 2026-11-19: iPhone 58.8 median FPS (p95 frame 17 ms), PC 75.2 median FPS (p95 frame 13.6 ms). Both runs were on the high LOD, and both are at their display refresh rate, so the phone meets the budget with room to spare even without the low LOD. The DevTools throttled run was not done, and is not needed now that a real phone has passed.
 - [x] Draw calls < 20 (spec §8, needed to meet the line above). One draw call for the skeleton; the `?bench` e2e test asserts < 20 during the orbit.
-- [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
+- [x] **Hosted copy is live and linked below** (extra requirement for every milestone).
 
 ---
 
@@ -71,9 +71,9 @@ Open `https://ajmarr04-ux.github.io/SkeletonViewer/m2/?bench` once it is live (o
 
 | Device / setting | LOD | Median FPS | 5th pct FPS | Draw calls | Target | Met? |
 | --- | --- | --- | --- | --- | --- | --- |
-| Desktop browser | high | | | | 60 | |
-| DevTools: mid-range phone, 4× CPU throttle (`?bench&lod=low`) | low | | | | ≥ 30 | |
-| Real phone (if available) | low | | | | ≥ 30 | |
+| Desktop browser (PC), `?bench` | high | 75.2 (median 13.3 ms) | 73.5 (p95 13.6 ms) | not reported | 60 | **Yes** (max frame 19.4 ms; 75 FPS suggests a 75 Hz display, so vsync-capped) |
+| DevTools: mid-range phone, 4× CPU throttle (`?bench&lod=low`) | low | not run | | | ≥ 30 | n/a |
+| Real phone (iPhone), `?bench` | high | 58.8 (median 17 ms) | ~58.8 (p95 17 ms) | not reported | ≥ 30 | **Yes** (max frame 117 ms, a single hitch; 60 Hz vsync-capped) |
 | Container Chromium (SwiftShader, not meaningful) | low | ~7 | | 1 | n/a | n/a |
 
 ## Step 1: State store (`src/state/`)
@@ -202,7 +202,7 @@ What can be checked automatically in the container, and what can't:
 - Link https://ajmarr04-ux.github.io/SkeletonViewer/m2/ in `README.md` and here, and ask the user to confirm it loads.
 - At the start of Milestone 3, follow the handover in `CLAUDE.md`: freeze `"m2": "<merge SHA>"` and set `current` to 3.
 
-**Hosted copy, Milestone 2:** https://ajmarr04-ux.github.io/SkeletonViewer/m2/ (live once this milestone is merged to `main`).
+**Hosted copy, Milestone 2:** https://ajmarr04-ux.github.io/SkeletonViewer/m2/ Live: merged in PR #4 (`eb3e8ff`), confirmed loading by the user on 2026-11-19.
 
 ---
 

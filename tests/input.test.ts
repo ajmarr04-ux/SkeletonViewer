@@ -220,3 +220,33 @@ describe("double tap", () => {
     expect(run([...tap(0), { type: "cancel", id: 1, x: 0, y: 0, t: 100 }, ...tap(150)])).toEqual([]);
   });
 });
+
+describe("single tap (click to select)", () => {
+  function taps(events: PointerSample[]): { taps: number; doubles: number } {
+    let s: TapState = INITIAL_TAP_STATE;
+    let n = 0;
+    let d = 0;
+    for (const e of events) {
+      const r = tapStep(s, e);
+      s = r.state;
+      if (r.tap) n++;
+      if (r.doubleTap) d++;
+    }
+    return { taps: n, doubles: d };
+  }
+  const press = (t: number, x = 100, moveTo = x, ms = 80): PointerSample[] => [
+    { type: "down", id: 1, x, y: 100, t },
+    { type: "move", id: 1, x: moveTo, y: 100, t: t + ms / 2 },
+    { type: "up", id: 1, x: moveTo, y: 100, t: t + ms },
+  ];
+
+  it("every still press is a tap; the second of a quick pair is also a double tap", () => {
+    expect(taps(press(0))).toEqual({ taps: 1, doubles: 0 });
+    expect(taps([...press(0), ...press(200)])).toEqual({ taps: 2, doubles: 1 });
+    expect(taps([...press(0), ...press(1000)])).toEqual({ taps: 2, doubles: 0 });
+  });
+  it("a drag of more than 5 px is a camera move, never a tap", () => {
+    expect(taps(press(0, 100, 106))).toEqual({ taps: 0, doubles: 0 });
+    expect(taps(press(0, 100, 105))).toEqual({ taps: 1, doubles: 0 });
+  });
+});

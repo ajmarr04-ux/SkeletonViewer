@@ -54,3 +54,32 @@ describe("hasFlag", () => {
     expect(hasFlag("?lod=low", "debug")).toBe(false);
   });
 });
+
+describe("selection in the URL", () => {
+  const ids = new Set(["femur_left", "tooth_18"]);
+  const isId = (id: string) => ids.has(id);
+
+  it("reads sel, tier and ghost, dropping unknown IDs", () => {
+    expect(parseUrlState("?sel=femur_left&tier=1&ghost=0", isId)).toEqual({ cam: null, sel: "femur_left", tier: 1, ghost: "hide" });
+    expect(parseUrlState("?sel=nope&tier=2", isId)).toEqual({ cam: null, sel: null, tier: 0, ghost: "ghost" });
+    expect(parseUrlState("?tier=2", isId).tier).toBe(0);
+    expect(parseUrlState("?sel=femur_left&tier=7", isId).tier).toBe(0);
+    expect(parseUrlState("?sel=tooth_18", isId).sel).toBe("tooth_18");
+    expect(parseUrlState("?ghost=1").ghost).toBe("ghost");
+  });
+
+  it("writes sel, tier, ghost and cam in that order, after other parameters, leaving defaults out", () => {
+    expect(serialiseUrlState({ sel: "femur_left" }, "?debug&cam=1,2,3,4,5,6")).toBe("?debug&sel=femur_left&cam=1,2,3,4,5,6");
+    expect(serialiseUrlState({ tier: 1 }, "?sel=femur_left")).toBe("?sel=femur_left&tier=1");
+    expect(serialiseUrlState({ sel: null, tier: 0 }, "?sel=femur_left&tier=1&lod=low")).toBe("?lod=low");
+    expect(serialiseUrlState({ ghost: "hide" }, "?sel=femur_left")).toBe("?sel=femur_left&ghost=0");
+    expect(serialiseUrlState({ ghost: "ghost" }, "?sel=femur_left&ghost=0")).toBe("?sel=femur_left");
+  });
+
+  it("round-trips a full state", () => {
+    const state = { cam: { position: [0, 1, 2], target: [0, 0.85, 0], offset: [0.1, 0] }, sel: "femur_left", tier: 2, ghost: "hide" } as const;
+    const search = serialiseUrlState(state as never, "");
+    expect(search).toBe("?sel=femur_left&tier=2&ghost=0&cam=0,1,2,0,0.85,0,0.1,0");
+    expect(parseUrlState(search, isId)).toEqual(state);
+  });
+});

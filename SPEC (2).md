@@ -194,6 +194,7 @@ Region (tier 2)  ── double-click a related bone ──► new focus at tier 
 | Reset | Home button | Home button | Home button | `H` |
 
 - Orbit pivots around a focus point. Re-centring eases the camera over about 400 ms.
+  - *Changed 2026-11-19 (the user, `docs/BACKLOG.md` entry 1, built in Milestone 3):* the focus point (orbit pivot) is fixed, CAD style. It starts at the skeleton's centre, and panning and zooming never move it (they shift the view instead). Selecting a bone moves the pivot to that bone without moving the picture; double-click / double-tap and `F` also bring the bone to the middle of the view. Home and the preset views put the pivot back on the skeleton's centre. `cam=` gains two optional values for the view shift: `cam=<px,py,pz,tx,ty,tz[,ox,oy]>`.
 - Clamp zoom: the minimum distance is set by the smallest visible object, and the maximum is about 3× the full skeleton's bounding sphere.
 - Clamp vertical orbit just short of the poles, so the view never flips.
 - Use damping on every move. When `prefers-reduced-motion` is set, use instant cuts.
