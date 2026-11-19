@@ -1,8 +1,9 @@
 {
   "repo": "SkeletonViewer",
-  "current": 3,
+  "current": 4,
   "frozen": {
     "m1": "b1392fa5c58c16debe20696c288822ad8a4bb167",
-    "m2": "eb3e8ff58b3b5b4a4b71d419c82707fa456782e9"
+    "m2": "eb3e8ff58b3b5b4a4b71d419c82707fa456782e9",
+    "m3": "d377478570af818960c63a0ecea115a45c3fb45c"
   }
 }

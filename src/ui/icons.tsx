@@ -41,3 +41,18 @@ export const OpacityIcon = svg(
     <path d="M12 7h5M12 11h8M12 15h7M12 19h3" />
   </>,
 );
+export const RelatedIcon = svg(
+  <>
+    <circle cx="12" cy="12" r="3" />
+    <circle cx="5" cy="6" r="2" />
+    <circle cx="19" cy="6" r="2" />
+    <circle cx="12" cy="20" r="2" />
+    <path d="M10 10 6.5 7.3M14 10l3.5-2.7M12 15v3" />
+  </>,
+);
+export const RegionIcon = svg(
+  <>
+    <circle cx="12" cy="12" r="3" />
+    <rect x="3" y="3" width="18" height="18" rx="4" strokeDasharray="3 3" />
+  </>,
+);

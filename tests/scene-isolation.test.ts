@@ -39,6 +39,23 @@ describe("isolationView", () => {
   it("a wisdom tooth (no mesh) isolates nothing", () => {
     expect(isolationView("tooth_18", 0, "ghost", hasMesh)).toEqual(FULL_VIEW);
   });
+  it("tiers 1 and 2 add the related bones and the region (femur worked example)", () => {
+    const t1 = isolationView("femur_left", 1, "ghost", hasMesh);
+    expect(t1.focus).toBe("femur_left");
+    expect([...t1.solid!].sort()).toEqual(["femur_left", "hip_bone_left", "patella_left", "tibia_left"]);
+    expect(isPickable(t1, "tibia_left")).toBe(true);
+    expect(isPickable(t1, "fibula_left")).toBe(false);
+    const t2 = isolationView("femur_left", 2, "ghost", hasMesh);
+    expect([...t2.solid!].sort()).toEqual(
+      ["coccyx", "femur_left", "fibula_left", "hip_bone_left", "hip_bone_right", "patella_left", "sacrum", "tibia_left"],
+    );
+  });
+  it("a wisdom tooth at tier 1 shows its neighbours with no focus", () => {
+    const v = isolationView("tooth_18", 1, "ghost", hasMesh);
+    expect(v.isolated).toBe(true);
+    expect(v.focus).toBeNull();
+    expect([...v.solid!].sort()).toEqual(["maxilla_right", "tooth_17"]);
+  });
 });
 
 describe("applyIsolationView", () => {

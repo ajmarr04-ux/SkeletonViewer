@@ -50,6 +50,14 @@ export const selectObject = (id: string): void => {
   if (isKnownId(id)) dispatchIsolation({ type: "select", id });
 };
 export const goBack = (): void => dispatchIsolation({ type: "back" });
+/** Tier 1 (spec §6 "Show related"). */
+export const showRelated = (): void => dispatchIsolation({ type: "related" });
+/** Tier 2 (spec §6 "Expand region"). */
+export const expandRegion = (): void => dispatchIsolation({ type: "region" });
+/** The other side of a pair, keeping the tier (plan decision 8). */
+export const switchSide = (id: string): void => {
+  if (isKnownId(id)) dispatchIsolation({ type: "switchSide", id });
+};
 
 /** Ghost or hide (spec §6 toggle): store and URL (`ghost=0` for hide), no new history entry. */
 export function setGhostMode(mode: GhostMode): void {

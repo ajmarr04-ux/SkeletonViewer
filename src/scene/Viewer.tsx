@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { loadContent } from "../content/loader";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import ids from "../../content/ids.json";
 import { CameraRig } from "../camera/CameraRig";
@@ -107,6 +108,7 @@ export function Viewer() {
         };
         setShown({ lod, skeleton, ghost, outlines });
         useViewer.getState().setLodActive(lod);
+        void loadContent(); // the panel text, off the first frame's path (plan step 4)
         setLoadTimes((t) => ({ ...t, [lod]: loaded.loadedAtMs }));
         if (debug) {
           setBounds(null);

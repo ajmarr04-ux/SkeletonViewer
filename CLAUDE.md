@@ -6,7 +6,7 @@ A static browser app: a 3D atlas of the adult human skeleton (bones and teeth on
 - Never translate, rotate or re-pose a bone. Every object keeps its world position exactly. Moving an object's *origin* is fine; moving its geometry in world space is not.
 - Never invent landmark coordinates, TA2 IDs or articulations. Anything uncertain goes in `content/QUESTIONS.md`.
 - If an asset problem blocks you, stop and describe it rather than working around it silently.
-- Before calling any step done, run `npx tsc --noEmit` and `npx vitest run`, plus `validate-content` once it exists.
+- Before calling any step done, run `npx tsc --noEmit` and `npx vitest run`, plus `npm run validate-content`.
 - Commit at the end of each session and push to the session's assigned branch. Mark progress in `docs/PLAN-milestone-1.md`.
 - Every milestone ends with a hosted copy on GitHub Pages, linked in `README.md`. The URL pattern is `https://ajmarr04-ux.github.io/SkeletonViewer/m<N>/`.
 
@@ -44,11 +44,17 @@ A static browser app: a 3D atlas of the adult human skeleton (bones and teeth on
 | `src/ui/Tooltip.tsx`, `src/content/names.ts` | Hover name tooltip; display names ("Femur (left)"). |
 | `src/ui/InfoPanel.tsx`, `Breadcrumb.tsx`, `Announcer.tsx` | Info panel (desktop right panel, phone bottom sheet), breadcrumb, `aria-live` announcements. The panel reports the area it covers (`panelInset`) so framing (`frameBeside`) keeps the bone beside it. |
 | `src/content/placeholder.ts`, `src/content/labels.ts` | Placeholder panel content from `ids.json` ("Not written yet"), opposite side, group labels and breadcrumb trail. |
+| `content/bones/<id>.md` | Content files (spec §5). Write the left and midline files only, then `npm run content:mirror` writes the right side; `validate-content` fails if they drift. |
+| `src/content/compile.ts`, `scripts/lib/content-plugin.ts`, `src/content/loader.ts`, `src/content/panel.ts` | Content compiler (front matter + `marked`), served as the virtual module `virtual:skeleton-content` (its own lazy chunk; `npm run content` prints its size); loader hook; the panel model (falls back to the placeholder for unwritten files). |
 | `tests/e2e/panel.spec.ts`, `tests/e2e/all-objects.spec.ts` | Panel, sheet, contrast and 200% reflow; every one of the 234 objects tapped on a 390 px phone (about 3 minutes). |
 | `src/scene/pick.ts` | Tiny objects (radius < 2 cm, 100 of them) and `pickWithProxies` (screen-space hit areas: 22 px touch, 6 px mouse). |
 | `src/camera/CameraRig.tsx` | camera-controls rig with a **fixed orbit pivot**: camera-controls only rotates; pan, zoom-to-surface and two-finger touch are the rig's own (focal offset). Clicks/taps select, double-tap centres, hover, `Esc`, `cam=` URL sync, `window.__viewer` debug hooks. |
 | `src/camera/math.ts`, `src/camera/input.ts` | Pure camera maths (presets, box framing, limits, fixed-pivot `panPose`/`dollyPose`/`repivot`/`centreOn`/`clampOffset`) and input helpers (`classifyWheel`, key map, taps and double taps). |
 | `tests/e2e/viewer.spec.ts`, `tests/e2e/select.spec.ts` | Playwright camera tests (keyboard, URL round trip, presets, re-centre, touch); selection and fixed-pivot tests. |
+| `content/articulations.json`, `regions.json`, `hierarchy.json`, `QUESTIONS.md` | Relationship data (spec §5): one entry per articulation pair; tier-2 sets on top of tier 1; the tree. `QUESTIONS.md` lists every uncertain choice. |
+| `src/content/schema.ts`, `validate.ts`, `frontmatter.ts`, `relations.ts` | zod schemas; pure validation rules; front matter and left → right mirroring; tier sets (`tier1`, `regionOf`, `visibleAt`). |
+| `scripts/validate-content.ts`, `scripts/content/mirror.ts`, `build-hierarchy.ts` | `npm run validate-content` (in `check` and `prebuild`), `content:mirror`, `content:hierarchy`. |
+| `tests/e2e/related.spec.ts` | Tiers 1 and 2, history, side toggle at a tier, teeth. |
 | `tests/e2e/smoke.spec.ts` | Playwright smoke test (`npm run e2e`): both LODs load, 234 batched bones + 4 known-missing, < 20 draw calls, every bone's bounds match the manifest (`?debug`). |
 | `scripts/build-pages.sh`, `deploy/pages.json` | Pages build: live site plus `/m<N>/` milestone snapshots. Deployed by `.github/workflows/deploy.yml` on push to `main`. |
 
@@ -60,7 +66,7 @@ When milestone N is merged and milestone N+1 begins:
 2. **Confirm that milestone N's hosted copy is live** at `https://ajmarr04-ux.github.io/SkeletonViewer/m<N>/`. The container can't reach `github.io`, so ask the user (or check the latest Deploy run with the GitHub tools). Then tick "Hosted copy is live" in that milestone's plan and update its row in `README.md`.
 3. Write the new milestone's plan as `docs/PLAN-milestone-<N+1>.md`, following the spec's §11 phase.
 
-Status: Milestone 1 is frozen at `b1392fa` and Milestone 2 at `eb3e8ff` (`current` is 3); `/m1/`, `/m2/` and `/m3/` are live (confirmed by the user). **Milestone 3 (select and isolate, fixed orbit pivot) is complete** (sessions G, H and I, merged in PR #7; all exit criteria ticked in `docs/PLAN-milestone-3.md`, step 9 met on PC and iPhone). Next: the Milestone 4 handover above. Freeze `m3` in `deploy/pages.json` at the merge commit of Milestone 3's last PR (the closeout PR if it was merged, else `86f4edd`; check `git log origin/main`), set `current` to 4, and write `docs/PLAN-milestone-4.md` from spec §11 Phase 4. The user's open hand checks from Milestone 3 (orbit feel, the two-to-one-finger touch handover, the sheet on a device) are listed in the M3 plan's "Needs the user" notes.
+Status: Milestones 1, 2 and 3 are frozen at `b1392fa`, `eb3e8ff` and `d377478` (`current` is 4); `/m1/`, `/m2/` and `/m3/` are live (confirmed by the user). **Milestone 4 (related isolation and content)** is in progress (`docs/PLAN-milestone-4.md`). Sessions J and K are done: `validate-content`, articulations / regions / hierarchy, tiers 1 and 2 (J); the content compiler, the real info panel and the 112 axial and teeth content files (K). Open choices are in `content/QUESTIONS.md`. Next: "begin session L" (appendicular content, then remove `--allow-missing-content`; joint highlighting, Explode, tests, hosted copy). The plan's "Decisions made in this plan" list fills gaps in the spec; the user's open hand checks from Milestone 3 are carried in its step 0.
 
 ## Environment notes
 - The cloud container is temporary, so **run `bash scripts/setup-blender.sh` first in every session**. It takes about a minute and is safe to re-run.

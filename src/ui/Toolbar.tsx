@@ -1,7 +1,8 @@
 import { PRESETS, type Preset } from "../camera/math";
-import { hasMesh, setGhostMode } from "../state/selection";
+import { isolationView } from "../scene/isolation";
+import { expandRegion, hasMesh, setGhostMode, showRelated } from "../state/selection";
 import { GHOST_OPACITY, useViewer } from "../state/store";
-import { GhostIcon, HomeIcon, OpacityIcon, SettingsIcon, ViewsIcon } from "./icons";
+import { GhostIcon, HomeIcon, OpacityIcon, RegionIcon, RelatedIcon, SettingsIcon, ViewsIcon } from "./icons";
 import { Popover } from "./Popover";
 import { Settings } from "./Settings";
 
@@ -55,14 +56,40 @@ export function Toolbar() {
   );
 }
 
-/** Ghost / hide toggle and the ghost-opacity slider (spec §6), shown only while something is isolated. */
+/**
+ * Show related / Expand region (spec §7 toolbar: one button, the next tier),
+ * the ghost / hide toggle and the ghost-opacity slider (spec §6), shown only
+ * while something is isolated.
+ */
 function IsolationTools() {
-  const isolated = useViewer((s) => s.sel !== null && hasMesh(s.sel));
+  const sel = useViewer((s) => s.sel);
+  const tier = useViewer((s) => s.tier);
+  const isolated = useViewer((s) => isolationView(s.sel, s.tier, "ghost", hasMesh).isolated);
   const ghostMode = useViewer((s) => s.ghostMode);
   const opacity = useViewer((s) => s.ghostOpacity);
   const setOpacity = useViewer((s) => s.setGhostOpacity);
-  if (!isolated) return null;
+  if (sel === null) return null;
   const ghosts = ghostMode === "ghost";
+  return (
+    <>
+      {tier === 0 && (
+        <button type="button" className="tool" data-testid="tool-related" title="Show related bones" onClick={showRelated}>
+          <RelatedIcon />
+          <span className="tool-label">Related</span>
+        </button>
+      )}
+      {tier === 1 && (
+        <button type="button" className="tool" data-testid="tool-region" title="Expand to the region" onClick={expandRegion}>
+          <RegionIcon />
+          <span className="tool-label">Region</span>
+        </button>
+      )}
+      {isolated && <GhostTools ghosts={ghosts} opacity={opacity} setOpacity={setOpacity} />}
+    </>
+  );
+}
+
+function GhostTools({ ghosts, opacity, setOpacity }: { ghosts: boolean; opacity: number; setOpacity: (v: number) => void }) {
   return (
     <>
       <button

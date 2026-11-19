@@ -7,6 +7,11 @@ describe("isolation reducer (spec §6 state diagram)", () => {
   const table: [string, Isolation, IsolationAction, Isolation, string][] = [
     ["select from the full skeleton", FULL_SKELETON, { type: "select", id: "femur_left" }, s("femur_left"), "push"],
     ["select the same bone again", s("femur_left"), { type: "select", id: "femur_left" }, s("femur_left"), "none"],
+    ["select the focus again at tier 1", s("femur_left", 1), { type: "select", id: "femur_left" }, s("femur_left", 1), "none"],
+    ["switch side at tier 2 keeps the tier", s("femur_left", 2), { type: "switchSide", id: "femur_right" }, s("femur_right", 2), "replace"],
+    ["switch side at tier 0", s("femur_left"), { type: "switchSide", id: "femur_right" }, s("femur_right"), "replace"],
+    ["switch side to the same bone", s("femur_left", 1), { type: "switchSide", id: "femur_left" }, s("femur_left", 1), "none"],
+    ["switch side from the full skeleton selects", FULL_SKELETON, { type: "switchSide", id: "femur_right" }, s("femur_right"), "push"],
     ["switch focus at tier 0", s("femur_left"), { type: "select", id: "tibia_left" }, s("tibia_left"), "replace"],
     ["new focus from tier 1", s("femur_left", 1), { type: "select", id: "tibia_left" }, s("tibia_left"), "push"],
     ["new focus from tier 2", s("femur_left", 2), { type: "select", id: "tibia_left" }, s("tibia_left"), "push"],

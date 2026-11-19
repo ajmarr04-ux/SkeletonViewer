@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import ids from "../content/ids.json";
 import { groupTrail, regionLabel } from "../src/content/labels";
+import { relations } from "../src/content/relations";
 import { announcement, NO_MODEL_NOTE, NOT_WRITTEN, oppositeOf, panelModel, SECTION_TITLES, type IdEntry } from "../src/content/placeholder";
 import { nearestSnap, nextSnap, PEEK_PX, snapHeights } from "../src/ui/InfoPanel";
 import { boxCentre, fitDistance, frameBeside, frameFrom, FOV_DEG, NO_PANEL, panelFractions, panelOffset, type Box } from "../src/camera/math";
@@ -90,11 +91,23 @@ describe("labels and breadcrumb", () => {
 
 describe("announcements (aria-live)", () => {
   it("names the bone, side and isolation", () => {
-    expect(announcement("femur_left")).toBe("Femur, left, selected. Isolated.");
-    expect(announcement("sternum")).toBe("Sternum, selected. Isolated.");
-    expect(announcement("tooth_13")).toBe("Upper right canine, selected. Isolated.");
-    expect(announcement("tooth_18")).toMatch(/No 3D model/);
-    expect(announcement(null)).toBe("Full skeleton");
+    expect(announcement({ sel: "femur_left", tier: 0 })).toBe("Femur, left, selected. Isolated.");
+    expect(announcement({ sel: "sternum", tier: 0 })).toBe("Sternum, selected. Isolated.");
+    expect(announcement({ sel: "tooth_13", tier: 0 })).toBe("Upper right canine, selected. Isolated.");
+    expect(announcement({ sel: "tooth_18", tier: 0 })).toMatch(/No 3D model/);
+    expect(announcement({ sel: null, tier: 0 })).toBe("Full skeleton");
+  });
+  it("names the related bones and the region (tiers 1 and 2)", () => {
+    const rel = (id: string) => relations.tier1(id);
+    expect(announcement({ sel: "femur_left", tier: 1 }, null, rel)).toBe("Femur, left: related bones shown. Hip bone, patella, tibia.");
+    expect(announcement({ sel: "hip_bone_left", tier: 1 }, null, rel)).toBe(
+      "Hip bone, left: related bones shown. Sacrum, hip bone (right), femur.",
+    );
+    expect(announcement({ sel: "rib_5_left", tier: 1 }, null, rel)).toBe("Rib 5, left: related bones shown. T4 vertebra, T5 vertebra, sternum.");
+    expect(announcement({ sel: "hyoid_bone", tier: 1 }, null, rel)).toBe("Hyoid bone: related bones shown. None.");
+    expect(announcement({ sel: "femur_left", tier: 2 }, null, rel, 8)).toBe("Femur, left: region shown, 8 bones.");
+    expect(announcement({ sel: "femur_left", tier: 0 }, { sel: "femur_left", tier: 1 })).toBe("Femur, left, isolated.");
+    expect(announcement({ sel: "tibia_left", tier: 0 }, { sel: "femur_left", tier: 1 })).toBe("Tibia, left, selected. Isolated.");
   });
 });
 
