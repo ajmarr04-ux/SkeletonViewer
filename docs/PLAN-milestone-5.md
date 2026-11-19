@@ -15,7 +15,7 @@ Out of scope: pinned landmark labels stay disabled, because no landmark has a po
 | (planning) | 0 (Milestone 4 handover) | **Done.** See step 0 |
 | M | 1 (search index), 2 (sidebar: search and tree), 3 (group isolation from the tree), 4 (Tab through visible objects) | **Done.** See "Session M notes" |
 | N | 5 (floating labels), 6 (colour-by-region and legend), 7 (screenshot), 8 (share link), 9 (attribution page), 10 (toolbar layout on phones) | **Done.** See "Session N notes" |
-| O | 11 (accessibility: axe-core and the keyboard pass), 12 (performance on the supported browsers, needs the user), 13 (tests and the smoke test), 14 (hosted copy) | **Steps 11 and 13 done; 12 done in Chromium, the browser table needs the user; 14 needs the merge.** See "Session O notes" |
+| O | 11 (accessibility: axe-core and the keyboard pass), 12 (performance on the supported browsers, needs the user), 13 (tests and the smoke test), 14 (hosted copy) | **Done.** Step 12's per-browser `?bench` table stays open for the user (loading confirmed fine on phone and PC). See "Session O notes" |
 
 Triggers: "begin session M", "begin session N" and "begin session O". Each session starts by reading this file and ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models`, `npm run validate-content` and `npm run e2e` passing, then a commit, a push to the session branch and a PR to `main`. No Blender work is planned.
 
@@ -25,7 +25,7 @@ Triggers: "begin session M", "begin session N" and "begin session O". Each sessi
 - [x] Accessibility checks pass: axe-core reports no violations, and a manual keyboard-only pass succeeds. (Scripted in `a11y.spec.ts` and `keyboard.spec.ts`; a screen-reader pass by the user is still welcome.)
 - [ ] Performance budgets are met on the supported browsers.
 - [x] A Playwright smoke test passes: load → click femur → Show related → Expand region → Back ×3 → full skeleton. (`tests/e2e/related.spec.ts`, first test; checked against this wording in session O.)
-- [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
+- [x] **Hosted copy is live and linked below** (extra requirement for every milestone). Confirmed by the user on 2026-11-19 ("loads great on smartphone and pc").
 
 ---
 
@@ -93,7 +93,7 @@ What was done, and where it differs from the steps below (say if any should chan
 - **Smoke test.** `related.spec.ts`'s first test matches the spec's wording step for step. It now presses the panel's **"Expand region"** button (the spec's words) rather than the toolbar's "Region"; the toolbar button is pressed in the keyboard and axe tests.
 - **The session N flake** ("keyboard moves the camera, the URL follows…") was the test, not the app: camera-controls fires `rest` while the camera is still easing, the URL is written then, and written again with the final pose at `sleep`. The test compared the camera with the first write. It now waits for the URL to settle on the camera (6 of 6 runs with 3 workers in parallel).
 - **Firefox and WebKit** (decision 13) were not tried in the container: its instructions say not to run `playwright install`, which is how they'd be fetched. Those browsers rely on the user's checks in the table.
-- **Test run:** see the end of these notes.
+- **Test run:** `tsc`, Vitest (307 tests), `check-models` and `validate-content` pass; Playwright 105 of 105 in one full run (18.8 min, 2 workers).
 
 ## Step 1: Search index (spec §2, §7)
 
@@ -187,7 +187,7 @@ What was done, and where it differs from the steps below (say if any should chan
 
 ## Step 14: Hosted copy
 
-**Hosted copy, Milestone 5:** https://ajmarr04-ux.github.io/SkeletonViewer/m5/ (not live yet).
+**Hosted copy, Milestone 5:** https://ajmarr04-ux.github.io/SkeletonViewer/m5/ (live; frozen at `71f04d0`, the merge of PR #11).
 
 - Merge to `main` through a PR, check the Deploy run, and ask the user to confirm https://ajmarr04-ux.github.io/SkeletonViewer/m5/ loads. Then tick the exit criterion and update `README.md`. Milestone 5 is the spec's last phase. After it, `CLAUDE.md`'s status should say so, and new work goes through `docs/BACKLOG.md`.
 
