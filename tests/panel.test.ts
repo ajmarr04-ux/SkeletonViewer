@@ -53,9 +53,10 @@ describe("content compiler", () => {
     }
   });
 
-  it("covers the whole axial skeleton and every tooth (session K)", () => {
-    for (const e of ids as { id: string; group: string[] }[])
-      if (e.group[0] !== "appendicular") expect(content[e.id], e.id).toBeDefined();
+  it("covers every object in ids.json, all 238 (sessions K and L)", () => {
+    const all = ids as { id: string }[];
+    expect(all.length).toBe(238);
+    for (const e of all) expect(content[e.id], e.id).toBeDefined();
   });
 });
 

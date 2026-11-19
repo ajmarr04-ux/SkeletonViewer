@@ -52,3 +52,13 @@ Drafted in Milestone 4, session K (axial skeleton and teeth, 73 written files pl
 29. **Eruption ages of the permanent teeth** follow the usual chart (upper central incisor 7 to 8 years, lower central incisor 6 to 7, first molars about 6, second molars about 12, third molars 17 to 21). Check against the reviewer's preferred source.
 30. **Common names.** "Front tooth" for the central incisors, "Eye tooth" for the upper canine only, "Bicuspid" for the premolars, "Six-year molar" and "Twelve-year molar", "Wisdom tooth", "Inferior turbinate", "Hammer", "Anvil" and "Stirrup". Most other bones have no common name (`null`), and the panel then hides that line.
 31. **Vertebral levels in the clinical notes** (jugular notch at T2–T3, sternal angle at T4–T5, IVC through the diaphragm at T8, oesophagus at T10, aortic bifurcation at L4, end of the spinal cord at L1–L2, carotid tubercle on C6) are the usual teaching levels; they vary between people.
+
+### Appendicular skeleton (session L)
+
+Drafted in Milestone 4, session L: 63 written files (left side) plus 63 mirrored, the same way as above.
+
+32. **Bone type.** The hip bone is `irregular` (some textbooks call it flat); the patella and pisiform are `sesamoid`; carpals and tarsals (talus and calcaneus included) are `short`; metacarpals, metatarsals and all phalanges are `long`.
+33. **Latin names.** Metacarpals and metatarsals use "Os metacarpi I" and "Os metatarsi I" (TA98 style; TA2 has "Os metacarpale"), and phalanges "Phalanx proximalis digiti secundi manus" and so on, with "pollicis" and "hallucis" for the thumb and big toe. The fibular muscles are named "Fibularis longus" (not "Peroneus").
+34. **Common names.** "Collarbone", "Shoulder blade", "Innominate bone" (for the hip bone; strictly an older anatomical name), "Thigh bone", "Kneecap", "Shinbone", "Calf bone", "Ankle bone" (talus) and "Heel bone". Every other appendicular bone has none.
+35. **Muscle attachments of the hand and foot.** Interossei are assigned to the phalanx bases and metacarpals/metatarsals by the usual pattern (hand: dorsal 1 to 4 and palmar 1 to 3; foot: dorsal 1 to 4 from adjacent metatarsals, plantar 1 to 3 from metatarsals 3 to 5). Lumbricals, which insert into the extensor expansion rather than bone, aren't listed. The small slips of tibialis posterior to the cuneiforms and cuboid, and of the oblique head of adductor pollicis to the trapezoid and capitate, are listed; check whether they're worth keeping.
+36. **Fused little-toe phalanges.** The middle and distal phalanges of the little toe are described as often fused; the model has them separate (as the 206 count assumes), and the text says so without giving a percentage.
