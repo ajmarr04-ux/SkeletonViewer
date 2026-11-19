@@ -22,10 +22,10 @@ const state = (page: Page) => page.evaluate(() => window.__viewer!.state());
 const project = (page: Page, p: Vec3) => page.evaluate((q) => window.__viewer!.project(q), p);
 const bone = async (page: Page, id: string) => (await page.evaluate((i) => window.__viewer!.bone(i), id))!;
 const param = (page: Page, name: string) => new URL(page.url()).searchParams.get(name);
-/** A point on the canvas with no bone under it (the debug overlay covers the top-left). */
+/** A point on the canvas with no bone under it (left edge: the debug overlay covers the top-left, the info panel the right). */
 async function emptySpot(page: Page) {
   const box = (await page.locator("canvas").boundingBox())!;
-  return { x: box.x + box.width - 20, y: box.y + box.height * 0.45 };
+  return { x: box.x + 20, y: box.y + box.height * 0.7 };
 }
 /** Wait for the damping to settle. */
 const settle = (page: Page, ms = 700) => page.waitForTimeout(ms);
@@ -114,7 +114,7 @@ test.describe("fixed orbit pivot", () => {
     await page.locator("canvas").focus();
     await page.keyboard.press("h");
     await expect.poll(async () => dist((await camera(page)).target, home.target), { timeout: 10_000 }).toBeLessThan(1e-4);
-    expect((await camera(page)).offset ?? [0, 0]).toEqual([0, 0]);
+    await expect.poll(async () => Math.hypot(...((await camera(page)).offset ?? [0, 0])), { timeout: 10_000 }).toBeLessThan(1e-6);
   });
 });
 
@@ -206,20 +206,26 @@ test.describe("selection", () => {
     expect(page.url()).toContain("localhost:4173");
   });
 
-  test("opening with sel and no cam frames the selection; F frames it again", async ({ page }) => {
+  test("opening with sel and no cam frames the selection beside the panel; F frames it again", async ({ page }) => {
     await open(page, "&sel=femur_left");
     const want = centreOf("femur_left");
     expect(dist((await camera(page)).target, want)).toBeLessThan(1e-4);
     const c = await camera(page);
     expect(dist(c.position, c.target)).toBeLessThan(1.5); // closer than the whole-skeleton view (~3 m)
-    // Pan away, then F brings the femur back to the middle.
+    // The info panel covers the right: the femur sits in the middle of the free area (offset to the right).
+    const framedOffset = c.offset ?? [0, 0];
+    expect(framedOffset[0]).toBeGreaterThan(0);
+    const panel = (await page.getByTestId("info-panel").boundingBox())!;
+    const onScreen = (await bone(page, "femur_left")).client;
+    expect(Math.abs(onScreen.x - panel.x / 2)).toBeLessThan(20);
+    // Pan away, then F brings the femur back to the same place.
     await page.locator("canvas").focus();
     await page.keyboard.press("Shift+ArrowLeft");
     await page.keyboard.press("Shift+ArrowLeft");
     await settle(page);
-    expect(Math.hypot(...((await camera(page)).offset ?? [0, 0]))).toBeGreaterThan(0);
+    expect(dist((await camera(page)).offset ?? [0, 0], framedOffset)).toBeGreaterThan(1e-3);
     await page.keyboard.press("f");
-    await expect.poll(async () => (await camera(page)).offset ?? [0, 0], { timeout: 10_000 }).toEqual([0, 0]);
+    await expect.poll(async () => dist((await camera(page)).offset ?? [0, 0], framedOffset), { timeout: 10_000 }).toBeLessThan(1e-6);
     expect(dist((await camera(page)).target, want)).toBeLessThan(1e-4);
   });
 

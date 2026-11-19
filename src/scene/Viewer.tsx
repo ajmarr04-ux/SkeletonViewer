@@ -24,6 +24,9 @@ import { createBoneMaterial, createGhostMaterial } from "./material";
 import { Isolation, type IsolationStats, type SkeletonScene } from "./Isolation";
 import { createOutline, disposeOutline, OUTLINE } from "./outline";
 import { Tooltip } from "../ui/Tooltip";
+import { InfoPanel } from "../ui/InfoPanel";
+import { Breadcrumb } from "../ui/Breadcrumb";
+import { Announcer } from "../ui/Announcer";
 import { probeDevice, readStoredSetting } from "./webgl";
 
 export type Shown = { lod: Lod } & SkeletonScene;
@@ -164,8 +167,11 @@ export function Viewer() {
         />
         <StatsProbe onStats={setStats} />
       </Canvas>
+      <Breadcrumb />
+      <InfoPanel />
       <Toolbar />
       <Tooltip />
+      <Announcer />
       {error && !debug && (
         <p className="load-error" role="alert">
           The skeleton could not be loaded: {error}

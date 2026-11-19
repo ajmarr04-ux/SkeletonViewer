@@ -123,7 +123,8 @@ export function framedHeightFraction(heightPx: number, insetPx = BOTTOM_INSET_PX
  * every corner of `box` is inside the view, with `margin` to spare. Exact for
  * a perspective camera looking at `centre`. With `heightFraction` < 1 the box
  * must fit in that share of the height, centred on the (offset) projection
- * centre; the width is unchanged.
+ * centre. `widthFraction` < 1 does the same for the width (the info panel
+ * on the right).
  */
 export function fitDistance(
   box: Box,
@@ -133,10 +134,11 @@ export function fitDistance(
   aspect: number,
   margin = FRAME_MARGIN,
   heightFraction = 1,
+  widthFraction = 1,
 ): number {
   const tanFull = Math.tan((fovDeg * Math.PI) / 360) / margin;
   const tanV = tanFull * heightFraction;
-  const tanH = tanFull * aspect;
+  const tanH = tanFull * aspect * widthFraction;
   const d = normalise(dir);
   const { right, up } = viewBasis(d);
   let need = 0;
@@ -153,6 +155,67 @@ export function frameFrom(box: Box, dir: Vec3, fovDeg: number, aspect: number, h
   const target = boxCentre(box);
   const d = normalise(dir);
   return { position: add(target, scale(d, fitDistance(box, target, d, fovDeg, aspect, FRAME_MARGIN, heightFraction))), target };
+}
+
+/**
+ * Space the info panel takes over the canvas, in CSS pixels: `right` for the
+ * desktop panel, `bottom` for the phone's bottom sheet (on top of the toolbar
+ * inset, which `setViewOffset` already handles), `top` for the breadcrumb.
+ */
+export type PanelInset = { right: number; bottom: number; top?: number };
+export const NO_PANEL: PanelInset = { right: 0, bottom: 0 };
+/** Framing always keeps at least this share of the width and height. */
+const MIN_FREE_SHARE = 0.35;
+
+/** Share of the width and of the framed height left free by the panel. */
+export function panelFractions(inset: PanelInset, widthPx: number, heightPx: number, heightFraction: number): { w: number; h: number } {
+  if (!(widthPx > 0) || !(heightPx > 0)) return { w: 1, h: heightFraction };
+  const w = Math.max(MIN_FREE_SHARE, 1 - Math.max(0, inset.right) / widthPx);
+  const covered = Math.max(0, inset.bottom) + Math.max(0, inset.top ?? 0);
+  const h = Math.max(MIN_FREE_SHARE * heightFraction, heightFraction - covered / heightPx);
+  return { w, h };
+}
+
+/**
+ * The focal offset that puts the pivot in the middle of the area the panel
+ * leaves free, at view depth `depth`: half the panel's width to the left, half
+ * the sheet's height up (and half the breadcrumb's down). The eye moves the
+ * other way. Zero without a panel.
+ */
+export function panelOffset(inset: PanelInset, depth: number, fovDeg: number, widthPx: number, heightPx: number, heightFraction: number): Offset {
+  if (!(heightPx > 0) || !(depth > 0)) return [0, 0];
+  const { w } = panelFractions(inset, widthPx, heightPx, heightFraction);
+  const metresPerPx = (2 * depth * Math.tan((fovDeg * Math.PI) / 360)) / heightPx;
+  // Vertical: the free band's middle moves up by half the sheet and down by half the breadcrumb.
+  const bottom = Math.max(0, inset.bottom);
+  const top = Math.max(0, inset.top ?? 0);
+  const free = heightFraction * heightPx - bottom - top;
+  const shiftUp = free >= MIN_FREE_SHARE * heightFraction * heightPx ? (bottom - top) / 2 : 0;
+  return [((1 - w) * widthPx * metresPerPx) / 2, -shiftUp * metresPerPx];
+}
+
+/**
+ * Frame `box` from `dir` in the area the panel leaves free: fit it to that
+ * area and shift the view (focal offset) so it sits in the middle. The pivot
+ * is the box's centre. Without a panel this is `frameFrom`.
+ */
+export function frameBeside(
+  box: Box,
+  dir: Vec3,
+  fovDeg: number,
+  widthPx: number,
+  heightPx: number,
+  heightFraction: number,
+  inset: PanelInset,
+): CameraState {
+  const target = boxCentre(box);
+  const d = normalise(dir);
+  const aspect = widthPx / Math.max(1, heightPx);
+  const { w, h } = panelFractions(inset, widthPx, heightPx, heightFraction);
+  const dist = fitDistance(box, target, d, fovDeg, aspect, FRAME_MARGIN, h, w);
+  const offset = panelOffset(inset, dist, fovDeg, widthPx, heightPx, heightFraction);
+  const cam: CameraState = { position: add(target, scale(d, dist)), target };
+  return offset[0] === 0 && offset[1] === 0 ? cam : { ...cam, offset };
 }
 
 export function presetView(preset: Preset, box: Box, fovDeg: number, aspect: number, heightFraction = 1): CameraState {

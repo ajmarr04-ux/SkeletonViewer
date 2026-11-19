@@ -136,8 +136,18 @@ test("double-clicking the femur re-centres the orbit on it, keeping its size on 
   const depth = want.reduce((acc, w, i) => acc + ((w - eye[i]!) * fwd[i]!) / n, 0);
   await page.mouse.dblclick(femur!.client.x, femur!.client.y);
   await expect.poll(async () => dist((await camera(page)).target, want), { timeout: 10_000 }).toBeLessThan(1e-3);
-  // Centred (no offset), at the same depth as before, so the femur keeps its size.
-  await expect.poll(async () => (await camera(page)).offset ?? [0, 0], { timeout: 10_000 }).toEqual([0, 0]);
+  // Centred in the area the info panel leaves free (the first click selected,
+  // so the panel is open), at the same depth as before, so the femur keeps its
+  // size. From this far out the offset is shortened by the pan limit
+  // (clampOffset), so the femur lands between the canvas centre and the free
+  // area's centre, nearer the latter.
+  const panel = (await page.getByTestId("info-panel").boundingBox())!;
+  const canvas = (await page.locator("canvas").boundingBox())!;
+  await expect.poll(async () => (await camera(page)).offset?.[0] ?? 0, { timeout: 10_000 }).toBeGreaterThan(0);
+  await page.waitForTimeout(800);
+  const x = (await page.evaluate(() => window.__viewer!.bone("femur_left")))!.client.x;
+  expect(x).toBeLessThan(canvas.x + canvas.width / 2 - 50);
+  expect(Math.abs(x - panel.x / 2)).toBeLessThan(Math.abs(x - (canvas.x + canvas.width / 2)));
   const after = await camera(page);
   expect(Math.abs(dist(after.position, after.target) - depth)).toBeLessThan(1e-3);
   await nextCam(page, null);

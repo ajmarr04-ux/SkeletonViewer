@@ -12,11 +12,31 @@ export const AO_FLOOR = 0.4;
 export const BONE_COLOUR = "#d8cdb8";
 
 /**
- * Accent colour for the selected bone (sRGB). A mid blue: against ivory it
- * stays distinct for deuteranopes and protanopes (the blue–yellow axis is the
- * one they keep), and selection is also shown by an outline (spec §10).
+ * Accent colour for the selected bone (sRGB). A pale blue (the user found the
+ * mid blue `#3d8bfd` too aggressive on the white bone). Pale blue on ivory is
+ * weaker for deuteranopes and protanopes, so the selection outline keeps the
+ * stronger `SELECTION_OUTLINE_COLOUR`: selection shows by outline and colour
+ * (spec §10).
  */
-export const ACCENT_COLOUR = "#3d8bfd";
+export const ACCENT_COLOUR = "#a7caf2";
+
+/**
+ * Per-channel gain on the accent tint (linear), measured on screenshots: the
+ * key light, environment and tone mapping make a bone tinted exactly to the
+ * accent read greyer (about #adc2d4 for #a7caf2), so the tint is
+ * lifted until the lit shaft of a selected femur reads close to the accent.
+ * Only the tint changes, never the lighting (plan step 6b).
+ */
+export const ACCENT_GAIN: readonly [number, number, number] = [0.62, 1.2, 2.9];
+
+/** The instance colour for the selected bone: `tintFor(ACCENT_COLOUR)` with `ACCENT_GAIN`. */
+export function accentTint(): Color {
+  const t = tintFor(ACCENT_COLOUR);
+  return new Color(t.r * ACCENT_GAIN[0], t.g * ACCENT_GAIN[1], t.b * ACCENT_GAIN[2]);
+}
+
+/** The selection outline's colour (sRGB): the stronger blue, for contrast. */
+export const SELECTION_OUTLINE_COLOUR = "#3d8bfd";
 
 /**
  * GLSL for the AO remap and the per-instance tint, kept separate so the

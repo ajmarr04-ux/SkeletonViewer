@@ -4,7 +4,7 @@ import ids from "../content/ids.json";
 import { displayName } from "../src/content/names";
 import { batchSkeleton, instanceWorldBounds, type BonePart } from "../src/scene/batchSkeleton";
 import { FULL_VIEW, applyIsolationView, isPickable, isolationView, visibleCount } from "../src/scene/isolation";
-import { tintFor, ACCENT_COLOUR } from "../src/scene/material";
+import { accentTint } from "../src/scene/material";
 import { createOutline, setOutlineTarget } from "../src/scene/outline";
 
 const hasMesh = (id: string) => !["tooth_18", "tooth_28", "tooth_38", "tooth_48"].includes(id);
@@ -53,7 +53,7 @@ describe("applyIsolationView", () => {
     expect(visibleCount(ghost)).toBe(2);
     expect(ghost.mesh.getVisibleAt(ghost.instanceOf.get("femur_right")!)).toBe(false);
     const c = solid.mesh.getColorAt(solid.instanceOf.get("femur_right")!, new Vector4());
-    const t = tintFor(ACCENT_COLOUR);
+    const t = accentTint();
     expect([c.x, c.y, c.z]).toEqual([t.r, t.g, t.b].map((x) => Math.fround(x)));
 
     applyIsolationView(solid, ghost, isolationView("femur_right", 0, "hide", hasMesh), "femur_right");

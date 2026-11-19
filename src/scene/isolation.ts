@@ -7,7 +7,7 @@ import { Color } from "three";
 import type { Tier } from "../state/isolation";
 import type { GhostMode } from "../state/url";
 import type { BatchedSkeleton } from "./batchSkeleton";
-import { ACCENT_COLOUR, tintFor } from "./material";
+import { accentTint as makeAccentTint } from "./material";
 
 export type IsolationView = {
   /** True when a bone with a mesh is isolated (a wisdom tooth isolates nothing). */
@@ -45,7 +45,7 @@ let accentTint: Color | null = null;
  * `previousFocus` is reset to white. Cheap: a few hundred flag writes at most.
  */
 export function applyIsolationView(solid: BatchedSkeleton, ghost: BatchedSkeleton | null, view: IsolationView, previousFocus: string | null): void {
-  accentTint ??= tintFor(ACCENT_COLOUR);
+  accentTint ??= makeAccentTint();
   solid.boneIds.forEach((id, i) => {
     const show = view.solid === null || view.solid.has(id);
     if (solid.mesh.getVisibleAt(i) !== show) solid.mesh.setVisibleAt(i, show);

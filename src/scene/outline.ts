@@ -15,10 +15,11 @@
 
 import { BackSide, BufferGeometry, Color, Matrix4, Mesh, ShaderMaterial, Vector2 } from "three";
 import type { BatchedSkeleton } from "./batchSkeleton";
+import { SELECTION_OUTLINE_COLOUR } from "./material";
 
 /** Outline widths in CSS pixels and colours (sRGB). */
 export const OUTLINE = {
-  selected: { widthPx: 3, colour: "#3d8bfd" },
+  selected: { widthPx: 3, colour: SELECTION_OUTLINE_COLOUR },
   hover: { widthPx: 1.5, colour: "#f1f3f4" },
 } as const;
 
