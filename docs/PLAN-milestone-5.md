@@ -15,7 +15,7 @@ Out of scope: pinned landmark labels stay disabled, because no landmark has a po
 | (planning) | 0 (Milestone 4 handover) | **Done.** See step 0 |
 | M | 1 (search index), 2 (sidebar: search and tree), 3 (group isolation from the tree), 4 (Tab through visible objects) | **Done.** See "Session M notes" |
 | N | 5 (floating labels), 6 (colour-by-region and legend), 7 (screenshot), 8 (share link), 9 (attribution page), 10 (toolbar layout on phones) | **Done.** See "Session N notes" |
-| O | 11 (accessibility: axe-core and the keyboard pass), 12 (performance on the supported browsers, needs the user), 13 (tests and the smoke test), 14 (hosted copy) | **Steps 11 and 13 done; 12 done in Chromium, the browser table needs the user; 14 needs the merge.** See "Session O notes" |
+| O | 11 (accessibility: axe-core and the keyboard pass), 12 (performance on the supported browsers, needs the user), 13 (tests and the smoke test), 14 (hosted copy) | **Done.** Step 12's per-browser `?bench` table stays open for the user (loading confirmed fine on phone and PC). See "Session O notes" |
 
 Triggers: "begin session M", "begin session N" and "begin session O". Each session starts by reading this file and ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models`, `npm run validate-content` and `npm run e2e` passing, then a commit, a push to the session branch and a PR to `main`. No Blender work is planned.
 
@@ -25,7 +25,7 @@ Triggers: "begin session M", "begin session N" and "begin session O". Each sessi
 - [x] Accessibility checks pass: axe-core reports no violations, and a manual keyboard-only pass succeeds. (Scripted in `a11y.spec.ts` and `keyboard.spec.ts`; a screen-reader pass by the user is still welcome.)
 - [ ] Performance budgets are met on the supported browsers.
 - [x] A Playwright smoke test passes: load → click femur → Show related → Expand region → Back ×3 → full skeleton. (`tests/e2e/related.spec.ts`, first test; checked against this wording in session O.)
-- [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
+- [x] **Hosted copy is live and linked below** (extra requirement for every milestone). Confirmed by the user on 2026-11-19 ("loads great on smartphone and pc").
 
 ---
 
@@ -187,7 +187,7 @@ What was done, and where it differs from the steps below (say if any should chan
 
 ## Step 14: Hosted copy
 
-**Hosted copy, Milestone 5:** https://ajmarr04-ux.github.io/SkeletonViewer/m5/ (not live yet).
+**Hosted copy, Milestone 5:** https://ajmarr04-ux.github.io/SkeletonViewer/m5/ (live; frozen at `71f04d0`, the merge of PR #11).
 
 - Merge to `main` through a PR, check the Deploy run, and ask the user to confirm https://ajmarr04-ux.github.io/SkeletonViewer/m5/ loads. Then tick the exit criterion and update `README.md`. Milestone 5 is the spec's last phase. After it, `CLAUDE.md`'s status should say so, and new work goes through `docs/BACKLOG.md`.
 
