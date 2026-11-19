@@ -93,7 +93,7 @@ What was done, and where it differs from the steps below (say if any should chan
 - **Smoke test.** `related.spec.ts`'s first test matches the spec's wording step for step. It now presses the panel's **"Expand region"** button (the spec's words) rather than the toolbar's "Region"; the toolbar button is pressed in the keyboard and axe tests.
 - **The session N flake** ("keyboard moves the camera, the URL follows…") was the test, not the app: camera-controls fires `rest` while the camera is still easing, the URL is written then, and written again with the final pose at `sleep`. The test compared the camera with the first write. It now waits for the URL to settle on the camera (6 of 6 runs with 3 workers in parallel).
 - **Firefox and WebKit** (decision 13) were not tried in the container: its instructions say not to run `playwright install`, which is how they'd be fetched. Those browsers rely on the user's checks in the table.
-- **Test run:** see the end of these notes.
+- **Test run:** `tsc`, Vitest (307 tests), `check-models` and `validate-content` pass; Playwright 105 of 105 in one full run (18.8 min, 2 workers).
 
 ## Step 1: Search index (spec §2, §7)
 
