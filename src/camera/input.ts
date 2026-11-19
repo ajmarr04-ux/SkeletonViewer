@@ -153,12 +153,16 @@ export type TapState = {
 
 export const INITIAL_TAP_STATE: TapState = { active: [], press: null, lastTap: null };
 
+export type TapResult = { state: TapState; tap?: { x: number; y: number }; doubleTap?: { x: number; y: number } };
+
 /**
- * Feed pointer events in; get back `doubleTap` (in the same coordinates) when
- * the second of two quick, still taps ends. Works the same for mouse, pen and
- * touch. A second finger (pinch) cancels the tap.
+ * Feed pointer events in. Every still press (moved no more than 5 px, released
+ * within TAP_MAX_MS) gives `tap` (a click: select); the second of two quick
+ * taps in the same place also gives `doubleTap` (re-centre). Coordinates are
+ * where the press started. Works the same for mouse, pen and touch. A second
+ * finger (pinch) cancels the tap, and a press that moves is a camera drag.
  */
-export function tapStep(s: TapState, e: PointerSample): { state: TapState; doubleTap?: { x: number; y: number } } {
+export function tapStep(s: TapState, e: PointerSample): TapResult {
   switch (e.type) {
     case "down": {
       const active = [...s.active.filter((id) => id !== e.id), e.id];
@@ -180,9 +184,9 @@ export function tapStep(s: TapState, e: PointerSample): { state: TapState; doubl
       if (!still) return { state: { active, press: null, lastTap: null } };
       const last = s.lastTap;
       if (last && e.t - last.t <= DOUBLE_TAP_MS && Math.hypot(e.x - last.x, e.y - last.y) <= DOUBLE_TAP_PX) {
-        return { state: { active, press: null, lastTap: null }, doubleTap: { x: p.x, y: p.y } };
+        return { state: { active, press: null, lastTap: null }, tap: { x: p.x, y: p.y }, doubleTap: { x: p.x, y: p.y } };
       }
-      return { state: { active, press: null, lastTap: { x: e.x, y: e.y, t: e.t } } };
+      return { state: { active, press: null, lastTap: { x: e.x, y: e.y, t: e.t } }, tap: { x: p.x, y: p.y } };
     }
   }
 }

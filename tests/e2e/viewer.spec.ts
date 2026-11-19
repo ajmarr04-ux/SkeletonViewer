@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import manifest from "../../assets/build/manifest.json" with { type: "json" };
 
 type Vec3 = [number, number, number];
-type Cam = { position: Vec3; target: Vec3 };
+type Cam = { position: Vec3; target: Vec3; offset?: [number, number] };
 
 const dist = (a: Vec3, b: Vec3) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 
@@ -123,24 +123,32 @@ test("a cam outside the zoom clamp is brought inside it", async ({ page }) => {
   expect(d).toBeGreaterThan(2);
 });
 
-test("double-clicking the femur re-centres the orbit on it", async ({ page }) => {
+test("double-clicking the femur re-centres the orbit on it, keeping its size on screen", async ({ page }) => {
   await open(page);
   const femur = await page.evaluate(() => window.__viewer!.bone("femur_left"));
   expect(femur).not.toBeNull();
-  const before = await camera(page);
-  await page.mouse.dblclick(femur!.client.x, femur!.client.y);
   const want = centreOf("femur_left");
+  // The femur's depth: distance from the eye along the view axis.
+  const before = await camera(page);
+  const eye = await page.evaluate(() => window.__viewer!.eye());
+  const fwd = before.target.map((t, i) => t - before.position[i]!);
+  const n = Math.hypot(...fwd);
+  const depth = want.reduce((acc, w, i) => acc + ((w - eye[i]!) * fwd[i]!) / n, 0);
+  await page.mouse.dblclick(femur!.client.x, femur!.client.y);
   await expect.poll(async () => dist((await camera(page)).target, want), { timeout: 10_000 }).toBeLessThan(1e-3);
-  // The distance is kept.
+  // Centred (no offset), at the same depth as before, so the femur keeps its size.
+  await expect.poll(async () => (await camera(page)).offset ?? [0, 0], { timeout: 10_000 }).toEqual([0, 0]);
   const after = await camera(page);
-  expect(Math.abs(dist(after.position, after.target) - dist(before.position, before.target))).toBeLessThan(1e-3);
+  expect(Math.abs(dist(after.position, after.target) - depth)).toBeLessThan(1e-3);
   await nextCam(page, null);
 });
 
 test("double-clicking empty space does nothing", async ({ page }) => {
   await open(page);
   const before = await camera(page);
-  await page.mouse.dblclick(15, 300);
+  const box = (await page.locator("canvas").boundingBox())!;
+  // Right edge, mid-height: no bone there, and clear of the debug overlay (top-left).
+  await page.mouse.dblclick(box.x + box.width - 20, box.y + box.height * 0.45);
   await page.waitForTimeout(600);
   expect(dist((await camera(page)).target, before.target)).toBeLessThan(1e-9);
   expect(camParam(page)).toBeNull();
@@ -161,12 +169,13 @@ test("the wheel zooms toward the cursor and a drag orbits", async ({ page }) => 
   await expect.poll(async () => dist((await camera(page)).position, mid.position), { timeout: 10_000 }).toBeGreaterThan(0.05);
 });
 
-test("Shift + left-drag pans: the target moves and the view direction doesn't", async ({ page }) => {
+test("Shift + left-drag pans: the picture moves, the pivot and the view direction don't", async ({ page }) => {
   await open(page);
   const before = await camera(page);
   const box = (await page.locator("canvas").boundingBox())!;
   const x = box.x + box.width / 2;
   const y = box.y + box.height / 2;
+  const pivotBefore = await page.evaluate((p) => window.__viewer!.project(p), before.target);
   await page.keyboard.down("Shift");
   await page.mouse.move(x, y);
   await page.mouse.down();
@@ -175,10 +184,16 @@ test("Shift + left-drag pans: the target moves and the view direction doesn't", 
   await page.keyboard.up("Shift");
   await nextCam(page, null);
   const after = await camera(page);
-  expect(dist(after.target, before.target)).toBeGreaterThan(0.05);
-  const dirB = before.position.map((v, i) => v - before.target[i]!);
-  const dirA = after.position.map((v, i) => v - after.target[i]!);
-  expect(dist(dirA as Vec3, dirB as Vec3)).toBeLessThan(1e-4);
+  expect(dist(after.target, before.target)).toBeLessThan(1e-9);
+  expect(dist(after.position, before.position)).toBeLessThan(1e-9);
+  expect(Math.hypot(...after.offset!)).toBeGreaterThan(0.05);
+  // The picture followed the pointer: the pivot moved right and down on screen
+  // (by about the drag: the grabbed bone is a little nearer than the pivot).
+  await expect.poll(async () => (await page.evaluate((p) => window.__viewer!.project(p), before.target)).x - pivotBefore.x, { timeout: 10_000 }).toBeGreaterThan(60);
+  const pivotAfter = await page.evaluate((p) => window.__viewer!.project(p), before.target);
+  expect(pivotAfter.y - pivotBefore.y).toBeGreaterThan(20);
+  // Shift-drag never selects.
+  expect(new URL(page.url()).searchParams.get("sel")).toBeNull();
 });
 
 test("reduced motion: moves are instant cuts", async ({ page }) => {

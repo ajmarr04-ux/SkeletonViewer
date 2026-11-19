@@ -38,10 +38,12 @@ A static browser app: a 3D atlas of the adult human skeleton (bones and teeth on
 | `src/scene/bench.ts`, `src/ui/BenchPanel.tsx` | `?bench`: 360° orbit over 10 s, median and 5th-percentile FPS, frame times, draw calls. |
 | `src/scene/batchSkeleton.ts` | Packs the 234 bones into one `BatchedMesh` (instance matrix = the glTF mesh's world matrix, vertices untouched), ID ↔ instance tables, three-mesh-bvh raycasting. |
 | `src/scene/material.ts`, `src/scene/Lighting.tsx` | Shared bone material with the AO remap (`AO_FLOOR`), key light and `RoomEnvironment`. |
-| `src/state/store.ts`, `src/state/url.ts` | zustand store (camera, LOD, reduced motion, `cameraRequest` commands); pure URL parse/serialise helpers (`cam=`). |
-| `src/camera/CameraRig.tsx` | camera-controls rig: clamps, damping, wheel/pinch/trackpad, keys, double-tap re-centre, `cam=` URL sync, `window.__viewer` debug hooks. |
-| `src/camera/math.ts`, `src/camera/input.ts` | Pure camera maths (presets, box framing, limits, dolly-to-cursor) and input helpers (`classifyWheel`, key map, double tap). |
-| `tests/e2e/viewer.spec.ts` | Playwright camera tests (keyboard, URL round trip, presets, re-centre, touch). |
+| `src/state/store.ts`, `src/state/url.ts` | zustand store (camera, LOD, reduced motion, `cameraRequest` commands, `sel`/`tier`/ghost/hover); pure URL parse/serialise helpers (`sel`, `tier`, `ghost`, `cam=` with optional offset). |
+| `src/state/isolation.ts`, `src/state/selection.ts` | Pure isolation reducer (spec §6 state diagram, history step per action); applying it to the store and browser history (push / replace / back, `skvDepth` marker, popstate). |
+| `src/scene/pick.ts` | Tiny objects (radius < 2 cm, 100 of them) and `pickWithProxies` (screen-space hit areas: 22 px touch, 6 px mouse). |
+| `src/camera/CameraRig.tsx` | camera-controls rig with a **fixed orbit pivot**: camera-controls only rotates; pan, zoom-to-surface and two-finger touch are the rig's own (focal offset). Clicks/taps select, double-tap centres, hover, `Esc`, `cam=` URL sync, `window.__viewer` debug hooks. |
+| `src/camera/math.ts`, `src/camera/input.ts` | Pure camera maths (presets, box framing, limits, fixed-pivot `panPose`/`dollyPose`/`repivot`/`centreOn`/`clampOffset`) and input helpers (`classifyWheel`, key map, taps and double taps). |
+| `tests/e2e/viewer.spec.ts`, `tests/e2e/select.spec.ts` | Playwright camera tests (keyboard, URL round trip, presets, re-centre, touch); selection and fixed-pivot tests. |
 | `tests/e2e/smoke.spec.ts` | Playwright smoke test (`npm run e2e`): both LODs load, 234 batched bones + 4 known-missing, < 20 draw calls, every bone's bounds match the manifest (`?debug`). |
 | `scripts/build-pages.sh`, `deploy/pages.json` | Pages build: live site plus `/m<N>/` milestone snapshots. Deployed by `.github/workflows/deploy.yml` on push to `main`. |
 
@@ -53,7 +55,7 @@ When milestone N is merged and milestone N+1 begins:
 2. **Confirm that milestone N's hosted copy is live** at `https://ajmarr04-ux.github.io/SkeletonViewer/m<N>/`. The container can't reach `github.io`, so ask the user (or check the latest Deploy run with the GitHub tools). Then tick "Hosted copy is live" in that milestone's plan and update its row in `README.md`.
 3. Write the new milestone's plan as `docs/PLAN-milestone-<N+1>.md`, following the spec's §11 phase.
 
-Status: Milestone 1 is frozen at `b1392fa` and Milestone 2 at `eb3e8ff` (`current` is 3); `/m1/` and `/m2/` are live (confirmed by the user). Milestone 3 (spec Phase 3, select and isolate, plus the fixed orbit pivot from `docs/BACKLOG.md` entry 1, approved by the user) is planned in `docs/PLAN-milestone-3.md`, split into sessions G, H and I (triggers: "begin session G" and so on).
+Status: Milestone 1 is frozen at `b1392fa` and Milestone 2 at `eb3e8ff` (`current` is 3); `/m1/` and `/m2/` are live (confirmed by the user). Milestone 3 (spec Phase 3, select and isolate, plus the fixed orbit pivot from `docs/BACKLOG.md` entry 1, approved by the user) is planned in `docs/PLAN-milestone-3.md`, split into sessions G, H and I (triggers: "begin session G" and so on). Session G (fixed pivot, selection state and URL, picking) is done; next is "begin session H".
 
 ## Environment notes
 - The cloud container is temporary, so **run `bash scripts/setup-blender.sh` first in every session**. It takes about a minute and is safe to re-run.

@@ -28,7 +28,8 @@ npm run e2e          # Playwright smoke test against a production build
 Viewer URL options: `?lod=low` or `?lod=high` loads only that model
 (`?lod=both` forces low then high); `?debug` shows the debug overlay;
 `?bench` orbits the skeleton once over 10 s and reports FPS, frame times and
-draw calls; `?cam=px,py,pz,tx,ty,tz` sets the camera; `?nowebgl` shows the
+draw calls; `?cam=px,py,pz,tx,ty,tz[,ox,oy]` sets the camera (orbit position,
+pivot, and an optional view shift); `?sel=<id>` selects an object; `?nowebgl` shows the
 WebGL 2 fallback.
 
 The models in `public/models/` are built from the Z-Anatomy source by the

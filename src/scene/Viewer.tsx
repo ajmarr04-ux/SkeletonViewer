@@ -3,6 +3,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import ids from "../../content/ids.json";
 import { CameraRig } from "../camera/CameraRig";
 import { FOV_DEG } from "../camera/math";
+import { initSelectionFromUrl, watchHistory } from "../state/selection";
 import { useViewer, watchReducedMotion } from "../state/store";
 import { hasFlag } from "../state/url";
 import { DebugOverlay, type BoundsReport, type RenderStats } from "../ui/DebugOverlay";
@@ -33,6 +34,8 @@ export function Viewer() {
   const debug = hasFlag(window.location.search, "debug");
   const bench = hasFlag(window.location.search, "bench");
   const [probe] = useState(probeDevice);
+  // Selection, tier and ghost mode from the URL, before the first render of the scene.
+  useState(initSelectionFromUrl);
   const [plan, setPlan] = useState(() => {
     const setting = parseLodSetting(readStoredSetting(LOD_SETTING_KEY));
     useViewer.getState().setLodSetting(setting);
@@ -48,6 +51,7 @@ export function Viewer() {
   const [bounds, setBounds] = useState<BoundsReport | null>(null);
 
   useEffect(() => watchReducedMotion(), []);
+  useEffect(() => watchHistory(), []);
   useEffect(() => () => material.dispose(), [material]);
 
   // A new choice in Settings re-plans. It overrides `?lod=`, which is dropped from the URL.
