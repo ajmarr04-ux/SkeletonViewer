@@ -14,7 +14,7 @@ Out of scope until Milestone 4: tiers 1 and 2 (Show related, Expand region), joi
 | --- | --- | --- |
 | G | 0 (Milestone 2 handover), 1 (fixed orbit pivot), 2 (selection state and URL), 3 (picking, drag vs click, hit proxies) | **Done.** See "Session G notes" below. Needs the user: a hand check of the new orbit |
 | H | 4 (highlight and outline), 5 (tier-0 isolation: ghost and hide), 6 (hover tooltip) | **Done.** See "Session H notes" below. Needs the user: the outline choice, and a look on a real device |
-| I | 6b (session H feedback: lighter accent, ghost opacity 10%), 7 (info panel and breadcrumb), 8 (keyboard, Back and a11y announcements), 9 (performance check), 10 (tests, including all 234 on a 390 px viewport), 11 (hosted copy) | **Steps 6b to 10 done.** See "Session I notes" below. Needs the user: step 9's numbers on PC and iPhone, a look at the panel and sheet on a device, then the merge for step 11 |
+| I | 6b (session H feedback: lighter accent, ghost opacity 10%), 7 (info panel and breadcrumb), 8 (keyboard, Back and a11y announcements), 9 (performance check), 10 (tests, including all 234 on a 390 px viewport), 11 (hosted copy) | **Steps 6b to 10 done; merged (PR #7) and deployed.** See "Session I notes" below. Step 9 FPS met on PC (75, vsync) and iPhone (59, vsync). Needs the user: draw calls and click → highlight times, and a look at `/m3/` to confirm step 11 |
 
 Triggers: "begin session G", "begin session H" and "begin session I". Each session starts by reading this file and ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models` and `npm run e2e` passing, then a commit and push to the session branch. No Blender work is planned, so `scripts/setup-blender.sh` is only needed if the models have to be rebuilt.
 
@@ -25,7 +25,7 @@ Triggers: "begin session G", "begin session H" and "begin session I". Each sessi
 - [x] The info panel works with placeholder content. (Session I.)
 - [x] Every object, including the ossicles and teeth, can be selected on a 390 px wide viewport. (Session I: `tests/e2e/all-objects.spec.ts`.)
 - [x] Orbit pivot stays put while panning and zooming (backlog 1), and selecting, double-clicking or `F` move it to the bone; Home resets it. (Session G; still needs the user's hand check.)
-- [ ] Click → highlight under 50 ms on desktop and 100 ms on a phone (spec §8), and draw calls stay under 20 with a bone isolated.
+- [ ] Click → highlight under 50 ms on desktop and 100 ms on a phone (spec §8), and draw calls stay under 20 with a bone isolated. (FPS with a bone isolated is met: PC 75, iPhone 59, both vsync-limited. Draw calls are 3 in the e2e tests; the device numbers for both are still to come.)
 - [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
 
 ---
@@ -85,10 +85,18 @@ Triggers: "begin session G", "begin session H" and "begin session I". Each sessi
 - **Breadcrumb** (`src/ui/Breadcrumb.tsx`): `Skeleton › Lower limb › Femur`, top left, one line with an ellipsis on a phone, only while something is selected. `axial` and `appendicular` are skipped; teeth read `Skeleton › Teeth › Upper right › Canines › Upper right canine`. "Skeleton" steps back to the full skeleton; the middle levels become links with Expand region in Milestone 4. The debug overlay moved down to make room.
 - **Step 8:** `Esc` on the canvas (as before) or anywhere in the panel steps back; so do the panel's Back and "Skeleton". Panel Back and "Skeleton" return focus to the canvas; a mouse selection leaves focus on the canvas. `src/ui/Announcer.tsx` is a polite live region: "Femur, left, selected. Isolated.", "Upper right canine, selected. Isolated.", "Upper right third molar, selected. No 3D model." and "Full skeleton" (changes only, not the state the page opened with).
 - **Contrast and reflow:** all panel text is ≥ 4.5:1 (checked in e2e on computed colours; the pressed side toggle and Back button use `#2563c9` under white text, 5.7:1, because `#3d8bfd` gave only 3.3:1). At 200% zoom (1280 px → 640 CSS px) the panel reflows with no horizontal scrolling (e2e, plus a screenshot in `test-results/panel-200pct.png`). The toolbar moves left to stay centred in the free area, and goes icons-only with the side panel open below 900 px so it fits beside it.
-- **Step 9 (bench):** `?bench&sel=femur_left` runs the 360° orbit with the femur isolated and ghosts on; the bench panel now shows what was isolated, and moves left of the info panel. Click → highlight time stays in the `?debug` overlay. **Needs the user:** run both on the PC and the iPhone (see "Needs the user" below).
+- **Step 9 (bench):** `?bench&sel=femur_left` runs the 360° orbit with the femur isolated and ghosts on; the bench panel now shows what was isolated, and moves left of the info panel. Click → highlight time stays in the `?debug` overlay.
+- **Step 9 results (the user, 2026-11-19, live site after PR #7, `?bench&sel=femur_left`):**
+
+  | Device | Median FPS | 5th pct FPS | Frame time |
+  | --- | --- | --- | --- |
+  | PC | 75.2 | 73.5 | median 13.3 ms, p95 13.6 ms, max 17.0 ms |
+  | iPhone | 58.8 | 58.8 | 17.0 ms throughout |
+
+  Both are at their display's refresh rate (a 75 Hz monitor; the iPhone's 60 Hz, with no frame over 17 ms), so the frame rate is limited by vsync, not by the ghosts or the outline. Targets met: PC 60, iPhone ≥ 30. Still to report: draw calls from the bench panel, and the click → highlight time from `?debug` on both devices.
 - **Tests:** Vitest 200 (new `tests/placeholder.test.ts`: every ID has a panel model, exactly the four wisdom teeth flagged, opposite side for all 204 lateral objects and none for the midline, labels, announcements, sheet snaps, framing beside the panel). Playwright 59 (new `tests/e2e/panel.spec.ts`: panel content, breadcrumb, announcer, side toggle, Back and focus, Esc in the panel, collapse, wisdom tooth, midline, contrast, 200% reflow, phone sheet tap / drag / toolbar / `F` above the sheet; new `tests/e2e/all-objects.spec.ts`: **all 234 objects tapped on a 390 × 844 touch screen**, in 4 parallel chunks, each framed as `F` would without selecting (from the current direction, else the other presets), then a real tap at a point `__viewer.pick` says is that object, then `sel` checked; plus all 28 teeth tapped with the whole skull in view). Ossicles are inside the temporal bone, so at whole-skull zoom they are covered and only reachable close up (as the all-objects pass does); the strict skull-zoom pass covers the teeth. New debug hooks: `back()` and `frameBone(id | ids[], preset?)`. Updated: `emptySpot` moved to the left edge (the panel covers the right), the `F` and double-click tests expect the panel offset.
 - **Needs the user:**
-  - Step 9 on PC and iPhone: `https://ajmarr04-ux.github.io/SkeletonViewer/?bench&sel=femur_left` (and the same with `&ghost=0`): median and 5th-percentile FPS and draw calls; then `?debug`, click a bone, and read "click → highlight" in the overlay.
+  - ~~Step 9 FPS on PC and iPhone~~ (done, above). Still wanted: draw calls from the bench panel, and the click → highlight time (`?debug`, click a bone, read the overlay) on both.
   - The panel on a desktop and the bottom sheet on the iPhone: does the peek / half / full sheet feel right, and is the pale-blue bone with the stronger blue outline what you wanted?
 
 ## Step 1: Fixed orbit pivot (backlog 1, approved by the user on 2026-11-19)
