@@ -213,7 +213,9 @@ test.describe("share link", () => {
     const copied = await page.evaluate(() => navigator.clipboard.readText());
     expect(copied).toBe(page.url());
     expect(copied).toMatch(/sel=femur_left&tier=1&ghost=0&color=region&cam=/);
-    const cam = await page.evaluate(() => window.__viewer!.camera());
+    // The pose the link carries (written when the camera came to rest).
+    const nums = new URL(copied).searchParams.get("cam")!.split(",").map(Number);
+    const cam = { position: nums.slice(0, 3), target: nums.slice(3, 6) };
 
     const other = await browser.newPage();
     await other.goto(copied);
