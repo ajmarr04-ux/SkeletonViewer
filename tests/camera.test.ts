@@ -18,6 +18,8 @@ import {
   dollyToPoint,
   dot,
   fitDistance,
+  framedHeightFraction,
+  BOTTOM_INSET_PX,
   frameFrom,
   length,
   normalise,
@@ -116,6 +118,31 @@ describe("framing", () => {
     const dir: Vec3 = [1, 0.5, 2];
     const cam = frameFrom(SKELETON, dir, FOV_DEG, 1.2);
     close(normalise(sub(cam.position, cam.target)), normalise(dir));
+  });
+
+  it("leaves room for the toolbar: the box fits the shorter height, the width is unchanged", () => {
+    for (const aspect of [0.46, 1.6]) {
+      const hf = 0.85;
+      const cam = presetView("anterior", SKELETON, FOV_DEG, aspect, hf);
+      let maxY = 0;
+      let maxX = 0;
+      for (const c of boxCorners(SKELETON)) {
+        // y in NDC about the (offset) projection centre; the framed area is ±hf.
+        const { x, y } = project(cam, c, FOV_DEG, aspect);
+        maxY = Math.max(maxY, Math.abs(y));
+        maxX = Math.max(maxX, Math.abs(x));
+      }
+      expect(maxY).toBeLessThanOrEqual(hf / 1.05 + 1e-9);
+      expect(maxX).toBeLessThanOrEqual(1 / 1.05 + 1e-9);
+      expect(Math.max(maxY / hf, maxX)).toBeCloseTo(1 / 1.05, 6);
+    }
+  });
+
+  it("framedHeightFraction takes the inset, capped at a quarter of the height", () => {
+    expect(framedHeightFraction(800)).toBeCloseTo(1 - BOTTOM_INSET_PX / 800, 12);
+    expect(framedHeightFraction(200)).toBeCloseTo(0.75, 12);
+    expect(framedHeightFraction(0)).toBe(1);
+    expect(framedHeightFraction(800, 0)).toBe(1);
   });
 
   it("a wider screen never needs a larger distance", () => {

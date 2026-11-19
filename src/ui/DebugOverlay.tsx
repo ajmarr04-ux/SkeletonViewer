@@ -24,8 +24,9 @@ type Props = {
 /** Debug readout. data-* attributes are read by the Playwright tests. */
 export function DebugOverlay(p: Props) {
   const { plan, current, loadTimes, objects, stats, bounds, error } = p;
-  const done = plan.lods.every((l) => loadTimes[l] !== undefined);
+  const done = plan.lods.every((l) => loadTimes[l] !== undefined) && current === plan.lods[plan.lods.length - 1];
   const camera = useViewer((s) => s.camera);
+  const bench = useViewer((s) => s.bench);
   const boundsDone = bounds !== undefined && bounds !== null && bounds.lod === current;
   return (
     <aside
@@ -45,11 +46,17 @@ export function DebugOverlay(p: Props) {
       data-triangles={p.modelTriangles}
       data-draw-calls={stats.drawCalls}
       data-cam={camera ? formatCam(camera) : ""}
+      data-bench-done={bench ? "true" : ""}
+      data-bench-median-fps={bench ? bench.medianFps.toFixed(1) : ""}
+      data-bench-p5-fps={bench ? bench.p5Fps.toFixed(1) : ""}
+      data-bench-frames={bench ? bench.frames : ""}
+      data-bench-draw-calls={bench ? bench.drawCalls : ""}
+      data-bench-lod={bench?.lod ?? ""}
       data-bounds-ok={boundsDone ? String(bounds.errors.length === 0) : ""}
       data-bounds-checked={boundsDone ? bounds.checked : ""}
       data-bounds-max-delta-mm={boundsDone ? (bounds.maxDelta * 1000).toFixed(4) : ""}
     >
-      <h1>Skeleton Viewer · Milestone 2</h1>
+      <h1>Debug · Milestone 2</h1>
       {error && <p className="error">Load failed: {error}</p>}
       <dl>
         <dt>LOD</dt>
@@ -109,7 +116,7 @@ export function DebugOverlay(p: Props) {
       </dl>
       <p className="hint">
         Try <a href="?lod=low&amp;debug">?lod=low</a> · <a href="?lod=high&amp;debug">?lod=high</a> ·{" "}
-        <a href="?lod=both&amp;debug">both</a> · <a href="?debug">auto</a>
+        <a href="?lod=both&amp;debug">both</a> · <a href="?debug">auto</a> · <a href="?bench&amp;debug">bench</a>
       </p>
     </aside>
   );

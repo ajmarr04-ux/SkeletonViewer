@@ -63,7 +63,14 @@ export function ensureBoundsTrees(mesh: BatchedMesh): void {
   computeBatchedBoundsTree.call(mesh, -1);
 }
 
+/**
+ * Free a skeleton's GPU data. It is detached from the scene first: when the
+ * viewer swaps LODs, React's effect cleanup can run before react-three-fiber
+ * has removed the old `<primitive>`, and a frame drawn in between would read
+ * the freed matrices texture.
+ */
 export function disposeBatchedSkeleton(s: BatchedSkeleton): void {
+  s.mesh.removeFromParent();
   if (s.mesh.boundsTrees) disposeBatchedBoundsTree.call(s.mesh, -1);
   s.mesh.dispose();
 }

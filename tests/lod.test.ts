@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import ids from "../content/ids.json";
-import { chooseLod, formatMs, lodPlan, parseLodSetting, summariseObjects, type DeviceProbe } from "../src/scene/lod";
+import { chooseLod, formatMs, lodPlan, lodsToLoad, parseLodSetting, summariseObjects, withoutLodParam, type DeviceProbe } from "../src/scene/lod";
 
 const desktop: DeviceProbe = {
   width: 1440,
@@ -81,5 +81,27 @@ describe("formatMs", () => {
     expect(formatMs(undefined)).toBe("…");
     expect(formatMs(412.4)).toBe("412 ms");
     expect(formatMs(2345)).toBe("2.35 s");
+  });
+});
+
+describe("lodsToLoad (a Settings change while a model is shown)", () => {
+  it.each<[string, ("low" | "high")[], "low" | "high" | null, ("low" | "high")[]]>([
+    ["first load: the whole plan", ["low", "high"], null, ["low", "high"]],
+    ["first load, low only", ["low"], null, ["low"]],
+    ["low shown, now High: only high", ["low", "high"], "low", ["high"]],
+    ["high shown, now Low: only low", ["low"], "high", ["low"]],
+    ["already showing the final LOD", ["low", "high"], "high", []],
+    ["low shown, still low", ["low"], "low", []],
+  ])("%s", (_, plan, shown, want) => {
+    expect(lodsToLoad(plan, shown)).toEqual(want);
+  });
+});
+
+describe("withoutLodParam", () => {
+  it("drops lod and keeps everything else verbatim", () => {
+    expect(withoutLodParam("?lod=low&debug&cam=1,2,3,4,5,6")).toBe("?debug&cam=1,2,3,4,5,6");
+    expect(withoutLodParam("?lod=both")).toBe("");
+    expect(withoutLodParam("")).toBe("");
+    expect(withoutLodParam("?bench&lodx=1")).toBe("?bench&lodx=1");
   });
 });

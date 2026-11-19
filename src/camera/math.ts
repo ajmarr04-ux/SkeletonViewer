@@ -104,13 +104,39 @@ export function viewBasis(dir: Vec3): { right: Vec3; up: Vec3 } {
 // --- framing ------------------------------------------------------------
 
 /**
+ * Toolbar and credits sit over the bottom of the canvas. Framing keeps the
+ * skeleton in the area above them: the projection centre is moved up by half
+ * the inset (`setViewOffset`), and fits use the shorter height.
+ */
+export const BOTTOM_INSET_PX = 100;
+/** The inset never takes more than this share of the canvas height. */
+export const MAX_INSET_SHARE = 0.25;
+
+/** Share of the canvas height that framing may use (1 = all of it). */
+export function framedHeightFraction(heightPx: number, insetPx = BOTTOM_INSET_PX): number {
+  if (!(heightPx > 0)) return 1;
+  return 1 - Math.min(insetPx, heightPx * MAX_INSET_SHARE) / heightPx;
+}
+
+/**
  * Smallest distance from `centre` (along `dir`, toward the camera) at which
  * every corner of `box` is inside the view, with `margin` to spare. Exact for
- * a perspective camera looking at `centre`.
+ * a perspective camera looking at `centre`. With `heightFraction` < 1 the box
+ * must fit in that share of the height, centred on the (offset) projection
+ * centre; the width is unchanged.
  */
-export function fitDistance(box: Box, centre: Vec3, dir: Vec3, fovDeg: number, aspect: number, margin = FRAME_MARGIN): number {
-  const tanV = Math.tan((fovDeg * Math.PI) / 360) / margin;
-  const tanH = tanV * aspect;
+export function fitDistance(
+  box: Box,
+  centre: Vec3,
+  dir: Vec3,
+  fovDeg: number,
+  aspect: number,
+  margin = FRAME_MARGIN,
+  heightFraction = 1,
+): number {
+  const tanFull = Math.tan((fovDeg * Math.PI) / 360) / margin;
+  const tanV = tanFull * heightFraction;
+  const tanH = tanFull * aspect;
   const d = normalise(dir);
   const { right, up } = viewBasis(d);
   let need = 0;
@@ -123,20 +149,20 @@ export function fitDistance(box: Box, centre: Vec3, dir: Vec3, fovDeg: number, a
 }
 
 /** Look at the box's centre from `dir`, far enough back to frame all of it. */
-export function frameFrom(box: Box, dir: Vec3, fovDeg: number, aspect: number): CameraState {
+export function frameFrom(box: Box, dir: Vec3, fovDeg: number, aspect: number, heightFraction = 1): CameraState {
   const target = boxCentre(box);
   const d = normalise(dir);
-  return { position: add(target, scale(d, fitDistance(box, target, d, fovDeg, aspect))), target };
+  return { position: add(target, scale(d, fitDistance(box, target, d, fovDeg, aspect, FRAME_MARGIN, heightFraction))), target };
 }
 
-export function presetView(preset: Preset, box: Box, fovDeg: number, aspect: number): CameraState {
+export function presetView(preset: Preset, box: Box, fovDeg: number, aspect: number, heightFraction = 1): CameraState {
   const { azimuth, polar } = PRESET_ANGLES[preset];
-  return frameFrom(box, directionFromAngles(azimuth, polar), fovDeg, aspect);
+  return frameFrom(box, directionFromAngles(azimuth, polar), fovDeg, aspect, heightFraction);
 }
 
 /** The first-load view, also used by Home and `H`. */
-export function defaultView(box: Box, fovDeg: number, aspect: number): CameraState {
-  return presetView("anterior", box, fovDeg, aspect);
+export function defaultView(box: Box, fovDeg: number, aspect: number, heightFraction = 1): CameraState {
+  return presetView("anterior", box, fovDeg, aspect, heightFraction);
 }
 
 /** Which preset (if any) a camera is looking from, within `tol` radians. */
@@ -166,14 +192,14 @@ export type Limits = {
  * ratio (the skeleton is tall and thin, so on a wide screen 3 × radius would
  * not quite fit it).
  */
-export function cameraLimits(skeleton: Box, objectRadii: number[], fovDeg: number, aspect: number): Limits {
+export function cameraLimits(skeleton: Box, objectRadii: number[], fovDeg: number, aspect: number, heightFraction = 1): Limits {
   const radius = boxRadius(skeleton);
   const smallest = Math.min(...objectRadii.filter((r) => r > 0));
   const centre = boxCentre(skeleton);
   let fit = 0;
   for (const p of PRESETS) {
     const { azimuth, polar } = PRESET_ANGLES[p];
-    fit = Math.max(fit, fitDistance(skeleton, centre, directionFromAngles(azimuth, polar), fovDeg, aspect));
+    fit = Math.max(fit, fitDistance(skeleton, centre, directionFromAngles(azimuth, polar), fovDeg, aspect, FRAME_MARGIN, heightFraction));
   }
   return {
     minDistance: 1.5 * (Number.isFinite(smallest) ? smallest : radius * 0.01),

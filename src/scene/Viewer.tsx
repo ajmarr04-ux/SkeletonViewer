@@ -16,7 +16,9 @@ import {
 import { checkInstanceBounds } from "./boundsCheck";
 import { Lighting } from "./Lighting";
 import { disposeParts, loadSkeleton } from "./loadSkeleton";
-import { LOD_SETTING_KEY, lodPlan, parseLodSetting, summariseObjects, type Lod } from "./lod";
+import { BenchPanel } from "../ui/BenchPanel";
+import { Toolbar } from "../ui/Toolbar";
+import { LOD_SETTING_KEY, lodPlan, lodsToLoad, parseLodSetting, summariseObjects, withoutLodParam, type Lod } from "./lod";
 import { createBoneMaterial } from "./material";
 import { probeDevice, readStoredSetting } from "./webgl";
 
@@ -29,13 +31,17 @@ export type Shown = { lod: Lod; skeleton: BatchedSkeleton };
  */
 export function Viewer() {
   const debug = hasFlag(window.location.search, "debug");
-  const [plan] = useState(() => {
+  const bench = hasFlag(window.location.search, "bench");
+  const [probe] = useState(probeDevice);
+  const [plan, setPlan] = useState(() => {
     const setting = parseLodSetting(readStoredSetting(LOD_SETTING_KEY));
     useViewer.getState().setLodSetting(setting);
-    return lodPlan(window.location.search, setting, probeDevice());
+    return lodPlan(window.location.search, setting, probe);
   });
   const [material] = useState(createBoneMaterial);
   const [shown, setShown] = useState<Shown | null>(null);
+  const shownRef = useRef<Shown | null>(null);
+  shownRef.current = shown;
   const [loadTimes, setLoadTimes] = useState<Partial<Record<Lod, number>>>({});
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<RenderStats>({ drawCalls: 0, renderedTriangles: 0, fps: 0 });
@@ -44,11 +50,25 @@ export function Viewer() {
   useEffect(() => watchReducedMotion(), []);
   useEffect(() => () => material.dispose(), [material]);
 
+  // A new choice in Settings re-plans. It overrides `?lod=`, which is dropped from the URL.
+  useEffect(
+    () =>
+      useViewer.subscribe((s, prev) => {
+        if (s.lodSetting === prev.lodSetting) return;
+        const search = withoutLodParam(window.location.search);
+        if (search !== window.location.search) {
+          window.history.replaceState(window.history.state, "", `${window.location.pathname}${search}${window.location.hash}`);
+        }
+        setPlan(lodPlan(search, s.lodSetting, probe));
+      }),
+    [probe],
+  );
+
   useEffect(() => {
     let cancelled = false;
-    let current: BatchedSkeleton | null = null;
+    let current: BatchedSkeleton | null = shownRef.current?.skeleton ?? null;
     (async () => {
-      for (const lod of plan.lods) {
+      for (const lod of lodsToLoad(plan.lods, shownRef.current?.lod ?? null)) {
         const loaded = await loadSkeleton(lod);
         if (cancelled) {
           disposeParts(loaded.parts);
@@ -85,6 +105,8 @@ export function Viewer() {
   }, [shown]);
 
   const objects = shown ? summariseObjects(shown.skeleton.boneIds, ids) : null;
+  const finalLod = plan.lods[plan.lods.length - 1] ?? null;
+  const finalShown = shown !== null && shown.lod === finalLod;
 
   return (
     <>
@@ -97,9 +119,21 @@ export function Viewer() {
         <color attach="background" args={["#1d2126"]} />
         <Lighting />
         {shown && <primitive object={shown.skeleton.mesh} />}
-        <CameraRig skeleton={shown?.skeleton ?? null} debug={debug} />
+        <CameraRig
+          skeleton={shown?.skeleton ?? null}
+          debug={debug}
+          bench={bench && finalShown ? shown.lod : null}
+        />
         <StatsProbe onStats={setStats} />
       </Canvas>
+      <Toolbar />
+      {error && !debug && (
+        <p className="load-error" role="alert">
+          The skeleton could not be loaded: {error}
+        </p>
+      )}
+      {bench && <BenchPanel />}
+      {debug && (
       <DebugOverlay
         plan={plan}
         current={shown?.lod ?? null}
@@ -111,6 +145,7 @@ export function Viewer() {
         bounds={debug ? bounds : undefined}
         error={error}
       />
+      )}
     </>
   );
 }

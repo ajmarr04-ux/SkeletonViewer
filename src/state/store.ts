@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { BenchResult } from "../scene/bench";
 import type { Lod, LodSetting } from "../scene/lod";
 import type { Preset } from "../camera/math";
 import type { CameraState } from "./url";
@@ -21,6 +22,9 @@ export type ViewerState = {
   reducedMotion: boolean;
   /** Latest camera command; `seq` grows by one each time, so repeats are seen. */
   cameraRequest: { command: CameraCommand; seq: number } | null;
+  /** `?bench` result once the orbit is done, with the LOD and draw calls it ran at. */
+  bench: (BenchResult & { lod: Lod; drawCalls: number }) | null;
+  setBench: (bench: ViewerState["bench"]) => void;
   requestCamera: (command: CameraCommand) => void;
   setCamera: (camera: CameraState | null) => void;
   setLodSetting: (setting: LodSetting) => void;
@@ -34,6 +38,8 @@ export const useViewer = create<ViewerState>()((set) => ({
   lodActive: null,
   reducedMotion: false,
   cameraRequest: null,
+  bench: null,
+  setBench: (bench) => set({ bench }),
   requestCamera: (command) => set((s) => ({ cameraRequest: { command, seq: (s.cameraRequest?.seq ?? 0) + 1 } })),
   setCamera: (camera) => set({ camera }),
   setLodSetting: (lodSetting) => set({ lodSetting }),

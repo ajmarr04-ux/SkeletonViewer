@@ -100,3 +100,21 @@ export function formatMs(ms: number | undefined): string {
   if (ms === undefined) return "…";
   return ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(2)} s`;
 }
+
+/**
+ * What to load when the plan changes while a model is on screen (for example
+ * the user picks a new detail level in Settings). Nothing on screen yet: the
+ * whole plan, in order. Otherwise only the plan's final LOD, if it differs
+ * from what is shown, so changing Auto → High doesn't reload low first.
+ */
+export function lodsToLoad(plan: Lod[], shown: Lod | null): Lod[] {
+  if (shown === null) return plan;
+  const final = plan[plan.length - 1];
+  return final === undefined || final === shown ? [] : [final];
+}
+
+/** Drop `lod=` from a query string (a new Settings choice overrides it). */
+export function withoutLodParam(search: string): string {
+  const kept = search.replace(/^\?/, "").split("&").filter((p) => p !== "" && p.split("=")[0] !== "lod");
+  return kept.length ? `?${kept.join("&")}` : "";
+}

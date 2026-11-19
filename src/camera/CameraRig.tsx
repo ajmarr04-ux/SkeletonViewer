@@ -14,6 +14,8 @@ import {
   type PerspectiveCamera,
 } from "three";
 import type { BatchedSkeleton } from "../scene/batchSkeleton";
+import { BENCH_DURATION_MS, BENCH_WARMUP_MS, benchAzimuth, summariseFrames } from "../scene/bench";
+import type { Lod } from "../scene/lod";
 import { useViewer, type CameraCommand } from "../state/store";
 import { parseUrlState, serialiseUrlState, type CameraState, type Vec3 } from "../state/url";
 import {
@@ -38,6 +40,7 @@ import {
   defaultView,
   dollyToPoint,
   frameFrom,
+  framedHeightFraction,
   length,
   pointOnTargetPlane,
   presetView,
@@ -96,7 +99,12 @@ declare global {
   }
 }
 
-type Props = { skeleton: BatchedSkeleton | null; debug: boolean };
+type Props = {
+  skeleton: BatchedSkeleton | null;
+  debug: boolean;
+  /** `?bench`: the LOD to run the orbit at, once it is the final one on screen; null otherwise. */
+  bench?: Lod | null;
+};
 
 /**
  * The camera (spec §6), built on camera-controls: orbit around a focus point,
@@ -104,22 +112,23 @@ type Props = { skeleton: BatchedSkeleton | null; debug: boolean };
  * re-centre on double-click or double-tap, the keyboard map, and the `cam=`
  * URL parameter.
  */
-export function CameraRig({ skeleton, debug }: Props) {
+export function CameraRig({ skeleton, debug, bench = null }: Props) {
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
   const gl = useThree((s) => s.gl);
   const size = useThree((s) => s.size);
   const reducedMotion = useViewer((s) => s.reducedMotion);
   const geometry = useMemo(() => (skeleton ? skeletonGeometry(skeleton) : null), [skeleton]);
   const aspect = size.width / Math.max(1, size.height);
+  const heightFraction = framedHeightFraction(size.height);
   const limits = useMemo(
-    () => (geometry ? cameraLimits(geometry.box, geometry.radii, camera.fov, aspect) : null),
-    [geometry, camera.fov, aspect],
+    () => (geometry ? cameraLimits(geometry.box, geometry.radii, camera.fov, aspect, heightFraction) : null),
+    [geometry, camera.fov, aspect, heightFraction],
   );
 
   const controlsRef = useRef<CameraControls | null>(null);
   // Everything the event handlers need, read fresh each time.
-  const live = useRef({ skeleton, geometry, limits, aspect, reducedMotion });
-  live.current = { skeleton, geometry, limits, aspect, reducedMotion };
+  const live = useRef({ skeleton, geometry, limits, aspect, heightFraction, reducedMotion });
+  live.current = { skeleton, geometry, limits, aspect, heightFraction, reducedMotion };
   /** URL writes start with the first move the user (or a command) makes. */
   const armed = useRef(false);
   const framed = useRef(false);
@@ -264,14 +273,14 @@ export function CameraRig({ skeleton, debug }: Props) {
 
     // Presets, reset and frame.
     const runCommand = (c: CameraCommand) => {
-      const { geometry: g, limits: lim, aspect: asp } = live.current;
+      const { geometry: g, limits: lim, aspect: asp, heightFraction: hf } = live.current;
       if (!g || !lim) return;
       let cam: CameraState;
-      if (c.kind === "preset") cam = presetView(c.preset, g.box, camera.fov, asp);
-      else if (c.kind === "reset") cam = defaultView(g.box, camera.fov, asp);
+      if (c.kind === "preset") cam = presetView(c.preset, g.box, camera.fov, asp, hf);
+      else if (c.kind === "reset") cam = defaultView(g.box, camera.fov, asp, hf);
       else {
         const now = current();
-        cam = frameFrom(g.box, sub(now.position, now.target), camera.fov, asp);
+        cam = frameFrom(g.box, sub(now.position, now.target), camera.fov, asp, hf);
       }
       go(clampCamera(cam, lim));
     };
@@ -336,10 +345,10 @@ export function CameraRig({ skeleton, debug }: Props) {
 
     // Back and Forward (used by Milestone 3's isolation levels) re-read the URL.
     const onPopState = () => {
-      const { geometry: g, limits: lim, aspect: asp } = live.current;
+      const { geometry: g, limits: lim, aspect: asp, heightFraction: hf } = live.current;
       if (!g || !lim) return;
       const cam = parseUrlState(window.location.search).cam;
-      go(clampCamera(cam ?? defaultView(g.box, camera.fov, asp), lim));
+      go(clampCamera(cam ?? defaultView(g.box, camera.fov, asp, hf), lim));
     };
     window.addEventListener("popstate", onPopState);
 
@@ -397,16 +406,51 @@ export function CameraRig({ skeleton, debug }: Props) {
     if (!c || !geometry || !limits || framed.current) return;
     framed.current = true;
     const fromUrl = parseUrlState(window.location.search).cam;
-    const cam = clampCamera(fromUrl ?? defaultView(geometry.box, camera.fov, aspect), limits);
+    const cam = clampCamera(fromUrl ?? defaultView(geometry.box, camera.fov, aspect, heightFraction), limits);
     void c.setLookAt(...cam.position, ...cam.target, false);
     if (fromUrl) useViewer.getState().setCamera(cam);
-  }, [geometry, limits, camera, aspect]);
+  }, [geometry, limits, camera, aspect, heightFraction]);
+
+  // --- keep the framed area above the toolbar: move the projection centre up ---
+  useEffect(() => {
+    const { width, height } = size;
+    if (width <= 0 || height <= 0) return;
+    const shift = ((1 - heightFraction) * height) / 2;
+    camera.setViewOffset(width, height, 0, shift, width, height);
+    camera.updateProjectionMatrix();
+    return () => {
+      camera.clearViewOffset();
+    };
+  }, [camera, size, heightFraction]);
 
   // --- per frame: advance the controls, keep the clip planes snug -------------
   const centreRadius = useMemo(() => (geometry ? { c: boxCentre(geometry.box), r: boxRadius(geometry.box) } : null), [geometry]);
-  useFrame((_, delta) => {
+  // `?bench`: orbit 360° about the vertical axis over 10 s, timing every frame.
+  const benchRun = useRef<{ lod: Lod; start: number; azimuth: number; last: number; frames: number[]; drawCalls: number } | null>(null);
+  const benchDone = useRef<Lod | null>(null);
+  useFrame(({ gl: renderer }, delta) => {
     const c = controlsRef.current;
     if (!c) return;
+    if (bench && framed.current && benchDone.current !== bench) {
+      const now = performance.now();
+      let run = benchRun.current;
+      if (!run || run.lod !== bench) {
+        run = benchRun.current = { lod: bench, start: now, azimuth: c.azimuthAngle, last: now, frames: [], drawCalls: 0 };
+        useViewer.getState().setBench(null);
+      } else {
+        if (now - run.start > BENCH_WARMUP_MS) run.frames.push(now - run.last);
+        run.last = now;
+        run.drawCalls = Math.max(run.drawCalls, renderer.info.render.calls);
+      }
+      const elapsed = now - run.start;
+      void c.rotateTo(run.azimuth + benchAzimuth(elapsed), c.polarAngle, false);
+      if (elapsed >= BENCH_DURATION_MS) {
+        benchDone.current = bench;
+        benchRun.current = null;
+        const result = summariseFrames(run.frames);
+        if (result) useViewer.getState().setBench({ ...result, lod: run.lod, drawCalls: run.drawCalls });
+      }
+    }
     c.update(delta);
     if (!centreRadius) return;
     const target = c.getTarget(new Vector3(), false);
