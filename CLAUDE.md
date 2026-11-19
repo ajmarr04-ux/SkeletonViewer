@@ -45,7 +45,7 @@ When milestone N is merged and milestone N+1 begins:
 2. **Confirm that milestone N's hosted copy is live** at `https://ajmarr04-ux.github.io/SkeletonViewer/m<N>/`. The container can't reach `github.io`, so ask the user (or check the latest Deploy run with the GitHub tools). Then tick "Hosted copy is live" in that milestone's plan and update its row in `README.md`.
 3. Write the new milestone's plan as `docs/PLAN-milestone-<N+1>.md`, following the spec's §11 phase.
 
-Status: Milestone 1 is frozen at `b1392fa` (`current` is 2). Step 2 is still open for Milestone 1: the user needs to confirm `/m1/` loads after the first successful deploy.
+Status: Milestone 1 is frozen at `b1392fa` (`current` is 2), and its Deploy run succeeded; the user still needs to confirm `/m1/` loads. Milestone 2 (spec Phase 2, viewer) is planned in `docs/PLAN-milestone-2.md`, split into sessions D, E and F (triggers: "begin session D" and so on).
 
 ## Environment notes
 - The cloud container is temporary, so **run `bash scripts/setup-blender.sh` first in every session**. It takes about a minute and is safe to re-run.
