@@ -12,7 +12,7 @@ Get one clean skeleton model into the repo: 238 separate objects (206 bones and 
 | --- | --- | --- |
 | A | 1 (audit) and 2 (ID list and mapping) | **Done.** See `assets/audit/REPORT.md`, the decisions are recorded there |
 | B | 3 (Blender pipeline) and 4 (compression and checks) | **Done.** See `assets/build/REPORT.md`. Rebuild with `npm run build-models` |
-| C | 5 (bare viewer) and 6 (Pages deploy) | **Done in the branch.** Viewer, smoke test and deploy workflow are in place; the hosted copy goes live when the branch is merged to `main` (and Pages Source is set to GitHub Actions) |
+| C | 5 (bare viewer) and 6 (Pages deploy) | **Done.** Viewer, smoke test and deploy workflow are in place, and the hosted copy is live |
 
 To resume in a fresh session, run `bash scripts/setup-blender.sh`, then read this file and `assets/audit/REPORT.md`.
 
@@ -22,7 +22,7 @@ To resume in a fresh session, run `bash scripts/setup-blender.sh`, then read thi
 - [x] 238 objects, named by stable ID, in one shared coordinate space. (234 meshes plus the 4 known-missing third molars; `check-models` asserts the names and that no bone moved.)
 - [x] Both LODs exported and compressed, and each is under its size budget (high: ~500k tris, < 15 MB; low: ~150k tris, < 6 MB). (high 499,981 tris, 2.59 MB; low 149,913 tris, 0.91 MB.)
 - [x] A bare viewer loads both LODs. (`src/scene/BareViewer.tsx`; the Playwright smoke test checks low then high, 234 meshes + 4 known-missing = 238 IDs.)
-- [ ] **Hosted copy is live and linked below** (extra requirement for every milestone). Linked; waiting on the merge to `main` for the first deploy.
+- [x] **Hosted copy is live and linked below** (extra requirement for every milestone). Deployed from `main` and confirmed in the browser by the user on 2026-11-19.
 
 ---
 
@@ -94,7 +94,7 @@ Runs with `blender -b --python scripts/blender/build_skeleton.py -- <source.blen
 - **Per-milestone snapshots:** each milestone also deploys to `/SkeletonViewer/m1/`, `/m2/` and so on, so earlier milestones stay viewable after later ones ship.
 - The finished milestone's link goes in `README.md` under "Milestones", and is shared back here.
 
-**Hosted copy, Milestone 1:** https://ajmarr04-ux.github.io/SkeletonViewer/m1/ (live after the first deploy from `main`). Snapshot layout: `deploy/README.md`.
+**Hosted copy, Milestone 1:** https://ajmarr04-ux.github.io/SkeletonViewer/m1/ (live, frozen at `b1392fa`). Snapshot layout: `deploy/README.md`.
 
 ---
 

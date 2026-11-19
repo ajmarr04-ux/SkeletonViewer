@@ -33,8 +33,16 @@ A static browser app: a 3D atlas of the adult human skeleton (bones and teeth on
 | `scripts/build-models.sh` | All of the above in one go: `npm run build-models` (about 45 s, after setup). |
 | `assets/build/REPORT.md` | Build results: triangle counts, sizes, AO method, leftover non-manifold geometry. |
 | `public/models/skeleton-{high,low}.glb` | The committed, compressed models. Named nodes = bones; each has an unnamed child holding the quantised mesh. |
-| `src/scene/BareViewer.tsx`, `src/scene/lod.ts` | Milestone 1 bare viewer: low then high LOD, `?lod=` override, debug overlay. Pure helpers in `lod.ts`. |
-| `tests/e2e/smoke.spec.ts` | Playwright smoke test (`npm run e2e`): both LODs load, 234 meshes + 4 known-missing. |
+| `src/scene/Viewer.tsx`, `src/scene/lod.ts` | The viewer (replaced M1's `BareViewer.tsx`): low then high LOD, automatic LOD choice, `?lod=low|high|both` override, live re-plan when Settings changes, debug overlay only with `?debug`. Pure helpers in `lod.ts`. |
+| `src/ui/Toolbar.tsx`, `Popover.tsx`, `Settings.tsx` | Bottom-centre toolbar: Home, Views menu (presets), Settings (model detail in `localStorage`). Framing leaves a 100 px bottom inset for it (`setViewOffset`). |
+| `src/scene/bench.ts`, `src/ui/BenchPanel.tsx` | `?bench`: 360° orbit over 10 s, median and 5th-percentile FPS, frame times, draw calls. |
+| `src/scene/batchSkeleton.ts` | Packs the 234 bones into one `BatchedMesh` (instance matrix = the glTF mesh's world matrix, vertices untouched), ID ↔ instance tables, three-mesh-bvh raycasting. |
+| `src/scene/material.ts`, `src/scene/Lighting.tsx` | Shared bone material with the AO remap (`AO_FLOOR`), key light and `RoomEnvironment`. |
+| `src/state/store.ts`, `src/state/url.ts` | zustand store (camera, LOD, reduced motion, `cameraRequest` commands); pure URL parse/serialise helpers (`cam=`). |
+| `src/camera/CameraRig.tsx` | camera-controls rig: clamps, damping, wheel/pinch/trackpad, keys, double-tap re-centre, `cam=` URL sync, `window.__viewer` debug hooks. |
+| `src/camera/math.ts`, `src/camera/input.ts` | Pure camera maths (presets, box framing, limits, dolly-to-cursor) and input helpers (`classifyWheel`, key map, double tap). |
+| `tests/e2e/viewer.spec.ts` | Playwright camera tests (keyboard, URL round trip, presets, re-centre, touch). |
+| `tests/e2e/smoke.spec.ts` | Playwright smoke test (`npm run e2e`): both LODs load, 234 batched bones + 4 known-missing, < 20 draw calls, every bone's bounds match the manifest (`?debug`). |
 | `scripts/build-pages.sh`, `deploy/pages.json` | Pages build: live site plus `/m<N>/` milestone snapshots. Deployed by `.github/workflows/deploy.yml` on push to `main`. |
 
 ## Milestone handover (do this at the start of every new milestone)
@@ -45,7 +53,7 @@ When milestone N is merged and milestone N+1 begins:
 2. **Confirm that milestone N's hosted copy is live** at `https://ajmarr04-ux.github.io/SkeletonViewer/m<N>/`. The container can't reach `github.io`, so ask the user (or check the latest Deploy run with the GitHub tools). Then tick "Hosted copy is live" in that milestone's plan and update its row in `README.md`.
 3. Write the new milestone's plan as `docs/PLAN-milestone-<N+1>.md`, following the spec's §11 phase.
 
-Status: Milestone 1 is frozen at `b1392fa` (`current` is 2). Step 2 is still open for Milestone 1: the user needs to confirm `/m1/` loads after the first successful deploy.
+Status: Milestone 1 is frozen at `b1392fa` (`current` is 2), and `/m1/` is live (confirmed by the user). Milestone 2 (spec Phase 2, viewer) is planned in `docs/PLAN-milestone-2.md`, split into sessions D, E and F (triggers: "begin session D" and so on). Sessions D, E and F are done in code. Milestone 2 still needs: real-device `?bench` numbers from the user (plan step 10), and the branch merged to `main` so `/m2/` deploys (step 12), then the user's confirmation that `/m2/` loads. After that, start Milestone 3 with the handover above.
 
 ## Environment notes
 - The cloud container is temporary, so **run `bash scripts/setup-blender.sh` first in every session**. It takes about a minute and is safe to re-run.

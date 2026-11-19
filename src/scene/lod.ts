@@ -3,11 +3,68 @@
 
 export type Lod = "low" | "high";
 
-/** The LODs to load, in order. `?lod=low|high` pins one; otherwise low then high. */
-export function lodPlan(search: string): Lod[] {
+/** The user's model-detail setting. */
+export type LodSetting = "auto" | Lod;
+
+export const LOD_SETTING_KEY = "skeleton-viewer:lod";
+
+export function parseLodSetting(value: string | null | undefined): LodSetting {
+  return value === "low" || value === "high" ? value : "auto";
+}
+
+/** What the device looks like, for the automatic choice (spec §8). */
+export type DeviceProbe = {
+  /** Viewport size in CSS pixels. */
+  width: number;
+  height: number;
+  /** `navigator.deviceMemory` in GiB, where the browser exposes it. */
+  deviceMemory?: number;
+  /** `gl.MAX_TEXTURE_SIZE` from a throwaway WebGL 2 context. */
+  maxTextureSize?: number;
+  /** `gl.RENDERER` from the same context. */
+  renderer?: string;
+};
+
+/** Below this shortest side (CSS px) the screen counts as a phone. */
+export const SMALL_SCREEN_PX = 600;
+
+/** Software renderers and older or low-end mobile GPUs. */
+const WEAK_GPU =
+  /swiftshader|llvmpipe|softpipe|software|microsoft basic render|mali-[gt]?\d{1,3}\b|mali-4|adreno[^0-9]*[1-5]\d\d\b|powervr|videocore/i;
+
+export type LodChoice = { lod: Lod; reason: string };
+
+/** Pick the detail level a device should end on (low is always shown first). */
+export function chooseLod(p: DeviceProbe): LodChoice {
+  const shortest = Math.min(p.width, p.height);
+  if (shortest < SMALL_SCREEN_PX) return { lod: "low", reason: `small screen (${Math.round(shortest)} px)` };
+  if (p.deviceMemory !== undefined && p.deviceMemory <= 4) {
+    return { lod: "low", reason: `${p.deviceMemory} GB device memory` };
+  }
+  if (p.maxTextureSize !== undefined && p.maxTextureSize < 8192) {
+    return { lod: "low", reason: `max texture size ${p.maxTextureSize}` };
+  }
+  if (p.renderer && WEAK_GPU.test(p.renderer)) return { lod: "low", reason: `GPU: ${p.renderer}` };
+  return { lod: "high", reason: "capable device" };
+}
+
+/** Where the LOD plan came from, for the debug overlay. */
+export type LodPlan = { lods: Lod[]; source: "url" | "setting" | "auto"; reason: string };
+
+/**
+ * The LODs to load, in order. `?lod=low|high` pins one file and `?lod=both`
+ * forces low then high (for testing); otherwise the stored setting decides,
+ * and with "auto" the device probe does. Low is always loaded first.
+ */
+export function lodPlan(search: string, setting: LodSetting = "auto", probe?: DeviceProbe): LodPlan {
   const lod = new URLSearchParams(search).get("lod");
-  if (lod === "low" || lod === "high") return [lod];
-  return ["low", "high"];
+  if (lod === "low" || lod === "high") return { lods: [lod], source: "url", reason: `?lod=${lod}` };
+  if (lod === "both") return { lods: ["low", "high"], source: "url", reason: "?lod=both" };
+  if (setting !== "auto") {
+    return { lods: setting === "high" ? ["low", "high"] : ["low"], source: "setting", reason: `setting: ${setting}` };
+  }
+  const choice = probe ? chooseLod(probe) : { lod: "high" as const, reason: "no device probe" };
+  return { lods: choice.lod === "high" ? ["low", "high"] : ["low"], source: "auto", reason: choice.reason };
 }
 
 export type IdEntry = { id: string; meshAvailable: boolean };
@@ -42,4 +99,22 @@ export function formatCount(n: number): string {
 export function formatMs(ms: number | undefined): string {
   if (ms === undefined) return "…";
   return ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(2)} s`;
+}
+
+/**
+ * What to load when the plan changes while a model is on screen (for example
+ * the user picks a new detail level in Settings). Nothing on screen yet: the
+ * whole plan, in order. Otherwise only the plan's final LOD, if it differs
+ * from what is shown, so changing Auto → High doesn't reload low first.
+ */
+export function lodsToLoad(plan: Lod[], shown: Lod | null): Lod[] {
+  if (shown === null) return plan;
+  const final = plan[plan.length - 1];
+  return final === undefined || final === shown ? [] : [final];
+}
+
+/** Drop `lod=` from a query string (a new Settings choice overrides it). */
+export function withoutLodParam(search: string): string {
+  const kept = search.replace(/^\?/, "").split("&").filter((p) => p !== "" && p.split("=")[0] !== "lod");
+  return kept.length ? `?${kept.join("&")}` : "";
 }

@@ -1,44 +1,71 @@
-import type { Lod, ObjectSummary } from "../scene/lod";
+import type { Lod, LodPlan, ObjectSummary } from "../scene/lod";
 import { formatCount, formatMs } from "../scene/lod";
+import { useViewer } from "../state/store";
+import { formatCam } from "../state/url";
 
 export type RenderStats = { drawCalls: number; renderedTriangles: number; fps: number };
 
+/** Result of comparing each batched bone's world bounds with the Blender manifest. */
+export type BoundsReport = { lod: Lod; checked: number; maxDelta: number; errors: string[] };
+
 type Props = {
-  plan: Lod[];
+  plan: LodPlan;
   current: Lod | null;
   loadTimes: Partial<Record<Lod, number>>;
   objects: ObjectSummary | null;
+  instances: number;
   modelTriangles: number;
   stats: RenderStats;
+  /** undefined: not requested (no ?debug); null: running. */
+  bounds?: BoundsReport | null;
   error: string | null;
 };
 
-/** Milestone 1 debug readout. data-* attributes are read by the Playwright smoke test. */
-export function DebugOverlay({ plan, current, loadTimes, objects, modelTriangles, stats, error }: Props) {
-  const done = plan.every((l) => loadTimes[l] !== undefined);
+/** Debug readout. data-* attributes are read by the Playwright tests. */
+export function DebugOverlay(p: Props) {
+  const { plan, current, loadTimes, objects, stats, bounds, error } = p;
+  const done = plan.lods.every((l) => loadTimes[l] !== undefined) && current === plan.lods[plan.lods.length - 1];
+  const camera = useViewer((s) => s.camera);
+  const bench = useViewer((s) => s.bench);
+  const boundsDone = bounds !== undefined && bounds !== null && bounds.lod === current;
   return (
     <aside
       className="debug"
       aria-label="Debug information"
       data-testid="debug"
       data-lod={current ?? ""}
-      data-loaded={plan.filter((l) => loadTimes[l] !== undefined).join(",")}
-      data-complete={done ? "true" : "false"}
+      data-plan={plan.lods.join(",")}
+      data-plan-source={plan.source}
+      data-loaded={plan.lods.filter((l) => loadTimes[l] !== undefined).join(",")}
+      data-complete={done && (bounds === undefined || boundsDone) ? "true" : "false"}
       data-objects={objects?.found ?? 0}
+      data-instances={p.instances}
       data-known-missing={objects?.knownMissing.join(",") ?? ""}
       data-unexpected-missing={objects?.unexpectedMissing.join(",") ?? ""}
       data-unknown={objects?.unknown.join(",") ?? ""}
-      data-triangles={modelTriangles}
+      data-triangles={p.modelTriangles}
+      data-draw-calls={stats.drawCalls}
+      data-cam={camera ? formatCam(camera) : ""}
+      data-bench-done={bench ? "true" : ""}
+      data-bench-median-fps={bench ? bench.medianFps.toFixed(1) : ""}
+      data-bench-p5-fps={bench ? bench.p5Fps.toFixed(1) : ""}
+      data-bench-frames={bench ? bench.frames : ""}
+      data-bench-draw-calls={bench ? bench.drawCalls : ""}
+      data-bench-lod={bench?.lod ?? ""}
+      data-bounds-ok={boundsDone ? String(bounds.errors.length === 0) : ""}
+      data-bounds-checked={boundsDone ? bounds.checked : ""}
+      data-bounds-max-delta-mm={boundsDone ? (bounds.maxDelta * 1000).toFixed(4) : ""}
     >
-      <h1>Skeleton Viewer · Milestone 1</h1>
+      <h1>Debug · Milestone 2</h1>
       {error && <p className="error">Load failed: {error}</p>}
       <dl>
         <dt>LOD</dt>
+        <dd>{current ?? "loading…"}</dd>
+        <dt>Plan</dt>
         <dd>
-          {current ?? "loading…"}
-          {plan.length === 1 && " (pinned by ?lod)"}
+          {plan.lods.join(" → ")} ({plan.reason})
         </dd>
-        {plan.map((l) => (
+        {plan.lods.map((l) => (
           <div key={l} className="row">
             <dt>{l} loaded</dt>
             <dd>{formatMs(loadTimes[l])}</dd>
@@ -67,14 +94,29 @@ export function DebugOverlay({ plan, current, loadTimes, objects, modelTriangles
           </>
         )}
         <dt>Triangles</dt>
-        <dd>{formatCount(modelTriangles)}</dd>
+        <dd>{formatCount(p.modelTriangles)}</dd>
         <dt>Draw calls</dt>
         <dd>{stats.drawCalls}</dd>
+        <dt>Camera</dt>
+        <dd>{camera ? formatCam(camera) : "default"}</dd>
         <dt>FPS</dt>
         <dd>{stats.fps.toFixed(0)}</dd>
+        {bounds !== undefined && (
+          <>
+            <dt>Bounds</dt>
+            <dd className={boundsDone && bounds.errors.length ? "error" : undefined}>
+              {!boundsDone
+                ? "checking…"
+                : bounds.errors.length
+                  ? `${bounds.errors.length} moved: ${bounds.errors.slice(0, 3).join("; ")}`
+                  : `${bounds.checked} match the manifest (max ${(bounds.maxDelta * 1000).toFixed(3)} mm)`}
+            </dd>
+          </>
+        )}
       </dl>
       <p className="hint">
-        Try <a href="?lod=low">?lod=low</a> · <a href="?lod=high">?lod=high</a> · <a href="?">both</a>
+        Try <a href="?lod=low&amp;debug">?lod=low</a> · <a href="?lod=high&amp;debug">?lod=high</a> ·{" "}
+        <a href="?lod=both&amp;debug">both</a> · <a href="?debug">auto</a> · <a href="?bench&amp;debug">bench</a>
       </p>
     </aside>
   );
