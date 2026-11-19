@@ -36,7 +36,10 @@ A static browser app: a 3D atlas of the adult human skeleton (bones and teeth on
 | `src/scene/Viewer.tsx`, `src/scene/lod.ts` | The viewer (replaced M1's `BareViewer.tsx`): low then high LOD, automatic LOD choice, `?lod=low|high|both` override, debug overlay behind `?debug` checks. Pure helpers in `lod.ts`. |
 | `src/scene/batchSkeleton.ts` | Packs the 234 bones into one `BatchedMesh` (instance matrix = the glTF mesh's world matrix, vertices untouched), ID ↔ instance tables, three-mesh-bvh raycasting. |
 | `src/scene/material.ts`, `src/scene/Lighting.tsx` | Shared bone material with the AO remap (`AO_FLOOR`), key light and `RoomEnvironment`. |
-| `src/state/store.ts`, `src/state/url.ts` | zustand store; pure URL parse/serialise helpers (`cam=`). |
+| `src/state/store.ts`, `src/state/url.ts` | zustand store (camera, LOD, reduced motion, `cameraRequest` commands); pure URL parse/serialise helpers (`cam=`). |
+| `src/camera/CameraRig.tsx` | camera-controls rig: clamps, damping, wheel/pinch/trackpad, keys, double-tap re-centre, `cam=` URL sync, `window.__viewer` debug hooks. |
+| `src/camera/math.ts`, `src/camera/input.ts` | Pure camera maths (presets, box framing, limits, dolly-to-cursor) and input helpers (`classifyWheel`, key map, double tap). |
+| `tests/e2e/viewer.spec.ts` | Playwright camera tests (keyboard, URL round trip, presets, re-centre, touch). |
 | `tests/e2e/smoke.spec.ts` | Playwright smoke test (`npm run e2e`): both LODs load, 234 batched bones + 4 known-missing, < 20 draw calls, every bone's bounds match the manifest (`?debug`). |
 | `scripts/build-pages.sh`, `deploy/pages.json` | Pages build: live site plus `/m<N>/` milestone snapshots. Deployed by `.github/workflows/deploy.yml` on push to `main`. |
 
@@ -48,7 +51,7 @@ When milestone N is merged and milestone N+1 begins:
 2. **Confirm that milestone N's hosted copy is live** at `https://ajmarr04-ux.github.io/SkeletonViewer/m<N>/`. The container can't reach `github.io`, so ask the user (or check the latest Deploy run with the GitHub tools). Then tick "Hosted copy is live" in that milestone's plan and update its row in `README.md`.
 3. Write the new milestone's plan as `docs/PLAN-milestone-<N+1>.md`, following the spec's §11 phase.
 
-Status: Milestone 1 is frozen at `b1392fa` (`current` is 2), and `/m1/` is live (confirmed by the user). Milestone 2 (spec Phase 2, viewer) is planned in `docs/PLAN-milestone-2.md`, split into sessions D, E and F (triggers: "begin session D" and so on).
+Status: Milestone 1 is frozen at `b1392fa` (`current` is 2), and `/m1/` is live (confirmed by the user). Milestone 2 (spec Phase 2, viewer) is planned in `docs/PLAN-milestone-2.md`, split into sessions D, E and F (triggers: "begin session D" and so on). Sessions D and E are done; next is "begin session F".
 
 ## Environment notes
 - The cloud container is temporary, so **run `bash scripts/setup-blender.sh` first in every session**. It takes about a minute and is safe to re-run.

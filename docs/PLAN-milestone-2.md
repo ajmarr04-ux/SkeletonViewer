@@ -13,15 +13,15 @@ Out of scope until Milestone 3: hover, selection, isolation, ghosting and the in
 | Session | Steps | Status |
 | --- | --- | --- |
 | D | 0 (Milestone 1 handover), 1 (state store), 2 (BatchedMesh scene), 3 (lighting), 4 (LOD choice) | **Done.** See "Session D notes" below |
-| E | 5 (camera rig), 6 (input mapping), 7 (presets, reset, re-centre), 8 (URL sync) | Not started |
+| E | 5 (camera rig), 6 (input mapping), 7 (presets, reset, re-centre), 8 (URL sync) | **Done.** See "Session E notes" below |
 | F | 9 (toolbar and settings), 10 (performance check), 11 (tests), 12 (hosted copy) | Not started |
 
 Triggers: "begin session D", "begin session E" and "begin session F". Each session starts by reading this file and ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models` and `npm run e2e` passing, then a commit and push to the session branch. No Blender work is planned, so `scripts/setup-blender.sh` is only needed if the models have to be rebuilt.
 
 ## Exit criteria (from spec §11, Phase 2)
 
-- [ ] Orbit, pan, zoom, presets and reset work on mouse, trackpad, touch and keyboard.
-- [ ] Camera state is synced to the URL.
+- [ ] Orbit, pan, zoom, presets and reset work on mouse, trackpad, touch and keyboard. (Session E: all done and tested except the Home button and preset menu, which arrive with the toolbar in session F, and a hand check of the trackpad heuristic on real hardware.)
+- [x] Camera state is synced to the URL.
 - [ ] The phone frame-rate budget is met (≥ 30 FPS while orbiting, checked with Chrome DevTools mobile emulation and CPU throttling, plus one real device if one is available).
 - [ ] Draw calls < 20 (spec §8, needed to meet the line above).
 - [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
@@ -42,6 +42,18 @@ Triggers: "begin session D", "begin session E" and "begin session F". Each sessi
 - **Lighting:** key light 2.2 from upper front-left (−2.5, 3, 2), `RoomEnvironment` at 0.25, bone colour `#d8cdb8`, roughness 0.6, `AO_FLOOR` 0.4. A first try with the environment at 0.55 washed out the form; these values keep the shading readable (checked in front-view screenshots). The skull close-up for the mandible's sockets waits for session E, when `?cam=` can place the camera.
 - **LOD choice:** `?lod=both` was added (forces low then high) because the container's Chromium uses SwiftShader, which `chooseLod` correctly sends to low. Tests use `?lod=both&debug`.
 - **Debug:** the bounds check (and the 270 kB manifest, loaded as its own chunk) only runs with `?debug`. The overlay itself is still always visible until step 9 hides it behind `?debug`.
+
+## Session E notes (steps 5 to 8, done)
+
+- **Rig:** `src/camera/CameraRig.tsx` drives `camera-controls` 3.1 directly (drei's `OrbitControls` is gone). Damping `smoothTime` 0.12 s, `draggingSmoothTime` 0.06 s, both 0 with reduced motion, and every scripted move then uses no transition (tested: one arrow press is a 5° cut on the next frame). Pole clamp 0.01 rad. The orbit target is kept inside the skeleton's box grown by a quarter of its radius (`setBoundary`), so panning can't lose the skeleton.
+- **Framing (changed from the plan):** presets, reset and `F` use an exact box fit (`fitDistance` in `src/camera/math.ts`: every corner of the skeleton's box inside the view with a 5% margin, for the current aspect ratio) rather than `fitToSphere`, which left the tall, thin skeleton small. Measured: skeleton box 0.67 × 1.70 × 0.25 m, bounding-sphere radius 0.920 m, so 3 × radius is 2.76 m, but a landscape screen needs about 2.96 m to frame the anterior view. **Max distance is therefore max(3 × radius, 1.2 × the largest preset fit at the current aspect).** Min distance is 1.5 × the stapes' bounding-sphere radius (2.8 mm), so 4.2 mm.
+- **Clip planes** follow the camera each frame: near = 2% of the distance (between 0.1 mm and 5 cm), far reaches past the whole skeleton. The skull close-ups at `deviceScaleFactor: 2` (the check deferred from session D) show no clipping and no black inner surfaces.
+- **Wheel (changed from the plan):** camera-controls turns a `ctrlKey` wheel event (a pinch) into an FOV zoom, which `cam=` can't store, so all wheel input is handled by the rig: mouse wheel and pinch dolly toward the cursor (`dollyToPoint`: camera and target scale about the point under the cursor, so it stays put), and a two-finger drag trucks by the pixel delta. `classifyWheel` order: `ctrlKey` → pinch; line/page mode → wheel; a gesture (events < 120 ms apart) keeps its first meaning; where `wheelDeltaY` exists (Chrome, Edge, Safari) a trackpad gives `wheelDeltaY = -3 × deltaY` and a mouse doesn't; otherwise a horizontal delta → pan, ≥ 50 px → wheel, whole pixels → wheel, small fractions → pan. Safari's `gesturechange` drives pinch on macOS Safari. **Needs the user:** a hand check on a Mac trackpad (Chrome and Safari) and a mouse wheel. If it misclassifies, the plan's fallback stands.
+- **Double-click / double-tap** share one pure detector (`tapStep`: 5 px drag threshold, 500 ms per press, 350 ms and 24 px between taps, a second finger cancels). The hit bone's box centre comes from its geometry box through its instance matrix (scale and translation only, so exact); the e2e test matches it to the manifest's femur centre within 1 mm. Re-centre uses `moveTo`, so the view direction and distance are kept. In software WebGL, two Playwright `touchscreen.tap()` calls land about 800 ms apart (logged), so the touch test sends the two taps' pointer events in-page.
+- **Keyboard** works when the canvas or the page itself has focus (not in inputs or buttons). The canvas has `tabIndex=0`, an `aria-label` listing the keys and a focus ring. Shift + left-drag is decided per press in a capture listener.
+- **URL:** `cam=` is written with `replaceState` on `rest`, and on `sleep` too (an instant cut never reaches `rest`). Nothing is written until the first user move or command, so a fresh load keeps a clean URL. A valid `cam` on load is clamped and used; a malformed one is ignored. `popstate` re-reads it. Store: `cameraRequest` (preset, reset, frame) is the hook for session F's toolbar.
+- **Debug hooks:** with `?debug`, `window.__viewer` exposes `camera()`, `bone(id)` (box centre and screen position) and `command()`; the overlay shows `data-cam`.
+- **Tests:** Vitest `tests/camera.test.ts` (presets, tight framing at three aspects, limits, clamps, dolly-to-cursor keeps the point fixed, clip planes) and `tests/input.test.ts` (wheel sequences modelled on each browser and device, zoom factors, key map, double tap). Playwright `tests/e2e/viewer.spec.ts` (12 tests): default view and clean URL, keyboard → URL → reload restores within 1 mm, `H`, all six presets, invalid and out-of-range `cam`, double-click on the femur and on empty space, wheel and drag, Shift-drag pan, reduced motion, phone double-tap and phone framing.
 
 ## Step 1: State store (`src/state/`)
 
