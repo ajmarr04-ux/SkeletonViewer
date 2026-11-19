@@ -6,9 +6,19 @@ Source of truth: `SPEC (2).md`, sections 4, 5 and 11 (Phase 1).
 
 Get one clean skeleton model into the repo: 238 separate objects (206 bones and 32 teeth), each named by its stable ID, in one shared coordinate space. Export it at two levels of detail, both within their size budgets. Add a bare viewer that loads both, and publish it at a hosted link so it can be checked in a browser.
 
+## Progress
+
+| Session | Steps | Status |
+| --- | --- | --- |
+| A | 1 (audit) and 2 (ID list and mapping) | **Done.** See `assets/audit/REPORT.md`, which ends with three questions for review |
+| B | 3 (Blender pipeline) and 4 (compression and checks) | Not started |
+| C | 5 (bare viewer) and 6 (Pages deploy) | Not started |
+
+To resume in a fresh session, run `bash scripts/setup-blender.sh`, then read this file and `assets/audit/REPORT.md`.
+
 ## Exit criteria (from spec §11, Phase 1)
 
-- [ ] Source chosen. Teeth are confirmed as separate meshes, or the problem has been reported back.
+- [x] Source chosen. Teeth are confirmed as separate meshes, or the problem has been reported back. (Z-Anatomy: 28 of 32 teeth are separate; the third molars are missing and reported.)
 - [ ] 238 objects, named by stable ID, in one shared coordinate space.
 - [ ] Both LODs exported and compressed, and each is under its size budget (high: ~500k tris, < 15 MB; low: ~150k tris, < 6 MB).
 - [ ] A bare viewer loads both LODs.
