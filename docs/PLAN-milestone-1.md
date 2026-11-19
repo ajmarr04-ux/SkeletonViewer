@@ -11,18 +11,18 @@ Get one clean skeleton model into the repo: 238 separate objects (206 bones and 
 | Session | Steps | Status |
 | --- | --- | --- |
 | A | 1 (audit) and 2 (ID list and mapping) | **Done.** See `assets/audit/REPORT.md`, the decisions are recorded there |
-| B | 3 (Blender pipeline) and 4 (compression and checks) | Not started. Start with "begin session B" (see `CLAUDE.md`) |
-| C | 5 (bare viewer) and 6 (Pages deploy) | Not started |
+| B | 3 (Blender pipeline) and 4 (compression and checks) | **Done.** See `assets/build/REPORT.md`. Rebuild with `npm run build-models` |
+| C | 5 (bare viewer) and 6 (Pages deploy) | **Done in the branch.** Viewer, smoke test and deploy workflow are in place; the hosted copy goes live when the branch is merged to `main` (and Pages Source is set to GitHub Actions) |
 
 To resume in a fresh session, run `bash scripts/setup-blender.sh`, then read this file and `assets/audit/REPORT.md`.
 
 ## Exit criteria (from spec §11, Phase 1)
 
 - [x] Source chosen. Teeth are confirmed as separate meshes, or the problem has been reported back. (Z-Anatomy: 28 of 32 teeth are separate; the third molars are missing and reported.)
-- [ ] 238 objects, named by stable ID, in one shared coordinate space.
-- [ ] Both LODs exported and compressed, and each is under its size budget (high: ~500k tris, < 15 MB; low: ~150k tris, < 6 MB).
-- [ ] A bare viewer loads both LODs.
-- [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
+- [x] 238 objects, named by stable ID, in one shared coordinate space. (234 meshes plus the 4 known-missing third molars; `check-models` asserts the names and that no bone moved.)
+- [x] Both LODs exported and compressed, and each is under its size budget (high: ~500k tris, < 15 MB; low: ~150k tris, < 6 MB). (high 499,981 tris, 2.59 MB; low 149,913 tris, 0.91 MB.)
+- [x] A bare viewer loads both LODs. (`src/scene/BareViewer.tsx`; the Playwright smoke test checks low then high, 234 meshes + 4 known-missing = 238 IDs.)
+- [ ] **Hosted copy is live and linked below** (extra requirement for every milestone). Linked; waiting on the merge to `main` for the first deploy.
 
 ---
 
@@ -72,7 +72,7 @@ Runs with `blender -b --python scripts/blender/build_skeleton.py -- <source.blen
 
 ## Step 5: Project scaffold and bare viewer
 
-- Set up Vite with React 18 and strict TypeScript, following the folder layout in spec §3. Add `three`, `@react-three/fiber`, `@react-three/drei` and `meshoptimizer` (the Meshopt decoder).
+- Set up Vite with React 18 (React 19 used, which the spec's "React 18+" allows, since React Three Fiber 9 needs it) and strict TypeScript, following the folder layout in spec §3. Add `three`, `@react-three/fiber`, `@react-three/drei` and `meshoptimizer` (the Meshopt decoder).
 - `src/scene/BareViewer.tsx`:
   - Loads `skeleton-low.glb` first, then streams in `skeleton-high.glb` and swaps it in once it has loaded.
   - Uses a simple drei `OrbitControls`, a placeholder that `camera-controls` replaces in Phase 2.
@@ -94,7 +94,7 @@ Runs with `blender -b --python scripts/blender/build_skeleton.py -- <source.blen
 - **Per-milestone snapshots:** each milestone also deploys to `/SkeletonViewer/m1/`, `/m2/` and so on, so earlier milestones stay viewable after later ones ship.
 - The finished milestone's link goes in `README.md` under "Milestones", and is shared back here.
 
-**Hosted copy, Milestone 1:** _link to be added when the milestone is complete_. Planned: https://ajmarr04-ux.github.io/SkeletonViewer/m1/
+**Hosted copy, Milestone 1:** https://ajmarr04-ux.github.io/SkeletonViewer/m1/ (live after the first deploy from `main`). Snapshot layout: `deploy/README.md`.
 
 ---
 

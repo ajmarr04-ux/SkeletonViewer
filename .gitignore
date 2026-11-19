@@ -3,3 +3,6 @@ dist/
 .venv/
 .cache/
 *.blend1
+__pycache__/
+test-results/
+playwright-report/
