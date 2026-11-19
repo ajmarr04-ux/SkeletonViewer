@@ -33,6 +33,9 @@ A static browser app: a 3D atlas of the adult human skeleton (bones and teeth on
 | `scripts/build-models.sh` | All of the above in one go: `npm run build-models` (about 45 s, after setup). |
 | `assets/build/REPORT.md` | Build results: triangle counts, sizes, AO method, leftover non-manifold geometry. |
 | `public/models/skeleton-{high,low}.glb` | The committed, compressed models. Named nodes = bones; each has an unnamed child holding the quantised mesh. |
+| `src/scene/BareViewer.tsx`, `src/scene/lod.ts` | Milestone 1 bare viewer: low then high LOD, `?lod=` override, debug overlay. Pure helpers in `lod.ts`. |
+| `tests/e2e/smoke.spec.ts` | Playwright smoke test (`npm run e2e`): both LODs load, 234 meshes + 4 known-missing. |
+| `scripts/build-pages.sh`, `deploy/pages.json` | Pages build: live site plus `/m<N>/` milestone snapshots. Deployed by `.github/workflows/deploy.yml` on push to `main`. |
 
 ## Environment notes
 - The cloud container is temporary, so **run `bash scripts/setup-blender.sh` first in every session**. It takes about a minute and is safe to re-run.
