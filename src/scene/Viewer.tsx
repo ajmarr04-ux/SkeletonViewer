@@ -17,7 +17,7 @@ import {
 } from "./batchSkeleton";
 import { checkInstanceBounds } from "./boundsCheck";
 import { Lighting } from "./Lighting";
-import { disposeParts, loadSkeleton } from "./loadSkeleton";
+import { disposeParts, loadSkeleton, prefetchModel } from "./loadSkeleton";
 import { BenchPanel } from "../ui/BenchPanel";
 import { Toolbar } from "../ui/Toolbar";
 import { LOD_SETTING_KEY, lodPlan, lodsToLoad, parseLodSetting, summariseObjects, withoutLodParam, type Lod } from "./lod";
@@ -104,8 +104,12 @@ export function Viewer() {
     let cancelled = false;
     let current: BatchedSkeleton | null = shownRef.current?.skeleton ?? null;
     (async () => {
-      for (const lod of lodsToLoad(plan.lods, shownRef.current?.lod ?? null)) {
+      const queue = lodsToLoad(plan.lods, shownRef.current?.lod ?? null);
+      for (const [i, lod] of queue.entries()) {
         const loaded = await loadSkeleton(lod);
+        // Fetch the next level now, while this one is batched and drawn (plan step 12).
+        const next = queue[i + 1];
+        if (next && !cancelled) void prefetchModel(next).catch(() => {});
         if (cancelled) {
           disposeParts(loaded.parts);
           return;

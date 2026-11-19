@@ -40,6 +40,8 @@ export function DebugOverlay(p: Props) {
       data-plan={plan.lods.join(",")}
       data-plan-source={plan.source}
       data-loaded={plan.lods.filter((l) => loadTimes[l] !== undefined).join(",")}
+      data-load-low={loadTimes.low !== undefined ? Math.round(loadTimes.low) : undefined}
+      data-load-high={loadTimes.high !== undefined ? Math.round(loadTimes.high) : undefined}
       data-complete={done && (bounds === undefined || boundsDone) ? "true" : "false"}
       data-objects={objects?.found ?? 0}
       data-instances={p.instances}

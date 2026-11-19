@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BENCH_DURATION_MS, benchAzimuth, percentile, summariseFrames } from "../src/scene/bench";
+import { BENCH_DURATION_MS, benchAzimuth, percentile, summariseFrames, summariseTimes, recordLabelLayout, labelLayoutMs, LABEL_TIMES_CAP } from "../src/scene/bench";
 
 describe("percentile", () => {
   it("uses the nearest rank", () => {
@@ -39,5 +39,18 @@ describe("benchAzimuth", () => {
     expect(benchAzimuth(BENCH_DURATION_MS)).toBeCloseTo(2 * Math.PI, 12);
     expect(benchAzimuth(BENCH_DURATION_MS * 3)).toBeCloseTo(2 * Math.PI, 12);
     expect(benchAzimuth(-5)).toBe(0);
+  });
+});
+
+describe("label layout times (plan step 12)", () => {
+  it("summarises count, median and max, ignoring bad values", () => {
+    expect(summariseTimes([])).toBeNull();
+    expect(summariseTimes([3, 1, NaN, 2, -1, 10])).toEqual({ count: 4, medianMs: 2, maxMs: 10 });
+  });
+  it("records up to a cap", () => {
+    labelLayoutMs.length = 0;
+    for (let i = 0; i < LABEL_TIMES_CAP + 50; i++) recordLabelLayout(1);
+    expect(labelLayoutMs.length).toBe(LABEL_TIMES_CAP);
+    labelLayoutMs.length = 0;
   });
 });

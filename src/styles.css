@@ -320,6 +320,13 @@ dialog.manual-share form { margin-top: 12px; text-align: right; }
 @media (max-width: 1099px) {
   .legend { bottom: 100px; }
 }
+/* Short windows (200% zoom on a laptop): two compact columns so the key doesn't cover the view. */
+@media (max-height: 520px) and (min-width: 600px) {
+  .legend { padding: 4px; }
+  .legend-title { display: none; }
+  .legend ul { display: grid; grid-template-columns: auto auto; gap: 0 2px; }
+  .legend-item { min-height: 24px; padding: 0 6px; gap: 5px; font-size: 12px; }
+}
 @media (max-width: 599px) {
   .legend {
     left: 8px; right: 8px; bottom: calc(max(40px, var(--panel-bottom, 0px) + 8px) + 58px);

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { BenchResult } from "../scene/bench";
+import type { BenchResult, LayoutTimes } from "../scene/bench";
 import type { Lod, LodSetting } from "../scene/lod";
 import { NO_PANEL, type PanelInset, type Preset } from "../camera/math";
 import type { Tier } from "./isolation";
@@ -109,7 +109,7 @@ export type ViewerState = {
   setGhostOpacity: (opacity: number) => void;
   setHovered: (id: string | null) => void;
   /** `?bench` result once the orbit is done, with the LOD and draw calls it ran at. */
-  bench: (BenchResult & { lod: Lod; drawCalls: number }) | null;
+  bench: (BenchResult & { lod: Lod; drawCalls: number; labels: LayoutTimes | null }) | null;
   setBench: (bench: ViewerState["bench"]) => void;
   requestCamera: (command: CameraCommand) => void;
   setCamera: (camera: CameraState | null) => void;

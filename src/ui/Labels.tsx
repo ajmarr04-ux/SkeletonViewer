@@ -5,6 +5,7 @@ import { displayName } from "../content/names";
 import { relations } from "../content/relations";
 import type { BatchedSkeleton } from "../scene/batchSkeleton";
 import { isolationView } from "../scene/isolation";
+import { recordLabelLayout } from "../scene/bench";
 import { LABEL, labelPriority, layoutLabels, leaderEnd, type LabelCandidate, type PlacedLabel, type Rect } from "../scene/labels";
 import { hasMesh } from "../state/selection";
 import { useViewer } from "../state/store";
@@ -84,6 +85,7 @@ export function LabelProbe({ skeleton }: { skeleton: BatchedSkeleton | null }) {
     last.current = { at: now, key, dirty: false };
     const next = computeLayout(skeleton, spheres, camera, gl.domElement);
     if (!sameLayout(st.labelLayout, next)) st.setLabelLayout(next);
+    recordLabelLayout(performance.now() - now); // for ?bench (plan step 12)
   });
   return null;
 }

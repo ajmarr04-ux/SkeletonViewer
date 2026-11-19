@@ -34,7 +34,7 @@ function isolationBox(boneBoxes: Map<string, Box>, sel: string | null, tier: 0 |
   const boxes = [...view.solid].map((id) => boneBoxes.get(id)).filter((b): b is Box => b !== undefined);
   return boxes.length ? unionBoxes(boxes) : undefined;
 }
-import { BENCH_DURATION_MS, BENCH_WARMUP_MS, benchAzimuth, summariseFrames } from "../scene/bench";
+import { BENCH_DURATION_MS, BENCH_WARMUP_MS, benchAzimuth, labelLayoutMs, summariseFrames, summariseTimes } from "../scene/bench";
 import type { Lod } from "../scene/lod";
 import { useViewer, type CameraCommand } from "../state/store";
 import { parseUrlState, serialiseUrlState, type CameraState, type Vec3 } from "../state/url";
@@ -873,6 +873,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       if (!run || run.lod !== bench) {
         run = benchRun.current = { lod: bench, start: now, azimuth: c.azimuthAngle, last: now, frames: [], drawCalls: 0 };
         useViewer.getState().setBench(null);
+        labelLayoutMs.length = 0;
       } else {
         if (now - run.start > BENCH_WARMUP_MS) run.frames.push(now - run.last);
         run.last = now;
@@ -884,7 +885,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
         benchDone.current = bench;
         benchRun.current = null;
         const result = summariseFrames(run.frames);
-        if (result) useViewer.getState().setBench({ ...result, lod: run.lod, drawCalls: run.drawCalls });
+        if (result) useViewer.getState().setBench({ ...result, lod: run.lod, drawCalls: run.drawCalls, labels: summariseTimes(labelLayoutMs) });
       }
     }
     c.update(delta);

@@ -21,9 +21,11 @@
     "content:hierarchy": "tsx scripts/content/build-hierarchy.ts",
     "prebuild": "npm run validate-content && npm run content",
     "content": "tsx scripts/build-content.ts",
-    "search-index": "tsx scripts/build-search-index.ts"
+    "search-index": "tsx scripts/build-search-index.ts",
+    "perf-load": "tsx scripts/perf-load.ts"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@gltf-transform/core": "^4.5.1",
     "@gltf-transform/extensions": "^4.5.1",
     "@playwright/test": "^1.63.0",

@@ -7,6 +7,8 @@ export function BenchPanel() {
   const active = useViewer((s) => s.lodActive);
   const sel = useViewer((s) => s.sel);
   const ghostMode = useViewer((s) => s.ghostMode);
+  const labelsOn = useViewer((s) => s.labelsOn);
+  const colourMode = useViewer((s) => s.colourMode);
   const isolation = sel === null ? "none (full skeleton)" : `${sel}, ${ghostMode === "ghost" ? "ghosts" : "others hidden"}`;
   return (
     <aside className="bench" aria-label="Benchmark" aria-live="polite" data-testid="bench">
@@ -34,6 +36,16 @@ export function BenchPanel() {
           <dd>{bench.frames}</dd>
           <dt>Draw calls</dt>
           <dd>{bench.drawCalls}</dd>
+          <dt>Labels</dt>
+          <dd data-testid="bench-labels">
+            {!labelsOn
+              ? "off"
+              : bench.labels
+                ? `on: ${bench.labels.count} layouts, median ${bench.labels.medianMs.toFixed(1)} ms, max ${bench.labels.maxMs.toFixed(1)} ms`
+                : "on: no layouts"}
+          </dd>
+          <dt>Colour</dt>
+          <dd>{colourMode === "region" ? "by region" : "bone"}</dd>
           <dt>Pixel ratio</dt>
           <dd>{window.devicePixelRatio}</dd>
         </dl>

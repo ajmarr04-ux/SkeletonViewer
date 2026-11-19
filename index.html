@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Skeleton Viewer</title>
     <link rel="stylesheet" href="/src/styles.css" />
+    <!-- The low-detail model is always shown first (except with the ?lod=high debug override): fetch it while the script downloads. -->
+    <link rel="preload" href="%BASE_URL%models/skeleton-low.glb" as="fetch" crossorigin="anonymous" />
   </head>
   <body>
     <div id="root"></div>
