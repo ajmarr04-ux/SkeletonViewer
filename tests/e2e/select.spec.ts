@@ -157,13 +157,19 @@ test.describe("selection", () => {
     expect(dist((await camera(page)).position, before.position)).toBeGreaterThan(0.01);
   });
 
-  test("clicking another bone switches focus in place; Back, Esc and an empty click step back", async ({ page }) => {
+  test("switching focus replaces the entry; a click on a ghost, Back, Esc and an empty click step back", async ({ page }) => {
     await open(page);
     const femur = await bone(page, "femur_left");
     const tibia = await bone(page, "tibia_left");
     await page.mouse.click(femur.client.x, femur.client.y);
     await expect.poll(() => param(page, "sel"), { timeout: 10_000 }).toBe("femur_left");
+    // With the femur isolated the tibia is a ghost: clicking it counts as empty space (plan step 3).
     await page.mouse.click(tibia.client.x, tibia.client.y);
+    await expect.poll(async () => (await state(page)).sel, { timeout: 10_000 }).toBeNull();
+    await page.mouse.click(femur.client.x, femur.client.y);
+    await expect.poll(() => param(page, "sel"), { timeout: 10_000 }).toBe("femur_left");
+    // A switch of focus at tier 0 (later: search, the side toggle) replaces the entry.
+    await page.evaluate(() => window.__viewer!.select("tibia_left"));
     await expect.poll(() => param(page, "sel"), { timeout: 10_000 }).toBe("tibia_left");
     const cam = await camera(page);
     // Switching focus replaced the entry, so one Back returns to the full skeleton.
@@ -252,6 +258,11 @@ test.describe("phone", () => {
     const femur = await bone(page, "femur_right");
     await page.touchscreen.tap(femur.client.x, femur.client.y);
     await expect.poll(async () => (await state(page)).sel, { timeout: 10_000 }).toBe("femur_right");
+    // With the femur isolated nothing else is pickable, the teeth included.
+    const t11 = await bone(page, "tooth_11");
+    expect(await page.evaluate(({ x, y }) => window.__viewer!.pick(x, y, true), t11.client)).toBeNull();
+    await page.evaluate(() => window.history.back());
+    await expect.poll(async () => (await state(page)).sel, { timeout: 10_000 }).toBeNull();
     // At the whole-skeleton view a tooth is a few pixels across; taps up to
     // 8 px off its centre still pick a tooth through the enlarged hit areas,
     // and so does a tap on the stapes, which is under a pixel.

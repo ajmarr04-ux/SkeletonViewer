@@ -16,6 +16,7 @@ import {
 import { ensureBoundsTrees, type BatchedSkeleton } from "../scene/batchSkeleton";
 import { PROXY_RADIUS_PX, pickWithProxies, tinyObjects, type Proxy, type RealHit } from "../scene/pick";
 import { goBack, hasMesh, selectObject } from "../state/selection";
+import { isPickable, isolationView } from "../scene/isolation";
 import { BENCH_DURATION_MS, BENCH_WARMUP_MS, benchAzimuth, summariseFrames } from "../scene/bench";
 import type { Lod } from "../scene/lod";
 import { useViewer, type CameraCommand } from "../state/store";
@@ -510,7 +511,11 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       const r = el.getBoundingClientRect();
       const tanHalf = Math.tan((camera.fov * Math.PI) / 360);
       const proxies: Proxy[] = [];
+      // Ghosts and hidden bones are not pickable (the raycast already skips hidden instances).
+      const st = useViewer.getState();
+      const view = isolationView(st.sel, st.tier, st.ghostMode, hasMesh);
       for (const id of tinyIds) {
+        if (!isPickable(view, id)) continue;
         const box = g.boneBoxes.get(id);
         const radius = g.radiusOf.get(id);
         if (!box || radius === undefined) continue;
@@ -542,8 +547,10 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       taps = r.state;
       if (r.tap) {
         const id = pick(r.tap.x, r.tap.y, lastPointerType !== "mouse");
+        useViewer.getState().markInput(e.timeStamp);
         if (id) selectObject(id);
         else goBack(); // empty space (spec §6)
+        useViewer.getState().markInput(null); // consumed by the highlight if anything changed
       }
       if (r.doubleTap) {
         const id = pick(r.doubleTap.x, r.doubleTap.y, lastPointerType !== "mouse");

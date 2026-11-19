@@ -13,7 +13,7 @@ Out of scope until Milestone 4: tiers 1 and 2 (Show related, Expand region), joi
 | Session | Steps | Status |
 | --- | --- | --- |
 | G | 0 (Milestone 2 handover), 1 (fixed orbit pivot), 2 (selection state and URL), 3 (picking, drag vs click, hit proxies) | **Done.** See "Session G notes" below. Needs the user: a hand check of the new orbit |
-| H | 4 (highlight and outline), 5 (tier-0 isolation: ghost and hide), 6 (hover tooltip) | Not started |
+| H | 4 (highlight and outline), 5 (tier-0 isolation: ghost and hide), 6 (hover tooltip) | **Done.** See "Session H notes" below. Needs the user: the outline choice, and a look on a real device |
 | I | 7 (info panel and breadcrumb), 8 (keyboard, Back and a11y announcements), 9 (performance check), 10 (tests, including all 234 on a 390 px viewport), 11 (hosted copy) | Not started |
 
 Triggers: "begin session G", "begin session H" and "begin session I". Each session starts by reading this file and ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models` and `npm run e2e` passing, then a commit and push to the session branch. No Blender work is planned, so `scripts/setup-blender.sh` is only needed if the models have to be rebuilt.
@@ -21,7 +21,7 @@ Triggers: "begin session G", "begin session H" and "begin session I". Each sessi
 ## Exit criteria (from spec §11, Phase 3)
 
 - [ ] Hover, select, drag-versus-click detection and enlarged hit proxies all work.
-- [ ] Tier-0 isolation works, with ghost and hide modes.
+- [x] Tier-0 isolation works, with ghost and hide modes. (Session H.)
 - [ ] The info panel works with placeholder content.
 - [ ] Every object, including the ossicles and teeth, can be selected on a 390 px wide viewport.
 - [x] Orbit pivot stays put while panning and zooming (backlog 1), and selecting, double-clicking or `F` move it to the bone; Home resets it. (Session G; still needs the user's hand check.)
@@ -57,6 +57,21 @@ Triggers: "begin session G", "begin session H" and "begin session I". Each sessi
   - Does orbiting now feel right after panning and zooming? (Mouse, trackpad and phone.)
   - Two fingers to one: when one finger lifts mid-gesture, camera-controls starts rotating with the remaining finger. Check there is no jump; if there is, the rig can ignore the rest of that touch.
   - Middle-drag now pans (it dollied in Milestone 2).
+
+## Session H notes (steps 4 to 6, done)
+
+- **Accent colour:** `#3d8bfd` through `BatchedMesh.setColorAt`. The instance colour is the accent divided by ivory in linear space (`tintFor`), so the bone comes out as the accent. three.js folds the instance colour into `vColor` together with the baked AO, which would have put it through the AO remap, so the bone material now carries it in its own varying (`vTint`, `TINT_VERTEX` in `src/scene/material.ts`). The colours texture is set up at load (all white), so the first selection doesn't compile a new shader.
+- **Outline: inverted hull, not `OutlineEffect` (decision for the user to confirm).** `OutlineEffect` would render the whole skeleton again for depth, plus mask, edge and blur passes at full resolution, and would replace the renderer's MSAA with the composer's. The hull (`src/scene/outline.ts`) is one extra draw call over that bone's triangles only: a `Mesh` whose geometry shares the solid batch's position, normal and index buffers, with a draw range over the bone's indices and its instance matrix (nothing copied, nothing moved). Back faces are pushed out along the screen-space normal by a constant width in CSS pixels. Selection: 3 px in the accent colour; hover: 1.5 px, light grey. The spec allows "or the equivalent". If the look isn't good enough on a device, `OutlineEffect` can still go in for the selection only.
+- **Isolation:** a second `BatchedMesh` (the ghosts) is built from the same parts at load, with a translucent material (no depth writes, no AO, `sortObjects` back to front). The pure `isolationView` (`src/scene/isolation.ts`) says which bones are solid (tier 0: the selection alone), which are ghosts, and which bone is the focus. `applyIsolationView` sets the per-instance visibility and colours, and `src/scene/Isolation.tsx` re-applies it on every store change, and after an LOD swap. Hide mode doesn't draw the ghost batch. Ghosts and hidden bones can't be picked (raycast and hit proxies); a click on a ghost counts as empty space and steps back. A wisdom tooth isolates nothing. The ghost and outline programs are compiled at load (`compileAsync`).
+- **Toolbar:** "Ghosts" toggle (`aria-pressed`; `ghost=0` in the URL for hide, `replaceState`) and a "Ghost opacity" slider popover (0.05 to 0.5, kept in `localStorage`), both only while something is isolated.
+- **Hover:** outline at once, tooltip with the name ("Femur (left)"; teeth already name their side) after 150 ms, hidden on wheel and never for the selected bone (`src/ui/Tooltip.tsx`, `src/content/names.ts`).
+- **Numbers (container, SwiftShader, so only the draw calls mean anything):** draw calls 2 for the full skeleton, 3 with a bone isolated (solid, ghosts, outline), 4 with a hover outline as well. Click → highlight is measured from the pointer-up to the end of the next draw of the solid batch, shown in the debug overlay (`data-highlight-ms`): 137 ms in SwiftShader. The real numbers come from step 9.
+- **Bounds:** the debug bounds check now covers the ghost batch too (`data-bounds-ghost-checked`), and still passes with a bone isolated.
+- **Tests:** Vitest 184 (new `tests/scene-isolation.test.ts`; shader and tint tests in `tests/batch.test.ts`). Playwright: new `tests/e2e/isolate.spec.ts` (isolate by click with accent, outline, ghost counts, timing, draw calls, bounds and reload; ghost/hide toggle and the slider; a hide-mode link and Esc; a wisdom tooth; an LOD swap keeps the isolation; hover outline and tooltip). Two session G tests changed, because clicking another bone during isolation now steps back instead of switching focus.
+- **Needs the user:**
+  - Is the hull outline good enough, or should the selection use `OutlineEffect`?
+  - The selection's outline is the same blue as the bone. It shows as a rim but doesn't contrast with the bone. A lighter outline (for example `#cfe3ff`) would separate the two more clearly for colour-blind users; say if you'd prefer that.
+  - Ghost look and default opacity (0.15) on a real screen.
 
 ## Step 1: Fixed orbit pivot (backlog 1, approved by the user on 2026-11-19)
 

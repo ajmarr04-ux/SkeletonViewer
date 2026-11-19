@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   Box3,
   BufferAttribute,
+  Color,
   BufferGeometry,
   Matrix4,
   MeshStandardMaterial,
@@ -10,7 +11,16 @@ import {
   Vector3,
 } from "three";
 import { allInstanceBounds, batchSkeleton, ensureBoundsTrees, type BonePart } from "../src/scene/batchSkeleton";
-import { AO_COLOR_FRAGMENT, AO_FLOOR, createBoneMaterial } from "../src/scene/material";
+import {
+  ACCENT_COLOUR,
+  AO_COLOR_FRAGMENT,
+  AO_FLOOR,
+  BONE_COLOUR,
+  TINT_VERTEX,
+  createBoneMaterial,
+  createGhostMaterial,
+  tintFor,
+} from "../src/scene/material";
 
 /** A quantised box like gltfpack writes: uint16 positions, int8 normals, uint8 RGBA. */
 function quantisedBox(size: number): BufferGeometry {
@@ -93,14 +103,56 @@ describe("bone material", () => {
   it("remaps AO to [floor, 1] in place of the colour chunk", () => {
     const m = createBoneMaterial();
     expect(m.vertexColors).toBe(true);
-    const shader = { fragmentShader: "void main() {\n#include <color_fragment>\n}", vertexShader: "", uniforms: {} };
+    const shader = {
+      fragmentShader: "#include <common>\nvoid main() {\n#include <color_fragment>\n}",
+      vertexShader: "#include <common>\nvoid main() {\n#include <color_vertex>\n}",
+      uniforms: {},
+    };
     m.onBeforeCompile(shader as never, undefined as never);
     expect(shader.fragmentShader).toContain(AO_COLOR_FRAGMENT);
     expect(shader.fragmentShader).not.toContain("#include <color_fragment>");
     expect(AO_COLOR_FRAGMENT).toContain(`vec3( ${AO_FLOOR.toFixed(3)} )`);
   });
+  it("keeps the instance tint out of the AO remap", () => {
+    const m = createBoneMaterial();
+    const shader = {
+      fragmentShader: "#include <common>\nvoid main() {\n#include <color_fragment>\n}",
+      vertexShader: "#include <common>\nvoid main() {\n#include <color_vertex>\n}",
+      uniforms: {},
+    };
+    m.onBeforeCompile(shader as never, undefined as never);
+    expect(shader.vertexShader).toContain(TINT_VERTEX);
+    expect(shader.vertexShader).toContain("varying vec4 vTint;");
+    expect(shader.fragmentShader).toContain("varying vec4 vTint;");
+    // The batching colour goes to vTint, never into vColor (which carries the AO).
+    expect(TINT_VERTEX).toMatch(/vTint = getBatchingColor/);
+    expect(TINT_VERTEX).not.toMatch(/vColor \*= getBatchingColor/);
+    expect(AO_COLOR_FRAGMENT).toContain("diffuseColor.rgb *= vTint.rgb;");
+  });
   it("fails loudly if three.js renames the colour chunk", () => {
     const m = createBoneMaterial();
     expect(() => m.onBeforeCompile({ fragmentShader: "", vertexShader: "", uniforms: {} } as never, undefined as never)).toThrow(/color_fragment/);
+    expect(() =>
+      m.onBeforeCompile({ fragmentShader: "#include <common>\n#include <color_fragment>", vertexShader: "#include <common>", uniforms: {} } as never, undefined as never),
+    ).toThrow(/color_vertex/);
+  });
+});
+
+describe("tint and ghost material", () => {
+  it("the accent tint times ivory gives the accent", () => {
+    const t = tintFor(ACCENT_COLOUR);
+    const ivory = new Color(BONE_COLOUR);
+    const got = new Color(ivory.r * t.r, ivory.g * t.g, ivory.b * t.b);
+    const want = new Color(ACCENT_COLOUR);
+    expect(got.r).toBeCloseTo(want.r, 6);
+    expect(got.g).toBeCloseTo(want.g, 6);
+    expect(got.b).toBeCloseTo(want.b, 6);
+  });
+  it("ghosts are translucent, write no depth and skip the AO", () => {
+    const m = createGhostMaterial(0.2);
+    expect(m.transparent).toBe(true);
+    expect(m.depthWrite).toBe(false);
+    expect(m.vertexColors).toBe(false);
+    expect(m.opacity).toBe(0.2);
   });
 });

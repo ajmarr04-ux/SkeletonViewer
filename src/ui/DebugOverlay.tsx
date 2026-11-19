@@ -2,11 +2,12 @@ import type { Lod, LodPlan, ObjectSummary } from "../scene/lod";
 import { formatCount, formatMs } from "../scene/lod";
 import { useViewer } from "../state/store";
 import { formatCam } from "../state/url";
+import type { IsolationStats } from "../scene/Isolation";
 
 export type RenderStats = { drawCalls: number; renderedTriangles: number; fps: number };
 
 /** Result of comparing each batched bone's world bounds with the Blender manifest. */
-export type BoundsReport = { lod: Lod; checked: number; maxDelta: number; errors: string[] };
+export type BoundsReport = { lod: Lod; checked: number; maxDelta: number; errors: string[]; ghostChecked?: number };
 
 type Props = {
   plan: LodPlan;
@@ -19,11 +20,12 @@ type Props = {
   /** undefined: not requested (no ?debug); null: running. */
   bounds?: BoundsReport | null;
   error: string | null;
+  isolation?: IsolationStats | null;
 };
 
 /** Debug readout. data-* attributes are read by the Playwright tests. */
 export function DebugOverlay(p: Props) {
-  const { plan, current, loadTimes, objects, stats, bounds, error } = p;
+  const { plan, current, loadTimes, objects, stats, bounds, error, isolation: iso } = p;
   const done = plan.lods.every((l) => loadTimes[l] !== undefined) && current === plan.lods[plan.lods.length - 1];
   const camera = useViewer((s) => s.camera);
   const bench = useViewer((s) => s.bench);
@@ -54,9 +56,16 @@ export function DebugOverlay(p: Props) {
       data-bench-lod={bench?.lod ?? ""}
       data-bounds-ok={boundsDone ? String(bounds.errors.length === 0) : ""}
       data-bounds-checked={boundsDone ? bounds.checked : ""}
+      data-bounds-ghost-checked={boundsDone ? (bounds.ghostChecked ?? "") : ""}
+      data-solid={iso ? iso.solid : ""}
+      data-ghosts={iso ? iso.ghost : ""}
+      data-focus={iso?.focus ?? ""}
+      data-outline-selected={iso?.outlineSelected ?? ""}
+      data-outline-hover={iso?.outlineHover ?? ""}
+      data-highlight-ms={iso?.highlightMs != null ? iso.highlightMs.toFixed(1) : ""}
       data-bounds-max-delta-mm={boundsDone ? (bounds.maxDelta * 1000).toFixed(4) : ""}
     >
-      <h1>Debug · Milestone 2</h1>
+      <h1>Debug · Milestone 3</h1>
       {error && <p className="error">Load failed: {error}</p>}
       <dl>
         <dt>LOD</dt>
@@ -99,6 +108,15 @@ export function DebugOverlay(p: Props) {
         <dd>{stats.drawCalls}</dd>
         <dt>Camera</dt>
         <dd>{camera ? formatCam(camera) : "default"}</dd>
+        {iso && (
+          <>
+            <dt>Isolation</dt>
+            <dd>
+              {iso.focus ? `${iso.focus}: ${iso.solid} solid, ${iso.ghost} ghosts` : "full skeleton"}
+              {iso.highlightMs !== null && ` · click → highlight ${iso.highlightMs.toFixed(0)} ms`}
+            </dd>
+          </>
+        )}
         <dt>FPS</dt>
         <dd>{stats.fps.toFixed(0)}</dd>
         {bounds !== undefined && (
