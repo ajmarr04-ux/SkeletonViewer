@@ -1,0 +1,760 @@
+{
+ "source": "Z-Anatomy Startup.blend, collection '1: Skeletal system'",
+ "notes": "Keys are stable IDs; values are the source object names joined to form that object.",
+ "map": {
+  "frontal_bone": [
+   "Frontal bone"
+  ],
+  "parietal_bone_left": [
+   "Parietal bone.l"
+  ],
+  "parietal_bone_right": [
+   "Parietal bone.r"
+  ],
+  "occipital_bone": [
+   "Occipital bone"
+  ],
+  "temporal_bone_left": [
+   "Temporal bone.l"
+  ],
+  "temporal_bone_right": [
+   "Temporal bone.r"
+  ],
+  "sphenoid_bone": [
+   "Sphenoid bone"
+  ],
+  "ethmoid_bone": [
+   "Ethmoid bone"
+  ],
+  "maxilla_left": [
+   "Maxilla.l"
+  ],
+  "maxilla_right": [
+   "Maxilla.r"
+  ],
+  "zygomatic_bone_left": [
+   "Zygomatic bone.l"
+  ],
+  "zygomatic_bone_right": [
+   "Zygomatic bone.r"
+  ],
+  "nasal_bone_left": [
+   "Nasal bone.l"
+  ],
+  "nasal_bone_right": [
+   "Nasal bone.r"
+  ],
+  "lacrimal_bone_left": [
+   "Lacrimal bone.l"
+  ],
+  "lacrimal_bone_right": [
+   "Lacrimal bone.r"
+  ],
+  "palatine_bone_left": [
+   "Palatine bone.l"
+  ],
+  "palatine_bone_right": [
+   "Palatine bone.r"
+  ],
+  "inferior_nasal_concha_left": [
+   "Inferior nasal concha bone.l"
+  ],
+  "inferior_nasal_concha_right": [
+   "Inferior nasal concha bone.r"
+  ],
+  "vomer": [
+   "Vomer"
+  ],
+  "mandible": [
+   "Mandible"
+  ],
+  "malleus_left": [
+   "Malleus.l"
+  ],
+  "malleus_right": [
+   "Malleus.r"
+  ],
+  "incus_left": [
+   "Incus.l"
+  ],
+  "incus_right": [
+   "Incus.r"
+  ],
+  "stapes_left": [
+   "Stapes.l"
+  ],
+  "stapes_right": [
+   "Stapes.r"
+  ],
+  "hyoid_bone": [
+   "Hyoid bone"
+  ],
+  "vertebra_c1": [
+   "Atlas (C1)"
+  ],
+  "vertebra_c2": [
+   "Axis (C2)"
+  ],
+  "vertebra_c3": [
+   "Vertebra C3"
+  ],
+  "vertebra_c4": [
+   "Vertebra C4"
+  ],
+  "vertebra_c5": [
+   "Vertebra C5"
+  ],
+  "vertebra_c6": [
+   "Vertebra C6"
+  ],
+  "vertebra_c7": [
+   "Vertebra C7"
+  ],
+  "vertebra_t1": [
+   "Vertebra T1"
+  ],
+  "vertebra_t2": [
+   "Vertebra T2"
+  ],
+  "vertebra_t3": [
+   "Vertebra T3"
+  ],
+  "vertebra_t4": [
+   "Vertebra T4"
+  ],
+  "vertebra_t5": [
+   "Vertebra T5"
+  ],
+  "vertebra_t6": [
+   "Vertebra T6"
+  ],
+  "vertebra_t7": [
+   "Vertebra T7"
+  ],
+  "vertebra_t8": [
+   "Vertebra T8"
+  ],
+  "vertebra_t9": [
+   "Vertebra T9"
+  ],
+  "vertebra_t10": [
+   "Vertebra T10"
+  ],
+  "vertebra_t11": [
+   "Vertebra T11"
+  ],
+  "vertebra_t12": [
+   "Vertebra T12"
+  ],
+  "vertebra_l1": [
+   "Vertebra L1"
+  ],
+  "vertebra_l2": [
+   "Vertebra L2"
+  ],
+  "vertebra_l3": [
+   "Vertebra L3"
+  ],
+  "vertebra_l4": [
+   "Vertebra L4"
+  ],
+  "vertebra_l5": [
+   "Vertebra L5"
+  ],
+  "sacrum": [
+   "Sacrum"
+  ],
+  "coccyx": [
+   "Coccyx"
+  ],
+  "sternum": [
+   "Manubrium of sternum",
+   "Body of sternum",
+   "Xiphoid process"
+  ],
+  "rib_1_left": [
+   "First rib.l"
+  ],
+  "rib_1_right": [
+   "First rib.r"
+  ],
+  "rib_2_left": [
+   "Second rib.l"
+  ],
+  "rib_2_right": [
+   "Second rib.r"
+  ],
+  "rib_3_left": [
+   "Third rib.l"
+  ],
+  "rib_3_right": [
+   "Third rib.r"
+  ],
+  "rib_4_left": [
+   "Fourth rib.l"
+  ],
+  "rib_4_right": [
+   "Fourth rib.r"
+  ],
+  "rib_5_left": [
+   "Fifth rib.l"
+  ],
+  "rib_5_right": [
+   "Fifth rib.r"
+  ],
+  "rib_6_left": [
+   "Sixth rib.l"
+  ],
+  "rib_6_right": [
+   "Sixth rib.r"
+  ],
+  "rib_7_left": [
+   "Seventh rib.l"
+  ],
+  "rib_7_right": [
+   "Seventh rib.r"
+  ],
+  "rib_8_left": [
+   "Eighth rib.l"
+  ],
+  "rib_8_right": [
+   "Eighth rib.r"
+  ],
+  "rib_9_left": [
+   "Ninth rib.l"
+  ],
+  "rib_9_right": [
+   "Ninth rib.r"
+  ],
+  "rib_10_left": [
+   "Tenth rib.l"
+  ],
+  "rib_10_right": [
+   "Tenth rib.r"
+  ],
+  "rib_11_left": [
+   "Eleventh rib.l"
+  ],
+  "rib_11_right": [
+   "Eleventh rib.r"
+  ],
+  "rib_12_left": [
+   "Twelfth rib.l"
+  ],
+  "rib_12_right": [
+   "Twelfth rib.r"
+  ],
+  "clavicle_left": [
+   "Clavicle.l"
+  ],
+  "clavicle_right": [
+   "Clavicle.r"
+  ],
+  "scapula_left": [
+   "Scapula.l"
+  ],
+  "scapula_right": [
+   "Scapula.r"
+  ],
+  "humerus_left": [
+   "Humerus.l"
+  ],
+  "humerus_right": [
+   "Humerus.r"
+  ],
+  "radius_left": [
+   "Radius.l"
+  ],
+  "radius_right": [
+   "Radius.r"
+  ],
+  "ulna_left": [
+   "Ulna.l"
+  ],
+  "ulna_right": [
+   "Ulna.r"
+  ],
+  "scaphoid_left": [
+   "Scaphoid bone.l"
+  ],
+  "scaphoid_right": [
+   "Scaphoid bone.r"
+  ],
+  "lunate_left": [
+   "Lunate bone.l"
+  ],
+  "lunate_right": [
+   "Lunate bone.r"
+  ],
+  "triquetrum_left": [
+   "Triquetrum bone.l"
+  ],
+  "triquetrum_right": [
+   "Triquetrum bone.r"
+  ],
+  "pisiform_left": [
+   "Pisiform bone.l"
+  ],
+  "pisiform_right": [
+   "Pisiform bone.r"
+  ],
+  "trapezium_left": [
+   "Trapezium bone.l"
+  ],
+  "trapezium_right": [
+   "Trapezium bone.r"
+  ],
+  "trapezoid_left": [
+   "Trapezoid bone.l"
+  ],
+  "trapezoid_right": [
+   "Trapezoid bone.r"
+  ],
+  "capitate_left": [
+   "Capitate bone.l"
+  ],
+  "capitate_right": [
+   "Capitate bone.r"
+  ],
+  "hamate_left": [
+   "Hamate bone.l"
+  ],
+  "hamate_right": [
+   "Hamate bone.r"
+  ],
+  "metacarpal_1_left": [
+   "First metacarpal bone.l"
+  ],
+  "metacarpal_1_right": [
+   "First metacarpal bone.r"
+  ],
+  "metacarpal_2_left": [
+   "Second metacarpal bone.l"
+  ],
+  "metacarpal_2_right": [
+   "Second metacarpal bone.r"
+  ],
+  "metacarpal_3_left": [
+   "Third metacarpal bone.l"
+  ],
+  "metacarpal_3_right": [
+   "Third metacarpal bone.r"
+  ],
+  "metacarpal_4_left": [
+   "Fourth metacarpal bone.l"
+  ],
+  "metacarpal_4_right": [
+   "Fourth metacarpal bone.r"
+  ],
+  "metacarpal_5_left": [
+   "Fifth metacarpal bone.l"
+  ],
+  "metacarpal_5_right": [
+   "Fifth metacarpal bone.r"
+  ],
+  "proximal_phalanx_hand_1_left": [
+   "Proximal phalanx of first finger of hand.l"
+  ],
+  "proximal_phalanx_hand_1_right": [
+   "Proximal phalanx of first finger of hand.r"
+  ],
+  "proximal_phalanx_hand_2_left": [
+   "Proximal phalanx of second finger of hand.l"
+  ],
+  "proximal_phalanx_hand_2_right": [
+   "Proximal phalanx of second finger of hand.r"
+  ],
+  "proximal_phalanx_hand_3_left": [
+   "Proximal phalanx of third finger of hand.l"
+  ],
+  "proximal_phalanx_hand_3_right": [
+   "Proximal phalanx of third finger of hand.r"
+  ],
+  "proximal_phalanx_hand_4_left": [
+   "Proximal phalanx of fourth finger of hand.l"
+  ],
+  "proximal_phalanx_hand_4_right": [
+   "Proximal phalanx of fourth finger of hand.r"
+  ],
+  "proximal_phalanx_hand_5_left": [
+   "Proximal phalanx of fifth finger of hand.l"
+  ],
+  "proximal_phalanx_hand_5_right": [
+   "Proximal phalanx of fifth finger of hand.r"
+  ],
+  "middle_phalanx_hand_2_left": [
+   "Middle phalanx of second finger of hand.l"
+  ],
+  "middle_phalanx_hand_2_right": [
+   "Middle phalanx of second finger of hand.r"
+  ],
+  "middle_phalanx_hand_3_left": [
+   "Middle phalanx of third finger of hand.l"
+  ],
+  "middle_phalanx_hand_3_right": [
+   "Middle phalanx of third finger of hand.r"
+  ],
+  "middle_phalanx_hand_4_left": [
+   "Middle phalanx of fourth finger of hand.l"
+  ],
+  "middle_phalanx_hand_4_right": [
+   "Middle phalanx of fourth finger of hand.r"
+  ],
+  "middle_phalanx_hand_5_left": [
+   "Middle phalanx of fifth finger of hand.l"
+  ],
+  "middle_phalanx_hand_5_right": [
+   "Middle phalanx of fifth finger of hand.r"
+  ],
+  "distal_phalanx_hand_1_left": [
+   "Distal phalanx of first finger of hand.l"
+  ],
+  "distal_phalanx_hand_1_right": [
+   "Distal phalanx of first finger of hand.r"
+  ],
+  "distal_phalanx_hand_2_left": [
+   "Distal phalanx of second finger of hand.l"
+  ],
+  "distal_phalanx_hand_2_right": [
+   "Distal phalanx of second finger of hand.r"
+  ],
+  "distal_phalanx_hand_3_left": [
+   "Distal phalanx of third finger of hand.l"
+  ],
+  "distal_phalanx_hand_3_right": [
+   "Distal phalanx of third finger of hand.r"
+  ],
+  "distal_phalanx_hand_4_left": [
+   "Distal phalanx of fourth finger of hand.l"
+  ],
+  "distal_phalanx_hand_4_right": [
+   "Distal phalanx of fourth finger of hand.r"
+  ],
+  "distal_phalanx_hand_5_left": [
+   "Distal phalanx of fifth finger of hand.l"
+  ],
+  "distal_phalanx_hand_5_right": [
+   "Distal phalanx of fifth finger of hand.r"
+  ],
+  "hip_bone_left": [
+   "Hip bone.l"
+  ],
+  "hip_bone_right": [
+   "Hip bone.r"
+  ],
+  "femur_left": [
+   "Femur.l"
+  ],
+  "femur_right": [
+   "Femur.r"
+  ],
+  "patella_left": [
+   "Patella.l"
+  ],
+  "patella_right": [
+   "Patella.r"
+  ],
+  "tibia_left": [
+   "Tibia.l"
+  ],
+  "tibia_right": [
+   "Tibia.r"
+  ],
+  "fibula_left": [
+   "Fibula.l"
+  ],
+  "fibula_right": [
+   "Fibula.r"
+  ],
+  "talus_left": [
+   "Talus.l"
+  ],
+  "talus_right": [
+   "Talus.r"
+  ],
+  "calcaneus_left": [
+   "Calcaneus.l"
+  ],
+  "calcaneus_right": [
+   "Calcaneus.r"
+  ],
+  "navicular_left": [
+   "Navicular bone.l"
+  ],
+  "navicular_right": [
+   "Navicular bone.r"
+  ],
+  "cuboid_left": [
+   "Cuboid bone.l"
+  ],
+  "cuboid_right": [
+   "Cuboid bone.r"
+  ],
+  "medial_cuneiform_left": [
+   "Medial cuneiform bone.l"
+  ],
+  "medial_cuneiform_right": [
+   "Medial cuneiform bone.r"
+  ],
+  "intermediate_cuneiform_left": [
+   "Intermediate cuneiform bone.l"
+  ],
+  "intermediate_cuneiform_right": [
+   "Intermediate cuneiform bone.r"
+  ],
+  "lateral_cuneiform_left": [
+   "Lateral cuneiform bone.l"
+  ],
+  "lateral_cuneiform_right": [
+   "Lateral cuneiform bone.r"
+  ],
+  "metatarsal_1_left": [
+   "First metatarsal bone.l"
+  ],
+  "metatarsal_1_right": [
+   "First metatarsal bone.r"
+  ],
+  "metatarsal_2_left": [
+   "Second metatarsal bone.l"
+  ],
+  "metatarsal_2_right": [
+   "Second metatarsal bone.r"
+  ],
+  "metatarsal_3_left": [
+   "Third metatarsal bone.l"
+  ],
+  "metatarsal_3_right": [
+   "Third metatarsal bone.r"
+  ],
+  "metatarsal_4_left": [
+   "Fourth metatarsal bone.l"
+  ],
+  "metatarsal_4_right": [
+   "Fourth metatarsal bone.r"
+  ],
+  "metatarsal_5_left": [
+   "Fifth metatarsal bone.l"
+  ],
+  "metatarsal_5_right": [
+   "Fifth metatarsal bone.r"
+  ],
+  "proximal_phalanx_foot_1_left": [
+   "Proximal phalanx of first finger of foot.l"
+  ],
+  "proximal_phalanx_foot_1_right": [
+   "Proximal phalanx of first finger of foot.r"
+  ],
+  "proximal_phalanx_foot_2_left": [
+   "Proximal phalanx of second finger of foot.l"
+  ],
+  "proximal_phalanx_foot_2_right": [
+   "Proximal phalanx of second finger of foot.r"
+  ],
+  "proximal_phalanx_foot_3_left": [
+   "Proximal phalanx of third finger of foot.l"
+  ],
+  "proximal_phalanx_foot_3_right": [
+   "Proximal phalanx of third finger of foot.r"
+  ],
+  "proximal_phalanx_foot_4_left": [
+   "Proximal phalanx of fourth finger of foot.l"
+  ],
+  "proximal_phalanx_foot_4_right": [
+   "Proximal phalanx of fourth finger of foot.r"
+  ],
+  "proximal_phalanx_foot_5_left": [
+   "Proximal phalanx of fifth finger of foot.l"
+  ],
+  "proximal_phalanx_foot_5_right": [
+   "Proximal phalanx of fifth finger of foot.r"
+  ],
+  "middle_phalanx_foot_2_left": [
+   "Middle phalanx of second finger of foot.l"
+  ],
+  "middle_phalanx_foot_2_right": [
+   "Middle phalanx of second finger of foot.r"
+  ],
+  "middle_phalanx_foot_3_left": [
+   "Middle phalanx of third finger of foot.l"
+  ],
+  "middle_phalanx_foot_3_right": [
+   "Middle phalanx of third finger of foot.r"
+  ],
+  "middle_phalanx_foot_4_left": [
+   "Middle phalanx of fourth finger of foot.l"
+  ],
+  "middle_phalanx_foot_4_right": [
+   "Middle phalanx of fourth finger of foot.r"
+  ],
+  "middle_phalanx_foot_5_left": [
+   "Middle phalanx of fifth finger of foot.l"
+  ],
+  "middle_phalanx_foot_5_right": [
+   "Middle phalanx of fifth finger of foot.r"
+  ],
+  "distal_phalanx_foot_1_left": [
+   "Distal phalanx of first finger of foot.l"
+  ],
+  "distal_phalanx_foot_1_right": [
+   "Distal phalanx of first finger of foot.r"
+  ],
+  "distal_phalanx_foot_2_left": [
+   "Distal phalanx of second finger of foot.l"
+  ],
+  "distal_phalanx_foot_2_right": [
+   "Distal phalanx of second finger of foot.r"
+  ],
+  "distal_phalanx_foot_3_left": [
+   "Distal phalanx of third finger of foot.l"
+  ],
+  "distal_phalanx_foot_3_right": [
+   "Distal phalanx of third finger of foot.r"
+  ],
+  "distal_phalanx_foot_4_left": [
+   "Distal phalanx of fourth finger of foot.l"
+  ],
+  "distal_phalanx_foot_4_right": [
+   "Distal phalanx of fourth finger of foot.r"
+  ],
+  "distal_phalanx_foot_5_left": [
+   "Distal phalanx of fifth finger of foot.l"
+  ],
+  "distal_phalanx_foot_5_right": [
+   "Distal phalanx of fifth finger of foot.r"
+  ],
+  "tooth_11": [
+   "Upper medial incisor.r"
+  ],
+  "tooth_12": [
+   "Upper lateral incisor.r"
+  ],
+  "tooth_13": [
+   "Upper canine.r"
+  ],
+  "tooth_14": [
+   "Upper first premolar.r"
+  ],
+  "tooth_15": [
+   "Upper second premolar.r"
+  ],
+  "tooth_16": [
+   "Upper first molar tooth.r"
+  ],
+  "tooth_17": [
+   "Upper second molar tooth.r"
+  ],
+  "tooth_21": [
+   "Upper medial incisor.l"
+  ],
+  "tooth_22": [
+   "Upper lateral incisor.l"
+  ],
+  "tooth_23": [
+   "Upper canine.l"
+  ],
+  "tooth_24": [
+   "Upper first premolar.l"
+  ],
+  "tooth_25": [
+   "Upper second premolar.l"
+  ],
+  "tooth_26": [
+   "Upper first molar tooth.l"
+  ],
+  "tooth_27": [
+   "Upper second molar tooth.l"
+  ],
+  "tooth_31": [
+   "Lower medial incisor.l"
+  ],
+  "tooth_32": [
+   "Lower lateral incisor.l"
+  ],
+  "tooth_33": [
+   "Lower canine.l"
+  ],
+  "tooth_34": [
+   "Lower first premolar.l"
+  ],
+  "tooth_35": [
+   "Lower second premolar.l"
+  ],
+  "tooth_36": [
+   "Lower first molar tooth.l"
+  ],
+  "tooth_37": [
+   "Lower second molar tooth.l"
+  ],
+  "tooth_41": [
+   "Lower medial incisor.r"
+  ],
+  "tooth_42": [
+   "Lower lateral incisor.r"
+  ],
+  "tooth_43": [
+   "Lower canine.r"
+  ],
+  "tooth_44": [
+   "Lower first premolar.r"
+  ],
+  "tooth_45": [
+   "Lower second premolar.r"
+  ],
+  "tooth_46": [
+   "Lower first molar tooth.r"
+  ],
+  "tooth_47": [
+   "Lower second molar tooth.r"
+  ]
+ },
+ "missing": {
+  "tooth_18": "Third molar has no mesh in Z-Anatomy (no third molars anywhere in the source file)",
+  "tooth_28": "Third molar has no mesh in Z-Anatomy (no third molars anywhere in the source file)",
+  "tooth_38": "Third molar has no mesh in Z-Anatomy (no third molars anywhere in the source file)",
+  "tooth_48": "Third molar has no mesh in Z-Anatomy (no third molars anywhere in the source file)"
+ },
+ "excluded": {
+  "Anterior cells of ethmoid bone.l": "Ethmoid air-cell volume (hidden from render in source)",
+  "Anterior cells of ethmoid bone.r": "Ethmoid air-cell volume (hidden from render in source)",
+  "Arytenoid cartilage.l": "Cartilage (out of scope per spec \u00a71)",
+  "Arytenoid cartilage.r": "Cartilage (out of scope per spec \u00a71)",
+  "Corniculate cartilage.l": "Cartilage (out of scope per spec \u00a71)",
+  "Corniculate cartilage.r": "Cartilage (out of scope per spec \u00a71)",
+  "Costal cartilage of eighth rib.l": "Cartilage (out of scope per spec \u00a71)",
+  "Costal cartilage of eighth rib.r": "Cartilage (out of scope per spec \u00a71)",
+  "Costal cartilage of fifth rib.l": "Cartilage (out of scope per spec \u00a71)",
+  "Costal cartilage of fifth rib.r": "Cartilage (out of scope per spec \u00a71)",
+  "Costal cartilage of first rib.l": "Cartilage (out of scope per spec \u00a71)",
+  "Costal cartilage of first rib.r": "Cartilage (out of scope per spec \u00a71)",
+  "Costal cartilage of fourth rib.l": "Cartilage (out of scope per spec \u00a71)",
+  "Costal cartilage of fourth rib.r": "Cartilage (out of scope per spec \u00a71)",
+  "Costal cartilage of ninth rib.l": "Cartilage (out of scope per spec \u00a71)",
+  "Costal cartilage of ninth rib.r": "Cartilage (out of scope per spec \u00a71)",
+  "Costal cartilage of second rib.l": "Cartilage (out of scope per spec \u00a71)",
+  "Costal cartilage of second rib.r": "Cartilage (out of scope per spec \u00a71)",
+  "Costal cartilage of seventh rib.l": "Cartilage (out of scope per spec \u00a71)",
+  "Costal cartilage of seventh rib.r": "Cartilage (out of scope per spec \u00a71)",
+  "Costal cartilage of sixth rib.l": "Cartilage (out of scope per spec \u00a71)",
+  "Costal cartilage of sixth rib.r": "Cartilage (out of scope per spec \u00a71)",
+  "Costal cartilage of tenth rib.l": "Cartilage (out of scope per spec \u00a71)",
+  "Costal cartilage of tenth rib.r": "Cartilage (out of scope per spec \u00a71)",
+  "Costal cartilage of third rib.l": "Cartilage (out of scope per spec \u00a71)",
+  "Costal cartilage of third rib.r": "Cartilage (out of scope per spec \u00a71)",
+  "Cricoid cartilage": "Cartilage (out of scope per spec \u00a71)",
+  "Lateral process of nasal septal cartilage.l": "Cartilage (out of scope per spec \u00a71)",
+  "Lateral process of nasal septal cartilage.r": "Cartilage (out of scope per spec \u00a71)",
+  "Major alar cartilage.l": "Cartilage (out of scope per spec \u00a71)",
+  "Major alar cartilage.r": "Cartilage (out of scope per spec \u00a71)",
+  "Middle cells of ethmoid bone.l": "Ethmoid air-cell volume (hidden from render in source)",
+  "Middle cells of ethmoid bone.r": "Ethmoid air-cell volume (hidden from render in source)",
+  "Nasal septal cartilage": "Cartilage (out of scope per spec \u00a71)",
+  "Posterior cells of ethmoid bone.l": "Ethmoid air-cell volume (hidden from render in source)",
+  "Posterior cells of ethmoid bone.r": "Ethmoid air-cell volume (hidden from render in source)",
+  "Sesamoid bones of foot.l": "Hallux sesamoids are not counted in the standard 206",
+  "Sesamoid bones of foot.r": "Hallux sesamoids are not counted in the standard 206",
+  "Sinus of frontal bone": "Air sinus volume, not bone (scope: bones and teeth only)",
+  "Sinus of sphenoid bone": "Air sinus volume, not bone",
+  "Skeletal system.g": "Collection helper / label backdrop, not anatomy",
+  "Thyroid cartilage": "Cartilage (out of scope per spec \u00a71)"
+ }
+}

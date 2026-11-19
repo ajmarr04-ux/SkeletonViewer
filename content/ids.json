@@ -1,0 +1,2869 @@
+[
+ {
+  "id": "frontal_bone",
+  "name": "Frontal bone",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "skull",
+   "cranial"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "parietal_bone_left",
+  "name": "Parietal bone",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "axial",
+   "skull",
+   "cranial"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "parietal_bone_right",
+  "name": "Parietal bone",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "axial",
+   "skull",
+   "cranial"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "occipital_bone",
+  "name": "Occipital bone",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "skull",
+   "cranial"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "temporal_bone_left",
+  "name": "Temporal bone",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "axial",
+   "skull",
+   "cranial"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "temporal_bone_right",
+  "name": "Temporal bone",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "axial",
+   "skull",
+   "cranial"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "sphenoid_bone",
+  "name": "Sphenoid bone",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "skull",
+   "cranial"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "ethmoid_bone",
+  "name": "Ethmoid bone",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "skull",
+   "cranial"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "maxilla_left",
+  "name": "Maxilla",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "axial",
+   "skull",
+   "facial"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "maxilla_right",
+  "name": "Maxilla",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "axial",
+   "skull",
+   "facial"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "zygomatic_bone_left",
+  "name": "Zygomatic bone",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "axial",
+   "skull",
+   "facial"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "zygomatic_bone_right",
+  "name": "Zygomatic bone",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "axial",
+   "skull",
+   "facial"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "nasal_bone_left",
+  "name": "Nasal bone",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "axial",
+   "skull",
+   "facial"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "nasal_bone_right",
+  "name": "Nasal bone",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "axial",
+   "skull",
+   "facial"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "lacrimal_bone_left",
+  "name": "Lacrimal bone",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "axial",
+   "skull",
+   "facial"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "lacrimal_bone_right",
+  "name": "Lacrimal bone",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "axial",
+   "skull",
+   "facial"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "palatine_bone_left",
+  "name": "Palatine bone",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "axial",
+   "skull",
+   "facial"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "palatine_bone_right",
+  "name": "Palatine bone",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "axial",
+   "skull",
+   "facial"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "inferior_nasal_concha_left",
+  "name": "Inferior nasal concha",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "axial",
+   "skull",
+   "facial"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "inferior_nasal_concha_right",
+  "name": "Inferior nasal concha",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "axial",
+   "skull",
+   "facial"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vomer",
+  "name": "Vomer",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "skull",
+   "facial"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "mandible",
+  "name": "Mandible",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "skull",
+   "facial"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "malleus_left",
+  "name": "Malleus",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "axial",
+   "skull",
+   "ossicles"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "malleus_right",
+  "name": "Malleus",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "axial",
+   "skull",
+   "ossicles"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "incus_left",
+  "name": "Incus",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "axial",
+   "skull",
+   "ossicles"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "incus_right",
+  "name": "Incus",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "axial",
+   "skull",
+   "ossicles"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "stapes_left",
+  "name": "Stapes",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "axial",
+   "skull",
+   "ossicles"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "stapes_right",
+  "name": "Stapes",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "axial",
+   "skull",
+   "ossicles"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "hyoid_bone",
+  "name": "Hyoid bone",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "skull",
+   "hyoid"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_c1",
+  "name": "Atlas (C1)",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "cervical"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_c2",
+  "name": "Axis (C2)",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "cervical"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_c3",
+  "name": "C3 vertebra",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "cervical"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_c4",
+  "name": "C4 vertebra",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "cervical"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_c5",
+  "name": "C5 vertebra",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "cervical"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_c6",
+  "name": "C6 vertebra",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "cervical"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_c7",
+  "name": "C7 vertebra",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "cervical"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_t1",
+  "name": "T1 vertebra",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "thoracic"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_t2",
+  "name": "T2 vertebra",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "thoracic"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_t3",
+  "name": "T3 vertebra",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "thoracic"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_t4",
+  "name": "T4 vertebra",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "thoracic"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_t5",
+  "name": "T5 vertebra",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "thoracic"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_t6",
+  "name": "T6 vertebra",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "thoracic"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_t7",
+  "name": "T7 vertebra",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "thoracic"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_t8",
+  "name": "T8 vertebra",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "thoracic"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_t9",
+  "name": "T9 vertebra",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "thoracic"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_t10",
+  "name": "T10 vertebra",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "thoracic"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_t11",
+  "name": "T11 vertebra",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "thoracic"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_t12",
+  "name": "T12 vertebra",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "thoracic"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_l1",
+  "name": "L1 vertebra",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "lumbar"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_l2",
+  "name": "L2 vertebra",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "lumbar"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_l3",
+  "name": "L3 vertebra",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "lumbar"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_l4",
+  "name": "L4 vertebra",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "lumbar"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "vertebra_l5",
+  "name": "L5 vertebra",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "lumbar"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "sacrum",
+  "name": "Sacrum",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "sacrococcygeal"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "coccyx",
+  "name": "Coccyx",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "vertebral_column",
+   "sacrococcygeal"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "sternum",
+  "name": "Sternum",
+  "kind": "bone",
+  "side": "midline",
+  "group": [
+   "axial",
+   "thorax"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_1_left",
+  "name": "Rib 1",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_1_right",
+  "name": "Rib 1",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_2_left",
+  "name": "Rib 2",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_2_right",
+  "name": "Rib 2",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_3_left",
+  "name": "Rib 3",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_3_right",
+  "name": "Rib 3",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_4_left",
+  "name": "Rib 4",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_4_right",
+  "name": "Rib 4",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_5_left",
+  "name": "Rib 5",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_5_right",
+  "name": "Rib 5",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_6_left",
+  "name": "Rib 6",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_6_right",
+  "name": "Rib 6",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_7_left",
+  "name": "Rib 7",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_7_right",
+  "name": "Rib 7",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_8_left",
+  "name": "Rib 8",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_8_right",
+  "name": "Rib 8",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_9_left",
+  "name": "Rib 9",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_9_right",
+  "name": "Rib 9",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_10_left",
+  "name": "Rib 10",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_10_right",
+  "name": "Rib 10",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_11_left",
+  "name": "Rib 11",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_11_right",
+  "name": "Rib 11",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_12_left",
+  "name": "Rib 12",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "rib_12_right",
+  "name": "Rib 12",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "axial",
+   "thorax",
+   "ribs"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "clavicle_left",
+  "name": "Clavicle",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "pectoral_girdle"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "clavicle_right",
+  "name": "Clavicle",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "pectoral_girdle"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "scapula_left",
+  "name": "Scapula",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "pectoral_girdle"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "scapula_right",
+  "name": "Scapula",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "pectoral_girdle"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "humerus_left",
+  "name": "Humerus",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "humerus_right",
+  "name": "Humerus",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "radius_left",
+  "name": "Radius",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "radius_right",
+  "name": "Radius",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "ulna_left",
+  "name": "Ulna",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "ulna_right",
+  "name": "Ulna",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "scaphoid_left",
+  "name": "Scaphoid",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "carpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "scaphoid_right",
+  "name": "Scaphoid",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "carpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "lunate_left",
+  "name": "Lunate",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "carpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "lunate_right",
+  "name": "Lunate",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "carpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "triquetrum_left",
+  "name": "Triquetrum",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "carpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "triquetrum_right",
+  "name": "Triquetrum",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "carpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "pisiform_left",
+  "name": "Pisiform",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "carpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "pisiform_right",
+  "name": "Pisiform",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "carpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "trapezium_left",
+  "name": "Trapezium",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "carpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "trapezium_right",
+  "name": "Trapezium",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "carpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "trapezoid_left",
+  "name": "Trapezoid",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "carpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "trapezoid_right",
+  "name": "Trapezoid",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "carpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "capitate_left",
+  "name": "Capitate",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "carpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "capitate_right",
+  "name": "Capitate",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "carpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "hamate_left",
+  "name": "Hamate",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "carpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "hamate_right",
+  "name": "Hamate",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "carpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "metacarpal_1_left",
+  "name": "Metacarpal 1",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "metacarpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "metacarpal_1_right",
+  "name": "Metacarpal 1",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "metacarpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "metacarpal_2_left",
+  "name": "Metacarpal 2",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "metacarpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "metacarpal_2_right",
+  "name": "Metacarpal 2",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "metacarpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "metacarpal_3_left",
+  "name": "Metacarpal 3",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "metacarpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "metacarpal_3_right",
+  "name": "Metacarpal 3",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "metacarpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "metacarpal_4_left",
+  "name": "Metacarpal 4",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "metacarpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "metacarpal_4_right",
+  "name": "Metacarpal 4",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "metacarpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "metacarpal_5_left",
+  "name": "Metacarpal 5",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "metacarpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "metacarpal_5_right",
+  "name": "Metacarpal 5",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "metacarpals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "proximal_phalanx_hand_1_left",
+  "name": "Proximal phalanx of hand, digit 1",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "proximal_phalanx_hand_1_right",
+  "name": "Proximal phalanx of hand, digit 1",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "proximal_phalanx_hand_2_left",
+  "name": "Proximal phalanx of hand, digit 2",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "proximal_phalanx_hand_2_right",
+  "name": "Proximal phalanx of hand, digit 2",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "proximal_phalanx_hand_3_left",
+  "name": "Proximal phalanx of hand, digit 3",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "proximal_phalanx_hand_3_right",
+  "name": "Proximal phalanx of hand, digit 3",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "proximal_phalanx_hand_4_left",
+  "name": "Proximal phalanx of hand, digit 4",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "proximal_phalanx_hand_4_right",
+  "name": "Proximal phalanx of hand, digit 4",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "proximal_phalanx_hand_5_left",
+  "name": "Proximal phalanx of hand, digit 5",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "proximal_phalanx_hand_5_right",
+  "name": "Proximal phalanx of hand, digit 5",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "middle_phalanx_hand_2_left",
+  "name": "Middle phalanx of hand, digit 2",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "middle_phalanx_hand_2_right",
+  "name": "Middle phalanx of hand, digit 2",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "middle_phalanx_hand_3_left",
+  "name": "Middle phalanx of hand, digit 3",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "middle_phalanx_hand_3_right",
+  "name": "Middle phalanx of hand, digit 3",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "middle_phalanx_hand_4_left",
+  "name": "Middle phalanx of hand, digit 4",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "middle_phalanx_hand_4_right",
+  "name": "Middle phalanx of hand, digit 4",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "middle_phalanx_hand_5_left",
+  "name": "Middle phalanx of hand, digit 5",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "middle_phalanx_hand_5_right",
+  "name": "Middle phalanx of hand, digit 5",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "distal_phalanx_hand_1_left",
+  "name": "Distal phalanx of hand, digit 1",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "distal_phalanx_hand_1_right",
+  "name": "Distal phalanx of hand, digit 1",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "distal_phalanx_hand_2_left",
+  "name": "Distal phalanx of hand, digit 2",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "distal_phalanx_hand_2_right",
+  "name": "Distal phalanx of hand, digit 2",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "distal_phalanx_hand_3_left",
+  "name": "Distal phalanx of hand, digit 3",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "distal_phalanx_hand_3_right",
+  "name": "Distal phalanx of hand, digit 3",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "distal_phalanx_hand_4_left",
+  "name": "Distal phalanx of hand, digit 4",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "distal_phalanx_hand_4_right",
+  "name": "Distal phalanx of hand, digit 4",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "distal_phalanx_hand_5_left",
+  "name": "Distal phalanx of hand, digit 5",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "distal_phalanx_hand_5_right",
+  "name": "Distal phalanx of hand, digit 5",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "upper_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "hip_bone_left",
+  "name": "Hip bone",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "pelvic_girdle"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "hip_bone_right",
+  "name": "Hip bone",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "pelvic_girdle"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "femur_left",
+  "name": "Femur",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "femur_right",
+  "name": "Femur",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "patella_left",
+  "name": "Patella",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "patella_right",
+  "name": "Patella",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tibia_left",
+  "name": "Tibia",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tibia_right",
+  "name": "Tibia",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "fibula_left",
+  "name": "Fibula",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "fibula_right",
+  "name": "Fibula",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "talus_left",
+  "name": "Talus",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "tarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "talus_right",
+  "name": "Talus",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "tarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "calcaneus_left",
+  "name": "Calcaneus",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "tarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "calcaneus_right",
+  "name": "Calcaneus",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "tarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "navicular_left",
+  "name": "Navicular",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "tarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "navicular_right",
+  "name": "Navicular",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "tarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "cuboid_left",
+  "name": "Cuboid",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "tarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "cuboid_right",
+  "name": "Cuboid",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "tarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "medial_cuneiform_left",
+  "name": "Medial cuneiform",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "tarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "medial_cuneiform_right",
+  "name": "Medial cuneiform",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "tarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "intermediate_cuneiform_left",
+  "name": "Intermediate cuneiform",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "tarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "intermediate_cuneiform_right",
+  "name": "Intermediate cuneiform",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "tarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "lateral_cuneiform_left",
+  "name": "Lateral cuneiform",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "tarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "lateral_cuneiform_right",
+  "name": "Lateral cuneiform",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "tarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "metatarsal_1_left",
+  "name": "Metatarsal 1",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "metatarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "metatarsal_1_right",
+  "name": "Metatarsal 1",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "metatarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "metatarsal_2_left",
+  "name": "Metatarsal 2",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "metatarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "metatarsal_2_right",
+  "name": "Metatarsal 2",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "metatarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "metatarsal_3_left",
+  "name": "Metatarsal 3",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "metatarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "metatarsal_3_right",
+  "name": "Metatarsal 3",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "metatarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "metatarsal_4_left",
+  "name": "Metatarsal 4",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "metatarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "metatarsal_4_right",
+  "name": "Metatarsal 4",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "metatarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "metatarsal_5_left",
+  "name": "Metatarsal 5",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "metatarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "metatarsal_5_right",
+  "name": "Metatarsal 5",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "metatarsals"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "proximal_phalanx_foot_1_left",
+  "name": "Proximal phalanx of foot, digit 1",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "proximal_phalanx_foot_1_right",
+  "name": "Proximal phalanx of foot, digit 1",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "proximal_phalanx_foot_2_left",
+  "name": "Proximal phalanx of foot, digit 2",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "proximal_phalanx_foot_2_right",
+  "name": "Proximal phalanx of foot, digit 2",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "proximal_phalanx_foot_3_left",
+  "name": "Proximal phalanx of foot, digit 3",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "proximal_phalanx_foot_3_right",
+  "name": "Proximal phalanx of foot, digit 3",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "proximal_phalanx_foot_4_left",
+  "name": "Proximal phalanx of foot, digit 4",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "proximal_phalanx_foot_4_right",
+  "name": "Proximal phalanx of foot, digit 4",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "proximal_phalanx_foot_5_left",
+  "name": "Proximal phalanx of foot, digit 5",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "proximal_phalanx_foot_5_right",
+  "name": "Proximal phalanx of foot, digit 5",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "middle_phalanx_foot_2_left",
+  "name": "Middle phalanx of foot, digit 2",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "middle_phalanx_foot_2_right",
+  "name": "Middle phalanx of foot, digit 2",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "middle_phalanx_foot_3_left",
+  "name": "Middle phalanx of foot, digit 3",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "middle_phalanx_foot_3_right",
+  "name": "Middle phalanx of foot, digit 3",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "middle_phalanx_foot_4_left",
+  "name": "Middle phalanx of foot, digit 4",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "middle_phalanx_foot_4_right",
+  "name": "Middle phalanx of foot, digit 4",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "middle_phalanx_foot_5_left",
+  "name": "Middle phalanx of foot, digit 5",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "middle_phalanx_foot_5_right",
+  "name": "Middle phalanx of foot, digit 5",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "distal_phalanx_foot_1_left",
+  "name": "Distal phalanx of foot, digit 1",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "distal_phalanx_foot_1_right",
+  "name": "Distal phalanx of foot, digit 1",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "distal_phalanx_foot_2_left",
+  "name": "Distal phalanx of foot, digit 2",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "distal_phalanx_foot_2_right",
+  "name": "Distal phalanx of foot, digit 2",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "distal_phalanx_foot_3_left",
+  "name": "Distal phalanx of foot, digit 3",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "distal_phalanx_foot_3_right",
+  "name": "Distal phalanx of foot, digit 3",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "distal_phalanx_foot_4_left",
+  "name": "Distal phalanx of foot, digit 4",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "distal_phalanx_foot_4_right",
+  "name": "Distal phalanx of foot, digit 4",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "distal_phalanx_foot_5_left",
+  "name": "Distal phalanx of foot, digit 5",
+  "kind": "bone",
+  "side": "left",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "distal_phalanx_foot_5_right",
+  "name": "Distal phalanx of foot, digit 5",
+  "kind": "bone",
+  "side": "right",
+  "group": [
+   "appendicular",
+   "lower_limb",
+   "phalanges"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_11",
+  "name": "Upper right central incisor",
+  "kind": "tooth",
+  "side": "right",
+  "group": [
+   "dentition",
+   "upper",
+   "right",
+   "incisors"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_12",
+  "name": "Upper right lateral incisor",
+  "kind": "tooth",
+  "side": "right",
+  "group": [
+   "dentition",
+   "upper",
+   "right",
+   "incisors"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_13",
+  "name": "Upper right canine",
+  "kind": "tooth",
+  "side": "right",
+  "group": [
+   "dentition",
+   "upper",
+   "right",
+   "canines"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_14",
+  "name": "Upper right first premolar",
+  "kind": "tooth",
+  "side": "right",
+  "group": [
+   "dentition",
+   "upper",
+   "right",
+   "premolars"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_15",
+  "name": "Upper right second premolar",
+  "kind": "tooth",
+  "side": "right",
+  "group": [
+   "dentition",
+   "upper",
+   "right",
+   "premolars"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_16",
+  "name": "Upper right first molar",
+  "kind": "tooth",
+  "side": "right",
+  "group": [
+   "dentition",
+   "upper",
+   "right",
+   "molars"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_17",
+  "name": "Upper right second molar",
+  "kind": "tooth",
+  "side": "right",
+  "group": [
+   "dentition",
+   "upper",
+   "right",
+   "molars"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_18",
+  "name": "Upper right third molar",
+  "kind": "tooth",
+  "side": "right",
+  "group": [
+   "dentition",
+   "upper",
+   "right",
+   "molars"
+  ],
+  "meshAvailable": false
+ },
+ {
+  "id": "tooth_21",
+  "name": "Upper left central incisor",
+  "kind": "tooth",
+  "side": "left",
+  "group": [
+   "dentition",
+   "upper",
+   "left",
+   "incisors"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_22",
+  "name": "Upper left lateral incisor",
+  "kind": "tooth",
+  "side": "left",
+  "group": [
+   "dentition",
+   "upper",
+   "left",
+   "incisors"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_23",
+  "name": "Upper left canine",
+  "kind": "tooth",
+  "side": "left",
+  "group": [
+   "dentition",
+   "upper",
+   "left",
+   "canines"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_24",
+  "name": "Upper left first premolar",
+  "kind": "tooth",
+  "side": "left",
+  "group": [
+   "dentition",
+   "upper",
+   "left",
+   "premolars"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_25",
+  "name": "Upper left second premolar",
+  "kind": "tooth",
+  "side": "left",
+  "group": [
+   "dentition",
+   "upper",
+   "left",
+   "premolars"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_26",
+  "name": "Upper left first molar",
+  "kind": "tooth",
+  "side": "left",
+  "group": [
+   "dentition",
+   "upper",
+   "left",
+   "molars"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_27",
+  "name": "Upper left second molar",
+  "kind": "tooth",
+  "side": "left",
+  "group": [
+   "dentition",
+   "upper",
+   "left",
+   "molars"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_28",
+  "name": "Upper left third molar",
+  "kind": "tooth",
+  "side": "left",
+  "group": [
+   "dentition",
+   "upper",
+   "left",
+   "molars"
+  ],
+  "meshAvailable": false
+ },
+ {
+  "id": "tooth_31",
+  "name": "Lower left central incisor",
+  "kind": "tooth",
+  "side": "left",
+  "group": [
+   "dentition",
+   "lower",
+   "left",
+   "incisors"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_32",
+  "name": "Lower left lateral incisor",
+  "kind": "tooth",
+  "side": "left",
+  "group": [
+   "dentition",
+   "lower",
+   "left",
+   "incisors"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_33",
+  "name": "Lower left canine",
+  "kind": "tooth",
+  "side": "left",
+  "group": [
+   "dentition",
+   "lower",
+   "left",
+   "canines"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_34",
+  "name": "Lower left first premolar",
+  "kind": "tooth",
+  "side": "left",
+  "group": [
+   "dentition",
+   "lower",
+   "left",
+   "premolars"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_35",
+  "name": "Lower left second premolar",
+  "kind": "tooth",
+  "side": "left",
+  "group": [
+   "dentition",
+   "lower",
+   "left",
+   "premolars"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_36",
+  "name": "Lower left first molar",
+  "kind": "tooth",
+  "side": "left",
+  "group": [
+   "dentition",
+   "lower",
+   "left",
+   "molars"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_37",
+  "name": "Lower left second molar",
+  "kind": "tooth",
+  "side": "left",
+  "group": [
+   "dentition",
+   "lower",
+   "left",
+   "molars"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_38",
+  "name": "Lower left third molar",
+  "kind": "tooth",
+  "side": "left",
+  "group": [
+   "dentition",
+   "lower",
+   "left",
+   "molars"
+  ],
+  "meshAvailable": false
+ },
+ {
+  "id": "tooth_41",
+  "name": "Lower right central incisor",
+  "kind": "tooth",
+  "side": "right",
+  "group": [
+   "dentition",
+   "lower",
+   "right",
+   "incisors"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_42",
+  "name": "Lower right lateral incisor",
+  "kind": "tooth",
+  "side": "right",
+  "group": [
+   "dentition",
+   "lower",
+   "right",
+   "incisors"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_43",
+  "name": "Lower right canine",
+  "kind": "tooth",
+  "side": "right",
+  "group": [
+   "dentition",
+   "lower",
+   "right",
+   "canines"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_44",
+  "name": "Lower right first premolar",
+  "kind": "tooth",
+  "side": "right",
+  "group": [
+   "dentition",
+   "lower",
+   "right",
+   "premolars"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_45",
+  "name": "Lower right second premolar",
+  "kind": "tooth",
+  "side": "right",
+  "group": [
+   "dentition",
+   "lower",
+   "right",
+   "premolars"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_46",
+  "name": "Lower right first molar",
+  "kind": "tooth",
+  "side": "right",
+  "group": [
+   "dentition",
+   "lower",
+   "right",
+   "molars"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_47",
+  "name": "Lower right second molar",
+  "kind": "tooth",
+  "side": "right",
+  "group": [
+   "dentition",
+   "lower",
+   "right",
+   "molars"
+  ],
+  "meshAvailable": true
+ },
+ {
+  "id": "tooth_48",
+  "name": "Lower right third molar",
+  "kind": "tooth",
+  "side": "right",
+  "group": [
+   "dentition",
+   "lower",
+   "right",
+   "molars"
+  ],
+  "meshAvailable": false
+ }
+]
