@@ -230,3 +230,176 @@ test.describe("touch", () => {
     }
   });
 });
+
+const viewDir = (c: Cam): Vec3 => {
+  const d = c.position.map((x, i) => x - c.target[i]!) as Vec3;
+  const len = Math.hypot(...d);
+  return d.map((x) => x / len) as Vec3;
+};
+const PRESET_DIRS: Record<string, Vec3> = {
+  anterior: [0, 0, 1],
+  posterior: [0, 0, -1],
+  left: [1, 0, 0],
+  right: [-1, 0, 0],
+  superior: [0, 1, 0],
+  inferior: [0, -1, 0],
+};
+
+test.describe("toolbar", () => {
+  test("the Views menu moves to each preset, and Home returns to the default view", async ({ page }) => {
+    const errors = await open(page);
+    const home = await camera(page);
+    const views = page.getByRole("button", { name: "Views" });
+    for (const [preset, dir] of Object.entries(PRESET_DIRS)) {
+      await views.click();
+      await expect(views).toHaveAttribute("aria-expanded", "true");
+      await page.locator(`[role=menuitem][data-preset=${preset}]`).click();
+      await expect(page.getByRole("menu")).toHaveCount(0);
+      await expect
+        .poll(async () => viewDir(await camera(page)).reduce((s, x, i) => s + x * dir[i]!, 0), { message: preset, timeout: 10_000 })
+        .toBeGreaterThan(0.999);
+    }
+    await page.getByRole("button", { name: "Home view" }).click();
+    await expect.poll(async () => dist((await camera(page)).position, home.position), { timeout: 10_000 }).toBeLessThan(1e-3);
+    expect(errors).toEqual([]);
+  });
+
+  test("the Views menu works from the keyboard", async ({ page }) => {
+    await open(page);
+    const views = page.getByRole("button", { name: "Views" });
+    await views.focus();
+    await page.keyboard.press("Enter");
+    // Focus lands on the first item; arrows move through the list.
+    await expect(page.getByRole("menuitem", { name: /Anterior/ })).toBeFocused();
+    await page.keyboard.press("ArrowDown");
+    await expect(page.getByRole("menuitem", { name: /Posterior/ })).toBeFocused();
+    await page.keyboard.press("ArrowUp");
+    await page.keyboard.press("ArrowUp");
+    await expect(page.getByRole("menuitem", { name: /Inferior/ })).toBeFocused();
+    // Escape closes the menu and gives focus back to its button, without moving the camera.
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("menu")).toHaveCount(0);
+    await expect(views).toBeFocused();
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+    await expect
+      .poll(async () => viewDir(await camera(page))[2], { timeout: 10_000 })
+      .toBeLessThan(-0.999);
+  });
+
+  test("Settings switches the model detail, stores it, and reports the active LOD", async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    // Start from a stored Low (what Auto picks depends on the browser's GPU).
+    await page.addInitScript(() => {
+      if (!sessionStorage.getItem("seeded")) {
+        sessionStorage.setItem("seeded", "1");
+        localStorage.setItem("skeleton-viewer:lod", "low");
+      }
+    });
+    await page.goto("./?debug");
+    const debug = page.getByTestId("debug");
+    await expect(debug).toHaveAttribute("data-complete", "true", { timeout: 60_000 });
+    await expect(debug).toHaveAttribute("data-plan-source", "setting");
+    await expect(debug).toHaveAttribute("data-lod", "low");
+
+    await page.getByRole("button", { name: "Settings" }).click();
+    const dialog = page.getByRole("dialog", { name: "Settings" });
+    await expect(dialog.getByLabel(/^Low/)).toBeChecked();
+    await expect(dialog.getByTestId("lod-active")).toHaveText("Showing: low detail");
+    await dialog.getByLabel(/^High/).check();
+    await expect(debug).toHaveAttribute("data-lod", "high", { timeout: 60_000 });
+    await expect(debug).toHaveAttribute("data-complete", "true", { timeout: 60_000 });
+    await expect(debug).toHaveAttribute("data-bounds-ok", "true");
+    await expect(dialog.getByTestId("lod-active")).toHaveText("Showing: high detail");
+    expect(await page.evaluate(() => localStorage.getItem("skeleton-viewer:lod"))).toBe("high");
+
+    // A reload keeps the stored High.
+    await page.reload();
+    await expect(debug).toHaveAttribute("data-complete", "true", { timeout: 60_000 });
+    await expect(debug).toHaveAttribute("data-plan-source", "setting");
+    await expect(debug).toHaveAttribute("data-loaded", "low,high");
+    await page.getByRole("button", { name: "Settings" }).click();
+    await expect(dialog.getByLabel(/^High/)).toBeChecked();
+
+    // Back to Low: the low model is shown again, and Auto clears the stored value.
+    await dialog.getByLabel(/^Low/).check();
+    await expect(debug).toHaveAttribute("data-lod", "low", { timeout: 60_000 });
+    await expect(debug).toHaveAttribute("data-complete", "true", { timeout: 60_000 });
+    await dialog.getByLabel(/^Auto/).check();
+    expect(await page.evaluate(() => localStorage.getItem("skeleton-viewer:lod"))).toBeNull();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+
+  test("a Settings choice overrides ?lod= and drops it from the URL", async ({ page }) => {
+    await open(page); // ?lod=low&debug
+    await page.getByRole("button", { name: "Settings" }).click();
+    await page.getByRole("dialog", { name: "Settings" }).getByLabel(/^High/).check();
+    const debug = page.getByTestId("debug");
+    await expect(debug).toHaveAttribute("data-lod", "high", { timeout: 60_000 });
+    const url = new URL(page.url());
+    expect(url.searchParams.has("lod")).toBe(false);
+    expect(url.searchParams.has("debug")).toBe(true);
+  });
+
+  test("without ?debug there is no debug overlay", async ({ page }) => {
+    await page.goto("./?lod=low");
+    await expect(page.getByRole("button", { name: "Home view" })).toBeVisible();
+    await expect(page.locator("canvas")).toBeVisible();
+    await page.waitForTimeout(1500);
+    await expect(page.getByTestId("debug")).toHaveCount(0);
+  });
+});
+
+test("?bench orbits once and reports FPS, frame times and draw calls", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto("./?lod=low&debug&bench");
+  const debug = page.getByTestId("debug");
+  await expect(debug).toHaveAttribute("data-complete", "true", { timeout: 60_000 });
+  await expect(page.getByTestId("bench")).toContainText("Orbiting");
+  await expect(debug).toHaveAttribute("data-bench-done", "true", { timeout: 40_000 });
+  await expect(debug).toHaveAttribute("data-bench-lod", "low");
+  expect(Number(await debug.getAttribute("data-bench-frames"))).toBeGreaterThan(5);
+  expect(Number(await debug.getAttribute("data-bench-median-fps"))).toBeGreaterThan(0);
+  const drawCalls = Number(await debug.getAttribute("data-bench-draw-calls"));
+  expect(drawCalls).toBeGreaterThan(0);
+  expect(drawCalls).toBeLessThan(20);
+  await expect(page.getByTestId("bench")).toContainText("Median FPS");
+  // FPS in this container is software WebGL and means nothing; log it anyway.
+  console.log("bench (SwiftShader):", await debug.getAttribute("data-bench-median-fps"), "median FPS");
+});
+
+test.describe("phone toolbar", () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test("fits on screen, shows icons only, and its buttons work", async ({ page }) => {
+    await open(page);
+    const bar = (await page.getByRole("navigation", { name: "View controls" }).boundingBox())!;
+    expect(bar.x).toBeGreaterThanOrEqual(0);
+    expect(bar.x + bar.width).toBeLessThanOrEqual(390);
+    expect(bar.y + bar.height).toBeLessThanOrEqual(844);
+    await expect(page.locator(".tool-label").first()).toBeHidden();
+    for (const b of await page.locator(".toolbar .tool").all()) {
+      const box = (await b.boundingBox())!;
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+    }
+    const home = await camera(page);
+    await page.getByRole("button", { name: "Views" }).tap();
+    const item = page.locator("[role=menuitem][data-preset=left]");
+    const ib = (await item.boundingBox())!;
+    expect(ib.x).toBeGreaterThanOrEqual(0);
+    expect(ib.x + ib.width).toBeLessThanOrEqual(390);
+    await item.tap();
+    await expect.poll(async () => viewDir(await camera(page))[0], { timeout: 10_000 }).toBeGreaterThan(0.999);
+    await page.getByRole("button", { name: "Home view" }).tap();
+    await expect.poll(async () => dist((await camera(page)).position, home.position), { timeout: 10_000 }).toBeLessThan(1e-3);
+    await page.getByRole("button", { name: "Settings" }).tap();
+    const sb = (await page.getByRole("dialog", { name: "Settings" }).boundingBox())!;
+    expect(sb.x).toBeGreaterThanOrEqual(0);
+    expect(sb.x + sb.width).toBeLessThanOrEqual(390);
+  });
+});

@@ -14,16 +14,16 @@ Out of scope until Milestone 3: hover, selection, isolation, ghosting and the in
 | --- | --- | --- |
 | D | 0 (Milestone 1 handover), 1 (state store), 2 (BatchedMesh scene), 3 (lighting), 4 (LOD choice) | **Done.** See "Session D notes" below |
 | E | 5 (camera rig), 6 (input mapping), 7 (presets, reset, re-centre), 8 (URL sync) | **Done.** See "Session E notes" below |
-| F | 9 (toolbar and settings), 10 (performance check), 11 (tests), 12 (hosted copy) | Not started |
+| F | 9 (toolbar and settings), 10 (performance check), 11 (tests), 12 (hosted copy) | **Code done.** See "Session F notes" below. Waiting on the user: real-device bench numbers (step 10) and the merge to `main` (step 12) |
 
 Triggers: "begin session D", "begin session E" and "begin session F". Each session starts by reading this file and ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models` and `npm run e2e` passing, then a commit and push to the session branch. No Blender work is planned, so `scripts/setup-blender.sh` is only needed if the models have to be rebuilt.
 
 ## Exit criteria (from spec §11, Phase 2)
 
-- [ ] Orbit, pan, zoom, presets and reset work on mouse, trackpad, touch and keyboard. (Session E: all done and tested except the Home button and preset menu, which arrive with the toolbar in session F, and a hand check of the trackpad heuristic on real hardware.)
+- [x] Orbit, pan, zoom, presets and reset work on mouse, trackpad, touch and keyboard. (Home button and Views menu added in session F and tested with mouse, keyboard and touch. Still worth a hand check of the trackpad heuristic on a real Mac.)
 - [x] Camera state is synced to the URL.
 - [ ] The phone frame-rate budget is met (≥ 30 FPS while orbiting, checked with Chrome DevTools mobile emulation and CPU throttling, plus one real device if one is available).
-- [ ] Draw calls < 20 (spec §8, needed to meet the line above).
+- [x] Draw calls < 20 (spec §8, needed to meet the line above). One draw call for the skeleton; the `?bench` e2e test asserts < 20 during the orbit.
 - [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
 
 ---
@@ -54,6 +54,27 @@ Triggers: "begin session D", "begin session E" and "begin session F". Each sessi
 - **URL:** `cam=` is written with `replaceState` on `rest`, and on `sleep` too (an instant cut never reaches `rest`). Nothing is written until the first user move or command, so a fresh load keeps a clean URL. A valid `cam` on load is clamped and used; a malformed one is ignored. `popstate` re-reads it. Store: `cameraRequest` (preset, reset, frame) is the hook for session F's toolbar.
 - **Debug hooks:** with `?debug`, `window.__viewer` exposes `camera()`, `bone(id)` (box centre and screen position) and `command()`; the overlay shows `data-cam`.
 - **Tests:** Vitest `tests/camera.test.ts` (presets, tight framing at three aspects, limits, clamps, dolly-to-cursor keeps the point fixed, clip planes) and `tests/input.test.ts` (wheel sequences modelled on each browser and device, zoom factors, key map, double tap). Playwright `tests/e2e/viewer.spec.ts` (12 tests): default view and clean URL, keyboard → URL → reload restores within 1 mm, `H`, all six presets, invalid and out-of-range `cam`, double-click on the femur and on empty space, wheel and drag, Shift-drag pan, reduced motion, phone double-tap and phone framing.
+
+## Session F notes (steps 9 to 11 done; 10 and 12 need the user)
+
+- **Toolbar** (`src/ui/Toolbar.tsx`, `Popover.tsx`, `Settings.tsx`, `icons.tsx`): floating at the bottom centre above the credits line, with Home, a Views menu (the six presets) and a Settings panel. Inline SVG icons; labels are hidden below 600 px, every button is at least 44 × 44 px with an `aria-label`, `title` and the shared focus ring. The Views menu is a `role="menu"` with arrow, Home and End keys; Escape or a click outside closes either panel and gives focus back to its button. The camera's own keys only act when the canvas or the page has focus, so they don't fire inside the toolbar.
+- **Settings:** Model detail Auto / Low / High (Auto removes the stored key, the others write `skeleton-viewer:lod`), plus "Showing: low/high detail" (`aria-live`). A change applies at once: the viewer re-plans and loads only the new final LOD (`lodsToLoad`: Auto → High with low on screen loads just high, High → Low reloads low). A Settings choice overrides `?lod=`, which is dropped from the URL so a reload agrees with the setting.
+- **Framing above the toolbar (new):** the toolbar and credits covered the feet. The projection centre is now moved up by half of a 100 px bottom inset (`camera.setViewOffset`, capped at a quarter of the height), and every fit (presets, Home, `F`, the zoom-out limit) fits the box into the shorter area (`fitDistance(..., heightFraction)`). Camera poses and `cam=` are unchanged in meaning; raycasting and projection use the offset matrix, so double-click re-centre still lands on the femur within 1 mm.
+- **Bug fixed (from session D):** react-three-fiber hadn't detached the old `<primitive>` when the effect cleanup disposed it (logged: `parent` still set every time), so a frame drawn in between could read the freed matrices texture (`Cannot read properties of null (reading 'image')`). Switching LODs from Settings hit it reliably. `disposeBatchedSkeleton` now calls `removeFromParent()` first.
+- **Debug overlay** only renders with `?debug` (or `?debug=1`). Without it, a load failure shows a short alert at the top instead. The overlay gained `data-bench-*` attributes and a `bench` link.
+- **`?bench`** (`src/scene/bench.ts`, rig in `CameraRig.tsx`, panel `src/ui/BenchPanel.tsx`): once the final LOD is on screen, the camera orbits 360° about the vertical axis over 10 s with no easing, timing every frame (the first 250 ms are dropped as warm-up). The panel then shows the LOD, median and 5th-percentile FPS, median / p95 / max frame time, frame count, the highest draw-call count seen and the device pixel ratio. In the container (SwiftShader) it reports about 7 FPS on low, which means nothing, as expected.
+- **Tests:** Vitest `tests/bench.test.ts` (percentile, summary, orbit angle), `lodsToLoad` and `withoutLodParam` tables in `tests/lod.test.ts`, inset framing in `tests/camera.test.ts` (128 tests in all). Playwright adds 7 tests to `viewer.spec.ts` (27 e2e in all): Views menu to each preset and Home, the menu by keyboard, Settings High → reload → Low → Auto with bounds still matching, Settings overriding `?lod=`, no overlay without `?debug`, `?bench` completing with < 20 draw calls, and the phone toolbar (fits 390 px, icons only, 44 px targets, Views/Home/Settings by tap).
+
+### Performance (step 10, needs the user)
+
+Open `https://ajmarr04-ux.github.io/SkeletonViewer/m2/?bench` once it is live (or `npm run dev` then `/?bench`), leave it for about 15 s, and report the panel's numbers.
+
+| Device / setting | LOD | Median FPS | 5th pct FPS | Draw calls | Target | Met? |
+| --- | --- | --- | --- | --- | --- | --- |
+| Desktop browser | high | | | | 60 | |
+| DevTools: mid-range phone, 4× CPU throttle (`?bench&lod=low`) | low | | | | ≥ 30 | |
+| Real phone (if available) | low | | | | ≥ 30 | |
+| Container Chromium (SwiftShader, not meaningful) | low | ~7 | | 1 | n/a | n/a |
 
 ## Step 1: State store (`src/state/`)
 
