@@ -37,6 +37,16 @@ A static browser app: a 3D atlas of the adult human skeleton (bones and teeth on
 | `tests/e2e/smoke.spec.ts` | Playwright smoke test (`npm run e2e`): both LODs load, 234 meshes + 4 known-missing. |
 | `scripts/build-pages.sh`, `deploy/pages.json` | Pages build: live site plus `/m<N>/` milestone snapshots. Deployed by `.github/workflows/deploy.yml` on push to `main`. |
 
+## Milestone handover (do this at the start of every new milestone)
+The site deploys from `main` through `.github/workflows/deploy.yml` only. Don't add a second Pages workflow (for example the Jekyll one that GitHub's Pages settings screen offers): both deploy on push to `main`, and whichever finishes last overwrites the site.
+
+When milestone N is merged and milestone N+1 begins:
+1. **Freeze milestone N's snapshot** in `deploy/pages.json`. Add `"m<N>": "<full commit SHA>"` under `frozen` (use the merge commit of the milestone's last PR, from `git log origin/main`, never a placeholder) and set `current` to N+1. Without this, the next deploy rebuilds `/m<N>/` from newer code. `scripts/build-pages.sh` fails if a frozen entry isn't a real commit.
+2. **Confirm that milestone N's hosted copy is live** at `https://ajmarr04-ux.github.io/SkeletonViewer/m<N>/`. The container can't reach `github.io`, so ask the user (or check the latest Deploy run with the GitHub tools). Then tick "Hosted copy is live" in that milestone's plan and update its row in `README.md`.
+3. Write the new milestone's plan as `docs/PLAN-milestone-<N+1>.md`, following the spec's §11 phase.
+
+Status: Milestone 1 is frozen at `b1392fa` (`current` is 2). Step 2 is still open for Milestone 1: the user needs to confirm `/m1/` loads after the first successful deploy.
+
 ## Environment notes
 - The cloud container is temporary, so **run `bash scripts/setup-blender.sh` first in every session**. It takes about a minute and is safe to re-run.
 - Blender runs as a Python module: `.cache/venv/bin/python -I scripts/blender/<script>.py <args>`. `bpy` 5.x needs Python 3.13. There's no `blender` binary, and download.blender.org is blocked by the network proxy.
