@@ -200,7 +200,7 @@ The user checked session H on the live site: "looks good functionality wise". Tw
 
 ## Step 11: Hosted copy
 
-**Hosted copy, Milestone 3:** https://ajmarr04-ux.github.io/SkeletonViewer/m3/ Live: merged in PR #7 (`86f4edd`), deployed by Deploy run #8, confirmed loading by the user on 2026-11-19. The `m3` snapshot is frozen at the start of Milestone 4 (handover step 1), on the merge commit of Milestone 3's last PR (this closeout's, if it is merged; else `86f4edd`).
+**Hosted copy, Milestone 3:** https://ajmarr04-ux.github.io/SkeletonViewer/m3/ Live: merged in PR #7 (`86f4edd`), deployed by Deploy run #8, confirmed loading by the user on 2026-11-19. The closeout was merged in PR #8, and the `m3` snapshot is frozen at its merge commit, `d377478`, in the Milestone 4 handover.
 
 - Merge to `main` through a PR, check the Deploy run, and ask the user to confirm https://ajmarr04-ux.github.io/SkeletonViewer/m3/ loads. Then tick the exit criterion, update `README.md`, and point `CLAUDE.md`'s status at Milestone 4's handover.
 
