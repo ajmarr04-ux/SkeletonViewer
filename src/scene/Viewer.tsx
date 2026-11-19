@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState, type ComponentRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
-import { Box3, Vector3, type BatchedMesh } from "three";
 import ids from "../../content/ids.json";
+import { CameraRig } from "../camera/CameraRig";
+import { FOV_DEG } from "../camera/math";
 import { useViewer, watchReducedMotion } from "../state/store";
 import { hasFlag } from "../state/url";
 import { DebugOverlay, type BoundsReport, type RenderStats } from "../ui/DebugOverlay";
@@ -90,14 +90,14 @@ export function Viewer() {
     <>
       <Canvas
         className="viewport"
-        camera={{ fov: 35, near: 0.01, far: 50, position: [0, 1, 4] }}
+        camera={{ fov: FOV_DEG, near: 0.01, far: 50, position: [0, 0.9, 3] }}
         gl={{ antialias: true, preserveDrawingBuffer: false }}
         dpr={[1, 2]}
       >
         <color attach="background" args={["#1d2126"]} />
         <Lighting />
         {shown && <primitive object={shown.skeleton.mesh} />}
-        <FrameOnFirstModel mesh={shown?.skeleton.mesh ?? null} />
+        <CameraRig skeleton={shown?.skeleton ?? null} debug={debug} />
         <StatsProbe onStats={setStats} />
       </Canvas>
       <DebugOverlay
@@ -118,28 +118,6 @@ export function Viewer() {
 function idle(fn: () => void): void {
   if ("requestIdleCallback" in window) window.requestIdleCallback(fn, { timeout: 2000 });
   else setTimeout(fn, 200);
-}
-
-/** Point the camera at the skeleton once, when the first LOD arrives. (Replaced by the camera rig in session E.) */
-function FrameOnFirstModel({ mesh }: { mesh: BatchedMesh | null }) {
-  const camera = useThree((s) => s.camera);
-  const controls = useRef<ComponentRef<typeof OrbitControls>>(null);
-  const framed = useRef(false);
-  useEffect(() => {
-    if (!mesh || framed.current || !controls.current) return;
-    framed.current = true;
-    mesh.computeBoundingBox();
-    const box = mesh.boundingBox ?? new Box3();
-    const centre = box.getCenter(new Vector3());
-    const height = box.getSize(new Vector3()).y;
-    // The skeleton faces +Z, so view it from the front.
-    const fov = (35 * Math.PI) / 180;
-    const distance = (height * 0.6) / Math.tan(fov / 2);
-    camera.position.set(centre.x, centre.y, centre.z + distance);
-    controls.current.target.copy(centre);
-    controls.current.update();
-  }, [mesh, camera]);
-  return <OrbitControls ref={controls} makeDefault enableDamping />;
 }
 
 /** Read renderer counters each frame and report them twice a second. */

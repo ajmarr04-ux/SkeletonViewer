@@ -1,5 +1,7 @@
 import type { Lod, LodPlan, ObjectSummary } from "../scene/lod";
 import { formatCount, formatMs } from "../scene/lod";
+import { useViewer } from "../state/store";
+import { formatCam } from "../state/url";
 
 export type RenderStats = { drawCalls: number; renderedTriangles: number; fps: number };
 
@@ -23,6 +25,7 @@ type Props = {
 export function DebugOverlay(p: Props) {
   const { plan, current, loadTimes, objects, stats, bounds, error } = p;
   const done = plan.lods.every((l) => loadTimes[l] !== undefined);
+  const camera = useViewer((s) => s.camera);
   const boundsDone = bounds !== undefined && bounds !== null && bounds.lod === current;
   return (
     <aside
@@ -41,6 +44,7 @@ export function DebugOverlay(p: Props) {
       data-unknown={objects?.unknown.join(",") ?? ""}
       data-triangles={p.modelTriangles}
       data-draw-calls={stats.drawCalls}
+      data-cam={camera ? formatCam(camera) : ""}
       data-bounds-ok={boundsDone ? String(bounds.errors.length === 0) : ""}
       data-bounds-checked={boundsDone ? bounds.checked : ""}
       data-bounds-max-delta-mm={boundsDone ? (bounds.maxDelta * 1000).toFixed(4) : ""}
@@ -86,6 +90,8 @@ export function DebugOverlay(p: Props) {
         <dd>{formatCount(p.modelTriangles)}</dd>
         <dt>Draw calls</dt>
         <dd>{stats.drawCalls}</dd>
+        <dt>Camera</dt>
+        <dd>{camera ? formatCam(camera) : "default"}</dd>
         <dt>FPS</dt>
         <dd>{stats.fps.toFixed(0)}</dd>
         {bounds !== undefined && (
