@@ -3,8 +3,8 @@ import { useThree } from "@react-three/fiber";
 import { hasMesh } from "../state/selection";
 import { useViewer } from "../state/store";
 import type { BatchedSkeleton } from "./batchSkeleton";
-import { applyIsolationView, isPickable, isolationView, visibleCount } from "./isolation";
-import { setOutlineTarget, setOutlineViewport, type Outline } from "./outline";
+import { applyIsolationView, isPickable, isolationView, visibleCount, withJoint } from "./isolation";
+import { OUTLINE, setOutlineColour, setOutlineTarget, setOutlineViewport, type Outline } from "./outline";
 
 /** Everything drawn for one LOD: solid batch, ghost batch and the two outlines. */
 export type SkeletonScene = {
@@ -20,6 +20,8 @@ export type IsolationStats = {
   focus: string | null;
   outlineSelected: string | null;
   outlineHover: string | null;
+  /** Bones of the joint highlighted from the panel (plan step 7). */
+  joint: string[];
   /** Pointer up → first frame drawn with the new highlight, ms (spec §8). */
   highlightMs: number | null;
 };
@@ -58,16 +60,21 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
   useEffect(() => {
     if (!scene) return;
     let focus: string | null = null;
+    let joint: readonly string[] = [];
     const apply = () => {
       const st = useViewer.getState();
-      const view = isolationView(st.sel, st.tier, st.ghostMode, hasMesh);
+      const view = withJoint(isolationView(st.sel, st.tier, st.ghostMode, hasMesh), st.joint, hasMesh);
       const focusChanged = view.focus !== focus;
-      applyIsolationView(scene.skeleton, scene.ghost, view, focus);
+      applyIsolationView(scene.skeleton, scene.ghost, view, focus, joint);
       focus = view.focus;
+      joint = view.joint;
       const ghostMaterial = scene.ghost.mesh.material as { opacity: number };
       ghostMaterial.opacity = st.ghostOpacity;
       setOutlineTarget(scene.outlines.selected, scene.skeleton, view.focus);
-      const hover = st.hovered !== null && st.hovered !== view.focus && isPickable(view, st.hovered) ? st.hovered : null;
+      // The hover outline shows the joint's partner while a joint is highlighted, else the pointer's bone.
+      const hover =
+        view.jointPartner ?? (st.hovered !== null && st.hovered !== view.focus && isPickable(view, st.hovered) ? st.hovered : null);
+      setOutlineColour(scene.outlines.hover, view.jointPartner !== null ? OUTLINE.joint.colour : OUTLINE.hover.colour);
       setOutlineTarget(scene.outlines.hover, scene.skeleton, hover);
       // Click → highlight (spec §8): from the pointer-up to the end of the next draw of the solid batch.
       const inputAt = st.inputAt;
@@ -89,6 +96,7 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
         focus,
         outlineSelected: scene.outlines.selected.target,
         outlineHover: scene.outlines.hover.target,
+        joint: [...joint],
         highlightMs: highlightMs.current,
       });
     };
@@ -99,7 +107,8 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
         s.tier !== prev.tier ||
         s.ghostMode !== prev.ghostMode ||
         s.ghostOpacity !== prev.ghostOpacity ||
-        s.hovered !== prev.hovered
+        s.hovered !== prev.hovered ||
+        s.joint !== prev.joint
       ) {
         apply();
       }

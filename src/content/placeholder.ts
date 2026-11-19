@@ -130,3 +130,14 @@ export function announcement(
   if (prev && prev.sel === now.sel && prev.tier > 0) return `${spoken(e)}, ${e.meshAvailable ? "isolated" : "no 3D model"}.`;
   return `${spoken(e)}, selected. ${e.meshAvailable ? "Isolated." : "No 3D model."}`;
 }
+
+/**
+ * Joint highlighting (spec §6, plan step 7): "Hip joint: femur and hip bone
+ * highlighted." The focus is named first; the partner keeps its side only when
+ * it differs from the focus's ("Sternoclavicular joint: clavicle and sternum").
+ */
+export function jointAnnouncement(jointName: string, focus: string, partner: string): string {
+  const f = BY_ID.get(focus);
+  const side = f?.side ?? "midline";
+  return `${jointName}: ${listed(focus, side)} and ${listed(partner, side)} highlighted.`;
+}

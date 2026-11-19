@@ -4,7 +4,7 @@ import { useContent } from "../content/loader";
 import { panelModel, type PanelLink, type PanelModel } from "../content/panel";
 import { NOT_WRITTEN } from "../content/placeholder";
 import { expandRegion, goBack, selectObject, showRelated, switchSide } from "../state/selection";
-import { useViewer } from "../state/store";
+import { useViewer, type JointHighlight } from "../state/store";
 import { focusCanvas } from "./canvasFocus";
 import { PHONE_QUERY, useMedia } from "./useMedia";
 
@@ -275,7 +275,7 @@ function Body({ model }: { model: PanelModel }) {
           <ul className="links">
             {model.articulations.map((a) => (
               <li key={a.joint}>
-                <LinkButton link={a} detail={a.name} />
+                <LinkButton link={a} detail={a.name} joint={{ a: model.id, b: a.id, name: a.name }} />
               </li>
             ))}
           </ul>
@@ -353,9 +353,73 @@ function List({ items, inline = false }: { items: string[]; inline?: boolean }) 
   );
 }
 
-function LinkButton({ link, detail }: { link: PanelLink; detail?: string }) {
+/** Press-and-hold time that highlights a joint on a touch screen (plan step 7). */
+export const JOINT_HOLD_MS = 450;
+
+/**
+ * A link to another object. For an articulation (`joint`), hovering or focusing
+ * it highlights both bones (spec §6, plan step 7); on a touch screen a
+ * press-and-hold does, and a tap still selects the partner.
+ */
+function LinkButton({ link, detail, joint }: { link: PanelLink; detail?: string; joint?: JointHighlight }) {
+  const hold = useRef<{ timer: number; held: boolean } | null>(null);
+  const setJoint = useViewer((s) => s.setJoint);
+  const on = () => joint && setJoint(joint);
+  const off = () => {
+    if (!joint) return;
+    const cur = useViewer.getState().joint;
+    if (cur && cur.a === joint.a && cur.b === joint.b) setJoint(null);
+  };
+  // Clear the highlight if the button goes away while it is on (a new selection clears it anyway).
+  useEffect(() => off, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const endHold = () => {
+    if (!hold.current) return;
+    window.clearTimeout(hold.current.timer);
+    if (hold.current.held) off();
+  };
   return (
-    <button type="button" className="link-button" data-testid={`link-${link.id}`} onClick={() => selectFromPanel(link.id)}>
+    <button
+      type="button"
+      className="link-button"
+      data-testid={`link-${link.id}`}
+      onClick={(e) => {
+        const held = hold.current?.held;
+        hold.current = null;
+        if (held) {
+          e.preventDefault();
+          return;
+        }
+        selectFromPanel(link.id);
+      }}
+      onPointerEnter={joint ? (e) => e.pointerType === "mouse" && on() : undefined}
+      onPointerLeave={joint ? (e) => e.pointerType === "mouse" && off() : undefined}
+      onFocus={joint ? (e) => e.currentTarget.matches(":focus-visible") && on() : undefined}
+      onBlur={joint ? off : undefined}
+      onPointerDown={
+        joint
+          ? (e) => {
+              if (e.pointerType === "mouse") return;
+              const h = { timer: 0, held: false };
+              h.timer = window.setTimeout(() => {
+                h.held = true;
+                on();
+              }, JOINT_HOLD_MS);
+              hold.current = h;
+            }
+          : undefined
+      }
+      onPointerUp={joint ? endHold : undefined}
+      onPointerCancel={
+        joint
+          ? () => {
+              endHold();
+              hold.current = null;
+            }
+          : undefined
+      }
+      onContextMenu={joint ? (e) => e.preventDefault() : undefined}
+      data-joint={joint ? "true" : undefined}
+    >
       <span className="link-name">{link.label}</span>
       {detail && <span className="link-detail">{detail}</span>}
     </button>

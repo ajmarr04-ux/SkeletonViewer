@@ -55,6 +55,8 @@ A static browser app: a 3D atlas of the adult human skeleton (bones and teeth on
 | `src/content/schema.ts`, `validate.ts`, `frontmatter.ts`, `relations.ts` | zod schemas; pure validation rules; front matter and left → right mirroring; tier sets (`tier1`, `regionOf`, `visibleAt`). |
 | `scripts/validate-content.ts`, `scripts/content/mirror.ts`, `build-hierarchy.ts` | `npm run validate-content` (in `check` and `prebuild`), `content:mirror`, `content:hierarchy`. |
 | `tests/e2e/related.spec.ts` | Tiers 1 and 2, history, side toggle at a tier, teeth. |
+| `src/scene/explode.ts`, `src/scene/Explode.tsx`, `src/ui/ExplodeSlider.tsx` | Explode (plan step 8): offsets, saved and restored instance matrices, the toolbar slider. Store `explode` (0 to 1). |
+| `tests/e2e/joints.spec.ts` | Joint highlighting (hover, focus, press-and-hold; store `joint`, `withJoint` in `src/scene/isolation.ts`) and Explode. |
 | `tests/e2e/smoke.spec.ts` | Playwright smoke test (`npm run e2e`): both LODs load, 234 batched bones + 4 known-missing, < 20 draw calls, every bone's bounds match the manifest (`?debug`). |
 | `scripts/build-pages.sh`, `deploy/pages.json` | Pages build: live site plus `/m<N>/` milestone snapshots. Deployed by `.github/workflows/deploy.yml` on push to `main`. |
 
@@ -66,7 +68,7 @@ When milestone N is merged and milestone N+1 begins:
 2. **Confirm that milestone N's hosted copy is live** at `https://ajmarr04-ux.github.io/SkeletonViewer/m<N>/`. The container can't reach `github.io`, so ask the user (or check the latest Deploy run with the GitHub tools). Then tick "Hosted copy is live" in that milestone's plan and update its row in `README.md`.
 3. Write the new milestone's plan as `docs/PLAN-milestone-<N+1>.md`, following the spec's §11 phase.
 
-Status: Milestones 1, 2 and 3 are frozen at `b1392fa`, `eb3e8ff` and `d377478` (`current` is 4); `/m1/`, `/m2/` and `/m3/` are live (confirmed by the user). **Milestone 4 (related isolation and content)** is in progress (`docs/PLAN-milestone-4.md`). Sessions J and K are done: `validate-content`, articulations / regions / hierarchy, tiers 1 and 2 (J); the content compiler, the real info panel and the 112 axial and teeth content files (K). Open choices are in `content/QUESTIONS.md`. Next: "begin session L" (appendicular content, then remove `--allow-missing-content`; joint highlighting, Explode, tests, hosted copy). The plan's "Decisions made in this plan" list fills gaps in the spec; the user's open hand checks from Milestone 3 are carried in its step 0.
+Status: Milestones 1, 2 and 3 are frozen at `b1392fa`, `eb3e8ff` and `d377478` (`current` is 4); `/m1/`, `/m2/` and `/m3/` are live (confirmed by the user). **Milestone 4 (related isolation and content)** is in progress (`docs/PLAN-milestone-4.md`). Sessions J, K and L are done: all 238 content files, articulations / regions / hierarchy, tiers 1 and 2, joint highlighting and Explode. Left: the user's bench at tier 2 (step 9), merging to `main` and confirming `/m4/` (step 11); then the Milestone 5 handover. Open choices are in `content/QUESTIONS.md`. The plan's "Decisions made in this plan" list fills gaps in the spec; the user's open hand checks from Milestone 3 are carried in its step 0.
 
 ## Environment notes
 - The cloud container is temporary, so **run `bash scripts/setup-blender.sh` first in every session**. It takes about a minute and is safe to re-run.

@@ -29,6 +29,7 @@ export function DebugOverlay(p: Props) {
   const done = plan.lods.every((l) => loadTimes[l] !== undefined) && current === plan.lods[plan.lods.length - 1];
   const camera = useViewer((s) => s.camera);
   const bench = useViewer((s) => s.bench);
+  const explode = useViewer((s) => s.explode);
   const boundsDone = bounds !== undefined && bounds !== null && bounds.lod === current;
   return (
     <aside
@@ -62,10 +63,12 @@ export function DebugOverlay(p: Props) {
       data-focus={iso?.focus ?? ""}
       data-outline-selected={iso?.outlineSelected ?? ""}
       data-outline-hover={iso?.outlineHover ?? ""}
+      data-joint={iso ? iso.joint.join(",") : ""}
+      data-explode={explode}
       data-highlight-ms={iso?.highlightMs != null ? iso.highlightMs.toFixed(1) : ""}
       data-bounds-max-delta-mm={boundsDone ? (bounds.maxDelta * 1000).toFixed(4) : ""}
     >
-      <h1>Debug · Milestone 3</h1>
+      <h1>Debug · Milestone 4</h1>
       {error && <p className="error">Load failed: {error}</p>}
       <dl>
         <dt>LOD</dt>

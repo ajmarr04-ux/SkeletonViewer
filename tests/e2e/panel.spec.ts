@@ -26,9 +26,13 @@ test.describe("desktop panel", () => {
     await page.mouse.click(femur.client.x, femur.client.y);
     await expect(panel).toHaveAttribute("data-id", "femur_left", { timeout: 10_000 });
     await expect(panel.getByRole("heading", { level: 2 })).toHaveText("Femur");
-    await expect(panel).toContainText("Latin name not written yet");
+    // Real content since session L: Latin name, common name, badges, no placeholder text.
+    await expect(panel.locator('[lang="la"]')).toHaveText("Femur");
+    await expect(panel).toContainText("Thigh bone");
     await expect(panel).toContainText("Draft — not yet reviewed");
     await expect(panel).toContainText("Lower limb");
+    await expect(panel).toContainText("Long bone");
+    await expect(panel).not.toContainText("Not written yet");
     for (const h of ["Summary", "Functions", "Articulations", "Key landmarks", "Major muscle attachments", "Clinical note"]) {
       await expect(panel.getByRole("heading", { level: 3, name: h })).toBeVisible();
     }

@@ -2,7 +2,9 @@ import { PRESETS, type Preset } from "../camera/math";
 import { isolationView } from "../scene/isolation";
 import { expandRegion, hasMesh, setGhostMode, showRelated } from "../state/selection";
 import { GHOST_OPACITY, useViewer } from "../state/store";
-import { GhostIcon, HomeIcon, OpacityIcon, RegionIcon, RelatedIcon, SettingsIcon, ViewsIcon } from "./icons";
+import { ExplodeIcon, GhostIcon, HomeIcon, OpacityIcon, RegionIcon, RelatedIcon, SettingsIcon, ViewsIcon } from "./icons";
+import { explodeMovers } from "../scene/Explode";
+import { ExplodeSlider } from "./ExplodeSlider";
 import { Popover } from "./Popover";
 import { Settings } from "./Settings";
 
@@ -59,7 +61,7 @@ export function Toolbar() {
 /**
  * Show related / Expand region (spec §7 toolbar: one button, the next tier),
  * the ghost / hide toggle and the ghost-opacity slider (spec §6), shown only
- * while something is isolated.
+ * while something is isolated; and Explode at tiers 1 and 2 (plan step 8).
  */
 function IsolationTools() {
   const sel = useViewer((s) => s.sel);
@@ -85,6 +87,11 @@ function IsolationTools() {
         </button>
       )}
       {isolated && <GhostTools ghosts={ghosts} opacity={opacity} setOpacity={setOpacity} />}
+      {isolated && explodeMovers(sel, tier) !== null && (
+        <Popover label="Explode" icon={<ExplodeIcon />} kind="dialog">
+          {() => <ExplodeSlider />}
+        </Popover>
+      )}
     </>
   );
 }
