@@ -22,7 +22,7 @@ Triggers: "begin session D", "begin session E" and "begin session F". Each sessi
 
 - [x] Orbit, pan, zoom, presets and reset work on mouse, trackpad, touch and keyboard. (Home button and Views menu added in session F and tested with mouse, keyboard and touch. Still worth a hand check of the trackpad heuristic on a real Mac.)
 - [x] Camera state is synced to the URL.
-- [x] The phone frame-rate budget is met (≥ 30 FPS while orbiting, checked with Chrome DevTools mobile emulation and CPU throttling, plus one real device if one is available). Measured with `?bench` on 2026-11-19: iPhone 58.8 median FPS (p95 frame 17 ms), PC 75.2 median FPS (p95 frame 13.6 ms). Both are at their display refresh rate. The user also saw it smooth on high LOD on both. The DevTools throttled run was not done, and is not needed now that a real phone has passed.
+- [x] The phone frame-rate budget is met (≥ 30 FPS while orbiting, checked with Chrome DevTools mobile emulation and CPU throttling, plus one real device if one is available). Measured with `?bench` on 2026-11-19: iPhone 58.8 median FPS (p95 frame 17 ms), PC 75.2 median FPS (p95 frame 13.6 ms). Both runs were on the high LOD, and both are at their display refresh rate, so the phone meets the budget with room to spare even without the low LOD. The DevTools throttled run was not done, and is not needed now that a real phone has passed.
 - [x] Draw calls < 20 (spec §8, needed to meet the line above). One draw call for the skeleton; the `?bench` e2e test asserts < 20 during the orbit.
 - [x] **Hosted copy is live and linked below** (extra requirement for every milestone).
 
@@ -71,9 +71,9 @@ Open `https://ajmarr04-ux.github.io/SkeletonViewer/m2/?bench` once it is live (o
 
 | Device / setting | LOD | Median FPS | 5th pct FPS | Draw calls | Target | Met? |
 | --- | --- | --- | --- | --- | --- | --- |
-| Desktop browser (PC), `?bench` | not reported | 75.2 (median 13.3 ms) | 73.5 (p95 13.6 ms) | not reported | 60 | **Yes** (max frame 19.4 ms; 75 FPS suggests a 75 Hz display, so vsync-capped) |
+| Desktop browser (PC), `?bench` | high | 75.2 (median 13.3 ms) | 73.5 (p95 13.6 ms) | not reported | 60 | **Yes** (max frame 19.4 ms; 75 FPS suggests a 75 Hz display, so vsync-capped) |
 | DevTools: mid-range phone, 4× CPU throttle (`?bench&lod=low`) | low | not run | | | ≥ 30 | n/a |
-| Real phone (iPhone), `?bench` | not reported | 58.8 (median 17 ms) | ~58.8 (p95 17 ms) | not reported | ≥ 30 | **Yes** (max frame 117 ms, a single hitch; 60 Hz vsync-capped) |
+| Real phone (iPhone), `?bench` | high | 58.8 (median 17 ms) | ~58.8 (p95 17 ms) | not reported | ≥ 30 | **Yes** (max frame 117 ms, a single hitch; 60 Hz vsync-capped) |
 | Container Chromium (SwiftShader, not meaningful) | low | ~7 | | 1 | n/a | n/a |
 
 ## Step 1: State store (`src/state/`)
