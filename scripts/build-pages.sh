@@ -12,6 +12,10 @@ BASE="/$REPO/m$CURRENT/" npx vite build --outDir "dist/m$CURRENT" --emptyOutDir
 node -e 'const c=require("./deploy/pages.json");for(const[k,v]of Object.entries(c.frozen))console.log(k,v)' |
 while read -r name sha; do
   [ "$name" = "m$CURRENT" ] && continue
+  if ! git rev-parse --verify --quiet "$sha^{commit}" >/dev/null; then
+    echo "deploy/pages.json: frozen.$name is '$sha', which is not a commit in this repo" >&2
+    exit 1
+  fi
   echo "Building frozen snapshot $name from $sha"
   tree="$(mktemp -d)"
   git worktree add --detach "$tree" "$sha"

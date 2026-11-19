@@ -1,5 +1,7 @@
 {
   "repo": "SkeletonViewer",
   "current": 2,
-  "frozen": {"m1": "<sha>"}
+  "frozen": {
+    "m1": "b1392fa5c58c16debe20696c288822ad8a4bb167"
+  }
 }
