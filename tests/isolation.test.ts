@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { FULL_SKELETON, isolationStep, levelOf, type Isolation, type IsolationAction } from "../src/state/isolation";
 
-const s = (sel: string | null, tier: 0 | 1 | 2 = 0): Isolation => ({ sel, tier });
+const s = (sel: string | null, tier: 0 | 1 | 2 = 0): Isolation => ({ sel, tier, grp: null });
+const g = (grp: string): Isolation => ({ sel: null, tier: 0, grp });
 
 describe("isolation reducer (spec §6 state diagram)", () => {
   const table: [string, Isolation, IsolationAction, Isolation, string][] = [
@@ -23,6 +24,13 @@ describe("isolation reducer (spec §6 state diagram)", () => {
     ["back from tier 1", s("femur_left", 1), { type: "back" }, s("femur_left"), "pop"],
     ["back from tier 0", s("femur_left"), { type: "back" }, FULL_SKELETON, "pop"],
     ["back at the full skeleton", FULL_SKELETON, { type: "back" }, FULL_SKELETON, "none"],
+    ["isolate a group", FULL_SKELETON, { type: "group", key: "axial.skull.ossicles" }, g("axial.skull.ossicles"), "push"],
+    ["the same group again", g("axial.skull.ossicles"), { type: "group", key: "axial.skull.ossicles" }, g("axial.skull.ossicles"), "none"],
+    ["another group from a group", g("axial.skull.ossicles"), { type: "group", key: "dentition.type.molars" }, g("dentition.type.molars"), "replace"],
+    ["a group from a selection", s("femur_left", 2), { type: "group", key: "dentition.type.molars" }, g("dentition.type.molars"), "push"],
+    ["a member from a group", g("dentition.type.molars"), { type: "select", id: "tooth_36" }, s("tooth_36"), "push"],
+    ["back from a group", g("dentition.type.molars"), { type: "back" }, FULL_SKELETON, "pop"],
+    ["no tiers for a group", g("dentition.type.molars"), { type: "related" }, g("dentition.type.molars"), "none"],
   ];
   for (const [name, from, action, to, history] of table) {
     it(name, () => {

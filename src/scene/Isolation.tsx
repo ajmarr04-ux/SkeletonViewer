@@ -63,7 +63,7 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
     let joint: readonly string[] = [];
     const apply = () => {
       const st = useViewer.getState();
-      const view = withJoint(isolationView(st.sel, st.tier, st.ghostMode, hasMesh), st.joint, hasMesh);
+      const view = withJoint(isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp), st.joint, hasMesh);
       const focusChanged = view.focus !== focus;
       applyIsolationView(scene.skeleton, scene.ghost, view, focus, joint);
       focus = view.focus;
@@ -105,6 +105,7 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
       if (
         s.sel !== prev.sel ||
         s.tier !== prev.tier ||
+        s.grp !== prev.grp ||
         s.ghostMode !== prev.ghostMode ||
         s.ghostOpacity !== prev.ghostOpacity ||
         s.hovered !== prev.hovered ||

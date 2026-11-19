@@ -48,6 +48,18 @@ export function Tooltip() {
     return () => window.clearTimeout(t);
   }, [hovered, sel]);
 
+  // The Tab cursor (plan step 4): the name at once, beside the bone's centre.
+  const cursor = useViewer((s) => s.keyCursor);
+  if (cursor) {
+    const w = ref.current?.offsetWidth ?? 160;
+    const left = Math.min(Math.max(4, cursor.x + OFFSET.x), window.innerWidth - w - 4);
+    const top = Math.min(Math.max(4, cursor.y - OFFSET.y), window.innerHeight - 32);
+    return (
+      <div ref={ref} className="tooltip" role="tooltip" data-testid="tooltip" data-id={cursor.id} data-cursor="true" style={{ left, top }}>
+        {displayName(cursor.id)}
+      </div>
+    );
+  }
   if (shown === null) return null;
   // Keep it on screen: flip to the left / above near the right and bottom edges.
   const w = ref.current?.offsetWidth ?? 160;

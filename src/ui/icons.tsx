@@ -62,3 +62,9 @@ export const ExplodeIcon = svg(
     <path d="M7 7 4 4M4 4h3M4 4v3M17 7l3-3M20 4h-3M20 4v3M7 17l-3 3M4 20h3M4 20v-3M17 17l3 3M20 20h-3M20 20v-3" />
   </>,
 );
+export const SearchIcon = svg(
+  <>
+    <circle cx="11" cy="11" r="6" />
+    <path d="m20 20-4.5-4.5" />
+  </>,
+);

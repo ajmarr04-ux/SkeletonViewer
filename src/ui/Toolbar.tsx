@@ -2,7 +2,8 @@ import { PRESETS, type Preset } from "../camera/math";
 import { isolationView } from "../scene/isolation";
 import { expandRegion, hasMesh, setGhostMode, showRelated } from "../state/selection";
 import { GHOST_OPACITY, useViewer } from "../state/store";
-import { ExplodeIcon, GhostIcon, HomeIcon, OpacityIcon, RegionIcon, RelatedIcon, SettingsIcon, ViewsIcon } from "./icons";
+import { ExplodeIcon, GhostIcon, HomeIcon, OpacityIcon, RegionIcon, RelatedIcon, SearchIcon, SettingsIcon, ViewsIcon } from "./icons";
+import { closeSidebar, openSearch, SIDEBAR_ID } from "./Sidebar";
 import { explodeMovers } from "../scene/Explode";
 import { ExplodeSlider } from "./ExplodeSlider";
 import { Popover } from "./Popover";
@@ -24,8 +25,23 @@ export const PRESET_LABELS: Record<Preset, string> = {
  */
 export function Toolbar() {
   const requestCamera = useViewer((s) => s.requestCamera);
+  const sidebarOpen = useViewer((s) => s.sidebarOpen);
   return (
     <nav className="toolbar" aria-label="View controls">
+      <button
+        type="button"
+        id="sidebar-toggle"
+        className="tool"
+        aria-label="Search and browse"
+        aria-expanded={sidebarOpen}
+        aria-controls={sidebarOpen ? SIDEBAR_ID : undefined}
+        title="Search and browse (/)"
+        data-testid="sidebar-toggle"
+        onClick={() => (sidebarOpen ? closeSidebar(false) : openSearch())}
+      >
+        <SearchIcon />
+        <span className="tool-label">Search</span>
+      </button>
       <button type="button" className="tool" aria-label="Home view" title="Home view (H)" onClick={() => requestCamera({ kind: "reset" })}>
         <HomeIcon />
         <span className="tool-label">Home</span>
@@ -66,12 +82,14 @@ export function Toolbar() {
 function IsolationTools() {
   const sel = useViewer((s) => s.sel);
   const tier = useViewer((s) => s.tier);
-  const isolated = useViewer((s) => isolationView(s.sel, s.tier, "ghost", hasMesh).isolated);
+  const grp = useViewer((s) => s.grp);
+  const isolated = useViewer((s) => isolationView(s.sel, s.tier, "ghost", hasMesh, s.grp).isolated);
   const ghostMode = useViewer((s) => s.ghostMode);
   const opacity = useViewer((s) => s.ghostOpacity);
   const setOpacity = useViewer((s) => s.setGhostOpacity);
-  if (sel === null) return null;
   const ghosts = ghostMode === "ghost";
+  // A group (plan step 3): no tiers and no Explode; Ghosts still apply.
+  if (sel === null) return grp !== null && isolated ? <GhostTools ghosts={ghosts} opacity={opacity} setOpacity={setOpacity} /> : null;
   return (
     <>
       {tier === 0 && (

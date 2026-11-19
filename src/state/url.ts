@@ -64,30 +64,39 @@ export type UrlState = {
   sel: string | null;
   /** Isolation tier, 0 to 2. Always 0 when nothing is selected. */
   tier: 0 | 1 | 2;
+  /** Isolated group (Milestone 5, a hierarchy node key), or null. Never set together with `sel`. */
+  grp: string | null;
   ghost: GhostMode;
 };
 
-const MANAGED = ["sel", "tier", "ghost", "cam"] as const;
+const MANAGED = ["sel", "tier", "grp", "ghost", "cam"] as const;
 
 /**
  * Read the app's parameters. `isId` says which IDs exist: an unknown `sel` is
- * dropped (and with it the tier).
+ * dropped (and with it the tier). `isGroup` does the same for `grp`, which is
+ * ignored when `sel` is set (the two are exclusive).
  */
-export function parseUrlState(search: string, isId: (id: string) => boolean = () => true): UrlState {
+export function parseUrlState(
+  search: string,
+  isId: (id: string) => boolean = () => true,
+  isGroup: (key: string) => boolean = () => true,
+): UrlState {
   const q = new URLSearchParams(search);
   const rawSel = q.get("sel");
   const sel = rawSel && isId(rawSel) ? rawSel : null;
   const t = Number(q.get("tier"));
   const tier = sel !== null && (t === 1 || t === 2) ? t : 0;
+  const rawGrp = q.get("grp");
+  const grp = sel === null && rawGrp && isGroup(rawGrp) ? rawGrp : null;
   const ghost: GhostMode = q.get("ghost") === "0" ? "hide" : "ghost";
-  return { cam: parseCam(q.get("cam")), sel, tier, ghost };
+  return { cam: parseCam(q.get("cam")), sel, tier, grp, ghost };
 }
 
 /**
  * Write the given parts of the state into `search`. Parts not given keep their
  * value from `search`; every other parameter is kept verbatim (including bare
  * flags such as `?debug`). The app's own parameters go last, in the order
- * sel, tier, ghost, cam, and only when they differ from the defaults.
+ * sel, tier (or grp), ghost, cam, and only when they differ from the defaults.
  * Returns "" or a string starting with "?".
  */
 export function serialiseUrlState(state: Partial<UrlState>, search: string): string {
@@ -96,7 +105,7 @@ export function serialiseUrlState(state: Partial<UrlState>, search: string): str
   if (merged.sel !== null) {
     kept.push(`sel=${encodeURIComponent(merged.sel)}`);
     if (merged.tier !== 0) kept.push(`tier=${merged.tier}`);
-  }
+  } else if (merged.grp !== null) kept.push(`grp=${encodeURIComponent(merged.grp)}`);
   if (merged.ghost === "hide") kept.push("ghost=0");
   if (merged.cam) kept.push(`cam=${formatCam(merged.cam)}`);
   return kept.length ? `?${kept.join("&")}` : "";

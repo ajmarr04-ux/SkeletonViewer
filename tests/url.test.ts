@@ -60,8 +60,8 @@ describe("selection in the URL", () => {
   const isId = (id: string) => ids.has(id);
 
   it("reads sel, tier and ghost, dropping unknown IDs", () => {
-    expect(parseUrlState("?sel=femur_left&tier=1&ghost=0", isId)).toEqual({ cam: null, sel: "femur_left", tier: 1, ghost: "hide" });
-    expect(parseUrlState("?sel=nope&tier=2", isId)).toEqual({ cam: null, sel: null, tier: 0, ghost: "ghost" });
+    expect(parseUrlState("?sel=femur_left&tier=1&ghost=0", isId)).toEqual({ cam: null, sel: "femur_left", tier: 1, grp: null, ghost: "hide" });
+    expect(parseUrlState("?sel=nope&tier=2", isId)).toEqual({ cam: null, sel: null, tier: 0, grp: null, ghost: "ghost" });
     expect(parseUrlState("?tier=2", isId).tier).toBe(0);
     expect(parseUrlState("?sel=femur_left&tier=7", isId).tier).toBe(0);
     expect(parseUrlState("?sel=tooth_18", isId).sel).toBe("tooth_18");
@@ -77,9 +77,18 @@ describe("selection in the URL", () => {
   });
 
   it("round-trips a full state", () => {
-    const state = { cam: { position: [0, 1, 2], target: [0, 0.85, 0], offset: [0.1, 0] }, sel: "femur_left", tier: 2, ghost: "hide" } as const;
+    const state = { cam: { position: [0, 1, 2], target: [0, 0.85, 0], offset: [0.1, 0] }, sel: "femur_left", tier: 2, grp: null, ghost: "hide" } as const;
     const search = serialiseUrlState(state as never, "");
     expect(search).toBe("?sel=femur_left&tier=2&ghost=0&cam=0,1,2,0,0.85,0,0.1,0");
     expect(parseUrlState(search, isId)).toEqual(state);
+  });
+
+  it("reads and writes grp (exclusive with sel)", () => {
+    const isGroup = (k: string) => k === "dentition.type.molars";
+    expect(parseUrlState("?grp=dentition.type.molars", isId, isGroup).grp).toBe("dentition.type.molars");
+    expect(parseUrlState("?grp=nope", isId, isGroup).grp).toBeNull();
+    expect(parseUrlState("?sel=femur_left&grp=dentition.type.molars", isId, isGroup)).toMatchObject({ sel: "femur_left", grp: null });
+    expect(serialiseUrlState({ sel: null, tier: 0, grp: "dentition.type.molars" }, "?sel=femur_left&tier=1&ghost=0")).toBe("?grp=dentition.type.molars&ghost=0");
+    expect(serialiseUrlState({ sel: "tooth_36", tier: 0, grp: null }, "?grp=dentition.type.molars")).toBe("?sel=tooth_36");
   });
 });

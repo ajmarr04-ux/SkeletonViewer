@@ -29,6 +29,7 @@ import { Tooltip } from "../ui/Tooltip";
 import { InfoPanel } from "../ui/InfoPanel";
 import { Breadcrumb } from "../ui/Breadcrumb";
 import { Announcer } from "../ui/Announcer";
+import { Sidebar } from "../ui/Sidebar";
 import { probeDevice, readStoredSetting } from "./webgl";
 
 export type Shown = { lod: Lod } & SkeletonScene;
@@ -171,6 +172,7 @@ export function Viewer() {
         <StatsProbe onStats={setStats} />
       </Canvas>
       <Breadcrumb />
+      <Sidebar />
       <InfoPanel />
       <Toolbar />
       <Tooltip />

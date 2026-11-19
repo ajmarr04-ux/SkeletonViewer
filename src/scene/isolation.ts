@@ -4,6 +4,7 @@
 // Only visibility and colours change. No geometry moves or reloads (spec §12).
 
 import { Color } from "three";
+import { groupOf } from "../content/groups";
 import { relations } from "../content/relations";
 import type { Tier } from "../state/isolation";
 import type { GhostMode } from "../state/url";
@@ -34,11 +35,29 @@ export const FULL_VIEW: IsolationView = { isolated: false, focus: null, solid: n
  * out: a wisdom tooth isolates nothing at tier 0, and at tiers 1 and 2 shows its
  * related bones with no focus.
  */
-export function isolationView(sel: string | null, tier: Tier, ghostMode: GhostMode, hasMesh: (id: string) => boolean): IsolationView {
-  if (sel === null) return FULL_VIEW;
+export function isolationView(
+  sel: string | null,
+  tier: Tier,
+  ghostMode: GhostMode,
+  hasMesh: (id: string) => boolean,
+  grp: string | null = null,
+): IsolationView {
+  if (sel === null) return grp === null ? FULL_VIEW : groupView(grp, ghostMode, hasMesh);
   const solid = new Set(relations.visibleAt(sel, tier).filter(hasMesh));
   if (solid.size === 0) return FULL_VIEW;
   return { isolated: true, focus: hasMesh(sel) ? sel : null, solid, ghosts: ghostMode === "ghost", joint: [], jointPartner: null };
+}
+
+/**
+ * A group isolation (plan decision 5): its members with a mesh drawn solid,
+ * with no focus (normal bone colour, no outline); the rest ghosted or hidden as
+ * at tier 0.
+ */
+export function groupView(grp: string, ghostMode: GhostMode, hasMesh: (id: string) => boolean): IsolationView {
+  const g = groupOf(grp);
+  const solid = new Set((g?.members ?? []).filter(hasMesh));
+  if (solid.size === 0) return FULL_VIEW;
+  return { isolated: true, focus: null, solid, ghosts: ghostMode === "ghost", joint: [], jointPartner: null };
 }
 
 /**

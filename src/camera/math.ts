@@ -162,7 +162,8 @@ export function frameFrom(box: Box, dir: Vec3, fovDeg: number, aspect: number, h
  * desktop panel, `bottom` for the phone's bottom sheet (on top of the toolbar
  * inset, which `setViewOffset` already handles), `top` for the breadcrumb.
  */
-export type PanelInset = { right: number; bottom: number; top?: number };
+/** Canvas area covered by panels, CSS px: the info panel (right or bottom), the breadcrumb (top) and the sidebar (left). */
+export type PanelInset = { right: number; bottom: number; top?: number; left?: number };
 export const NO_PANEL: PanelInset = { right: 0, bottom: 0 };
 /** Framing always keeps at least this share of the width and height. */
 const MIN_FREE_SHARE = 0.35;
@@ -170,7 +171,7 @@ const MIN_FREE_SHARE = 0.35;
 /** Share of the width and of the framed height left free by the panel. */
 export function panelFractions(inset: PanelInset, widthPx: number, heightPx: number, heightFraction: number): { w: number; h: number } {
   if (!(widthPx > 0) || !(heightPx > 0)) return { w: 1, h: heightFraction };
-  const w = Math.max(MIN_FREE_SHARE, 1 - Math.max(0, inset.right) / widthPx);
+  const w = Math.max(MIN_FREE_SHARE, 1 - (Math.max(0, inset.right) + Math.max(0, inset.left ?? 0)) / widthPx);
   const covered = Math.max(0, inset.bottom) + Math.max(0, inset.top ?? 0);
   const h = Math.max(MIN_FREE_SHARE * heightFraction, heightFraction - covered / heightPx);
   return { w, h };
@@ -186,12 +187,18 @@ export function panelOffset(inset: PanelInset, depth: number, fovDeg: number, wi
   if (!(heightPx > 0) || !(depth > 0)) return [0, 0];
   const { w } = panelFractions(inset, widthPx, heightPx, heightFraction);
   const metresPerPx = (2 * depth * Math.tan((fovDeg * Math.PI) / 360)) / heightPx;
+  // Horizontal: half the right panel's width to the left, half the sidebar's to the right
+  // (scaled down when they leave less than the minimum share free).
+  const right = Math.max(0, inset.right);
+  const left = Math.max(0, inset.left ?? 0);
+  const covered = right + left;
+  const shiftLeft = covered > 0 ? (((right - left) / 2) * (1 - w) * widthPx) / covered : 0;
   // Vertical: the free band's middle moves up by half the sheet and down by half the breadcrumb.
   const bottom = Math.max(0, inset.bottom);
   const top = Math.max(0, inset.top ?? 0);
   const free = heightFraction * heightPx - bottom - top;
   const shiftUp = free >= MIN_FREE_SHARE * heightFraction * heightPx ? (bottom - top) / 2 : 0;
-  return [((1 - w) * widthPx * metresPerPx) / 2, -shiftUp * metresPerPx];
+  return [shiftLeft * metresPerPx, -shiftUp * metresPerPx];
 }
 
 /**

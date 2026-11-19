@@ -23,7 +23,7 @@ a { color: #8ab4f8; }
 .error { color: #f28b82; }
 
 .footer {
-  position: fixed; bottom: 0; left: 0; right: 0; padding: 6px 12px;
+  position: fixed; bottom: 0; left: var(--sidebar-left, 0px); right: 0; padding: 6px 12px;
   font-size: 12px; text-align: center; color: #bdc1c6; background: rgb(0 0 0 / 0.45);
 }
 button.link { background: none; border: 0; padding: 0; font: inherit; color: #8ab4f8; text-decoration: underline; cursor: pointer; }
@@ -42,7 +42,7 @@ dialog.attribution pre { white-space: pre-wrap; font: 13px/1.5 ui-monospace, mon
 
 /* Toolbar (spec §7): floating, bottom centre, above the credits line. */
 .toolbar {
-  position: fixed; left: calc(50% - var(--panel-right, 0px) / 2); bottom: max(40px, calc(var(--panel-bottom, 0px) + 8px));
+  position: fixed; left: calc(50% + (var(--sidebar-left, 0px) - var(--panel-right, 0px)) / 2); bottom: max(40px, calc(var(--panel-bottom, 0px) + 8px));
   transform: translateX(-50%); z-index: 3;
   display: flex; gap: 4px; padding: 4px; border-radius: 12px;
   background: rgb(32 35 40 / 0.88); border: 1px solid #3c4043;
@@ -114,8 +114,8 @@ dialog.attribution pre { white-space: pre-wrap; font: 13px/1.5 ui-monospace, mon
 
 /* Breadcrumb (spec §7): top left; one line on a phone. */
 .breadcrumb {
-  position: fixed; top: 12px; left: 12px; z-index: 2;
-  max-width: calc(100vw - var(--panel-right, 0px) - 36px);
+  position: fixed; top: 12px; left: calc(12px + var(--sidebar-left, 0px)); z-index: 2;
+  max-width: calc(100vw - var(--panel-right, 0px) - var(--sidebar-left, 0px) - 36px);
   padding: 4px 10px; border-radius: 8px; background: rgb(32 35 40 / 0.88); border: 1px solid #3c4043;
   font-size: 14px; line-height: 1.4;
 }
@@ -215,4 +215,63 @@ dialog.attribution pre { white-space: pre-wrap; font: 13px/1.5 ui-monospace, mon
 @media (max-width: 899px) {
   :root[data-panel="side"] .tool-label { display: none; }
   :root[data-panel="side"] .tool { padding: 0; }
+}
+
+/* Sidebar (spec §7, Milestone 5): search and the hierarchy tree. Left on desktop, full screen on phones. */
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0; z-index: 4; width: min(300px, 40vw);
+  display: flex; flex-direction: column; background: #202328; border-right: 1px solid #3c4043;
+  color: #e8eaed; box-shadow: 4px 0 16px rgb(0 0 0 / 0.3);
+}
+.sidebar-phone { width: auto; right: 0; z-index: 6; border-right: 0; }
+.sidebar-head { display: flex; align-items: center; gap: 8px; padding: 10px 8px 4px 16px; }
+.sidebar-title { flex: 1; margin: 0; font-size: 16px; }
+.search { padding: 4px 12px 0; }
+.search-input {
+  box-sizing: border-box; width: 100%; min-height: 44px; padding: 0 12px; border-radius: 8px;
+  border: 1px solid #5f6368; background: #15171a; color: #e8eaed; font: inherit; font-size: 16px;
+}
+.search-input::placeholder { color: #9aa0a6; }
+.search-input:focus-visible { outline: 2px solid #8ab4f8; outline-offset: 1px; }
+.search-status { min-height: 1.4em; margin: 4px 2px; font-size: 13px; }
+.search-results { flex: 1; overflow-y: auto; margin: 0; padding: 0 8px 12px; list-style: none; }
+.search-result {
+  display: flex; flex-direction: column; justify-content: center; min-height: 44px; padding: 4px 8px;
+  border-radius: 6px; cursor: pointer;
+}
+.search-result[aria-selected="true"] { background: #2f3540; outline: 1px solid #8ab4f8; outline-offset: -1px; }
+.result-label { font-weight: 600; }
+.result-match { font-size: 13px; color: #bdc1c6; }
+.sidebar > div:last-child { flex: 1; overflow-y: auto; min-height: 0; }
+.tree { margin: 0; padding: 0 6px 4px; list-style: none; font-size: 14px; }
+.tree-row {
+  display: flex; align-items: center; gap: 4px; min-height: 36px; padding-right: 4px;
+  border-radius: 6px; cursor: pointer;
+}
+.tree-row:hover { background: #2a2d31; }
+.tree-row:focus { outline: none; }
+.tree-row:focus-visible { outline: 2px solid #8ab4f8; outline-offset: -2px; }
+.tree-row[aria-selected="true"] { background: #2f3540; box-shadow: inset 3px 0 0 #8ab4f8; }
+.tree-chevron { width: 14px; flex: none; color: #bdc1c6; }
+.tree-leaf .tree-label { padding-left: 18px; }
+.tree-type .tree-label { padding-left: 18px; }
+.tree-label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.tree-group > .tree-label { font-weight: 600; }
+.tree-count { font-weight: 400; color: #bdc1c6; }
+.tree-isolate {
+  flex: none; min-height: 28px; padding: 0 8px; border-radius: 6px; border: 1px solid #5f6368;
+  background: transparent; color: #e8eaed; font: inherit; font-size: 12px; cursor: pointer; opacity: 0;
+}
+.tree-row:hover .tree-isolate, .tree-row:focus-within .tree-isolate, .tree-row:focus .tree-isolate,
+.tree-row[aria-selected="true"] .tree-isolate, .sidebar-phone .tree-isolate { opacity: 1; }
+.tree-help { margin: 8px 14px 16px; font-size: 12px; }
+:root { --sidebar-left: 0px; }
+/* The sidebar open (with or without the side panel): icons only when the toolbar would not fit beside them. */
+@media (max-width: 1099px) {
+  :root[data-sidebar] .tool-label { display: none; }
+  :root[data-sidebar] .tool { padding: 0; }
+}
+@media (max-width: 1599px) {
+  :root[data-sidebar][data-panel="side"] .tool-label { display: none; }
+  :root[data-sidebar][data-panel="side"] .tool { padding: 0; }
 }

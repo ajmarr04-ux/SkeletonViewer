@@ -44,8 +44,25 @@ export type ViewerState = {
   /** Selected object (stable ID), or null for the full skeleton. May be a tooth with no mesh. */
   sel: string | null;
   tier: Tier;
+  /** Isolated group (Milestone 5, plan decision 5), or null. Never set together with `sel`. */
+  grp: string | null;
   ghostMode: GhostMode;
   ghostOpacity: number;
+  /** A message for the live region (spec §10), with a sequence number so a repeat is heard again. */
+  announce: { text: string; seq: number } | null;
+  say: (text: string) => void;
+  /**
+   * The keyboard cursor in the 3D view (plan step 4): the object Tab has reached
+   * and where its centre is on screen (client px), or null.
+   */
+  keyCursor: { id: string; x: number; y: number } | null;
+  setKeyCursor: (c: ViewerState["keyCursor"]) => void;
+  /** Whether the sidebar (search and tree, Milestone 5) is open. */
+  sidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+  /** Width of the left sidebar on desktop (CSS px), 0 when closed, for framing. */
+  sidebarLeft: number;
+  setSidebarLeft: (px: number) => void;
   /** Object under the mouse pointer (desktop hover), or null. */
   hovered: string | null;
   /**
@@ -70,7 +87,7 @@ export type ViewerState = {
    */
   inputAt: number | null;
   markInput: (t: number | null) => void;
-  setIsolation: (iso: { sel: string | null; tier: Tier }) => void;
+  setIsolation: (iso: { sel: string | null; tier: Tier; grp?: string | null }) => void;
   setGhostMode: (mode: GhostMode) => void;
   setGhostOpacity: (opacity: number) => void;
   setHovered: (id: string | null) => void;
@@ -93,9 +110,19 @@ export const useViewer = create<ViewerState>()((set) => ({
   bench: null,
   sel: null,
   tier: 0,
+  grp: null,
   ghostMode: "ghost",
   ghostOpacity: typeof window === "undefined" ? GHOST_OPACITY.default : storedGhostOpacity(),
   hovered: null,
+  announce: null,
+  say: (text) => set((s) => ({ announce: { text, seq: (s.announce?.seq ?? 0) + 1 } })),
+  keyCursor: null,
+  setKeyCursor: (keyCursor) =>
+    set((s) => (s.keyCursor === keyCursor || (s.keyCursor && keyCursor && s.keyCursor.id === keyCursor.id && s.keyCursor.x === keyCursor.x && s.keyCursor.y === keyCursor.y) ? s : { keyCursor })),
+  sidebarOpen: false,
+  setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
+  sidebarLeft: 0,
+  setSidebarLeft: (sidebarLeft) => set((s) => (s.sidebarLeft === sidebarLeft ? s : { sidebarLeft })),
   joint: null,
   explode: 0,
   setExplode: (v) => set((s) => {
@@ -110,7 +137,8 @@ export const useViewer = create<ViewerState>()((set) => ({
     ),
   inputAt: null,
   markInput: (inputAt) => set({ inputAt }),
-  setIsolation: ({ sel, tier }) => set((s) => (s.sel === sel && s.tier === tier ? s : { sel, tier, joint: null, explode: 0 })),
+  setIsolation: ({ sel, tier, grp = null }) =>
+    set((s) => (s.sel === sel && s.tier === tier && s.grp === grp ? s : { sel, tier, grp, joint: null, explode: 0 })),
   setGhostMode: (ghostMode) => set({ ghostMode }),
   setGhostOpacity: (o) => {
     const ghostOpacity = clampOpacity(o);

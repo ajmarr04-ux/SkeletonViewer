@@ -58,6 +58,9 @@ A static browser app: a 3D atlas of the adult human skeleton (bones and teeth on
 | `src/scene/explode.ts`, `src/scene/Explode.tsx`, `src/ui/ExplodeSlider.tsx` | Explode (plan step 8): offsets, saved and restored instance matrices, the toolbar slider. Store `explode` (0 to 1). |
 | `tests/e2e/joints.spec.ts` | Joint highlighting (hover, focus, press-and-hold; store `joint`, `withJoint` in `src/scene/isolation.ts`) and Explode. |
 | `tests/e2e/smoke.spec.ts` | Playwright smoke test (`npm run e2e`): both LODs load, 234 batched bones + 4 known-missing, < 20 draw calls, every bone's bounds match the manifest (`?debug`). |
+| `content/synonyms.json`, `src/content/search.ts`, `src/content/searchLoader.ts`, `scripts/lib/search-data.ts` | Search (M5 step 1): extra terms per left/midline ID (checked by `validate-content`); minisearch documents, options, side filter; the prebuilt index as `virtual:skeleton-search` (lazy chunk; `npm run search-index` prints its size). |
+| `src/ui/Sidebar.tsx`, `src/content/tree.ts`, `src/content/groups.ts` | Sidebar (search combobox and ARIA tree; `/` opens it; desktop width reported as `sidebarLeft`); pure tree rows and keys; groups (hierarchy nodes plus `dentition.type.*`), names, counts, announcements, breadcrumb links. Group isolation is `grp` in the store, URL and reducer. |
+| `tests/e2e/sidebar.spec.ts` | Search, tree, group isolation and the Tab cursor (`tabCursor` in `src/camera/input.ts`, store `keyCursor`). |
 | `scripts/build-pages.sh`, `deploy/pages.json` | Pages build: live site plus `/m<N>/` milestone snapshots. Deployed by `.github/workflows/deploy.yml` on push to `main`. |
 
 ## Milestone handover (do this at the start of every new milestone)
@@ -68,7 +71,7 @@ When milestone N is merged and milestone N+1 begins:
 2. **Confirm that milestone N's hosted copy is live** at `https://ajmarr04-ux.github.io/SkeletonViewer/m<N>/`. The container can't reach `github.io`, so ask the user (or check the latest Deploy run with the GitHub tools). Then tick "Hosted copy is live" in that milestone's plan and update its row in `README.md`.
 3. Write the new milestone's plan as `docs/PLAN-milestone-<N+1>.md`, following the spec's §11 phase.
 
-Status: Milestones 1 to 4 are frozen at `b1392fa`, `eb3e8ff`, `d377478` and `db07f62` (`current` is 5); `/m1/` to `/m4/` are live (confirmed by the user). **Milestone 5 (polish, the spec's last phase)** is planned in `docs/PLAN-milestone-5.md`: sidebar search and tree, group isolation, Tab through objects (session M); labels, colour-by-region, screenshot, share, attribution, phone toolbar (N); axe-core and keyboard pass, browser performance, tests, hosted copy (O). Next: "begin session M". The plan's "Decisions made in this plan" list fills gaps in the spec; open content choices are in `content/QUESTIONS.md`.
+Status: Milestones 1 to 4 are frozen at `b1392fa`, `eb3e8ff`, `d377478` and `db07f62` (`current` is 5); `/m1/` to `/m4/` are live (confirmed by the user). **Milestone 5 (polish, the spec's last phase)** is planned in `docs/PLAN-milestone-5.md`: sidebar search and tree, group isolation, Tab through objects (session M); labels, colour-by-region, screenshot, share, attribution, phone toolbar (N); axe-core and keyboard pass, browser performance, tests, hosted copy (O). Session M is done (see the plan's "Session M notes"). Next: "begin session N". The plan's "Decisions made in this plan" list fills gaps in the spec; open content choices are in `content/QUESTIONS.md`.
 
 ## Environment notes
 - The cloud container is temporary, so **run `bash scripts/setup-blender.sh` first in every session**. It takes about a minute and is safe to re-run.
