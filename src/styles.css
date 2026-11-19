@@ -159,6 +159,22 @@ dialog.attribution pre { white-space: pre-wrap; font: 13px/1.5 ui-monospace, mon
 .no-model { margin: 0 0 12px; padding: 8px 10px; border-radius: 8px; background: #33373d; }
 .panel-section h3 { margin: 14px 0 2px; font-size: 15px; }
 .panel-section p { margin: 0; }
+.panel-section h4 { margin: 10px 0 2px; font-size: 14px; color: #bdc1c6; }
+.panel-title h2:focus { outline: none; }
+.panel-title h2:focus-visible { outline: 2px solid #8ab4f8; outline-offset: 2px; }
+.summary p { margin: 0 0 6px; }
+.plain-list { margin: 0; padding-left: 20px; }
+.inline-list { display: flex; flex-wrap: wrap; margin: 0 0 4px; padding: 0; list-style: none; }
+.inline-list li:not(:last-child)::after { content: ","; margin-right: 0.35em; }
+.links { margin: 2px 0 0; padding: 0; list-style: none; }
+.link-button {
+  display: flex; flex-direction: column; align-items: flex-start; width: calc(100% + 16px); min-height: 44px; padding: 4px 8px; margin: 0 -8px;
+  border: 0; border-radius: 6px; background: transparent; color: #8ab4f8; font: inherit; text-align: left; cursor: pointer;
+}
+.link-button:hover, .link-button:focus-visible { background: #2a2d31; }
+.link-button:focus-visible { outline: 2px solid #8ab4f8; outline-offset: -2px; }
+.link-name { text-decoration: underline; text-underline-offset: 2px; }
+.link-detail { font-size: 13px; color: #bdc1c6; }
 .toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; }
 .toggle.disabled { color: #9aa0a6; }
 .panel-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }

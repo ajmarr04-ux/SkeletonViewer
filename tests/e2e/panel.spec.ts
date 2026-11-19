@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 // Milestone 3 session I: the info panel (placeholder content), breadcrumb,
+// Milestone 4 session K: the real content (compiled from content/bones),
 // side toggle, Back and focus, aria-live announcements, the phone's bottom
 // sheet, and 200% zoom (spec §7, §10).
 
@@ -64,7 +65,7 @@ test.describe("desktop panel", () => {
     await open(page, "&sel=tooth_13");
     await expect(page.getByTestId("breadcrumb")).toHaveText(/Skeleton\s*›\s*Teeth\s*›\s*Upper right\s*›\s*Canines\s*›\s*Upper right canine/);
     const panel = page.getByTestId("info-panel");
-    await expect(panel).toContainText("Canine");
+    await expect(panel).toContainText("Tooth type: canine");
     // Collapse and expand.
     await page.getByTestId("panel-collapse").click();
     await expect(panel.getByRole("heading", { name: "Summary" })).toHaveCount(0);
@@ -97,8 +98,49 @@ test.describe("desktop panel", () => {
     await expect(page.getByTestId("side-left")).toHaveCount(0);
   });
 
+  test("real content (session K): Latin name, badges, summary, sections; an articulation selects its bone", async ({ page }) => {
+    const errors = await open(page, "&sel=rib_1_left");
+    const panel = page.getByTestId("info-panel");
+    await expect(panel.locator(".latin")).toHaveText("Costa I", { timeout: 10_000 });
+    await expect(panel.locator(".badges")).toContainText("Flat bone");
+    await expect(panel.locator(".badges")).toContainText("Draft — not yet reviewed");
+    await expect(page.getByTestId("section-summary")).toContainText("The first rib is the shortest");
+    await expect(page.getByTestId("section-functions").getByRole("listitem")).toHaveCount(3);
+    await expect(page.getByTestId("section-landmarks")).toContainText("Scalene tubercle");
+    await expect(page.getByTestId("section-landmarks")).toContainText("no positions yet");
+    await expect(page.getByTestId("section-muscles")).toContainText("Scalenus anterior");
+    await expect(page.getByTestId("section-clinical")).toContainText("thoracic outlet");
+    await expect(panel).not.toContainText("Not written yet");
+    // Articulations: T1 and the sternum, each a link with the joint's name.
+    const links = page.getByTestId("section-articulations").getByRole("button");
+    await expect(links).toHaveCount(2);
+    await expect(page.getByTestId("link-sternum")).toContainText("Sternocostal joint, rib 1");
+    await page.getByTestId("link-vertebra_t1").click();
+    await expect.poll(() => param(page, "sel"), { timeout: 10_000 }).toBe("vertebra_t1");
+    await expect(panel.getByRole("heading", { level: 2 })).toHaveText("T1 vertebra");
+    await expect(panel.locator(".latin")).toHaveText("Vertebra thoracica I");
+    // Focus moves to the new title, so keyboard users keep their place.
+    await expect(panel.getByRole("heading", { level: 2 })).toBeFocused();
+    expect((await state(page)).tier).toBe(0);
+    expect(errors).toEqual([]);
+  });
+
+  test("a tooth: tooth-type badge, alveolar bone and neighbouring teeth; the hyoid has no articulation", async ({ page }) => {
+    await open(page, "&sel=tooth_36");
+    const panel = page.getByTestId("info-panel");
+    await expect(panel.locator(".badges")).toContainText("Tooth type: molar", { timeout: 10_000 });
+    await expect(page.getByTestId("link-mandible")).toContainText("gomphosis");
+    await expect(page.getByTestId("section-articulations").getByRole("heading", { name: "Neighbouring teeth" })).toBeVisible();
+    await expect(page.getByTestId("link-tooth_35")).toBeVisible();
+    await expect(page.getByTestId("link-tooth_37")).toBeVisible();
+    await expect(page.getByTestId("section-muscles")).toContainText("None (teeth have no muscle attachments)");
+    await page.evaluate(() => window.__viewer!.select("hyoid_bone"));
+    await expect(page.getByTestId("section-articulations")).toContainText("No bony articulation.");
+  });
+
   test("panel text contrast is at least 4.5:1", async ({ page }) => {
-    await open(page, "&sel=femur_left");
+    await open(page, "&sel=mandible");
+    await expect(page.getByTestId("section-summary")).toContainText("The mandible", { timeout: 10_000 });
     const ratios = await page.evaluate(() => {
       const parse = (c: string) => c.match(/[\d.]+/g)!.slice(0, 3).map(Number);
       const lum = ([r, g, b]: number[]) =>
@@ -130,9 +172,9 @@ test.describe("desktop panel", () => {
 
   test("reflows at 200% zoom (640 CSS px wide)", async ({ page }) => {
     await page.setViewportSize({ width: 640, height: 400 });
-    await open(page, "&sel=femur_left");
+    await open(page, "&sel=mandible"); // real text, the longest muscle list
     const panel = page.getByTestId("info-panel");
-    await expect(panel).toBeVisible();
+    await expect(page.getByTestId("section-summary")).toContainText("The mandible", { timeout: 10_000 });
     // No horizontal scrolling: the page and the panel fit.
     const { scroll, client, panelScroll, panelClient } = await page.evaluate(() => {
       const p = document.querySelector('[data-testid="info-panel"] .panel-body')!;

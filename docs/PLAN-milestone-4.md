@@ -14,7 +14,7 @@ Out of scope until Milestone 5: the sidebar (search and hierarchy tree, includin
 | --- | --- | --- |
 | (planning) | 0 (Milestone 3 handover) | **Done.** See step 0 |
 | J | 1 (content schema and `validate-content`), 2 (relationship data: articulations, regions, hierarchy), 3 (tiers 1 and 2) | **Done.** See "Session J notes" below. Needs the user: `content/QUESTIONS.md` (articulation and region choices), and tiers 1 and 2 on a device |
-| K | 4 (content compile and real info panel), 5 (content drafting, part 1: axial skeleton and teeth) | Not started |
+| K | 4 (content compile and real info panel), 5 (content drafting, part 1: axial skeleton and teeth) | **Done.** See "Session K notes" below. Needs the user: `content/QUESTIONS.md` 26 to 31 (text), and the real panel on a phone |
 | L | 6 (content drafting, part 2: appendicular skeleton), 7 (joint highlighting), 8 (Explode), 9 (performance check), 10 (tests), 11 (hosted copy) | Not started |
 
 Triggers: "begin session J", "begin session K" and "begin session L". Each session starts by reading this file and ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models`, `npm run validate-content` (from session J on) and `npm run e2e` passing, then a commit and push to the session branch. No Blender work is planned, so `scripts/setup-blender.sh` is only needed if the models have to be rebuilt (or a landmark position is ever derived from the mesh, which this plan doesn't do).
@@ -23,7 +23,7 @@ Triggers: "begin session J", "begin session K" and "begin session L". Each sessi
 
 - [x] `articulations.json`, `regions.json` and `hierarchy.json` are complete. (Session J: 357 articulations, 238 region sets, the hierarchy; the open choices are in `content/QUESTIONS.md`.)
 - [ ] Tiers 1 and 2, joint highlighting and the Explode slider work. (Tiers done in session J; joints and Explode in session L.)
-- [ ] All 238 content files are drafted from standard anatomical references, with `reviewed: false`. (Sessions K and L.)
+- [ ] All 238 content files are drafted from standard anatomical references, with `reviewed: false`. (Sessions K and L. Session K: the 112 axial and teeth files.)
 - [ ] `validate-content` passes, and runs in CI and before `build`. (Written in session J, green with all files in session L.)
 - [ ] Click → highlight and draw calls stay within spec §8 at tiers 1 and 2, and with Explode in use. (Session L, step 9.)
 - [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
@@ -75,6 +75,16 @@ These fill gaps the spec leaves open. Each is the smallest choice that fits the 
 - **Needs the user:**
   - Work through `content/QUESTIONS.md` (or say who will). Nothing there blocks the next session.
   - Try tiers 1 and 2 on the live site once this is merged: do the region sets feel like the right "regions"?
+
+## Session K notes (steps 4 and 5, done)
+
+- **Compiler:** `src/content/compile.ts` (pure: front matter through the zod schema, body through `marked`, one entry per ID with the Latin and common names, region, type, functions, landmark names and how many have positions, muscles, clinical note, summary HTML, `reviewed`). **Changed from the plan:** instead of writing a git-ignored `src/content/generated/content.json`, a small Vite plugin (`scripts/lib/content-plugin.ts`) serves the compiled object as the virtual module `virtual:skeleton-content`. Nothing generated sits on disk to go stale, `dev` recompiles on every content edit (full reload), and `tsc` needs only a declaration (`src/content/virtual.d.ts`). `npm run content` (`scripts/build-content.ts`, also in `prebuild` after `validate-content`) compiles the same way and prints the size; `--out <file>` writes the JSON for inspection.
+- **Lazy loading:** `src/content/loader.ts` imports the module dynamically, so Vite puts it in its own chunk. The viewer starts the load as soon as the first LOD is on screen; the panel also starts it if it opens first. Until it arrives, the panel shows the placeholder text. **Size:** 112 files are 112 KB raw, **16 KB gzipped**; all 238 should be about 35 KB gzipped, well under the plan's 100 to 150 KB guess.
+- **Panel model:** `src/content/panel.ts` builds on `placeholder.ts` (which keeps the names, trail, pair and announcements). Objects without a file still say "Not written yet" section by section (the appendicular skeleton until session L), but every object now lists its real articulations from `articulations.json`.
+- **Panel (spec §7 order):** English name with the Latin name underneath (`lang="la"`); the common name line (hidden when a written file has none); side toggle; badges: region (from the file's `region`), "Flat bone" / "Irregular bone" / … or "Tooth type: molar", and the draft note; Summary (HTML); Functions (list); Articulations, each a button showing the partner ("Rib 1 (left)", the side only when it differs from the focus's) and the joint's name; for teeth a "Neighbouring teeth" list under it; "No bony articulation." for the hyoid; Key landmarks (names; the toggle disabled with "(no positions yet)", decision 9); Major muscle attachments ("None (teeth have no muscle attachments)." for teeth); Clinical note; the three buttons. Clicking an articulation or neighbour selects it (a new focus at tier 0; replace at tier 0, push from tier 1 or 2, as the reducer already does) and moves keyboard focus to the panel title. Hovering a joint (step 7) is session L.
+- **Content (step 5):** 73 written files (the skull, ossicles and hyoid; C1 to L5, sacrum and coccyx; sternum and ribs 1 to 12 on the left; the 16 left-side teeth) and 39 mirrored right-side files: **112 of 238**. Bodies 40 to 80 words, `reviewed: false`, `ta2: null`, every landmark `position: null`, no side words in paired bodies (so the mirror reads correctly). Teeth carry no muscle attachments. The wisdom teeth have full files. Text-level doubts are in `content/QUESTIONS.md` 26 to 31 (bone-type classification, Latin names, level-by-level muscle ranges, eruption ages, common names, vertebral levels in the clinical notes).
+- **Tests:** Vitest 239 (new `tests/panel.test.ts`: the compiler on fixtures and on every committed file, the axial and teeth coverage, the panel model with and without content, articulation labels, teeth and the hyoid). Playwright: `tests/e2e/panel.spec.ts` gains the real content for rib 1 (Latin, badges, sections, no "Not written yet", an articulation link to T1 with focus on the new title) and a tooth (tooth-type badge, gomphosis, neighbours) and the hyoid; the contrast and 200% reflow tests now run on the mandible, the longest real text; the tooth badge assertion is now "Tooth type: canine".
+- **Needs the user:** look at the panel with real text on the phone (sheet at half and full) and on a desktop; work through `content/QUESTIONS.md` 26 to 31 when convenient. Nothing blocks session L.
 
 ## Step 1: Content schema and `validate-content` (spec §5, §9)
 

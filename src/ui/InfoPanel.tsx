@@ -1,7 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { NO_PANEL } from "../camera/math";
-import { panelModel, type PanelModel } from "../content/placeholder";
-import { expandRegion, goBack, showRelated, switchSide } from "../state/selection";
+import { useContent } from "../content/loader";
+import { panelModel, type PanelLink, type PanelModel } from "../content/panel";
+import { NOT_WRITTEN } from "../content/placeholder";
+import { expandRegion, goBack, selectObject, showRelated, switchSide } from "../state/selection";
 import { useViewer } from "../state/store";
 import { focusCanvas } from "./canvasFocus";
 import { PHONE_QUERY, useMedia } from "./useMedia";
@@ -32,7 +34,8 @@ export function nearestSnap(height: number, heights: Record<Snap, number>): Snap
 export const nextSnap = (s: Snap): Snap => SNAPS[(SNAPS.indexOf(s) + 1) % SNAPS.length]!;
 
 /**
- * Info panel (spec §7) with placeholder content (Milestone 3): a right-hand
+ * Info panel (spec §7) with the compiled content (placeholder text for files
+ * not written yet): a right-hand
  * panel on desktop (collapsible), a bottom sheet on phones. It reports the
  * canvas area it covers to the store, so `F` and double-click frame the bone
  * beside it, and to CSS (`--panel-right`, `--panel-bottom`) for the toolbar.
@@ -40,7 +43,8 @@ export const nextSnap = (s: Snap): Snap => SNAPS[(SNAPS.indexOf(s) + 1) % SNAPS.
 export function InfoPanel() {
   const sel = useViewer((s) => s.sel);
   const phone = useMedia(PHONE_QUERY);
-  const model = sel === null ? null : panelModel(sel);
+  const content = useContent();
+  const model = sel === null ? null : panelModel(sel, content);
   const setInset = useViewer((s) => s.setPanelInset);
   const open = model !== null;
 
@@ -223,20 +227,32 @@ function Sheet({ model }: { model: PanelModel }) {
 function Title({ model }: { model: PanelModel }) {
   return (
     <div className="panel-title">
-      <h2 id="panel-title">{model.name}</h2>
-      <p className="latin">{model.latin ?? "Latin name not written yet"}</p>
+      <h2 id="panel-title" tabIndex={-1}>
+        {model.name}
+      </h2>
+      <p className="latin" lang="la">
+        {model.latin ?? (model.written ? "" : "Latin name not written yet")}
+      </p>
     </div>
   );
 }
 
+/** A related object in the panel: selecting it makes it the new focus; focus moves to the panel's title. */
+function selectFromPanel(id: string) {
+  selectObject(id);
+  requestAnimationFrame(() => document.getElementById("panel-title")?.focus());
+}
+
 function Body({ model }: { model: PanelModel }) {
-  const [summary, ...rest] = model.sections;
   const tier = useViewer((s) => s.tier);
+  const isTooth = model.kind === "tooth";
   return (
     <>
-      <p className="common">
-        <span className="muted">Common name:</span> {model.common ?? "Not written yet"}
-      </p>
+      {(!model.written || model.common) && (
+        <p className="common" data-testid="common-name">
+          <span className="muted">Common name:</span> {model.common ?? NOT_WRITTEN}
+        </p>
+      )}
       {model.pair && <SideToggle pair={model.pair} current={model.id} />}
       <ul className="badges" aria-label="Classification">
         <li className="badge">{model.badges.region}</li>
@@ -248,16 +264,54 @@ function Body({ model }: { model: PanelModel }) {
           {model.note}
         </p>
       )}
-      {summary && <Section title={summary.title} text={summary.text} />}
-      {rest.map((s) => (
-        <Section key={s.title} title={s.title} text={s.text}>
-          {s.title === "Key landmarks" && (
-            <label className="toggle disabled">
-              <input type="checkbox" disabled /> Show landmarks
-            </label>
-          )}
-        </Section>
-      ))}
+      <Section title="Summary" testId="summary">
+        {model.summary !== null ? <div className="summary" dangerouslySetInnerHTML={{ __html: model.summary }} /> : <Unwritten />}
+      </Section>
+      <Section title="Functions" testId="functions">
+        {model.functions ? <List items={model.functions} /> : <Unwritten />}
+      </Section>
+      <Section title="Articulations" testId="articulations">
+        {model.articulations.length ? (
+          <ul className="links">
+            {model.articulations.map((a) => (
+              <li key={a.joint}>
+                <LinkButton link={a} detail={a.name} />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="muted">No bony articulation.</p>
+        )}
+        {isTooth && model.neighbours.length > 0 && (
+          <>
+            <h4>Neighbouring teeth</h4>
+            <ul className="links">
+              {model.neighbours.map((n) => (
+                <li key={n.id}>
+                  <LinkButton link={n} />
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </Section>
+      <Section title="Key landmarks" testId="landmarks">
+        {model.landmarks ? model.landmarks.length ? <List items={model.landmarks} inline /> : <p className="muted">None listed.</p> : <Unwritten />}
+        <label className={`toggle${model.landmarkPositions === 0 ? " disabled" : ""}`}>
+          <input type="checkbox" disabled={model.landmarkPositions === 0} /> Show landmarks
+          {model.landmarkPositions === 0 && <span className="muted"> (no positions yet)</span>}
+        </label>
+      </Section>
+      <Section title="Major muscle attachments" testId="muscles">
+        {model.muscles ? (
+          model.muscles.length ? <List items={model.muscles} inline /> : <p className="muted">{isTooth ? "None (teeth have no muscle attachments)." : "None."}</p>
+        ) : (
+          <Unwritten />
+        )}
+      </Section>
+      <Section title="Clinical note" testId="clinical">
+        {model.clinical ? <p>{model.clinical}</p> : model.written ? <p className="muted">None.</p> : <Unwritten />}
+      </Section>
       <div className="panel-actions">
         <button
           type="button"
@@ -287,11 +341,31 @@ function Body({ model }: { model: PanelModel }) {
   );
 }
 
-function Section({ title, text, children }: { title: string; text: string; children?: React.ReactNode }) {
+const Unwritten = () => <p className="muted">{NOT_WRITTEN}</p>;
+
+function List({ items, inline = false }: { items: string[]; inline?: boolean }) {
   return (
-    <section className="panel-section">
-      <h3>{title}</h3>
-      <p className="muted">{text}</p>
+    <ul className={inline ? "inline-list" : "plain-list"}>
+      {items.map((t) => (
+        <li key={t}>{t}</li>
+      ))}
+    </ul>
+  );
+}
+
+function LinkButton({ link, detail }: { link: PanelLink; detail?: string }) {
+  return (
+    <button type="button" className="link-button" data-testid={`link-${link.id}`} onClick={() => selectFromPanel(link.id)}>
+      <span className="link-name">{link.label}</span>
+      {detail && <span className="link-detail">{detail}</span>}
+    </button>
+  );
+}
+
+function Section({ title, testId, children }: { title: string; testId: string; children?: React.ReactNode }) {
+  return (
+    <section className="panel-section" data-testid={`section-${testId}`} aria-labelledby={`h-${testId}`}>
+      <h3 id={`h-${testId}`}>{title}</h3>
       {children}
     </section>
   );
