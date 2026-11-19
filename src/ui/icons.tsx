@@ -56,3 +56,9 @@ export const RegionIcon = svg(
     <rect x="3" y="3" width="18" height="18" rx="4" strokeDasharray="3 3" />
   </>,
 );
+export const ExplodeIcon = svg(
+  <>
+    <rect x="9" y="9" width="6" height="6" rx="1" />
+    <path d="M7 7 4 4M4 4h3M4 4v3M17 7l3-3M20 4h-3M20 4v3M7 17l-3 3M4 20h3M4 20v-3M17 17l3 3M20 20h-3M20 20v-3" />
+  </>,
+);

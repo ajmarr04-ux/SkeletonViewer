@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { announcement } from "../content/placeholder";
+import { announcement, jointAnnouncement } from "../content/placeholder";
 import { relations } from "../content/relations";
 import { isolationView } from "../scene/isolation";
 import { hasMesh } from "../state/selection";
@@ -23,6 +23,11 @@ export function Announcer() {
     const solid = isolationView(sel, tier, "ghost", hasMesh).solid;
     setText(announcement({ sel, tier }, before, (id) => relations.tier1(id), solid?.size ?? 0));
   }, [sel, tier]);
+  // Joint highlighting (plan step 7): "Hip joint: femur and hip bone highlighted." Only when it turns on.
+  const joint = useViewer((s) => s.joint);
+  useEffect(() => {
+    if (joint) setText(jointAnnouncement(joint.name, joint.a, joint.b));
+  }, [joint]);
   return (
     <div className="visually-hidden" aria-live="polite" role="status" data-testid="announcer">
       {text}

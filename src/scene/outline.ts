@@ -21,6 +21,8 @@ import { SELECTION_OUTLINE_COLOUR } from "./material";
 export const OUTLINE = {
   selected: { widthPx: 3, colour: SELECTION_OUTLINE_COLOUR },
   hover: { widthPx: 1.5, colour: "#f1f3f4" },
+  /** A joint's partner (plan step 7): the hover outline's width in the selection's stronger blue. */
+  joint: { widthPx: 1.5, colour: SELECTION_OUTLINE_COLOUR },
 } as const;
 
 const VERTEX = /* glsl */ `
@@ -108,6 +110,11 @@ export function setOutlineTarget(o: Outline, skeleton: BatchedSkeleton, id: stri
   o.mesh.matrix.copy(skeleton.mesh.matrixWorld).multiply(_m);
   o.mesh.matrixWorld.copy(o.mesh.matrix);
   o.mesh.visible = true;
+}
+
+/** Change an outline's colour (sRGB); cheap, a uniform write. */
+export function setOutlineColour(o: Outline, colour: string): void {
+  (o.mesh.material.uniforms.uColor!.value as Color).set(colour);
 }
 
 /** Keep the width constant in CSS pixels: call when the canvas size or pixel ratio changes. */

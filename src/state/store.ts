@@ -12,6 +12,8 @@ import type { CameraState, GhostMode } from "./url";
  * - `centre`: ease the bone to the middle of the view and orbit about it (double-click);
  * - `goto`: go to a pose (browser Back / Forward).
  */
+export type JointHighlight = { a: string; b: string; name: string };
+
 export type CameraCommand =
   | { kind: "preset"; preset: Preset }
   | { kind: "reset" }
@@ -46,6 +48,19 @@ export type ViewerState = {
   ghostOpacity: number;
   /** Object under the mouse pointer (desktop hover), or null. */
   hovered: string | null;
+  /**
+   * The articulation highlighted from the panel (plan step 7): hover or focus
+   * on desktop, press-and-hold on a phone. `a` is the selected object, `b` its
+   * partner. Cleared whenever the selection changes.
+   */
+  joint: JointHighlight | null;
+  setJoint: (joint: JointHighlight | null) => void;
+  /**
+   * Explode slider value (plan step 8), 0 (rest) to 1, only non-zero while the
+   * slider is held or easing back. Not in the URL. Reset with the selection.
+   */
+  explode: number;
+  setExplode: (value: number) => void;
   /** Canvas area covered by the info panel (CSS px), for framing (`F`, double-click). */
   panelInset: PanelInset;
   setPanelInset: (inset: PanelInset) => void;
@@ -81,6 +96,13 @@ export const useViewer = create<ViewerState>()((set) => ({
   ghostMode: "ghost",
   ghostOpacity: typeof window === "undefined" ? GHOST_OPACITY.default : storedGhostOpacity(),
   hovered: null,
+  joint: null,
+  explode: 0,
+  setExplode: (v) => set((s) => {
+    const explode = Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0;
+    return s.explode === explode ? s : { explode };
+  }),
+  setJoint: (joint) => set((s) => (sameJoint(s.joint, joint) ? s : { joint })),
   panelInset: NO_PANEL,
   setPanelInset: (inset) =>
     set((s) =>
@@ -88,7 +110,7 @@ export const useViewer = create<ViewerState>()((set) => ({
     ),
   inputAt: null,
   markInput: (inputAt) => set({ inputAt }),
-  setIsolation: ({ sel, tier }) => set({ sel, tier }),
+  setIsolation: ({ sel, tier }) => set((s) => (s.sel === sel && s.tier === tier ? s : { sel, tier, joint: null, explode: 0 })),
   setGhostMode: (ghostMode) => set({ ghostMode }),
   setGhostOpacity: (o) => {
     const ghostOpacity = clampOpacity(o);
@@ -133,4 +155,8 @@ export function storedGhostOpacity(): number {
 export function clampOpacity(o: number): number {
   if (!Number.isFinite(o)) return GHOST_OPACITY.default;
   return Math.min(GHOST_OPACITY.max, Math.max(GHOST_OPACITY.min, o));
+}
+
+function sameJoint(x: JointHighlight | null, y: JointHighlight | null): boolean {
+  return x === y || (x !== null && y !== null && x.a === y.a && x.b === y.b && x.name === y.name);
 }

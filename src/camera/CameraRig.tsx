@@ -13,7 +13,7 @@ import {
   Vector4,
   type PerspectiveCamera,
 } from "three";
-import { ensureBoundsTrees, type BatchedSkeleton } from "../scene/batchSkeleton";
+import { ensureBoundsTrees, instanceWorldBounds, type BatchedSkeleton } from "../scene/batchSkeleton";
 import { PROXY_RADIUS_PX, pickWithProxies, tinyObjects, type Proxy, type RealHit } from "../scene/pick";
 import { goBack, hasMesh, selectObject } from "../state/selection";
 import { isPickable, isolationView } from "../scene/isolation";
@@ -132,6 +132,8 @@ export type ViewerDebugApi = {
    */
   frameBone: (id: string | string[], from?: Preset) => boolean;
   state: () => { sel: string | null; tier: number; hovered: string | null };
+  /** A bone's box centre where it is drawn now (moves with Explode; `bone` gives the rest position). */
+  boneNow: (id: string) => Vec3 | null;
 };
 declare global {
   interface Window {
@@ -534,6 +536,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     const pick = (clientX: number, clientY: number, touch: boolean): string | null => {
       const { skeleton: sk, geometry: g, tiny: tinyIds } = live.current;
       if (!sk || !g) return null;
+      if (useViewer.getState().explode > 0) return null; // picking is off while exploded (plan step 8)
       ensureBoundsTrees(sk.mesh); // normally already built in an idle callback
       camera.updateMatrixWorld();
       const now: CameraState = { position: arr(camera.position), target: arr(camera.position.clone().add(camera.getWorldDirection(new Vector3()))) };
@@ -576,14 +579,16 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       if (type === "down") lastPointerType = e.pointerType;
       const r = tapStep(taps, { type, id: e.pointerId, x: e.clientX, y: e.clientY, t: e.timeStamp });
       taps = r.state;
-      if (r.tap) {
+      // Picking is off while the bones are exploded (plan step 8).
+      const exploded = useViewer.getState().explode > 0;
+      if (r.tap && !exploded) {
         const id = pick(r.tap.x, r.tap.y, lastPointerType !== "mouse");
         useViewer.getState().markInput(e.timeStamp);
         if (id) selectObject(id);
         else goBack(); // empty space (spec §6)
         useViewer.getState().markInput(null); // consumed by the highlight if anything changed
       }
-      if (r.doubleTap) {
+      if (r.doubleTap && !exploded) {
         const id = pick(r.doubleTap.x, r.doubleTap.y, lastPointerType !== "mouse");
         if (id) runCommand({ kind: "centre", id }); // empty space: nothing more happens
       }
@@ -657,6 +662,13 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
         state: () => {
           const s = useViewer.getState();
           return { sel: s.sel, tier: s.tier, hovered: s.hovered };
+        },
+        boneNow: (id) => {
+          const sk = live.current.skeleton;
+          const i = sk?.instanceOf.get(id);
+          if (!sk || i === undefined) return null;
+          const b = instanceWorldBounds(sk.mesh, i);
+          return [(b.min.x + b.max.x) / 2, (b.min.y + b.max.y) / 2, (b.min.z + b.max.z) / 2];
         },
       };
     }
@@ -762,7 +774,8 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     const at = hoverAt.current;
     if (at && skeleton?.mesh.boundsTrees?.every(Boolean)) {
       hoverAt.current = null;
-      useViewer.getState().setHovered(userMoving.current ? null : pickRef.current(at.x, at.y, false));
+      const st = useViewer.getState();
+      st.setHovered(userMoving.current || st.explode > 0 ? null : pickRef.current(at.x, at.y, false));
     }
     if (!centreRadius) return;
     const o = c.getFocalOffset(new Vector3(), false);

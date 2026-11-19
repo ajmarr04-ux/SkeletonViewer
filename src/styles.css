@@ -173,6 +173,8 @@ dialog.attribution pre { white-space: pre-wrap; font: 13px/1.5 ui-monospace, mon
 }
 .link-button:hover, .link-button:focus-visible { background: #2a2d31; }
 .link-button:focus-visible { outline: 2px solid #8ab4f8; outline-offset: -2px; }
+/* Articulations: press-and-hold highlights the joint on a phone (no text selection or callout). */
+.link-button[data-joint] { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 .link-name { text-decoration: underline; text-underline-offset: 2px; }
 .link-detail { font-size: 13px; color: #bdc1c6; }
 .toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; }

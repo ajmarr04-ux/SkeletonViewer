@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { loadContent } from "../content/loader";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import ids from "../../content/ids.json";
@@ -22,6 +22,7 @@ import { BenchPanel } from "../ui/BenchPanel";
 import { Toolbar } from "../ui/Toolbar";
 import { LOD_SETTING_KEY, lodPlan, lodsToLoad, parseLodSetting, summariseObjects, withoutLodParam, type Lod } from "./lod";
 import { createBoneMaterial, createGhostMaterial } from "./material";
+import { Explode } from "./Explode";
 import { Isolation, type IsolationStats, type SkeletonScene } from "./Isolation";
 import { createOutline, disposeOutline, OUTLINE } from "./outline";
 import { Tooltip } from "../ui/Tooltip";
@@ -66,6 +67,14 @@ export function Viewer() {
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<RenderStats>({ drawCalls: 0, renderedTriangles: 0, fps: 0 });
   const [bounds, setBounds] = useState<BoundsReport | null>(null);
+
+  // `?debug`: after Explode puts the bones back, every bone's bounds are checked again (plan step 8).
+  const recheckBounds = useCallback(() => {
+    const s = shownRef.current;
+    if (!s) return;
+    setBounds(null);
+    void boundsReport(s.lod, s.skeleton, s.ghost).then((r) => shownRef.current === s && setBounds(r));
+  }, []);
 
   useEffect(() => watchReducedMotion(), []);
   useEffect(() => watchHistory(), []);
@@ -112,16 +121,7 @@ export function Viewer() {
         setLoadTimes((t) => ({ ...t, [lod]: loaded.loadedAtMs }));
         if (debug) {
           setBounds(null);
-          const [solidReport, ghostReport] = await Promise.all([
-            checkInstanceBounds(lod, allInstanceBounds(skeleton)),
-            checkInstanceBounds(lod, allInstanceBounds(ghost)),
-          ]);
-          setBounds({
-            ...solidReport,
-            ghostChecked: ghostReport.checked,
-            maxDelta: Math.max(solidReport.maxDelta, ghostReport.maxDelta),
-            errors: [...solidReport.errors, ...ghostReport.errors.map((e) => `ghost ${e}`)],
-          });
+          setBounds(await boundsReport(lod, skeleton, ghost));
         }
       }
       // Build the raycasting BVH once the final LOD is on screen, off the critical path.
@@ -162,6 +162,7 @@ export function Viewer() {
         {shown && <primitive object={shown.outlines.hover.mesh} />}
         {shown && <primitive object={shown.ghost.mesh} />}
         <Isolation scene={shown} onStats={debug ? setIsoStats : undefined} />
+        <Explode scene={shown} onRestored={debug ? recheckBounds : undefined} />
         <CameraRig
           skeleton={shown?.skeleton ?? null}
           debug={debug}
@@ -220,4 +221,18 @@ function StatsProbe({ onStats }: { onStats: (s: RenderStats) => void }) {
     acc.current = { frames: 0, since: now };
   });
   return null;
+}
+
+/** The `?debug` bounds check of both batches against the manifest (nothing moved). */
+async function boundsReport(lod: Lod, skeleton: BatchedSkeleton, ghost: BatchedSkeleton): Promise<BoundsReport> {
+  const [solidReport, ghostReport] = await Promise.all([
+    checkInstanceBounds(lod, allInstanceBounds(skeleton)),
+    checkInstanceBounds(lod, allInstanceBounds(ghost)),
+  ]);
+  return {
+    ...solidReport,
+    ghostChecked: ghostReport.checked,
+    maxDelta: Math.max(solidReport.maxDelta, ghostReport.maxDelta),
+    errors: [...solidReport.errors, ...ghostReport.errors.map((e) => `ghost ${e}`)],
+  };
 }
