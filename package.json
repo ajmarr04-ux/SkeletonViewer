@@ -20,7 +20,8 @@
     "content:mirror": "tsx scripts/content/mirror.ts",
     "content:hierarchy": "tsx scripts/content/build-hierarchy.ts",
     "prebuild": "npm run validate-content && npm run content",
-    "content": "tsx scripts/build-content.ts"
+    "content": "tsx scripts/build-content.ts",
+    "search-index": "tsx scripts/build-search-index.ts"
   },
   "devDependencies": {
     "@gltf-transform/core": "^4.5.1",
@@ -43,6 +44,7 @@
     "@react-three/fiber": "^9.8.2",
     "camera-controls": "^3.1.2",
     "marked": "^18.2.1",
+    "minisearch": "^7.2.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "three": "^0.187.0",

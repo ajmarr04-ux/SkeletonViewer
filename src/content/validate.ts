@@ -11,6 +11,7 @@ import {
   frontMatterSchema,
   hierarchySchema,
   regionsSchema,
+  synonymsSchema,
   wordCount,
   type Articulation,
   type FrontMatter,
@@ -30,6 +31,8 @@ export type ContentInput = {
   hierarchy: unknown;
   /** The opposite side's ID (paired objects), else null. */
   opposite: (id: string) => string | null;
+  /** content/synonyms.json (Milestone 5); not checked when absent. */
+  synonyms?: unknown;
 };
 export type ContentOptions = { allowMissingContent?: boolean };
 export type ContentReport = { errors: string[]; warnings: string[]; files: number };
@@ -211,5 +214,40 @@ export function validateContent(input: ContentInput, opts: ContentOptions = {}):
     }
   }
 
+  if (input.synonyms !== undefined) errors.push(...validateSynonyms(input.synonyms, input.ids));
+
   return { errors, warnings, files: input.files.size };
+}
+
+const SIDE_WORD = /\b(left|right)\b/i;
+
+/**
+ * content/synonyms.json (plan decision 1): known IDs only, no right-side keys
+ * (pairs are written under the left ID), no empty or repeated terms, and no
+ * side words (the side comes from the object, and the left key's terms are
+ * reused for the right).
+ */
+export function validateSynonyms(raw: unknown, ids: IdEntry[]): string[] {
+  const res = synonymsSchema.safeParse(raw);
+  if (!res.success) return zodLines("synonyms.json", res.error);
+  const errors: string[] = [];
+  const byId = new Map(ids.map((e) => [e.id, e]));
+  for (const [id, terms] of Object.entries(res.data)) {
+    const where = `synonyms.json ${id}`;
+    const e = byId.get(id);
+    if (!e) {
+      errors.push(`${where}: no such ID in content/ids.json`);
+      continue;
+    }
+    if (e.side === "right") errors.push(`${where}: write paired terms under the left ID`);
+    const seen = new Set<string>();
+    for (const t of terms) {
+      const norm = t.trim().toLowerCase();
+      if (norm === "") errors.push(`${where}: empty term`);
+      else if (seen.has(norm)) errors.push(`${where}: "${t}" is listed twice`);
+      else if (SIDE_WORD.test(norm)) errors.push(`${where}: "${t}" names a side`);
+      seen.add(norm);
+    }
+  }
+  return errors;
 }
