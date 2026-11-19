@@ -161,6 +161,13 @@ describe("framing beside the info panel", () => {
     expect(both[1]).toBeCloseTo(-((200 - 56) / 2) * mpp, 12);
   });
 
+  it("a left sidebar shifts the bone right; with both, by half the difference", () => {
+    const mpp = (2 * Math.tan((FOV_DEG * Math.PI) / 360)) / H;
+    expect(panelOffset({ right: 0, bottom: 0, left: 300 }, 1, FOV_DEG, W, H, hf)[0]).toBeCloseTo(-150 * mpp, 12);
+    expect(panelOffset({ right: 372, bottom: 0, left: 300 }, 1, FOV_DEG, W, H, hf)[0]).toBeCloseTo(36 * mpp, 12);
+    expect(panelFractions({ right: 372, bottom: 0, left: 300 }, W, H, hf).w).toBeCloseTo(1 - 672 / W, 12);
+  });
+
   it("never leaves less than 35% of the view to frame in", () => {
     const f = panelFractions({ right: 5000, bottom: 5000 }, 1000, 800, 0.9);
     expect(f.w).toBeCloseTo(0.35);

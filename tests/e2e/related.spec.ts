@@ -20,6 +20,8 @@ const isolation = async (page: Page) => {
 };
 
 test.describe("related isolation", () => {
+  // The spec's smoke test (§11, Phase 5 exit criterion), step for step:
+  // load → click femur → Show related → Expand region → Back ×3 → full skeleton.
   test("femur: Show related → Expand region → Back ×3 → full skeleton", async ({ page }) => {
     const errors = await open(page);
     const debug = page.getByTestId("debug");
@@ -41,7 +43,9 @@ test.describe("related isolation", () => {
     await expect(panel.getByTestId("show-related")).toBeDisabled();
     await expect(page.getByTestId("tool-region")).toBeVisible();
 
-    await page.getByTestId("tool-region").click();
+    // The spec's wording (§11 Phase 5): the panel's "Expand region" button. The
+    // toolbar's "Region" button does the same (keyboard.spec.ts and a11y.spec.ts press it).
+    await panel.getByRole("button", { name: "Expand region" }).click();
     await expect.poll(() => isolation(page)).toBe("femur_left@2");
     await expect(debug).toHaveAttribute("data-solid", "8"); // + sacrum, coccyx, hip bone (right), fibula
     await expect(announcer).toHaveText("Femur, left: region shown, 8 bones.");

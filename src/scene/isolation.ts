@@ -4,6 +4,7 @@
 // Only visibility and colours change. No geometry moves or reloads (spec §12).
 
 import { Color } from "three";
+import { groupOf } from "../content/groups";
 import { relations } from "../content/relations";
 import type { Tier } from "../state/isolation";
 import type { GhostMode } from "../state/url";
@@ -34,11 +35,29 @@ export const FULL_VIEW: IsolationView = { isolated: false, focus: null, solid: n
  * out: a wisdom tooth isolates nothing at tier 0, and at tiers 1 and 2 shows its
  * related bones with no focus.
  */
-export function isolationView(sel: string | null, tier: Tier, ghostMode: GhostMode, hasMesh: (id: string) => boolean): IsolationView {
-  if (sel === null) return FULL_VIEW;
+export function isolationView(
+  sel: string | null,
+  tier: Tier,
+  ghostMode: GhostMode,
+  hasMesh: (id: string) => boolean,
+  grp: string | null = null,
+): IsolationView {
+  if (sel === null) return grp === null ? FULL_VIEW : groupView(grp, ghostMode, hasMesh);
   const solid = new Set(relations.visibleAt(sel, tier).filter(hasMesh));
   if (solid.size === 0) return FULL_VIEW;
   return { isolated: true, focus: hasMesh(sel) ? sel : null, solid, ghosts: ghostMode === "ghost", joint: [], jointPartner: null };
+}
+
+/**
+ * A group isolation (plan decision 5): its members with a mesh drawn solid,
+ * with no focus (normal bone colour, no outline); the rest ghosted or hidden as
+ * at tier 0.
+ */
+export function groupView(grp: string, ghostMode: GhostMode, hasMesh: (id: string) => boolean): IsolationView {
+  const g = groupOf(grp);
+  const solid = new Set((g?.members ?? []).filter(hasMesh));
+  if (solid.size === 0) return FULL_VIEW;
+  return { isolated: true, focus: null, solid, ghosts: ghostMode === "ghost", joint: [], jointPartner: null };
 }
 
 /**
@@ -64,6 +83,15 @@ export function isPickable(view: IsolationView, id: string): boolean {
 const WHITE = new Color(1, 1, 1);
 let accentTint: Color | null = null;
 
+/** An object's own instance colour: white (plain bone), or its region tint (colour-by-region). */
+export type BaseTint = (id: string) => Color;
+export const PLAIN: BaseTint = () => WHITE;
+
+/** Write every instance's base colour (on a colour-mode change); `applyIsolationView` then adds the accent. */
+export function applyBaseColours(solid: BatchedSkeleton, base: BaseTint): void {
+  solid.boneIds.forEach((id, i) => solid.mesh.setColorAt(i, base(id)));
+}
+
 /** Gain on a bone's tint while its joint is highlighted: brighter, same hue. */
 export const JOINT_GAIN = 1.3;
 const _tint = new Color();
@@ -71,7 +99,8 @@ const _tint = new Color();
 /**
  * Apply a view: solid batch shows `solid`, the ghost batch shows the rest
  * (only drawn when `ghosts`), and the focus bone gets the accent tint.
- * `previousFocus` is reset to white. Cheap: a few hundred flag writes at most.
+ * `previousFocus` is reset to its base colour (white, or its region's tint).
+ * Cheap: a few hundred flag writes at most.
  */
 export function applyIsolationView(
   solid: BatchedSkeleton,
@@ -79,6 +108,7 @@ export function applyIsolationView(
   view: IsolationView,
   previousFocus: string | null,
   previousJoint: readonly string[] = [],
+  base: BaseTint = PLAIN,
 ): void {
   accentTint ??= makeAccentTint();
   solid.boneIds.forEach((id, i) => {
@@ -95,7 +125,7 @@ export function applyIsolationView(
   for (const id of previousFocus === null ? previousJoint : [previousFocus, ...previousJoint]) {
     if (id === view.focus || view.joint.includes(id)) continue;
     const i = solid.instanceOf.get(id);
-    if (i !== undefined) solid.mesh.setColorAt(i, WHITE);
+    if (i !== undefined) solid.mesh.setColorAt(i, base(id));
   }
   if (view.focus !== null) {
     const i = solid.instanceOf.get(view.focus);
@@ -104,7 +134,7 @@ export function applyIsolationView(
   for (const id of view.joint) {
     const i = solid.instanceOf.get(id);
     if (i === undefined) continue;
-    _tint.copy(id === view.focus ? accentTint : WHITE).multiplyScalar(JOINT_GAIN);
+    _tint.copy(id === view.focus ? accentTint : base(id)).multiplyScalar(JOINT_GAIN);
     solid.mesh.setColorAt(i, _tint);
   }
 }

@@ -19,12 +19,36 @@ export function modelUrl(lod: Lod): string {
 
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 
+/** Downloads started ahead of time (plan step 12), by LOD. */
+const downloads = new Map<Lod, Promise<ArrayBuffer>>();
+
+/**
+ * Start downloading a LOD's file without parsing it, so the next level arrives
+ * while the current one is batched and first drawn. The low file's request
+ * matches index.html's `<link rel="preload">`, so it isn't fetched twice.
+ */
+export function prefetchModel(lod: Lod): Promise<ArrayBuffer> {
+  let p = downloads.get(lod);
+  if (!p) {
+    p = fetch(modelUrl(lod), { credentials: "same-origin" }).then((r) => {
+      if (!r.ok) throw new Error(`skeleton-${lod}.glb: HTTP ${r.status}`);
+      return r.arrayBuffer();
+    });
+    // A failed download can be tried again.
+    p.catch(() => downloads.delete(lod));
+    downloads.set(lod, p);
+  }
+  return p;
+}
+
 /**
  * Load one LOD and return each bone's geometry with its world matrix. The glTF
  * scene graph itself is dropped: the viewer draws the bones as one BatchedMesh.
  */
 export async function loadSkeleton(lod: Lod): Promise<LoadedParts> {
-  const gltf = await loader.loadAsync(modelUrl(lod));
+  const data = await prefetchModel(lod);
+  downloads.delete(lod); // parsed once; a later reload of this LOD fetches again (from the HTTP cache)
+  const gltf = await loader.parseAsync(data, modelUrl(lod).replace(/[^/]*$/, ""));
   const scene = gltf.scene;
   scene.updateMatrixWorld(true);
   const json = gltf.parser.json as { nodes?: { name?: string }[] };

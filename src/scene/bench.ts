@@ -44,3 +44,23 @@ export function summariseFrames(frameMs: readonly number[]): BenchResult | null 
 export function benchAzimuth(elapsedMs: number, durationMs = BENCH_DURATION_MS): number {
   return (2 * Math.PI * Math.min(Math.max(elapsedMs, 0), durationMs)) / durationMs;
 }
+
+/** Label layout cost during the bench (plan step 12): how many layouts ran and how long they took. */
+export type LayoutTimes = { count: number; medianMs: number; maxMs: number };
+
+export function summariseTimes(ms: readonly number[]): LayoutTimes | null {
+  const sorted = ms.filter((x) => Number.isFinite(x) && x >= 0).sort((a, b) => a - b);
+  if (sorted.length === 0) return null;
+  return { count: sorted.length, medianMs: percentile(sorted, 50), maxMs: sorted[sorted.length - 1]! };
+}
+
+/**
+ * Durations (ms) of the floating-label layouts since the bench started. The
+ * label probe appends to it; the bench empties it at the start and reads it at
+ * the end. Capped so it can't grow without a bench running.
+ */
+export const labelLayoutMs: number[] = [];
+export const LABEL_TIMES_CAP = 2000;
+export function recordLabelLayout(ms: number): void {
+  if (labelLayoutMs.length < LABEL_TIMES_CAP) labelLayoutMs.push(ms);
+}

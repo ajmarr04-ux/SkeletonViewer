@@ -51,12 +51,18 @@ test("keyboard moves the camera, the URL follows, and a reload restores it", asy
   await page.locator("canvas").focus();
   await page.keyboard.press("ArrowLeft");
   await page.keyboard.press("+");
-  const written = await nextCam(page, null);
-  // Rest is reached: the URL matches the camera to 0.1 mm.
-  const now = await camera(page);
-  const url = parseCam(written);
-  expect(dist(url.position, now.position)).toBeLessThan(2e-4);
-  expect(dist(url.target, now.target)).toBeLessThan(2e-4);
+  await nextCam(page, null);
+  // The URL is first written at camera-controls' "rest" (still easing in the
+  // last millimetres; under load, further), then again at "sleep" with the
+  // final pose. Once the camera is still, the URL matches it to 0.1 mm.
+  // (Comparing with the first write was session N's flake.)
+  const gap = async () => {
+    const now = await camera(page);
+    const u = parseCam(camParam(page)!);
+    return Math.max(dist(u.position, now.position), dist(u.target, now.target));
+  };
+  await expect.poll(gap, { timeout: 10_000 }).toBeLessThan(2e-4);
+  const url = parseCam(camParam(page)!);
   // Other parameters are kept.
   expect(new URL(page.url()).searchParams.get("lod")).toBe("low");
   expect(new URL(page.url()).searchParams.has("debug")).toBe(true);
@@ -397,6 +403,32 @@ test("?bench orbits once and reports FPS, frame times and draw calls", async ({ 
   console.log("bench (SwiftShader):", await debug.getAttribute("data-bench-median-fps"), "median FPS");
 });
 
+for (const where of [
+  { name: "full skeleton", query: "" },
+  { name: "tier 2", query: "&sel=femur_left&tier=2" },
+]) {
+  test(`?bench with labels and colour by region on (${where.name}) reports the label layout cost`, async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.addInitScript(() => window.localStorage.setItem("skeleton-viewer:labels", "1"));
+    // 4× CPU slowdown, as for a phone (plan step 12).
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
+    await page.goto(`./?lod=low&debug&bench&color=region${where.query}`);
+    const debug = page.getByTestId("debug");
+    await expect(debug).toHaveAttribute("data-complete", "true", { timeout: 60_000 });
+    await expect(debug).toHaveAttribute("data-bench-done", "true", { timeout: 60_000 });
+    const text = (await page.getByTestId("bench-labels").textContent())!;
+    const m = text.match(/^on: (\d+) layouts, median ([\d.]+) ms, max ([\d.]+) ms$/);
+    expect(m, text).not.toBeNull();
+    expect(Number(m![1])).toBeGreaterThan(0);
+    await expect(page.getByTestId("bench")).toContainText("by region");
+    // Labels are re-laid out at most every 100 ms while moving; at 30 FPS a frame
+    // is 33 ms, so a layout must stay well under that even at 4× slowdown.
+    expect(Number(m![2])).toBeLessThan(16);
+    console.log(`bench, labels on, ${where.name}, 4× CPU (SwiftShader):`, text);
+  });
+}
+
 test.describe("phone toolbar", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
@@ -422,8 +454,9 @@ test.describe("phone toolbar", () => {
     await expect.poll(async () => viewDir(await camera(page))[0], { timeout: 10_000 }).toBeGreaterThan(0.999);
     await page.getByRole("button", { name: "Home view" }).tap();
     await expect.poll(async () => dist((await camera(page)).position, home.position), { timeout: 10_000 }).toBeLessThan(1e-3);
-    await page.getByRole("button", { name: "Settings" }).tap();
-    const sb = (await page.getByRole("dialog", { name: "Settings" }).boundingBox())!;
+    // Settings is in "More" on a phone (plan decision 12).
+    await page.getByRole("button", { name: "More" }).tap();
+    const sb = (await page.getByRole("dialog", { name: "More" }).boundingBox())!;
     expect(sb.x).toBeGreaterThanOrEqual(0);
     expect(sb.x + sb.width).toBeLessThanOrEqual(390);
   });

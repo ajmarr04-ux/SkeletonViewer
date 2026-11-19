@@ -76,3 +76,10 @@ export function wordCount(markdown: string): number {
   const plain = markdown.replace(/[*_`#>[\]()]/g, " ");
   return plain.split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
 }
+
+/**
+ * Extra search terms (Milestone 5, plan decision 1): ID → terms. Paired objects
+ * are written once, under the left ID, and apply to both sides.
+ */
+export const synonymsSchema = z.record(snake, z.array(z.string()));
+export type Synonyms = z.infer<typeof synonymsSchema>;

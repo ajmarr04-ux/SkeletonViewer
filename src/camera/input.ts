@@ -190,3 +190,17 @@ export function tapStep(s: TapState, e: PointerSample): TapResult {
     }
   }
 }
+
+/**
+ * Tab through the visible objects (spec §10, plan decision 6): the next ID
+ * after `current` in `visibleIds` (Shift: the one before). With no current
+ * object (or one no longer visible) Tab starts at the first and Shift + Tab at
+ * the last. Null past either end: focus leaves the canvas, so it is never a
+ * keyboard trap.
+ */
+export function tabCursor(visibleIds: readonly string[], current: string | null, shift: boolean): string | null {
+  if (visibleIds.length === 0) return null;
+  const i = current === null ? -1 : visibleIds.indexOf(current);
+  if (i < 0) return shift ? visibleIds[visibleIds.length - 1]! : visibleIds[0]!;
+  return visibleIds[i + (shift ? -1 : 1)] ?? null;
+}

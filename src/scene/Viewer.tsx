@@ -17,7 +17,7 @@ import {
 } from "./batchSkeleton";
 import { checkInstanceBounds } from "./boundsCheck";
 import { Lighting } from "./Lighting";
-import { disposeParts, loadSkeleton } from "./loadSkeleton";
+import { disposeParts, loadSkeleton, prefetchModel } from "./loadSkeleton";
 import { BenchPanel } from "../ui/BenchPanel";
 import { Toolbar } from "../ui/Toolbar";
 import { LOD_SETTING_KEY, lodPlan, lodsToLoad, parseLodSetting, summariseObjects, withoutLodParam, type Lod } from "./lod";
@@ -29,6 +29,11 @@ import { Tooltip } from "../ui/Tooltip";
 import { InfoPanel } from "../ui/InfoPanel";
 import { Breadcrumb } from "../ui/Breadcrumb";
 import { Announcer } from "../ui/Announcer";
+import { Sidebar } from "../ui/Sidebar";
+import { LabelProbe, Labels } from "../ui/Labels";
+import { Legend } from "../ui/Legend";
+import { Toast } from "../ui/Toast";
+import { ScreenshotService } from "./ScreenshotService";
 import { probeDevice, readStoredSetting } from "./webgl";
 
 export type Shown = { lod: Lod } & SkeletonScene;
@@ -99,8 +104,12 @@ export function Viewer() {
     let cancelled = false;
     let current: BatchedSkeleton | null = shownRef.current?.skeleton ?? null;
     (async () => {
-      for (const lod of lodsToLoad(plan.lods, shownRef.current?.lod ?? null)) {
+      const queue = lodsToLoad(plan.lods, shownRef.current?.lod ?? null);
+      for (const [i, lod] of queue.entries()) {
         const loaded = await loadSkeleton(lod);
+        // Fetch the next level now, while this one is batched and drawn (plan step 12).
+        const next = queue[i + 1];
+        if (next && !cancelled) void prefetchModel(next).catch(() => {});
         if (cancelled) {
           disposeParts(loaded.parts);
           return;
@@ -168,11 +177,17 @@ export function Viewer() {
           debug={debug}
           bench={bench && finalShown ? shown.lod : null}
         />
+        <LabelProbe skeleton={shown?.skeleton ?? null} />
+        <ScreenshotService />
         <StatsProbe onStats={setStats} />
       </Canvas>
+      <Labels />
       <Breadcrumb />
+      <Sidebar />
       <InfoPanel />
       <Toolbar />
+      <Legend />
+      <Toast />
       <Tooltip />
       <Announcer />
       {error && !debug && (

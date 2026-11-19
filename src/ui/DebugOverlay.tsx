@@ -40,6 +40,8 @@ export function DebugOverlay(p: Props) {
       data-plan={plan.lods.join(",")}
       data-plan-source={plan.source}
       data-loaded={plan.lods.filter((l) => loadTimes[l] !== undefined).join(",")}
+      data-load-low={loadTimes.low !== undefined ? Math.round(loadTimes.low) : undefined}
+      data-load-high={loadTimes.high !== undefined ? Math.round(loadTimes.high) : undefined}
       data-complete={done && (bounds === undefined || boundsDone) ? "true" : "false"}
       data-objects={objects?.found ?? 0}
       data-instances={p.instances}
@@ -64,6 +66,7 @@ export function DebugOverlay(p: Props) {
       data-outline-selected={iso?.outlineSelected ?? ""}
       data-outline-hover={iso?.outlineHover ?? ""}
       data-joint={iso ? iso.joint.join(",") : ""}
+      data-colour={iso?.colour ?? ""}
       data-explode={explode}
       data-highlight-ms={iso?.highlightMs != null ? iso.highlightMs.toFixed(1) : ""}
       data-bounds-max-delta-mm={boundsDone ? (bounds.maxDelta * 1000).toFixed(4) : ""}

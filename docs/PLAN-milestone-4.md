@@ -15,7 +15,7 @@ Out of scope until Milestone 5: the sidebar (search and hierarchy tree, includin
 | (planning) | 0 (Milestone 3 handover) | **Done.** See step 0 |
 | J | 1 (content schema and `validate-content`), 2 (relationship data: articulations, regions, hierarchy), 3 (tiers 1 and 2) | **Done.** See "Session J notes" below. Needs the user: `content/QUESTIONS.md` (articulation and region choices), and tiers 1 and 2 on a device |
 | K | 4 (content compile and real info panel), 5 (content drafting, part 1: axial skeleton and teeth) | **Done.** See "Session K notes" below. Needs the user: `content/QUESTIONS.md` 26 to 31 (text), and the real panel on a phone |
-| L | 6 (content drafting, part 2: appendicular skeleton), 7 (joint highlighting), 8 (Explode), 9 (performance check), 10 (tests), 11 (hosted copy) | **Steps 6, 7, 8 and 10 done.** See "Session L notes" below. Needs the user: step 9 (bench at tier 2 on the PC and the iPhone), step 11 (merge the PR, then confirm `/m4/`), `content/QUESTIONS.md` 32 to 36 |
+| L | 6 (content drafting, part 2: appendicular skeleton), 7 (joint highlighting), 8 (Explode), 9 (performance check), 10 (tests), 11 (hosted copy) | **Done.** Merged (PR #10, `db07f62`) and deployed; `/m4/` confirmed live by the user on 2026-11-19. See "Session L notes" below. Step 9: FPS 75 (PC) and 59 (iPhone), both vsync-limited, 3 draw calls at tier 2; click → highlight not timed (the user found it responsive). The user: "articulations work great" |
 
 Triggers: "begin session J", "begin session K" and "begin session L". Each session starts by reading this file and ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models`, `npm run validate-content` (from session J on) and `npm run e2e` passing, then a commit and push to the session branch. No Blender work is planned, so `scripts/setup-blender.sh` is only needed if the models have to be rebuilt (or a landmark position is ever derived from the mesh, which this plan doesn't do).
 
@@ -25,8 +25,8 @@ Triggers: "begin session J", "begin session K" and "begin session L". Each sessi
 - [x] Tiers 1 and 2, joint highlighting and the Explode slider work. (Tiers in session J; joints and Explode in session L. Still worth a look on a device.)
 - [x] All 238 content files are drafted from standard anatomical references, with `reviewed: false`. (Session K: 112 axial and teeth files; session L: 126 appendicular files.)
 - [x] `validate-content` passes, and runs in CI and before `build`. (Session L: without `--allow-missing-content`, 238 of 238 files.)
-- [ ] Click → highlight and draw calls stay within spec §8 at tiers 1 and 2, and with Explode in use. (Session L, step 9.)
-- [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
+- [x] Click → highlight and draw calls stay within spec §8 at tiers 1 and 2, and with Explode in use. (Session L, step 9: FPS and draw calls at tier 2 well within spec on the PC and the iPhone. Click → highlight wasn't timed: the user found it responsive and waived the measurement on 2026-11-19.)
+- [x] **Hosted copy is live and linked below** (extra requirement for every milestone). Confirmed by the user on 2026-11-19.
 
 ---
 
@@ -93,7 +93,7 @@ These fill gaps the spec leaves open. Each is the smallest choice that fits the 
 - **Explode (step 8):** `src/scene/explode.ts` (pure offsets and matrix helpers), `src/scene/Explode.tsx` (applies the store's `explode` value 0 to 1 to the solid batch), `src/ui/ExplodeSlider.tsx` (toolbar popover, shown at tiers 1 and 2 when the focus has a mesh). Tier-1 bones move along the focus-centre → bone-centre line by radius × 0.5 × slider; the focus and tier-2-only bones stay. Release (pointer up, key up, blur, closing the popover) eases back in 400 ms (ease-out; instant with reduced motion), then the saved matrices are written back exactly and `?debug` re-runs the bounds check. Picking and hover are off while the value is above zero. The ghost batch never moves: its copies of the tier-1 bones are hidden at tiers 1 and 2. The value resets with any selection change (restored at once).
 - **Debug:** the overlay adds `data-joint` and `data-explode`; `window.__viewer.boneNow(id)` gives where a bone is drawn now.
 - **Tests (step 10):** Vitest 252 (new `tests/explode.test.ts`: offsets, release easing, exact restore on a batch, which bones move, store reset; new `tests/joint.test.ts`: `withJoint`, tints on and off, announcements, store clearing; the panel coverage test now requires all 238). Playwright 72, all passing (new `tests/e2e/joints.spec.ts`: hover, keyboard focus then Enter, phone press-and-hold and tap; Explode drag with bone positions before, during and after, draw calls, the bounds check after release; keyboard hold and release; picking off while exploded; no Explode at tier 0). `panel.spec.ts`'s femur test now checks the real text.
-- **Step 9 (needs the user):** open `https://ajmarr04-ux.github.io/SkeletonViewer/?bench&sel=femur_left&tier=2` on the PC and the iPhone once it's deployed, and report the bench panel's median and 5th-percentile FPS and draw calls; also how Explode and the joint highlight feel. Headless SwiftShader numbers aren't meaningful (7 FPS for the whole skeleton here).
+- **Step 9 (bench, run by the user on the live site, `?bench&sel=femur_left&tier=2`, 2026-11-19):** PC: median 75.2 FPS, 5th percentile 73.5, frame time median 13.3 ms, p95 13.6 ms, max 17.6 ms, 733 frames, **3 draw calls**, pixel ratio 1. iPhone: median 58.8 FPS, 5th percentile 58.8, 17 ms throughout, **3 draw calls**, pixel ratio 3. Both are vsync-limited, as in Milestone 3, and well above the targets (PC 60, iPhone ≥ 30, < 20 draw calls). Click → highlight wasn't timed: the user found it responsive and said not to worry about it for now. The user on joint highlighting: "articulations work great". Headless SwiftShader numbers aren't meaningful.
 
 ## Step 1: Content schema and `validate-content` (spec §5, §9)
 
@@ -178,8 +178,9 @@ These fill gaps the spec leaves open. Each is the smallest choice that fits the 
 
 ## Step 11: Hosted copy
 
-**Hosted copy, Milestone 4:** https://ajmarr04-ux.github.io/SkeletonViewer/m4/ (not live yet).
+**Hosted copy, Milestone 4:** https://ajmarr04-ux.github.io/SkeletonViewer/m4/ (live, confirmed by the user on 2026-11-19; frozen at `db07f62` in the Milestone 5 handover).
 
+- PR #10 merged (`db07f62`); Deploy run 11 succeeded on 2026-11-19; the user confirmed `/m4/` loads.
 - Merge to `main` through a PR, check the Deploy run, and ask the user to confirm https://ajmarr04-ux.github.io/SkeletonViewer/m4/ loads. Then tick the exit criterion, update `README.md`, and point `CLAUDE.md`'s status at Milestone 5's handover.
 
 ## New dependencies

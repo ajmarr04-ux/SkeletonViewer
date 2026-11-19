@@ -60,12 +60,19 @@ describe("selection in the URL", () => {
   const isId = (id: string) => ids.has(id);
 
   it("reads sel, tier and ghost, dropping unknown IDs", () => {
-    expect(parseUrlState("?sel=femur_left&tier=1&ghost=0", isId)).toEqual({ cam: null, sel: "femur_left", tier: 1, ghost: "hide" });
-    expect(parseUrlState("?sel=nope&tier=2", isId)).toEqual({ cam: null, sel: null, tier: 0, ghost: "ghost" });
+    expect(parseUrlState("?sel=femur_left&tier=1&ghost=0", isId)).toEqual({ cam: null, sel: "femur_left", tier: 1, grp: null, ghost: "hide", color: null });
+    expect(parseUrlState("?sel=nope&tier=2", isId)).toEqual({ cam: null, sel: null, tier: 0, grp: null, ghost: "ghost", color: null });
     expect(parseUrlState("?tier=2", isId).tier).toBe(0);
     expect(parseUrlState("?sel=femur_left&tier=7", isId).tier).toBe(0);
     expect(parseUrlState("?sel=tooth_18", isId).sel).toBe("tooth_18");
     expect(parseUrlState("?ghost=1").ghost).toBe("ghost");
+  });
+
+  it("reads and writes color=region (colour-by-region), after ghost and before cam", () => {
+    expect(parseUrlState("?color=region").color).toBe("region");
+    expect(parseUrlState("?color=bogus").color).toBeNull();
+    expect(serialiseUrlState({ color: "region" }, "?sel=femur_left&ghost=0&cam=0,1,2,0,0.85,0")).toBe("?sel=femur_left&ghost=0&color=region&cam=0,1,2,0,0.85,0");
+    expect(serialiseUrlState({ color: null }, "?debug&color=region")).toBe("?debug");
   });
 
   it("writes sel, tier, ghost and cam in that order, after other parameters, leaving defaults out", () => {
@@ -77,9 +84,18 @@ describe("selection in the URL", () => {
   });
 
   it("round-trips a full state", () => {
-    const state = { cam: { position: [0, 1, 2], target: [0, 0.85, 0], offset: [0.1, 0] }, sel: "femur_left", tier: 2, ghost: "hide" } as const;
+    const state = { cam: { position: [0, 1, 2], target: [0, 0.85, 0], offset: [0.1, 0] }, sel: "femur_left", tier: 2, grp: null, ghost: "hide", color: null } as const;
     const search = serialiseUrlState(state as never, "");
     expect(search).toBe("?sel=femur_left&tier=2&ghost=0&cam=0,1,2,0,0.85,0,0.1,0");
     expect(parseUrlState(search, isId)).toEqual(state);
+  });
+
+  it("reads and writes grp (exclusive with sel)", () => {
+    const isGroup = (k: string) => k === "dentition.type.molars";
+    expect(parseUrlState("?grp=dentition.type.molars", isId, isGroup).grp).toBe("dentition.type.molars");
+    expect(parseUrlState("?grp=nope", isId, isGroup).grp).toBeNull();
+    expect(parseUrlState("?sel=femur_left&grp=dentition.type.molars", isId, isGroup)).toMatchObject({ sel: "femur_left", grp: null });
+    expect(serialiseUrlState({ sel: null, tier: 0, grp: "dentition.type.molars" }, "?sel=femur_left&tier=1&ghost=0")).toBe("?grp=dentition.type.molars&ghost=0");
+    expect(serialiseUrlState({ sel: "tooth_36", tier: 0, grp: null }, "?grp=dentition.type.molars")).toBe("?sel=tooth_36");
   });
 });

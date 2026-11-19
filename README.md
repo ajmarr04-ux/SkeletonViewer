@@ -11,7 +11,8 @@ backend. The build spec is [`SPEC (2).md`](<SPEC (2).md>).
 | 1: Model ready (bare dual-LOD viewer) | https://ajmarr04-ux.github.io/SkeletonViewer/m1/ | Live (frozen at `b1392fa`) |
 | 2: Viewer (camera, URL state, phone frame rate) | https://ajmarr04-ux.github.io/SkeletonViewer/m2/ | Live (frozen at `eb3e8ff`) |
 | 3: Select and isolate (picking, tier-0 isolation, info panel, fixed orbit pivot) | https://ajmarr04-ux.github.io/SkeletonViewer/m3/ | Live (frozen at `d377478`) |
-| 4: Related isolation and content (tiers 1 and 2, joints, Explode, 238 content files) | https://ajmarr04-ux.github.io/SkeletonViewer/m4/ | In progress ([plan](docs/PLAN-milestone-4.md)) |
+| 4: Related isolation and content (tiers 1 and 2, joints, Explode, 238 content files) | https://ajmarr04-ux.github.io/SkeletonViewer/m4/ | Live (frozen at `db07f62`) |
+| 5: Polish (search and tree, labels, colour-by-region, screenshots, share links, accessibility) | https://ajmarr04-ux.github.io/SkeletonViewer/m5/ | In progress ([plan](docs/PLAN-milestone-5.md)) |
 
 Known issues and requested changes for later milestones: [`docs/BACKLOG.md`](docs/BACKLOG.md).
 

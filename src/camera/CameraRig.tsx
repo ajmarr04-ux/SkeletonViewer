@@ -3,6 +3,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import CameraControls from "camera-controls";
 import {
   Box3,
+  Color,
   Matrix4,
   Quaternion,
   Raycaster,
@@ -15,17 +16,25 @@ import {
 } from "three";
 import { ensureBoundsTrees, instanceWorldBounds, type BatchedSkeleton } from "../scene/batchSkeleton";
 import { PROXY_RADIUS_PX, pickWithProxies, tinyObjects, type Proxy, type RealHit } from "../scene/pick";
+import ids from "../../content/ids.json";
+import { displayName } from "../content/names";
 import { goBack, hasMesh, selectObject } from "../state/selection";
 import { isPickable, isolationView } from "../scene/isolation";
 
+/** Everything that covers the canvas for framing: the info panel, the breadcrumb and the sidebar. */
+function framingInset() {
+  const st = useViewer.getState();
+  return st.sidebarLeft > 0 ? { ...st.panelInset, left: st.sidebarLeft } : st.panelInset;
+}
+
 /** The box around everything solid in the current isolation (tiers 1 and 2: the focus and its related bones). */
-function isolationBox(boneBoxes: Map<string, Box>, sel: string | null, tier: 0 | 1 | 2): Box | undefined {
-  const view = isolationView(sel, tier, "ghost", hasMesh);
+function isolationBox(boneBoxes: Map<string, Box>, sel: string | null, tier: 0 | 1 | 2, grp: string | null = null): Box | undefined {
+  const view = isolationView(sel, tier, "ghost", hasMesh, grp);
   if (!view.solid) return undefined;
   const boxes = [...view.solid].map((id) => boneBoxes.get(id)).filter((b): b is Box => b !== undefined);
   return boxes.length ? unionBoxes(boxes) : undefined;
 }
-import { BENCH_DURATION_MS, BENCH_WARMUP_MS, benchAzimuth, summariseFrames } from "../scene/bench";
+import { BENCH_DURATION_MS, BENCH_WARMUP_MS, benchAzimuth, labelLayoutMs, summariseFrames, summariseTimes } from "../scene/bench";
 import type { Lod } from "../scene/lod";
 import { useViewer, type CameraCommand } from "../state/store";
 import { parseUrlState, serialiseUrlState, type CameraState, type Vec3 } from "../state/url";
@@ -34,6 +43,7 @@ import {
   NO_WHEEL_MEMORY,
   classifyWheel,
   keyAction,
+  tabCursor,
   tapStep,
   zoomFactor,
   type KeyAction,
@@ -131,9 +141,11 @@ export type ViewerDebugApi = {
    * direction, or the current one. For the all-objects e2e test.
    */
   frameBone: (id: string | string[], from?: Preset) => boolean;
-  state: () => { sel: string | null; tier: number; hovered: string | null };
+  state: () => { sel: string | null; tier: number; grp: string | null; hovered: string | null; cursor: string | null };
   /** A bone's box centre where it is drawn now (moves with Explode; `bone` gives the rest position). */
   boneNow: (id: string) => Vec3 | null;
+  /** A bone's instance colour in the solid batch (linear RGB), for the colour-by-region tests. */
+  instanceColour: (id: string) => [number, number, number] | null;
 };
 declare global {
   interface Window {
@@ -212,7 +224,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     el.setAttribute("role", "img");
     el.setAttribute(
       "aria-label",
-      "3D skeleton. Click a bone to select it, Escape to go back. Arrow keys orbit, Shift and arrows pan, plus and minus zoom, H resets the view, F frames the selection.",
+      "3D skeleton. Click a bone to select it, Escape to go back. Arrow keys orbit, Shift and arrows pan, plus and minus zoom, H resets the view, F frames the selection. Tab moves through the visible bones and Enter selects one; Escape then Tab leaves the view.",
     );
     el.style.touchAction = "none";
 
@@ -451,8 +463,103 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
           break;
       }
     };
+    // --- Tab through the visible objects (spec §10, plan decision 6) ---------------
+    /** After Escape clears the cursor, the next Tab leaves the canvas instead of starting again. */
+    let passThrough = false;
+    const cursorNow = () => useViewer.getState().keyCursor?.id ?? null;
+    const clearCursor = () => {
+      const st = useViewer.getState();
+      if (!st.keyCursor) return;
+      if (st.hovered === st.keyCursor.id) st.setHovered(null);
+      st.setKeyCursor(null);
+    };
+    const visibleIds = () => {
+      const st = useViewer.getState();
+      const view = isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp);
+      const present = live.current.geometry?.boneBoxes;
+      return (ids as { id: string }[]).map((e) => e.id).filter((id) => hasMesh(id) && present?.has(id) && isPickable(view, id));
+    };
+    /** Where a bone's box centre is on screen (client px), and whether it is in view. */
+    const onScreen = (id: string) => {
+      const box = live.current.geometry?.boneBoxes.get(id);
+      if (!box) return null;
+      camera.updateMatrixWorld();
+      const p = v(boxCentre(box)).project(camera);
+      const r = el.getBoundingClientRect();
+      const inView = p.z > -1 && p.z < 1 && Math.abs(p.x) <= 1 && Math.abs(p.y) <= 1;
+      return { x: r.left + ((p.x + 1) / 2) * r.width, y: r.top + ((1 - p.y) / 2) * r.height, inView };
+    };
+    const spokenName = (id: string) => displayName(id).replace(/ \((left|right)\)$/, ", $1");
+    const moveCursor = (id: string, list: string[]) => {
+      const st = useViewer.getState();
+      const at = onScreen(id);
+      st.setKeyCursor({ id, x: at?.x ?? 0, y: at?.y ?? 0 });
+      st.setHovered(id);
+      const off = at && !at.inView ? " Off screen: press F to frame it." : "";
+      st.say(`${spokenName(id)}. ${list.indexOf(id) + 1} of ${list.length}.${off}`);
+    };
+    const onTabKey = (e: KeyboardEvent): boolean => {
+      if (e.target !== el || e.ctrlKey || e.metaKey || e.altKey) return false;
+      if (e.key === "Tab") {
+        if (passThrough) {
+          passThrough = false;
+          return false; // let focus leave the canvas
+        }
+        const list = visibleIds();
+        const next = tabCursor(list, cursorNow(), e.shiftKey);
+        if (next === null) {
+          clearCursor();
+          return false;
+        }
+        e.preventDefault();
+        moveCursor(next, list);
+        return true;
+      }
+      const cur = cursorNow();
+      if (cur === null) return false;
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        clearCursor();
+        selectObject(cur);
+        return true;
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        clearCursor();
+        passThrough = true;
+        useViewer.getState().say("Left the bones. Tab moves on.");
+        return true;
+      }
+      if (e.key === "f" || e.key === "F") {
+        // F frames the cursor's bone (it may be off screen), without selecting it.
+        e.preventDefault();
+        const box = boneBox(cur);
+        const { size: sz, heightFraction: hf } = live.current;
+        if (!box) return true;
+        armed.current = true;
+        focusDepth.current = Infinity;
+        const now = pose();
+        go(clamped(frameBeside(box, sub(now.position, now.target), camera.fov, sz.width, sz.height, hf, framingInset())));
+        return true;
+      }
+      return false;
+    };
+    const onBlur = () => {
+      clearCursor();
+      passThrough = false;
+    };
+    el.addEventListener("blur", onBlur);
+    const onCursorPointer = () => clearCursor();
+    el.addEventListener("pointermove", onCursorPointer);
+    el.addEventListener("pointerdown", onCursorPointer);
+    const unsubscribeCursor = useViewer.subscribe((s, prev) => {
+      if (s.sel !== prev.sel || s.tier !== prev.tier || s.grp !== prev.grp) clearCursor();
+    });
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented) return;
+      if (onTabKey(e)) return;
+      if (e.key === "Tab") return;
       if (e.target !== el && e.target !== document.body && e.target !== document.documentElement) return;
       if (e.key === "Escape" && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();
@@ -478,7 +585,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     // Presets, reset, frame, repivot, centre and goto.
     const runCommand = (c: CameraCommand) => {
       const { geometry: g, limits: lim, aspect: asp, heightFraction: hf, size: sz } = live.current;
-      const inset = useViewer.getState().panelInset;
+      const inset = framingInset();
       if (!g || !lim) return;
       const now = pose();
       let cam: CameraState;
@@ -494,7 +601,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
           // The isolation (the selection, plus its related bones at tiers 1 and 2) is framed beside the info
           // panel; the skeleton (nothing selected) as before.
           const st = useViewer.getState();
-          const box = g ? isolationBox(g.boneBoxes, st.sel, st.tier) : undefined;
+          const box = g ? isolationBox(g.boneBoxes, st.sel, st.tier, st.grp) : undefined;
           const dir = sub(now.position, now.target);
           cam = box ? frameBeside(box, dir, camera.fov, sz.width, sz.height, hf, inset) : frameFrom(g.box, dir, camera.fov, asp, hf);
           break;
@@ -547,7 +654,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       const proxies: Proxy[] = [];
       // Ghosts and hidden bones are not pickable (the raycast already skips hidden instances).
       const st = useViewer.getState();
-      const view = isolationView(st.sel, st.tier, st.ghostMode, hasMesh);
+      const view = isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp);
       for (const id of tinyIds) {
         if (!isPickable(view, id)) continue;
         const box = g.boneBoxes.get(id);
@@ -661,7 +768,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
         },
         state: () => {
           const s = useViewer.getState();
-          return { sel: s.sel, tier: s.tier, hovered: s.hovered };
+          return { sel: s.sel, tier: s.tier, grp: s.grp, hovered: s.hovered, cursor: s.keyCursor?.id ?? null };
         },
         boneNow: (id) => {
           const sk = live.current.skeleton;
@@ -669,6 +776,13 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
           if (!sk || i === undefined) return null;
           const b = instanceWorldBounds(sk.mesh, i);
           return [(b.min.x + b.max.x) / 2, (b.min.y + b.max.y) / 2, (b.min.z + b.max.z) / 2];
+        },
+        instanceColour: (id) => {
+          const sk = live.current.skeleton;
+          const i = sk?.instanceOf.get(id);
+          if (!sk || i === undefined) return null;
+          const c = sk.mesh.getColorAt(i, new Color());
+          return [c.r, c.g, c.b];
         },
       };
     }
@@ -689,6 +803,10 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       el.removeEventListener("pointermove", onHoverMove);
       el.removeEventListener("pointerleave", onLeave);
       window.removeEventListener("keydown", onKeyDown);
+      el.removeEventListener("blur", onBlur);
+      el.removeEventListener("pointermove", onCursorPointer);
+      el.removeEventListener("pointerdown", onCursorPointer);
+      unsubscribeCursor();
       unsubscribe();
       if (debug) delete window.__viewer;
     };
@@ -718,9 +836,9 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     framed.current = true;
     const url = parseUrlState(window.location.search);
     const st = useViewer.getState();
-    const selBox = isolationBox(geometry.boneBoxes, st.sel, st.tier);
+    const selBox = isolationBox(geometry.boneBoxes, st.sel, st.tier, st.grp);
     const home = defaultView(geometry.box, camera.fov, aspect, heightFraction);
-    const inset = useViewer.getState().panelInset;
+    const inset = framingInset();
     const start = url.cam ?? (selBox ? frameBeside(selBox, sub(home.position, home.target), camera.fov, size.width, size.height, heightFraction, inset) : home);
     const cam = clampCamera(start, limits);
     const [ox, oy] = offsetOf(cam);
@@ -755,6 +873,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       if (!run || run.lod !== bench) {
         run = benchRun.current = { lod: bench, start: now, azimuth: c.azimuthAngle, last: now, frames: [], drawCalls: 0 };
         useViewer.getState().setBench(null);
+        labelLayoutMs.length = 0;
       } else {
         if (now - run.start > BENCH_WARMUP_MS) run.frames.push(now - run.last);
         run.last = now;
@@ -766,10 +885,22 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
         benchDone.current = bench;
         benchRun.current = null;
         const result = summariseFrames(run.frames);
-        if (result) useViewer.getState().setBench({ ...result, lod: run.lod, drawCalls: run.drawCalls });
+        if (result) useViewer.getState().setBench({ ...result, lod: run.lod, drawCalls: run.drawCalls, labels: summariseTimes(labelLayoutMs) });
       }
     }
     c.update(delta);
+    // The Tab cursor's tooltip follows its bone on screen.
+    const kc = useViewer.getState().keyCursor;
+    if (kc && geometry) {
+      const box = geometry.boneBoxes.get(kc.id);
+      if (box) {
+        const p = v(boxCentre(box)).project(camera);
+        const r = gl.domElement.getBoundingClientRect();
+        const x = Math.round(r.left + ((p.x + 1) / 2) * r.width);
+        const y = Math.round(r.top + ((1 - p.y) / 2) * r.height);
+        if (Math.abs(x - kc.x) > 1 || Math.abs(y - kc.y) > 1) useViewer.getState().setKeyCursor({ id: kc.id, x, y });
+      }
+    }
     // Hover: one pick per frame at most, never while the camera is being moved.
     const at = hoverAt.current;
     if (at && skeleton?.mesh.boundsTrees?.every(Boolean)) {

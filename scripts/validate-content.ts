@@ -20,6 +20,7 @@ const report = validateContent(
     regions: readJson("content/regions.json"),
     hierarchy: readJson("content/hierarchy.json"),
     opposite: oppositeOf,
+    synonyms: readJson("content/synonyms.json"),
   },
   { allowMissingContent },
 );

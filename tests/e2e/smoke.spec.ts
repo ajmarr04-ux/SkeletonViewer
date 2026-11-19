@@ -65,7 +65,7 @@ test("shows the WebGL 2 fallback", async ({ page }) => {
 
 test("attribution dialog shows the credits", async ({ page }) => {
   await page.goto("./?lod=low");
-  await page.getByRole("button", { name: "Attribution" }).click();
+  await page.getByRole("link", { name: "Attribution" }).click();
   await expect(page.getByRole("dialog")).toContainText("Z-Anatomy");
   await expect(page.getByRole("dialog")).toContainText("BodyParts3D");
 });

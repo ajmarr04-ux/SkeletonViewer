@@ -1,9 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { NO_PANEL } from "../camera/math";
+import { groupCounts, groupOf, type Group } from "../content/groups";
 import { useContent } from "../content/loader";
+import { displayName } from "../content/names";
 import { panelModel, type PanelLink, type PanelModel } from "../content/panel";
 import { NOT_WRITTEN } from "../content/placeholder";
-import { expandRegion, goBack, selectObject, showRelated, switchSide } from "../state/selection";
+import { expandRegion, goBack, hasMesh, selectObject, showRelated, switchSide } from "../state/selection";
 import { useViewer, type JointHighlight } from "../state/store";
 import { focusCanvas } from "./canvasFocus";
 import { PHONE_QUERY, useMedia } from "./useMedia";
@@ -42,11 +44,14 @@ export const nextSnap = (s: Snap): Snap => SNAPS[(SNAPS.indexOf(s) + 1) % SNAPS.
  */
 export function InfoPanel() {
   const sel = useViewer((s) => s.sel);
+  const grp = useViewer((s) => s.grp);
   const phone = useMedia(PHONE_QUERY);
   const content = useContent();
   const model = sel === null ? null : panelModel(sel, content);
+  // A group (plan step 3): its name, member count and members as links.
+  const group = sel === null && grp !== null ? (groupOf(grp) ?? null) : null;
   const setInset = useViewer((s) => s.setPanelInset);
-  const open = model !== null;
+  const open = model !== null || group !== null;
 
   // Clear the inset once the panel is gone.
   useEffect(() => {
@@ -55,9 +60,15 @@ export function InfoPanel() {
     setCssInset(0, 0);
   }, [open, setInset]);
 
-  if (!model) return null;
-  return phone ? <Sheet key="sheet" model={model} /> : <SidePanel key="side" model={model} />;
+  let view: PanelView;
+  if (model) view = { id: model.id, group: null, head: <Title model={model} />, body: <Body model={model} /> };
+  else if (group) view = { id: null, group: group.key, head: <GroupTitle group={group} />, body: <GroupBody group={group} /> };
+  else return null;
+  return phone ? <Sheet key="sheet" view={view} /> : <SidePanel key="side" view={view} />;
 }
+
+/** What the panel shows: an object or a group, its title and its body. */
+type PanelView = { id: string | null; group: string | null; head: React.ReactNode; body: React.ReactNode };
 
 function setCssInset(right: number, bottom: number): void {
   const root = document.documentElement;
@@ -105,7 +116,7 @@ function back() {
   focusCanvas();
 }
 
-function SidePanel({ model }: { model: PanelModel }) {
+function SidePanel({ view }: { view: PanelView }) {
   const ref = useRef<HTMLElement>(null);
   const [collapsed, setCollapsed] = useState(false);
   useReportInset(ref, "right");
@@ -115,11 +126,12 @@ function SidePanel({ model }: { model: PanelModel }) {
       className={`info-panel${collapsed ? " collapsed" : ""}`}
       aria-labelledby="panel-title"
       data-testid="info-panel"
-      data-id={model.id}
+      data-id={view.id ?? undefined}
+      data-group={view.group ?? undefined}
       onKeyDown={onPanelKey}
     >
       <div className="panel-head">
-        <Title model={model} />
+        {view.head}
         <button
           type="button"
           className="icon-button"
@@ -135,14 +147,14 @@ function SidePanel({ model }: { model: PanelModel }) {
       </div>
       {!collapsed && (
         <div className="panel-body" id="panel-body">
-          <Body model={model} />
+          {view.body}
         </div>
       )}
     </aside>
   );
 }
 
-function Sheet({ model }: { model: PanelModel }) {
+function Sheet({ view }: { view: PanelView }) {
   const ref = useRef<HTMLElement>(null);
   const [snap, setSnap] = useState<Snap>("peek");
   const [dragH, setDragH] = useState<number | null>(null);
@@ -198,7 +210,8 @@ function Sheet({ model }: { model: PanelModel }) {
       className="sheet"
       aria-labelledby="panel-title"
       data-testid="info-panel"
-      data-id={model.id}
+      data-id={view.id ?? undefined}
+      data-group={view.group ?? undefined}
       data-snap={snap}
       style={{ height }}
       onKeyDown={onPanelKey}
@@ -215,10 +228,10 @@ function Sheet({ model }: { model: PanelModel }) {
         >
           <span aria-hidden="true" />
         </button>
-        <Title model={model} />
+        {view.head}
       </div>
       <div className="panel-body" id="panel-body" hidden={snap === "peek" && dragH === null}>
-        <Body model={model} />
+        {view.body}
       </div>
     </aside>
   );
@@ -234,6 +247,43 @@ function Title({ model }: { model: PanelModel }) {
         {model.latin ?? (model.written ? "" : "Latin name not written yet")}
       </p>
     </div>
+  );
+}
+
+function GroupTitle({ group }: { group: Group }) {
+  const { shown, total } = groupCounts(group.key);
+  return (
+    <div className="panel-title">
+      <h2 id="panel-title" tabIndex={-1}>
+        {group.name}
+      </h2>
+      <p className="latin" data-testid="group-count">
+        Group · {shown === total ? `${total} ${total === 1 ? "object" : "objects"}` : `${shown} of ${total} have a 3D model`}
+      </p>
+    </div>
+  );
+}
+
+/** A group's members (plan step 3): each a link that makes it the focus at tier 0; Back returns here. */
+function GroupBody({ group }: { group: Group }) {
+  return (
+    <>
+      <section className="panel-section" aria-labelledby="h-members" data-testid="section-members">
+        <h3 id="h-members">Members</h3>
+        <ul className="links">
+          {group.members.map((id) => (
+            <li key={id}>
+              <LinkButton link={{ id, label: displayName(id) }} detail={hasMesh(id) ? undefined : "No 3D model"} />
+            </li>
+          ))}
+        </ul>
+      </section>
+      <div className="panel-actions">
+        <button type="button" className="button primary" data-testid="panel-back" onClick={back}>
+          Back
+        </button>
+      </div>
+    </>
   );
 }
 
