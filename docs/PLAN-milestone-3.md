@@ -14,16 +14,16 @@ Out of scope until Milestone 4: tiers 1 and 2 (Show related, Expand region), joi
 | --- | --- | --- |
 | G | 0 (Milestone 2 handover), 1 (fixed orbit pivot), 2 (selection state and URL), 3 (picking, drag vs click, hit proxies) | **Done.** See "Session G notes" below. Needs the user: a hand check of the new orbit |
 | H | 4 (highlight and outline), 5 (tier-0 isolation: ghost and hide), 6 (hover tooltip) | **Done.** See "Session H notes" below. Needs the user: the outline choice, and a look on a real device |
-| I | 7 (info panel and breadcrumb), 8 (keyboard, Back and a11y announcements), 9 (performance check), 10 (tests, including all 234 on a 390 px viewport), 11 (hosted copy) | Not started |
+| I | 6b (session H feedback: lighter accent, ghost opacity 10%), 7 (info panel and breadcrumb), 8 (keyboard, Back and a11y announcements), 9 (performance check), 10 (tests, including all 234 on a 390 px viewport), 11 (hosted copy) | **Steps 6b to 10 done.** See "Session I notes" below. Needs the user: step 9's numbers on PC and iPhone, a look at the panel and sheet on a device, then the merge for step 11 |
 
 Triggers: "begin session G", "begin session H" and "begin session I". Each session starts by reading this file and ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models` and `npm run e2e` passing, then a commit and push to the session branch. No Blender work is planned, so `scripts/setup-blender.sh` is only needed if the models have to be rebuilt.
 
 ## Exit criteria (from spec §11, Phase 3)
 
-- [ ] Hover, select, drag-versus-click detection and enlarged hit proxies all work.
+- [x] Hover, select, drag-versus-click detection and enlarged hit proxies all work. (Sessions G and H; the all-objects phone test in session I.)
 - [x] Tier-0 isolation works, with ghost and hide modes. (Session H.)
-- [ ] The info panel works with placeholder content.
-- [ ] Every object, including the ossicles and teeth, can be selected on a 390 px wide viewport.
+- [x] The info panel works with placeholder content. (Session I.)
+- [x] Every object, including the ossicles and teeth, can be selected on a 390 px wide viewport. (Session I: `tests/e2e/all-objects.spec.ts`.)
 - [x] Orbit pivot stays put while panning and zooming (backlog 1), and selecting, double-clicking or `F` move it to the bone; Home resets it. (Session G; still needs the user's hand check.)
 - [ ] Click → highlight under 50 ms on desktop and 100 ms on a phone (spec §8), and draw calls stay under 20 with a bone isolated.
 - [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
@@ -72,6 +72,24 @@ Triggers: "begin session G", "begin session H" and "begin session I". Each sessi
   - Is the hull outline good enough, or should the selection use `OutlineEffect`?
   - The selection's outline is the same blue as the bone. It shows as a rim but doesn't contrast with the bone. A lighter outline (for example `#cfe3ff`) would separate the two more clearly for colour-blind users; say if you'd prefer that.
   - Ghost look and default opacity (0.15) on a real screen.
+  - *Answered after PR #6:* functionality is good. Make the accent lighter (`#a7caf2`) and the default ghost opacity 10%: step 6b, done in session I. The outline method wasn't questioned, so the hull stays.
+
+## Session I notes (steps 6b to 10, done; step 11 waits for the merge)
+
+- **Step 6b, accent:** `ACCENT_COLOUR` is `#a7caf2`. Tinted exactly to it (accent ÷ ivory), the lit bone read greyish, about `#adc2d4`: the key light, environment and ACES tone mapping desaturate it. So the tint has a per-channel gain, `ACCENT_GAIN = [0.62, 1.2, 2.9]` (linear; `accentTint()` in `src/scene/material.ts`), found by measuring screenshots: the median of the lit shaft of a selected femur now reads **rgb(166, 200, 241)** against the target (167, 202, 242). The lighting is unchanged.
+- **Step 6b, outline:** the selection outline stays the stronger blue, `#3d8bfd` (`SELECTION_OUTLINE_COLOUR`), as agreed with the user. **Colour-blindness check** (Machado 2009 matrices, full severity, on the screenshot): with deuteranopia the shaft reads rgb(192, 205, 243) and the outline rgb(33, 133, 251); with protanopia rgb(199, 212, 246) and rgb(79, 150, 255). In both, the selected bone stays a clearly blue-lavender against the grey ghosts, and the outline separates from the bone (contrast about 2:1, by lightness) and from the background (4.5:1 and 5.5:1). Selection is therefore shown by outline and colour for both (spec §10).
+- **Step 6b, ghosts:** default opacity 10% (`GHOST_OPACITY.default`); a stored slider value still wins.
+- **Info panel** (`src/ui/InfoPanel.tsx`, content from `src/content/placeholder.ts` and `labels.ts`, built from `content/ids.json` only): name with "Latin name not written yet" in italics underneath, common name, side toggle (paired objects only), badges (region, "Bone" or the tooth type, "Draft — not yet reviewed"), the no-model note for the wisdom teeth, the six sections ("Not written yet"; the landmarks toggle is there but disabled), and Show related / Expand region (disabled, "Arrives in Milestone 4") / Back. Desktop: right panel, `min(360px, 45vw)`, collapsible. Phone (< 600 px): bottom sheet at peek (76 px: handle and name), half (50% of the height) and full (all but 48 px); the handle or a tap on the header steps through them, a drag snaps to the nearest. At peek and half the toolbar sits above the sheet; at full it is hidden.
+- **Side toggle:** opposite side matched by kind, name and group with "left" and "right" swapped (teeth carry the side in both), so tooth_13 ↔ tooth_23 and tooth_18 ↔ tooth_28 (all 102 pairs tested). It's a tier-0 switch of focus: the entry is replaced and the pivot moves without moving the picture. (Milestone 4 must make it keep tiers 1 and 2, which the reducer's `select` resets to 0.)
+- **Framing beside the panel:** the panel reports the area it covers (`panelInset` in the store, plus 56 px at the top for the breadcrumb). `F` with a selection, opening a link with `sel`, and double-click / double-tap frame or centre the bone in the area left free, by fitting to it and setting the focal offset (`frameBeside`, `panelOffset` in `src/camera/math.ts`). The projection itself never changes when the panel opens, so opening it doesn't jerk the view. The pan limit (`clampOffset`) can shorten the offset from far out (double-click on the femur from the whole-skeleton view lands it about 30 px short of the free area's centre). Home and presets are unchanged (no offset).
+- **Breadcrumb** (`src/ui/Breadcrumb.tsx`): `Skeleton › Lower limb › Femur`, top left, one line with an ellipsis on a phone, only while something is selected. `axial` and `appendicular` are skipped; teeth read `Skeleton › Teeth › Upper right › Canines › Upper right canine`. "Skeleton" steps back to the full skeleton; the middle levels become links with Expand region in Milestone 4. The debug overlay moved down to make room.
+- **Step 8:** `Esc` on the canvas (as before) or anywhere in the panel steps back; so do the panel's Back and "Skeleton". Panel Back and "Skeleton" return focus to the canvas; a mouse selection leaves focus on the canvas. `src/ui/Announcer.tsx` is a polite live region: "Femur, left, selected. Isolated.", "Upper right canine, selected. Isolated.", "Upper right third molar, selected. No 3D model." and "Full skeleton" (changes only, not the state the page opened with).
+- **Contrast and reflow:** all panel text is ≥ 4.5:1 (checked in e2e on computed colours; the pressed side toggle and Back button use `#2563c9` under white text, 5.7:1, because `#3d8bfd` gave only 3.3:1). At 200% zoom (1280 px → 640 CSS px) the panel reflows with no horizontal scrolling (e2e, plus a screenshot in `test-results/panel-200pct.png`). The toolbar moves left to stay centred in the free area, and goes icons-only with the side panel open below 900 px so it fits beside it.
+- **Step 9 (bench):** `?bench&sel=femur_left` runs the 360° orbit with the femur isolated and ghosts on; the bench panel now shows what was isolated, and moves left of the info panel. Click → highlight time stays in the `?debug` overlay. **Needs the user:** run both on the PC and the iPhone (see "Needs the user" below).
+- **Tests:** Vitest 200 (new `tests/placeholder.test.ts`: every ID has a panel model, exactly the four wisdom teeth flagged, opposite side for all 204 lateral objects and none for the midline, labels, announcements, sheet snaps, framing beside the panel). Playwright 59 (new `tests/e2e/panel.spec.ts`: panel content, breadcrumb, announcer, side toggle, Back and focus, Esc in the panel, collapse, wisdom tooth, midline, contrast, 200% reflow, phone sheet tap / drag / toolbar / `F` above the sheet; new `tests/e2e/all-objects.spec.ts`: **all 234 objects tapped on a 390 × 844 touch screen**, in 4 parallel chunks, each framed as `F` would without selecting (from the current direction, else the other presets), then a real tap at a point `__viewer.pick` says is that object, then `sel` checked; plus all 28 teeth tapped with the whole skull in view). Ossicles are inside the temporal bone, so at whole-skull zoom they are covered and only reachable close up (as the all-objects pass does); the strict skull-zoom pass covers the teeth. New debug hooks: `back()` and `frameBone(id | ids[], preset?)`. Updated: `emptySpot` moved to the left edge (the panel covers the right), the `F` and double-click tests expect the panel offset.
+- **Needs the user:**
+  - Step 9 on PC and iPhone: `https://ajmarr04-ux.github.io/SkeletonViewer/?bench&sel=femur_left` (and the same with `&ghost=0`): median and 5th-percentile FPS and draw calls; then `?debug`, click a bone, and read "click → highlight" in the overlay.
+  - The panel on a desktop and the bottom sheet on the iPhone: does the peek / half / full sheet feel right, and is the pale-blue bone with the stronger blue outline what you wanted?
 
 ## Step 1: Fixed orbit pivot (backlog 1, approved by the user on 2026-11-19)
 
@@ -127,6 +145,14 @@ Triggers: "begin session G", "begin session H" and "begin session I". Each sessi
 ## Step 6: Hover tooltip
 
 - Desktop only: after the pointer rests on a bone for 150 ms, a small tooltip near the pointer shows the bone's name (with side, for example "Femur (left)"). It hides on drag, leave or wheel. Not shown for the selected bone while the panel is open.
+
+## Step 6b: Session H feedback (the user, after testing PR #6; do first in session I)
+
+The user checked session H on the live site: "looks good functionality wise". Two changes:
+- **Lighter accent on the selected bone.** The current `#3d8bfd` "feels too aggressive on the white bone". Aim for **`#a7caf2`** (`ACCENT_COLOUR` in `src/scene/material.ts`). The tint is the accent divided by ivory, so check on a screenshot that the lit, AO-shaded bone actually reads close to `#a7caf2`. If it comes out greyish, adjust the tint (not the lighting) until it does.
+  - Selection must still show by outline **and** colour (spec §10). A pale blue on ivory is harder to tell apart for colour-blind users, so keep the selection outline a stronger blue (the current `#3d8bfd`, `OUTLINE.selected`) and check it with a deuteranopia/protanopia simulation of the screenshot. Note the result here.
+  - Update the colour test in `tests/batch.test.ts` if it hard-codes the old value (it uses the constant, so it should follow).
+- **Default ghost opacity 10%:** `GHOST_OPACITY.default` 0.15 → 0.10 in `src/state/store.ts` (the range stays 0.05 to 0.5). People who moved the slider keep their stored value.
 
 ## Step 7: Info panel and breadcrumb (spec §7)
 

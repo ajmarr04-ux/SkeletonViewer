@@ -5,6 +5,9 @@ import { useViewer } from "../state/store";
 export function BenchPanel() {
   const bench = useViewer((s) => s.bench);
   const active = useViewer((s) => s.lodActive);
+  const sel = useViewer((s) => s.sel);
+  const ghostMode = useViewer((s) => s.ghostMode);
+  const isolation = sel === null ? "none (full skeleton)" : `${sel}, ${ghostMode === "ghost" ? "ghosts" : "others hidden"}`;
   return (
     <aside className="bench" aria-label="Benchmark" aria-live="polite" data-testid="bench">
       <h2>Benchmark</h2>
@@ -16,6 +19,8 @@ export function BenchPanel() {
         <dl>
           <dt>LOD</dt>
           <dd>{bench.lod}</dd>
+          <dt>Isolated</dt>
+          <dd data-testid="bench-isolation">{isolation}</dd>
           <dt>Median FPS</dt>
           <dd>{bench.medianFps.toFixed(1)}</dd>
           <dt>5th pct FPS</dt>

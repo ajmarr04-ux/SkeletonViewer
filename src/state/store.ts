@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { BenchResult } from "../scene/bench";
 import type { Lod, LodSetting } from "../scene/lod";
-import type { Preset } from "../camera/math";
+import { NO_PANEL, type PanelInset, type Preset } from "../camera/math";
 import type { Tier } from "./isolation";
 import type { CameraState, GhostMode } from "./url";
 
@@ -21,7 +21,7 @@ export type CameraCommand =
   | { kind: "goto"; cam: CameraState | null };
 
 /** Ghost opacity (spec §6 slider): default and range. Kept in localStorage, not the URL. */
-export const GHOST_OPACITY = { default: 0.15, min: 0.05, max: 0.5 } as const;
+export const GHOST_OPACITY = { default: 0.1, min: 0.05, max: 0.5 } as const;
 export const GHOST_OPACITY_KEY = "skeleton-viewer:ghost-opacity";
 
 /**
@@ -46,6 +46,9 @@ export type ViewerState = {
   ghostOpacity: number;
   /** Object under the mouse pointer (desktop hover), or null. */
   hovered: string | null;
+  /** Canvas area covered by the info panel (CSS px), for framing (`F`, double-click). */
+  panelInset: PanelInset;
+  setPanelInset: (inset: PanelInset) => void;
   /**
    * `performance.now()` time of the pointer-up that asked for a selection, until
    * the highlight is drawn (click → highlight timing, spec §8); else null.
@@ -78,6 +81,11 @@ export const useViewer = create<ViewerState>()((set) => ({
   ghostMode: "ghost",
   ghostOpacity: typeof window === "undefined" ? GHOST_OPACITY.default : storedGhostOpacity(),
   hovered: null,
+  panelInset: NO_PANEL,
+  setPanelInset: (inset) =>
+    set((s) =>
+      s.panelInset.right === inset.right && s.panelInset.bottom === inset.bottom && s.panelInset.top === inset.top ? s : { panelInset: inset },
+    ),
   inputAt: null,
   markInput: (inputAt) => set({ inputAt }),
   setIsolation: ({ sel, tier }) => set({ sel, tier }),

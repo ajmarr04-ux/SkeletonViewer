@@ -43,13 +43,18 @@ import {
   clipPlanes,
   defaultView,
   depthOf,
+  directionFromAngles,
+  PRESET_ANGLES,
+  type Preset,
   dollyPose,
   eyeOf,
+  frameBeside,
   frameFrom,
   framedHeightFraction,
   length,
   offsetOf,
   panPose,
+  panelOffset,
   pointOnTargetPlane,
   presetView,
   repivot,
@@ -111,6 +116,13 @@ export type ViewerDebugApi = {
   pick: (x: number, y: number, touch?: boolean) => string | null;
   command: (c: CameraCommand) => void;
   select: (id: string) => void;
+  /** Step back one isolation level (as Esc). */
+  back: () => void;
+  /**
+   * Frame a bone without selecting it (instant, as `F` would): from a preset
+   * direction, or the current one. For the all-objects e2e test.
+   */
+  frameBone: (id: string | string[], from?: Preset) => boolean;
   state: () => { sel: string | null; tier: number; hovered: string | null };
 };
 declare global {
@@ -157,8 +169,8 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
 
   const controlsRef = useRef<CameraControls | null>(null);
   // Everything the event handlers need, read fresh each time.
-  const live = useRef({ skeleton, geometry, tiny, limits, aspect, heightFraction, reducedMotion });
-  live.current = { skeleton, geometry, tiny, limits, aspect, heightFraction, reducedMotion };
+  const live = useRef({ skeleton, geometry, tiny, limits, aspect, heightFraction, reducedMotion, size });
+  live.current = { skeleton, geometry, tiny, limits, aspect, heightFraction, reducedMotion, size };
   /** URL writes start with the first move the user (or a command) makes. */
   const armed = useRef(false);
   const framed = useRef(false);
@@ -455,7 +467,8 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
 
     // Presets, reset, frame, repivot, centre and goto.
     const runCommand = (c: CameraCommand) => {
-      const { geometry: g, limits: lim, aspect: asp, heightFraction: hf } = live.current;
+      const { geometry: g, limits: lim, aspect: asp, heightFraction: hf, size: sz } = live.current;
+      const inset = useViewer.getState().panelInset;
       if (!g || !lim) return;
       const now = pose();
       let cam: CameraState;
@@ -467,9 +480,13 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
         case "reset":
           cam = defaultView(g.box, camera.fov, asp, hf);
           break;
-        case "frame":
-          cam = frameFrom(boneBox(useViewer.getState().sel) ?? g.box, sub(now.position, now.target), camera.fov, asp, hf);
+        case "frame": {
+          // The selection is framed beside the info panel; the skeleton (nothing selected) as before.
+          const box = boneBox(useViewer.getState().sel);
+          const dir = sub(now.position, now.target);
+          cam = box ? frameBeside(box, dir, camera.fov, sz.width, sz.height, hf, inset) : frameFrom(g.box, dir, camera.fov, asp, hf);
           break;
+        }
         case "goto":
           cam = c.cam ?? defaultView(g.box, camera.fov, asp, hf);
           break;
@@ -477,6 +494,10 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
           const box = boneBox(c.id);
           if (!box) return;
           cam = centreOn(now, boxCentre(box));
+          // In the middle of the area the info panel leaves free.
+          const depth = length(sub(cam.position, cam.target));
+          const offset = panelOffset(inset, depth, camera.fov, sz.width, sz.height, hf);
+          if (offset[0] !== 0 || offset[1] !== 0) cam = { ...cam, offset };
           break;
         }
         case "repivot": {
@@ -611,6 +632,18 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
         pick: (x, y, touch = false) => pick(x, y, touch),
         command: (c) => useViewer.getState().requestCamera(c),
         select: (id) => selectObject(id),
+        back: () => goBack(),
+        frameBone: (id, from) => {
+          const boxes = (Array.isArray(id) ? id : [id]).map((i) => live.current.geometry?.boneBoxes.get(i));
+          if (boxes.length === 0 || boxes.some((b) => !b)) return false;
+          const box = unionBoxes(boxes as Box[]);
+          const now = pose();
+          const dir = from ? directionFromAngles(PRESET_ANGLES[from].azimuth, PRESET_ANGLES[from].polar) : sub(now.position, now.target);
+          focusDepth.current = Infinity;
+          const cam = clamped(frameFrom(box, dir, camera.fov, live.current.aspect, live.current.heightFraction));
+          go(cam, false);
+          return true;
+        },
         state: () => {
           const s = useViewer.getState();
           return { sel: s.sel, tier: s.tier, hovered: s.hovered };
@@ -665,13 +698,14 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     const sel = useViewer.getState().sel;
     const selBox = sel && hasMesh(sel) ? geometry.boneBoxes.get(sel) : undefined;
     const home = defaultView(geometry.box, camera.fov, aspect, heightFraction);
-    const start = url.cam ?? (selBox ? frameFrom(selBox, sub(home.position, home.target), camera.fov, aspect, heightFraction) : home);
+    const inset = useViewer.getState().panelInset;
+    const start = url.cam ?? (selBox ? frameBeside(selBox, sub(home.position, home.target), camera.fov, size.width, size.height, heightFraction, inset) : home);
     const cam = clampCamera(start, limits);
     const [ox, oy] = offsetOf(cam);
     void c.setLookAt(...cam.position, ...cam.target, false);
     void c.setFocalOffset(ox, -oy, 0, false);
     if (url.cam) useViewer.getState().setCamera(cam);
-  }, [geometry, limits, camera, aspect, heightFraction]);
+  }, [geometry, limits, camera, aspect, heightFraction, size]);
 
   // --- keep the framed area above the toolbar: move the projection centre up ---
   useEffect(() => {
