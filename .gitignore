@@ -3,3 +3,4 @@ dist/
 .venv/
 .cache/
 *.blend1
+__pycache__/

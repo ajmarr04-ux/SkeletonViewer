@@ -11,16 +11,16 @@ Get one clean skeleton model into the repo: 238 separate objects (206 bones and 
 | Session | Steps | Status |
 | --- | --- | --- |
 | A | 1 (audit) and 2 (ID list and mapping) | **Done.** See `assets/audit/REPORT.md`, the decisions are recorded there |
-| B | 3 (Blender pipeline) and 4 (compression and checks) | Not started. Start with "begin session B" (see `CLAUDE.md`) |
-| C | 5 (bare viewer) and 6 (Pages deploy) | Not started |
+| B | 3 (Blender pipeline) and 4 (compression and checks) | **Done.** See `assets/build/REPORT.md`. Rebuild with `npm run build-models` |
+| C | 5 (bare viewer) and 6 (Pages deploy) | Not started. Start with "begin session C" (see `CLAUDE.md`) |
 
 To resume in a fresh session, run `bash scripts/setup-blender.sh`, then read this file and `assets/audit/REPORT.md`.
 
 ## Exit criteria (from spec §11, Phase 1)
 
 - [x] Source chosen. Teeth are confirmed as separate meshes, or the problem has been reported back. (Z-Anatomy: 28 of 32 teeth are separate; the third molars are missing and reported.)
-- [ ] 238 objects, named by stable ID, in one shared coordinate space.
-- [ ] Both LODs exported and compressed, and each is under its size budget (high: ~500k tris, < 15 MB; low: ~150k tris, < 6 MB).
+- [x] 238 objects, named by stable ID, in one shared coordinate space. (234 meshes plus the 4 known-missing third molars; `check-models` asserts the names and that no bone moved.)
+- [x] Both LODs exported and compressed, and each is under its size budget (high: ~500k tris, < 15 MB; low: ~150k tris, < 6 MB). (high 499,981 tris, 2.59 MB; low 149,913 tris, 0.91 MB.)
 - [ ] A bare viewer loads both LODs.
 - [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
 

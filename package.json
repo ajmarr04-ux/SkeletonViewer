@@ -6,10 +6,18 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "ids": "python3 scripts/mapping/generate_ids.py"
+    "ids": "python3 scripts/mapping/generate_ids.py",
+    "check-models": "tsx scripts/check-models.ts",
+    "build-models": "bash scripts/build-models.sh",
+    "compress-models": "bash scripts/compress-models.sh"
   },
   "devDependencies": {
+    "@gltf-transform/core": "^4.5.1",
+    "@gltf-transform/extensions": "^4.5.1",
     "@types/node": "^26.6.6",
+    "gltfpack": "^1.3.0",
+    "meshoptimizer": "^1.3.0",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.1.1"
   }

@@ -28,6 +28,11 @@ A static browser app: a 3D atlas of the adult human skeleton (bones and teeth on
 | `scripts/blender/audit_source.py` | Produces the audit. |
 | `scripts/setup-blender.sh` | Installs `bpy==5.3.0` into `.cache/venv` and fetches the pinned source into `.cache/z-anatomy/` (git-ignored). |
 | `tests/ids.test.ts` | Vitest tests of the ID list and the mapping. |
+| `scripts/blender/build_skeleton.py` | Blender pipeline: extract, clean, origins, AO bake, LODs, glTF export, `assets/build/manifest.json`. |
+| `scripts/compress-models.sh`, `scripts/check-models.ts` | gltfpack into `public/models/`, then the name, budget and bounds checks (`npm run check-models`). |
+| `scripts/build-models.sh` | All of the above in one go: `npm run build-models` (about 45 s, after setup). |
+| `assets/build/REPORT.md` | Build results: triangle counts, sizes, AO method, leftover non-manifold geometry. |
+| `public/models/skeleton-{high,low}.glb` | The committed, compressed models. Named nodes = bones; each has an unnamed child holding the quantised mesh. |
 
 ## Environment notes
 - The cloud container is temporary, so **run `bash scripts/setup-blender.sh` first in every session**. It takes about a minute and is safe to re-run.
