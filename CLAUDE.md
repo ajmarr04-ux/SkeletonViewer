@@ -40,6 +40,8 @@ A static browser app: a 3D atlas of the adult human skeleton (bones and teeth on
 | `src/scene/material.ts`, `src/scene/Lighting.tsx` | Shared bone material with the AO remap (`AO_FLOOR`), key light and `RoomEnvironment`. |
 | `src/state/store.ts`, `src/state/url.ts` | zustand store (camera, LOD, reduced motion, `cameraRequest` commands, `sel`/`tier`/ghost/hover); pure URL parse/serialise helpers (`sel`, `tier`, `ghost`, `cam=` with optional offset). |
 | `src/state/isolation.ts`, `src/state/selection.ts` | Pure isolation reducer (spec §6 state diagram, history step per action); applying it to the store and browser history (push / replace / back, `skvDepth` marker, popstate). |
+| `src/scene/isolation.ts`, `src/scene/Isolation.tsx`, `src/scene/outline.ts` | Isolation view (solid / ghost / focus) applied to the solid and ghost batches; inverted-hull outlines sharing the batch's buffers. |
+| `src/ui/Tooltip.tsx`, `src/content/names.ts` | Hover name tooltip; display names ("Femur (left)"). |
 | `src/scene/pick.ts` | Tiny objects (radius < 2 cm, 100 of them) and `pickWithProxies` (screen-space hit areas: 22 px touch, 6 px mouse). |
 | `src/camera/CameraRig.tsx` | camera-controls rig with a **fixed orbit pivot**: camera-controls only rotates; pan, zoom-to-surface and two-finger touch are the rig's own (focal offset). Clicks/taps select, double-tap centres, hover, `Esc`, `cam=` URL sync, `window.__viewer` debug hooks. |
 | `src/camera/math.ts`, `src/camera/input.ts` | Pure camera maths (presets, box framing, limits, fixed-pivot `panPose`/`dollyPose`/`repivot`/`centreOn`/`clampOffset`) and input helpers (`classifyWheel`, key map, taps and double taps). |
@@ -55,7 +57,7 @@ When milestone N is merged and milestone N+1 begins:
 2. **Confirm that milestone N's hosted copy is live** at `https://ajmarr04-ux.github.io/SkeletonViewer/m<N>/`. The container can't reach `github.io`, so ask the user (or check the latest Deploy run with the GitHub tools). Then tick "Hosted copy is live" in that milestone's plan and update its row in `README.md`.
 3. Write the new milestone's plan as `docs/PLAN-milestone-<N+1>.md`, following the spec's §11 phase.
 
-Status: Milestone 1 is frozen at `b1392fa` and Milestone 2 at `eb3e8ff` (`current` is 3); `/m1/` and `/m2/` are live (confirmed by the user). Milestone 3 (spec Phase 3, select and isolate, plus the fixed orbit pivot from `docs/BACKLOG.md` entry 1, approved by the user) is planned in `docs/PLAN-milestone-3.md`, split into sessions G, H and I (triggers: "begin session G" and so on). Session G (fixed pivot, selection state and URL, picking) is done; next is "begin session H".
+Status: Milestone 1 is frozen at `b1392fa` and Milestone 2 at `eb3e8ff` (`current` is 3); `/m1/` and `/m2/` are live (confirmed by the user). Milestone 3 (spec Phase 3, select and isolate, plus the fixed orbit pivot from `docs/BACKLOG.md` entry 1, approved by the user) is planned in `docs/PLAN-milestone-3.md`, split into sessions G, H and I (triggers: "begin session G" and so on). Sessions G (fixed pivot, selection state and URL, picking) and H (highlight, outline, ghost/hide isolation, hover tooltip) are done; next is "begin session I".
 
 ## Environment notes
 - The cloud container is temporary, so **run `bash scripts/setup-blender.sh` first in every session**. It takes about a minute and is safe to re-run.
