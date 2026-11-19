@@ -12,7 +12,8 @@
 import ids from "../../content/ids.json";
 import { isGroupKey } from "../content/groups";
 import { isolationStep, type IsolationAction } from "./isolation";
-import { useViewer } from "./store";
+import { COLOUR_MODE_KEY, type ColourMode } from "../scene/regionColours";
+import { storedFlag, useViewer } from "./store";
 import { parseUrlState, serialiseUrlState, type GhostMode, type UrlState } from "./url";
 
 type IdEntry = { id: string; meshAvailable: boolean };
@@ -98,12 +99,38 @@ export function setGhostMode(mode: GhostMode): void {
   window.history.replaceState(window.history.state, "", urlWith({ ghost: mode }));
 }
 
-/** Read the selection from the URL at start-up. */
+/**
+ * Colour-by-region on or off (plan decision 8): store, localStorage and the URL
+ * (`color=region`, no new history entry), so a share link shows the same colours.
+ */
+export function setColourMode(mode: ColourMode): void {
+  const st = useViewer.getState();
+  try {
+    if (mode === "region") window.localStorage.setItem(COLOUR_MODE_KEY, "1");
+    else window.localStorage.removeItem(COLOUR_MODE_KEY);
+  } catch {
+    // Storage disabled: the URL still carries it.
+  }
+  if (st.colourMode === mode) return;
+  st.setColourMode(mode);
+  window.history.replaceState(window.history.state, "", urlWith({ color: mode === "region" ? "region" : null }));
+}
+
+/**
+ * Read the selection from the URL at start-up. Colour-by-region comes from the
+ * URL when it says `color=region`, else from the stored preference (which is
+ * then written to the URL, so the address always shows what is on screen).
+ */
 export function initSelectionFromUrl(): UrlState {
   const url = parseUrlState(window.location.search, isKnownId, isGroupKey);
   const st = useViewer.getState();
   st.setIsolation({ sel: url.sel, tier: url.tier, grp: url.grp });
   st.setGhostMode(url.ghost);
+  const colour: ColourMode = url.color === "region" || storedFlag(COLOUR_MODE_KEY) ? "region" : "bone";
+  st.setColourMode(colour);
+  if (colour === "region" && url.color !== "region") {
+    window.history.replaceState(window.history.state, "", urlWith({ color: "region" }));
+  }
   return url;
 }
 
@@ -116,6 +143,9 @@ export function initSelectionFromUrl(): UrlState {
 export function onPopState(): void {
   const url = parseUrlState(window.location.search, isKnownId, isGroupKey);
   const st = useViewer.getState();
+  // Colour-by-region isn't history: an older entry keeps today's colours, and its URL is brought up to date.
+  const colour = st.colourMode === "region" ? "region" : null;
+  if (url.color !== colour) window.history.replaceState(window.history.state, "", urlWith({ color: colour }));
   const isolationChanged = url.sel !== st.sel || url.tier !== st.tier || url.grp !== st.grp || url.ghost !== st.ghostMode;
   if (!isolationChanged) {
     st.requestCamera({ kind: "goto", cam: url.cam });

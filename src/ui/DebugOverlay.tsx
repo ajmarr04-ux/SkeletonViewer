@@ -64,6 +64,7 @@ export function DebugOverlay(p: Props) {
       data-outline-selected={iso?.outlineSelected ?? ""}
       data-outline-hover={iso?.outlineHover ?? ""}
       data-joint={iso ? iso.joint.join(",") : ""}
+      data-colour={iso?.colour ?? ""}
       data-explode={explode}
       data-highlight-ms={iso?.highlightMs != null ? iso.highlightMs.toFixed(1) : ""}
       data-bounds-max-delta-mm={boundsDone ? (bounds.maxDelta * 1000).toFixed(4) : ""}

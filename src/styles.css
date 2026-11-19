@@ -31,7 +31,18 @@ dialog.attribution {
   max-width: min(720px, calc(100vw - 32px)); max-height: 80vh; color: inherit;
   background: #26292e; border: 1px solid #444; border-radius: 8px; text-align: left;
 }
-dialog.attribution pre { white-space: pre-wrap; font: 13px/1.5 ui-monospace, monospace; }
+dialog.attribution { font-size: 15px; line-height: 1.5; padding: 0 20px 16px; }
+dialog.attribution::backdrop { background: rgb(0 0 0 / 0.5); }
+.attribution-head {
+  position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 10px 0 4px; background: #26292e;
+}
+.attribution-head h1 { margin: 0; font-size: 20px; }
+.attribution-body h1 { display: none; } /* the file's own title; the dialog has one */
+.attribution-body h2 { margin: 16px 0 4px; font-size: 16px; }
+.attribution-body p, .attribution-body ul { margin: 0 0 8px; }
+.attribution-body a { overflow-wrap: anywhere; }
+.attribution-body code { font-size: 13px; }
 
 .fallback { max-width: 560px; margin: 0 auto; padding: 32px 16px 64px; text-align: center; }
 .fallback img { max-width: 100%; max-height: 60vh; }
@@ -85,10 +96,25 @@ dialog.attribution pre { white-space: pre-wrap; font: 13px/1.5 ui-monospace, mon
 .bench dt { color: #9aa0a6; }
 .bench dd { margin: 0; font-variant-numeric: tabular-nums; }
 
-/* Phones: icons only (spec §7). */
+/* Icons only when the toolbar chose so (src/ui/toolbarFit.ts), always on phones (spec §7). */
+.toolbar:not([data-fit="labels"]) .tool-label { display: none; }
+.toolbar:not([data-fit="labels"]) .tool { padding: 0; }
+/* "More" (plan decision 12): the overflow buttons and sliders, one section each. */
+.more-menu { display: flex; flex-direction: column; gap: 2px; min-width: 220px; }
+.more-item { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.more-item[aria-pressed="true"] { background: rgb(61 139 253 / 0.22); }
+.more-section + .more-section { border-top: 1px solid #3c4043; padding-top: 2px; }
+.more-section .settings { padding: 6px 8px; }
+dialog.manual-share {
+  width: min(520px, calc(100vw - 32px)); color: inherit; background: #26292e; border: 1px solid #444; border-radius: 8px;
+}
+dialog.manual-share h2 { margin: 0 0 10px; font-size: 16px; }
+dialog.manual-share input {
+  box-sizing: border-box; width: 100%; min-height: 44px; padding: 0 10px; border-radius: 8px;
+  border: 1px solid #5f6368; background: #15171a; color: #e8eaed; font: inherit;
+}
+dialog.manual-share form { margin-top: 12px; text-align: right; }
 @media (max-width: 599px) {
-  .tool-label { display: none; }
-  .tool { padding: 0; }
   /* Popovers span the toolbar (its own containing block), so they stay on screen whichever button opens them. */
   .popover-anchor { position: static; }
   .popover { left: 0; right: 0; transform: none; min-width: 0; }
@@ -212,11 +238,6 @@ dialog.attribution pre { white-space: pre-wrap; font: 13px/1.5 ui-monospace, mon
 @media (prefers-reduced-motion: reduce) {
   .sheet { transition: none; }
 }
-/* Side panel open on a narrow window (or 200% zoom): the toolbar goes icons-only to fit beside it. */
-@media (max-width: 899px) {
-  :root[data-panel="side"] .tool-label { display: none; }
-  :root[data-panel="side"] .tool { padding: 0; }
-}
 
 /* Sidebar (spec §7, Milestone 5): search and the hierarchy tree. Left on desktop, full screen on phones. */
 .sidebar {
@@ -267,16 +288,59 @@ dialog.attribution pre { white-space: pre-wrap; font: 13px/1.5 ui-monospace, mon
 .tree-row[aria-selected="true"] .tree-isolate, .sidebar-phone .tree-isolate { opacity: 1; }
 .tree-help { margin: 8px 14px 16px; font-size: 12px; }
 :root { --sidebar-left: 0px; }
-/* The sidebar open (with or without the side panel): icons only when the toolbar would not fit beside them. */
+
+/* Floating labels (Milestone 5, plan decision 7): under the panels and toolbar, never in the pointer's way. */
+.labels { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+.label-leaders { position: absolute; inset: 0; }
+.label-leaders line { stroke: rgb(232 234 237 / 0.75); stroke-width: 1; }
+.label-leaders circle { fill: #e8eaed; stroke: rgb(0 0 0 / 0.6); stroke-width: 1; }
+.label {
+  position: absolute; top: 0; left: 0; box-sizing: border-box; padding: 0 6px; border-radius: 5px;
+  background: rgb(20 22 26 / 0.86); border: 1px solid #5f6368; color: #e8eaed;
+  font: 13px/20px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; white-space: nowrap; overflow: hidden;
+}
+.label-focus { border-color: #8ab4f8; background: rgb(22 38 64 / 0.92); }
+
+/* Colour-by-region legend (plan decision 8): bottom left on desktop, a strip above the toolbar on phones. */
+.legend {
+  position: fixed; left: calc(12px + var(--sidebar-left, 0px)); bottom: 40px; z-index: 2;
+  padding: 6px 6px 4px; border-radius: 10px; background: rgb(32 35 40 / 0.9); border: 1px solid #3c4043;
+  font-size: 13px;
+}
+.legend-title { margin: 0 6px 2px; font-size: 13px; font-weight: 600; color: #bdc1c6; }
+.legend ul { margin: 0; padding: 0; list-style: none; }
+.legend-item {
+  display: flex; align-items: center; gap: 8px; width: 100%; min-height: 28px; padding: 0 8px;
+  border: 0; border-radius: 6px; background: transparent; color: #e8eaed; font: inherit; text-align: left; cursor: pointer;
+}
+.legend-item:hover { background: rgb(255 255 255 / 0.1); }
+.legend-item[aria-current="true"] { background: rgb(61 139 253 / 0.22); }
+.legend-swatch { flex: none; width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgb(0 0 0 / 0.5); }
+/* With the side panel or the sidebar on a narrow window, the legend would sit under the toolbar: lift it. */
 @media (max-width: 1099px) {
-  :root[data-sidebar] .tool-label { display: none; }
-  :root[data-sidebar] .tool { padding: 0; }
+  .legend { bottom: 100px; }
 }
-@media (max-width: 1599px) {
-  :root[data-sidebar][data-panel="side"] .tool-label { display: none; }
-  :root[data-sidebar][data-panel="side"] .tool { padding: 0; }
+@media (max-width: 599px) {
+  .legend {
+    left: 8px; right: 8px; bottom: calc(max(40px, var(--panel-bottom, 0px) + 8px) + 58px);
+    padding: 4px;
+  }
+  .legend-title { display: none; }
+  .legend ul { display: flex; flex-wrap: wrap; gap: 0 2px; }
+  .legend li { flex: 0 0 auto; }
+  .legend-item { min-height: 24px; padding: 0 6px; gap: 5px; font-size: 12px; }
+  .sheet[data-snap="full"] ~ .legend, .sheet[data-snap="half"] ~ .legend { display: none; }
 }
-/* Narrow window with the side panel: tighter spacing so the toolbar (with Search) still fits beside it. */
-@media (max-width: 899px) {
-  :root[data-panel="side"] .toolbar { gap: 0; padding: 2px; }
+
+/* Toast ("Link copied"): above the toolbar, briefly. */
+.toast {
+  position: fixed; left: calc(50% + (var(--sidebar-left, 0px) - var(--panel-right, 0px)) / 2);
+  bottom: calc(max(40px, var(--panel-bottom, 0px) + 8px) + 62px); transform: translateX(-50%); z-index: 5;
+  max-width: calc(100vw - 32px); padding: 8px 14px; border-radius: 8px;
+  background: #2f3540; border: 1px solid #8ab4f8; color: #e8eaed; font-size: 14px; pointer-events: none;
+  animation: toast-in 0.15s ease-out;
+}
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 6px); } }
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none; }
 }

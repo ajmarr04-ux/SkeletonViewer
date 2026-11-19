@@ -67,9 +67,11 @@ export type UrlState = {
   /** Isolated group (Milestone 5, a hierarchy node key), or null. Never set together with `sel`. */
   grp: string | null;
   ghost: GhostMode;
+  /** Colour-by-region (plan decision 8): `color=region` in the URL; null when the URL doesn't say. */
+  color: "region" | null;
 };
 
-const MANAGED = ["sel", "tier", "grp", "ghost", "cam"] as const;
+const MANAGED = ["sel", "tier", "grp", "ghost", "color", "cam"] as const;
 
 /**
  * Read the app's parameters. `isId` says which IDs exist: an unknown `sel` is
@@ -89,14 +91,15 @@ export function parseUrlState(
   const rawGrp = q.get("grp");
   const grp = sel === null && rawGrp && isGroup(rawGrp) ? rawGrp : null;
   const ghost: GhostMode = q.get("ghost") === "0" ? "hide" : "ghost";
-  return { cam: parseCam(q.get("cam")), sel, tier, grp, ghost };
+  const color = q.get("color") === "region" ? "region" : null;
+  return { cam: parseCam(q.get("cam")), sel, tier, grp, ghost, color };
 }
 
 /**
  * Write the given parts of the state into `search`. Parts not given keep their
  * value from `search`; every other parameter is kept verbatim (including bare
  * flags such as `?debug`). The app's own parameters go last, in the order
- * sel, tier (or grp), ghost, cam, and only when they differ from the defaults.
+ * sel, tier (or grp), ghost, color, cam, and only when they differ from the defaults.
  * Returns "" or a string starting with "?".
  */
 export function serialiseUrlState(state: Partial<UrlState>, search: string): string {
@@ -107,6 +110,7 @@ export function serialiseUrlState(state: Partial<UrlState>, search: string): str
     if (merged.tier !== 0) kept.push(`tier=${merged.tier}`);
   } else if (merged.grp !== null) kept.push(`grp=${encodeURIComponent(merged.grp)}`);
   if (merged.ghost === "hide") kept.push("ghost=0");
+  if (merged.color === "region") kept.push("color=region");
   if (merged.cam) kept.push(`cam=${formatCam(merged.cam)}`);
   return kept.length ? `?${kept.join("&")}` : "";
 }

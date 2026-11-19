@@ -3,7 +3,10 @@ import { useThree } from "@react-three/fiber";
 import { hasMesh } from "../state/selection";
 import { useViewer } from "../state/store";
 import type { BatchedSkeleton } from "./batchSkeleton";
-import { applyIsolationView, isPickable, isolationView, visibleCount, withJoint } from "./isolation";
+import { Color } from "three";
+import { applyBaseColours, applyIsolationView, isPickable, isolationView, PLAIN, visibleCount, withJoint, type BaseTint } from "./isolation";
+import { tintFor } from "./material";
+import { REGIONS, regionColour, regionOf, type ColourMode, type Region } from "./regionColours";
 import { OUTLINE, setOutlineColour, setOutlineTarget, setOutlineViewport, type Outline } from "./outline";
 
 /** Everything drawn for one LOD: solid batch, ghost batch and the two outlines. */
@@ -12,6 +15,23 @@ export type SkeletonScene = {
   ghost: BatchedSkeleton;
   outlines: { selected: Outline; hover: Outline };
 };
+
+let regionTints: Map<Region, Color> | null = null;
+
+/** The instance colours for colour-by-region: each region's colour divided by the ivory material. */
+function regionBase(): BaseTint {
+  regionTints ??= new Map(REGIONS.map((r) => [r.region, tintFor(regionColour(r.region))]));
+  const white = new Color(1, 1, 1);
+  return (id) => {
+    const r = regionOf(id);
+    return (r && regionTints!.get(r)) || white;
+  };
+}
+
+/** The base colour of each object in a colour mode. */
+export function baseTintFor(mode: ColourMode): BaseTint {
+  return mode === "region" ? regionBase() : PLAIN;
+}
 
 /** What the debug overlay shows about isolation (and the e2e tests read). */
 export type IsolationStats = {
@@ -24,6 +44,8 @@ export type IsolationStats = {
   joint: string[];
   /** Pointer up → first frame drawn with the new highlight, ms (spec §8). */
   highlightMs: number | null;
+  /** The colour mode the instance colours were last written for. */
+  colour: ColourMode;
 };
 
 /**
@@ -61,11 +83,18 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
     if (!scene) return;
     let focus: string | null = null;
     let joint: readonly string[] = [];
+    let colour: ColourMode = "bone";
     const apply = () => {
       const st = useViewer.getState();
       const view = withJoint(isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp), st.joint, hasMesh);
       const focusChanged = view.focus !== focus;
-      applyIsolationView(scene.skeleton, scene.ghost, view, focus, joint);
+      const base = baseTintFor(st.colourMode);
+      if (st.colourMode !== colour) {
+        // Colour-by-region on or off: every instance gets its new base colour, then the accent goes back on.
+        applyBaseColours(scene.skeleton, base);
+        colour = st.colourMode;
+      }
+      applyIsolationView(scene.skeleton, scene.ghost, view, focus, joint, base);
       focus = view.focus;
       joint = view.joint;
       const ghostMaterial = scene.ghost.mesh.material as { opacity: number };
@@ -98,6 +127,7 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
         outlineHover: scene.outlines.hover.target,
         joint: [...joint],
         highlightMs: highlightMs.current,
+        colour,
       });
     };
     apply();
@@ -109,7 +139,8 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
         s.ghostMode !== prev.ghostMode ||
         s.ghostOpacity !== prev.ghostOpacity ||
         s.hovered !== prev.hovered ||
-        s.joint !== prev.joint
+        s.joint !== prev.joint ||
+        s.colourMode !== prev.colourMode
       ) {
         apply();
       }

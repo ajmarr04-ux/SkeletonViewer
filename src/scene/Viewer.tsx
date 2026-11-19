@@ -30,6 +30,10 @@ import { InfoPanel } from "../ui/InfoPanel";
 import { Breadcrumb } from "../ui/Breadcrumb";
 import { Announcer } from "../ui/Announcer";
 import { Sidebar } from "../ui/Sidebar";
+import { LabelProbe, Labels } from "../ui/Labels";
+import { Legend } from "../ui/Legend";
+import { Toast } from "../ui/Toast";
+import { ScreenshotService } from "./ScreenshotService";
 import { probeDevice, readStoredSetting } from "./webgl";
 
 export type Shown = { lod: Lod } & SkeletonScene;
@@ -169,12 +173,17 @@ export function Viewer() {
           debug={debug}
           bench={bench && finalShown ? shown.lod : null}
         />
+        <LabelProbe skeleton={shown?.skeleton ?? null} />
+        <ScreenshotService />
         <StatsProbe onStats={setStats} />
       </Canvas>
+      <Labels />
       <Breadcrumb />
       <Sidebar />
       <InfoPanel />
       <Toolbar />
+      <Legend />
+      <Toast />
       <Tooltip />
       <Announcer />
       {error && !debug && (

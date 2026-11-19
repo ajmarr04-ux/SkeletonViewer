@@ -68,3 +68,37 @@ export const SearchIcon = svg(
     <path d="m20 20-4.5-4.5" />
   </>,
 );
+export const LabelsIcon = svg(
+  <>
+    <path d="M3 5h11l4 4-4 4H3z" />
+    <path d="M7 17v3M7 13v1" />
+  </>,
+);
+export const ColourIcon = svg(
+  <>
+    <circle cx="8" cy="9" r="4" />
+    <circle cx="16" cy="9" r="4" />
+    <circle cx="12" cy="16" r="4" />
+  </>,
+);
+export const CameraIcon = svg(
+  <>
+    <path d="M4 7h3l2-3h6l2 3h3v13H4z" />
+    <circle cx="12" cy="13" r="4" />
+  </>,
+);
+export const ShareIcon = svg(
+  <>
+    <circle cx="18" cy="5" r="3" />
+    <circle cx="6" cy="12" r="3" />
+    <circle cx="18" cy="19" r="3" />
+    <path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" />
+  </>,
+);
+export const MoreIcon = svg(
+  <>
+    <circle cx="5" cy="12" r="1.2" fill="currentColor" />
+    <circle cx="12" cy="12" r="1.2" fill="currentColor" />
+    <circle cx="19" cy="12" r="1.2" fill="currentColor" />
+  </>,
+);

@@ -422,8 +422,9 @@ test.describe("phone toolbar", () => {
     await expect.poll(async () => viewDir(await camera(page))[0], { timeout: 10_000 }).toBeGreaterThan(0.999);
     await page.getByRole("button", { name: "Home view" }).tap();
     await expect.poll(async () => dist((await camera(page)).position, home.position), { timeout: 10_000 }).toBeLessThan(1e-3);
-    await page.getByRole("button", { name: "Settings" }).tap();
-    const sb = (await page.getByRole("dialog", { name: "Settings" }).boundingBox())!;
+    // Settings is in "More" on a phone (plan decision 12).
+    await page.getByRole("button", { name: "More" }).tap();
+    const sb = (await page.getByRole("dialog", { name: "More" }).boundingBox())!;
     expect(sb.x).toBeGreaterThanOrEqual(0);
     expect(sb.x + sb.width).toBeLessThanOrEqual(390);
   });

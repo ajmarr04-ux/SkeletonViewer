@@ -4,6 +4,11 @@ import type { Lod, LodSetting } from "../scene/lod";
 import { NO_PANEL, type PanelInset, type Preset } from "../camera/math";
 import type { Tier } from "./isolation";
 import type { CameraState, GhostMode } from "./url";
+import type { ColourMode } from "../scene/regionColours";
+import type { PlacedLabel } from "../scene/labels";
+
+/** Floating labels on or off (plan decision 7): localStorage, not the URL. */
+export const LABELS_KEY = "skeleton-viewer:labels";
 
 /**
  * A camera move asked for by the UI or the selection logic.
@@ -48,6 +53,18 @@ export type ViewerState = {
   grp: string | null;
   ghostMode: GhostMode;
   ghostOpacity: number;
+  /** Colour-by-region or plain bone (plan decision 8): URL `color=region` and localStorage. */
+  colourMode: ColourMode;
+  setColourMode: (mode: ColourMode) => void;
+  /** Floating labels on or off (plan decision 7). */
+  labelsOn: boolean;
+  setLabelsOn: (on: boolean) => void;
+  /** The labels placed by the last layout (CSS px, client coordinates), drawn by `Labels.tsx` and the screenshot. */
+  labelLayout: readonly PlacedLabel[];
+  setLabelLayout: (layout: readonly PlacedLabel[]) => void;
+  /** A short message shown as a toast ("Link copied"), with a sequence number; also announced. */
+  toast: { text: string; seq: number } | null;
+  showToast: (text: string) => void;
   /** A message for the live region (spec §10), with a sequence number so a repeat is heard again. */
   announce: { text: string; seq: number } | null;
   say: (text: string) => void;
@@ -113,6 +130,23 @@ export const useViewer = create<ViewerState>()((set) => ({
   grp: null,
   ghostMode: "ghost",
   ghostOpacity: typeof window === "undefined" ? GHOST_OPACITY.default : storedGhostOpacity(),
+  colourMode: "bone",
+  setColourMode: (colourMode) => set({ colourMode }),
+  labelsOn: typeof window === "undefined" ? false : storedFlag(LABELS_KEY),
+  setLabelsOn: (labelsOn) => {
+    set({ labelsOn });
+    try {
+      if (labelsOn) window.localStorage.setItem(LABELS_KEY, "1");
+      else window.localStorage.removeItem(LABELS_KEY);
+    } catch {
+      // Storage disabled: the choice lasts for this page only.
+    }
+  },
+  labelLayout: [],
+  setLabelLayout: (labelLayout) => set((s) => (s.labelLayout.length === 0 && labelLayout.length === 0 ? s : { labelLayout })),
+  toast: null,
+  showToast: (text) =>
+    set((s) => ({ toast: { text, seq: (s.toast?.seq ?? 0) + 1 }, announce: { text, seq: (s.announce?.seq ?? 0) + 1 } })),
   hovered: null,
   announce: null,
   say: (text) => set((s) => ({ announce: { text, seq: (s.announce?.seq ?? 0) + 1 } })),
@@ -168,6 +202,15 @@ export function watchReducedMotion(): () => void {
   update();
   mq.addEventListener("change", update);
   return () => mq.removeEventListener("change", update);
+}
+
+/** A stored on/off flag ("1" means on). */
+export function storedFlag(key: string): boolean {
+  try {
+    return window.localStorage.getItem(key) === "1";
+  } catch {
+    return false;
+  }
 }
 
 /** The stored ghost opacity, or the default. */

@@ -34,6 +34,21 @@ Under the share-alike terms, the derived models in `models/`
 (`skeleton-high.glb`, `skeleton-low.glb`) are distributed under
 CC BY-SA 4.0.
 
+## Text content
+
+The descriptions in the info panel (summaries, landmarks, articulations,
+muscle attachments, clinical notes), the articulations and the region sets
+were drafted from standard anatomical references for this project. They have
+**not yet been reviewed** by an anatomist, and every content file is marked
+`reviewed: false`, so treat them as a study aid, not as a reference. Every
+choice that was uncertain while drafting (which bones count as articulating,
+what a region holds, naming) is recorded in `content/QUESTIONS.md` in the
+project's repository, where corrections are welcome.
+
+Screenshots taken in the app carry the model's attribution in the bottom
+right corner, as the licences above ask.
+
 ## Software
 
-Built with three.js, React Three Fiber, drei and meshoptimizer (all MIT).
+Built with three.js, React Three Fiber, drei, camera-controls,
+three-mesh-bvh, zustand, marked, MiniSearch and meshoptimizer (all MIT).

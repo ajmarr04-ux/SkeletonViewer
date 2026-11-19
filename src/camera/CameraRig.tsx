@@ -3,6 +3,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import CameraControls from "camera-controls";
 import {
   Box3,
+  Color,
   Matrix4,
   Quaternion,
   Raycaster,
@@ -143,6 +144,8 @@ export type ViewerDebugApi = {
   state: () => { sel: string | null; tier: number; grp: string | null; hovered: string | null; cursor: string | null };
   /** A bone's box centre where it is drawn now (moves with Explode; `bone` gives the rest position). */
   boneNow: (id: string) => Vec3 | null;
+  /** A bone's instance colour in the solid batch (linear RGB), for the colour-by-region tests. */
+  instanceColour: (id: string) => [number, number, number] | null;
 };
 declare global {
   interface Window {
@@ -773,6 +776,13 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
           if (!sk || i === undefined) return null;
           const b = instanceWorldBounds(sk.mesh, i);
           return [(b.min.x + b.max.x) / 2, (b.min.y + b.max.y) / 2, (b.min.z + b.max.z) / 2];
+        },
+        instanceColour: (id) => {
+          const sk = live.current.skeleton;
+          const i = sk?.instanceOf.get(id);
+          if (!sk || i === undefined) return null;
+          const c = sk.mesh.getColorAt(i, new Color());
+          return [c.r, c.g, c.b];
         },
       };
     }
