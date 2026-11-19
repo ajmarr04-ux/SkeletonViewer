@@ -46,6 +46,12 @@ export type ViewerState = {
   ghostOpacity: number;
   /** Object under the mouse pointer (desktop hover), or null. */
   hovered: string | null;
+  /**
+   * `performance.now()` time of the pointer-up that asked for a selection, until
+   * the highlight is drawn (click → highlight timing, spec §8); else null.
+   */
+  inputAt: number | null;
+  markInput: (t: number | null) => void;
   setIsolation: (iso: { sel: string | null; tier: Tier }) => void;
   setGhostMode: (mode: GhostMode) => void;
   setGhostOpacity: (opacity: number) => void;
@@ -70,11 +76,21 @@ export const useViewer = create<ViewerState>()((set) => ({
   sel: null,
   tier: 0,
   ghostMode: "ghost",
-  ghostOpacity: GHOST_OPACITY.default,
+  ghostOpacity: typeof window === "undefined" ? GHOST_OPACITY.default : storedGhostOpacity(),
   hovered: null,
+  inputAt: null,
+  markInput: (inputAt) => set({ inputAt }),
   setIsolation: ({ sel, tier }) => set({ sel, tier }),
   setGhostMode: (ghostMode) => set({ ghostMode }),
-  setGhostOpacity: (o) => set({ ghostOpacity: clampOpacity(o) }),
+  setGhostOpacity: (o) => {
+    const ghostOpacity = clampOpacity(o);
+    set({ ghostOpacity });
+    try {
+      window.localStorage.setItem(GHOST_OPACITY_KEY, String(ghostOpacity));
+    } catch {
+      // Private mode or storage disabled: the value lasts for this page only.
+    }
+  },
   setHovered: (hovered) => set((s) => (s.hovered === hovered ? s : { hovered })),
   setBench: (bench) => set({ bench }),
   requestCamera: (command) => set((s) => ({ cameraRequest: { command, seq: (s.cameraRequest?.seq ?? 0) + 1 } })),
@@ -94,6 +110,16 @@ export function watchReducedMotion(): () => void {
   update();
   mq.addEventListener("change", update);
   return () => mq.removeEventListener("change", update);
+}
+
+/** The stored ghost opacity, or the default. */
+export function storedGhostOpacity(): number {
+  try {
+    const raw = window.localStorage.getItem(GHOST_OPACITY_KEY);
+    return raw === null ? GHOST_OPACITY.default : clampOpacity(Number(raw));
+  } catch {
+    return GHOST_OPACITY.default;
+  }
 }
 
 export function clampOpacity(o: number): number {

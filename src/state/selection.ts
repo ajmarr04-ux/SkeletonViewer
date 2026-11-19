@@ -12,7 +12,7 @@
 import ids from "../../content/ids.json";
 import { isolationStep, type IsolationAction } from "./isolation";
 import { useViewer } from "./store";
-import { parseUrlState, serialiseUrlState, type UrlState } from "./url";
+import { parseUrlState, serialiseUrlState, type GhostMode, type UrlState } from "./url";
 
 type IdEntry = { id: string; meshAvailable: boolean };
 const ENTRIES = ids as IdEntry[];
@@ -50,6 +50,14 @@ export const selectObject = (id: string): void => {
   if (isKnownId(id)) dispatchIsolation({ type: "select", id });
 };
 export const goBack = (): void => dispatchIsolation({ type: "back" });
+
+/** Ghost or hide (spec §6 toggle): store and URL (`ghost=0` for hide), no new history entry. */
+export function setGhostMode(mode: GhostMode): void {
+  const st = useViewer.getState();
+  if (st.ghostMode === mode) return;
+  st.setGhostMode(mode);
+  window.history.replaceState(window.history.state, "", urlWith({ ghost: mode }));
+}
 
 /** Read the selection from the URL at start-up. */
 export function initSelectionFromUrl(): UrlState {

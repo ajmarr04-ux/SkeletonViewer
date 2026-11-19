@@ -1,4 +1,4 @@
-import { BatchedMesh, Box3, Matrix4, Mesh, Vector3, type BufferGeometry, type Material } from "three";
+import { BatchedMesh, Box3, Color, Matrix4, Mesh, Vector3, type BufferGeometry, type Material } from "three";
 import { acceleratedRaycast, computeBatchedBoundsTree, disposeBatchedBoundsTree } from "three-mesh-bvh";
 
 // three-mesh-bvh's BatchedMesh raycast runs each instance through an internal
@@ -32,7 +32,7 @@ function counts(g: BufferGeometry): { vertices: number; indices: number } {
  * dequantising child), so every bone keeps its exact world position: nothing
  * is translated, rotated or re-posed (spec §12).
  */
-export function batchSkeleton(parts: BonePart[], material: Material): BatchedSkeleton {
+export function batchSkeleton(parts: BonePart[], material: Material, opts: { name?: string; instanceColours?: boolean } = {}): BatchedSkeleton {
   let maxVertices = 0;
   let maxIndices = 0;
   for (const p of parts) {
@@ -41,7 +41,7 @@ export function batchSkeleton(parts: BonePart[], material: Material): BatchedSke
     maxIndices += c.indices;
   }
   const mesh = new BatchedMesh(parts.length, maxVertices, maxIndices, material);
-  mesh.name = "skeleton";
+  mesh.name = opts.name ?? "skeleton";
   const boneIds: string[] = [];
   const instanceOf = new Map<string, number>();
   let triangles = 0;
@@ -53,6 +53,12 @@ export function batchSkeleton(parts: BonePart[], material: Material): BatchedSke
     boneIds[instanceId] = p.id;
     instanceOf.set(p.id, instanceId);
     triangles += counts(p.geometry).indices / 3;
+  }
+  // Instance colours (the selection's accent) change the shader program. Set
+  // them up front, all white, so the first selection doesn't compile a new one.
+  if (opts.instanceColours) {
+    const white = new Color(1, 1, 1);
+    for (let i = 0; i < boneIds.length; i++) mesh.setColorAt(i, white);
   }
   return { mesh, boneIds, instanceOf, triangles };
 }

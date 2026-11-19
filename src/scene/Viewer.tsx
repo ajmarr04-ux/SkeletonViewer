@@ -20,10 +20,21 @@ import { disposeParts, loadSkeleton } from "./loadSkeleton";
 import { BenchPanel } from "../ui/BenchPanel";
 import { Toolbar } from "../ui/Toolbar";
 import { LOD_SETTING_KEY, lodPlan, lodsToLoad, parseLodSetting, summariseObjects, withoutLodParam, type Lod } from "./lod";
-import { createBoneMaterial } from "./material";
+import { createBoneMaterial, createGhostMaterial } from "./material";
+import { Isolation, type IsolationStats, type SkeletonScene } from "./Isolation";
+import { createOutline, disposeOutline, OUTLINE } from "./outline";
+import { Tooltip } from "../ui/Tooltip";
 import { probeDevice, readStoredSetting } from "./webgl";
 
-export type Shown = { lod: Lod; skeleton: BatchedSkeleton };
+export type Shown = { lod: Lod } & SkeletonScene;
+
+function disposeScene(s: SkeletonScene): void {
+  // The outlines share the solid batch's buffers: free them together.
+  disposeOutline(s.outlines.selected);
+  disposeOutline(s.outlines.hover);
+  disposeBatchedSkeleton(s.ghost);
+  disposeBatchedSkeleton(s.skeleton);
+}
 
 /**
  * The Milestone 2 viewer. Loads the low LOD, then (if the device or the
@@ -42,6 +53,8 @@ export function Viewer() {
     return lodPlan(window.location.search, setting, probe);
   });
   const [material] = useState(createBoneMaterial);
+  const [ghostMaterial] = useState(() => createGhostMaterial(useViewer.getState().ghostOpacity));
+  const [isoStats, setIsoStats] = useState<IsolationStats | null>(null);
   const [shown, setShown] = useState<Shown | null>(null);
   const shownRef = useRef<Shown | null>(null);
   shownRef.current = shown;
@@ -53,6 +66,7 @@ export function Viewer() {
   useEffect(() => watchReducedMotion(), []);
   useEffect(() => watchHistory(), []);
   useEffect(() => () => material.dispose(), [material]);
+  useEffect(() => () => ghostMaterial.dispose(), [ghostMaterial]);
 
   // A new choice in Settings re-plans. It overrides `?lod=`, which is dropped from the URL.
   useEffect(
@@ -78,15 +92,31 @@ export function Viewer() {
           disposeParts(loaded.parts);
           return;
         }
-        const skeleton = batchSkeleton(loaded.parts, material);
-        disposeParts(loaded.parts); // the BatchedMesh holds its own copy
+        const skeleton = batchSkeleton(loaded.parts, material, { instanceColours: true });
+        // Ghosts (spec §6): a second batch from the same parts, drawn translucent.
+        const ghost = batchSkeleton(loaded.parts, ghostMaterial, { name: "ghosts" });
+        ghost.mesh.visible = false;
+        disposeParts(loaded.parts); // the BatchedMeshes hold their own copies
         current = skeleton;
-        setShown({ lod, skeleton });
+        const outlines = {
+          selected: createOutline(skeleton, OUTLINE.selected.colour, OUTLINE.selected.widthPx, "outline-selected"),
+          hover: createOutline(skeleton, OUTLINE.hover.colour, OUTLINE.hover.widthPx, "outline-hover"),
+        };
+        setShown({ lod, skeleton, ghost, outlines });
         useViewer.getState().setLodActive(lod);
         setLoadTimes((t) => ({ ...t, [lod]: loaded.loadedAtMs }));
         if (debug) {
           setBounds(null);
-          setBounds(await checkInstanceBounds(lod, allInstanceBounds(skeleton)));
+          const [solidReport, ghostReport] = await Promise.all([
+            checkInstanceBounds(lod, allInstanceBounds(skeleton)),
+            checkInstanceBounds(lod, allInstanceBounds(ghost)),
+          ]);
+          setBounds({
+            ...solidReport,
+            ghostChecked: ghostReport.checked,
+            maxDelta: Math.max(solidReport.maxDelta, ghostReport.maxDelta),
+            errors: [...solidReport.errors, ...ghostReport.errors.map((e) => `ghost ${e}`)],
+          });
         }
       }
       // Build the raycasting BVH once the final LOD is on screen, off the critical path.
@@ -98,14 +128,14 @@ export function Viewer() {
     return () => {
       cancelled = true;
     };
-  }, [plan, material, debug]);
+  }, [plan, material, ghostMaterial, debug]);
 
   // Free a skeleton once it is off screen: this cleanup runs after the commit
   // that swapped the next one into the scene (or on unmount), never while it
   // can still be drawn.
   useEffect(() => {
     if (!shown) return;
-    return () => disposeBatchedSkeleton(shown.skeleton);
+    return () => disposeScene(shown);
   }, [shown]);
 
   const objects = shown ? summariseObjects(shown.skeleton.boneIds, ids) : null;
@@ -123,6 +153,10 @@ export function Viewer() {
         <color attach="background" args={["#1d2126"]} />
         <Lighting />
         {shown && <primitive object={shown.skeleton.mesh} />}
+        {shown && <primitive object={shown.outlines.selected.mesh} />}
+        {shown && <primitive object={shown.outlines.hover.mesh} />}
+        {shown && <primitive object={shown.ghost.mesh} />}
+        <Isolation scene={shown} onStats={debug ? setIsoStats : undefined} />
         <CameraRig
           skeleton={shown?.skeleton ?? null}
           debug={debug}
@@ -131,6 +165,7 @@ export function Viewer() {
         <StatsProbe onStats={setStats} />
       </Canvas>
       <Toolbar />
+      <Tooltip />
       {error && !debug && (
         <p className="load-error" role="alert">
           The skeleton could not be loaded: {error}
@@ -147,6 +182,7 @@ export function Viewer() {
         modelTriangles={shown?.skeleton.triangles ?? 0}
         stats={stats}
         bounds={debug ? bounds : undefined}
+        isolation={isoStats}
         error={error}
       />
       )}
