@@ -74,3 +74,18 @@ export function pickWithProxies(
   }
   return best ? best.id : (real?.id ?? null);
 }
+
+/** One ray hit on a layer's solid batch. */
+export type LayerHit = { layer: string; id: string; distance: number };
+
+/**
+ * Picking across layers (M7 plan decision 11): one ray against every solid
+ * batch drawn; the nearest hit on a pickable structure wins, whatever its
+ * layer. Ghosts and hidden structures are skipped (they aren't in a solid
+ * batch, and `isPickable` says no to them as well).
+ */
+export function nearestPickable<T extends LayerHit>(hits: readonly T[], isPickable: (layer: string, id: string) => boolean): T | null {
+  let best: T | null = null;
+  for (const h of hits) if ((best === null || h.distance < best.distance) && isPickable(h.layer, h.id)) best = h;
+  return best;
+}

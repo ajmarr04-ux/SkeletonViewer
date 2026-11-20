@@ -29,9 +29,13 @@ export const ACCENT_COLOUR = "#a7caf2";
  */
 export const ACCENT_GAIN: readonly [number, number, number] = [0.62, 1.2, 2.9];
 
-/** The instance colour for the selected bone: `tintFor(ACCENT_COLOUR)` with `ACCENT_GAIN`. */
-export function accentTint(): Color {
-  const t = tintFor(ACCENT_COLOUR);
+/**
+ * The instance colour for the selected bone: `tintFor(ACCENT_COLOUR)` with
+ * `ACCENT_GAIN`. M7: `base` is the layer's material colour for a soft-tissue
+ * structure (the same accent on a muscle; M10 revisits the colours).
+ */
+export function accentTint(base: string = BONE_COLOUR): Color {
+  const t = tintFor(ACCENT_COLOUR, base);
   return new Color(t.r * ACCENT_GAIN[0], t.g * ACCENT_GAIN[1], t.b * ACCENT_GAIN[2]);
 }
 

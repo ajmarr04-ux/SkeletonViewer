@@ -11,7 +11,11 @@
 
 import ids from "../../content/ids.json";
 import { isGroupKey } from "../content/groups";
-import { isolationStep, type IsolationAction } from "./isolation";
+import { displayName } from "../content/names";
+import { hideTargets, isSoftId, softEntry, softLayerOf } from "../content/softRegistry";
+import { loadSoftIds } from "../content/loadSoftIds";
+import { useLayerBatches } from "../scene/layerRegistry";
+import { FULL_SKELETON, isolationStep, type IsolationAction } from "./isolation";
 import { COLOUR_MODE_KEY, type ColourMode } from "../scene/regionColours";
 import { LAYERS_KEY, storedFlag, useViewer } from "./store";
 import {
@@ -20,6 +24,7 @@ import {
   isDefaultLayers,
   isUserLayersValue,
   LAYERS,
+  HIDDEN_URL_CAP,
   parseHidden,
   parseLayers,
   parseUrlState,
@@ -37,9 +42,14 @@ const ENTRIES = ids as IdEntry[];
 const KNOWN = new Set(ENTRIES.map((e) => e.id));
 const WITH_MESH = new Set(ENTRIES.filter((e) => e.meshAvailable).map((e) => e.id));
 
-export const isKnownId = (id: string): boolean => KNOWN.has(id);
-/** False for the four wisdom teeth, which have no mesh in the source. */
-export const hasMesh = (id: string): boolean => WITH_MESH.has(id);
+/** A bone or tooth, or (once its table is loaded) a soft-tissue structure. */
+export const isKnownId = (id: string): boolean => KNOWN.has(id) || isSoftId(id);
+/** False for the four wisdom teeth, the parent muscles and the structures the source lacks. */
+export const hasMesh = (id: string): boolean => WITH_MESH.has(id) || softEntry(id)?.mesh === true;
+/** The layer an object is drawn in: bones (and teeth), or its soft-tissue layer; null if unknown. */
+export const layerOfId = (id: string): Layer | null => (KNOWN.has(id) ? "bones" : softLayerOf(id));
+/** True for a structure of the new kinds (M7: tier 0 only, plan decision 8). */
+export const isNewKind = (id: string | null): boolean => id !== null && !KNOWN.has(id) && isSoftId(id);
 
 type HistoryMark = { skvDepth?: number };
 const depthNow = (): number => ((window.history.state as HistoryMark | null)?.skvDepth ?? 0);
@@ -75,8 +85,16 @@ function frameSoon(): void {
 }
 
 export const selectObject = (id: string): void => {
-  if (isKnownId(id)) dispatchIsolation({ type: "select", id });
+  if (!isKnownId(id)) return;
+  showLayerOf(id);
+  dispatchIsolation({ type: "select", id });
 };
+
+/** A soft-tissue structure is selected with its layer showing: an Off layer is turned On (plan decision 12). */
+function showLayerOf(id: string): void {
+  const layer = layerOfId(id);
+  if (layer && layer !== "bones" && useViewer.getState().layers[layer] === "off") setLayerMode(layer, "on");
+}
 export const goBack = (): void => dispatchIsolation({ type: "back" });
 /** Isolate a whole group from the tree or the legend (plan decision 5). */
 export const isolateGroup = (key: string): void => {
@@ -98,10 +116,47 @@ export function selectAndFrame(id: string): void {
   }
   if (hasMesh(id)) frameSoon();
 }
-/** Tier 1 (spec §6 "Show related"). */
-export const showRelated = (): void => dispatchIsolation({ type: "related" });
+/** Tier 1 (spec §6 "Show related"). The new kinds have tier 0 only in M7 (plan decision 8). */
+export const showRelated = (): void => {
+  if (!isNewKind(useViewer.getState().sel)) dispatchIsolation({ type: "related" });
+};
 /** Tier 2 (spec §6 "Expand region"). */
-export const expandRegion = (): void => dispatchIsolation({ type: "region" });
+export const expandRegion = (): void => {
+  if (!isNewKind(useViewer.getState().sel)) dispatchIsolation({ type: "region" });
+};
+/** Why Show related and Expand are off for a new-kind structure (plan decision 8). */
+export const NEW_KIND_TIERS_REASON = "Arrives with muscle content (M9)";
+
+/**
+ * Hide the selected structure (spec §5.5, plan decision 13): the panel's Hide
+ * button and the `X` key. A muscle with parts hides all its parts. The
+ * selection is cleared (for a leaf at tier 0 that is the step Esc takes), and
+ * hiding and clearing are one new history entry, so browser Back brings the
+ * structure back, selected. The URL keeps the first 100 hidden IDs.
+ */
+export function hideSelected(): void {
+  const st = useViewer.getState();
+  const id = st.sel;
+  if (id === null || !hasMesh(id)) return;
+  const hidden = new Set(st.hidden);
+  for (const t of hideTargets(id)) hidden.add(t);
+  const all = [...hidden];
+  st.setHidden(all);
+  st.setIsolation(FULL_SKELETON);
+  const url = urlWith({ sel: null, tier: 0, grp: null, hid: all.slice(0, HIDDEN_URL_CAP) });
+  window.history.pushState({ ...window.history.state, skvDepth: depthNow() + 1 }, "", url);
+  if (all.length > HIDDEN_URL_CAP) st.showToast(`Only the first ${HIDDEN_URL_CAP} hidden structures are kept in the link`);
+  st.say(`${displayName(id)} hidden. ${all.length} hidden.`);
+}
+
+/** Show every hidden structure again (the toolbar chip): one `replace`, not a history step. */
+export function showAllHidden(): void {
+  const st = useViewer.getState();
+  if (st.hidden.size === 0) return;
+  st.setHidden([]);
+  window.history.replaceState(window.history.state, "", urlWith({ hid: [] }));
+  st.say("All hidden structures shown.");
+}
 /** The other side of a pair, keeping the tier (plan decision 8). */
 export const switchSide = (id: string): void => {
   if (isKnownId(id)) dispatchIsolation({ type: "switchSide", id });
@@ -223,7 +278,42 @@ export function initSelectionFromUrl(): UrlState {
   st.setHidden(url.hid);
   const over = parseHidden(new URLSearchParams(window.location.search).get("hid")).dropped;
   if (over > 0) st.showToast(`Only the first ${url.hid.length} hidden structures are kept in the link`);
+  const rawSel = new URLSearchParams(window.location.search).get("sel");
+  if (url.sel === null && rawSel !== null && /^[a-z0-9_]+$/.test(rawSel)) void selectSoftFromUrl(rawSel, url.cam !== null);
   return url;
+}
+
+/**
+ * `sel=` naming a soft-tissue structure (plan decision 12): load the table; if
+ * the ID is real, turn its layer on (if Off) and select it once that layer is
+ * on screen, at tier 0, framed unless the link carries a camera. An unknown ID
+ * is dropped from the URL, as for bones.
+ */
+export async function selectSoftFromUrl(id: string, hasCam: boolean): Promise<void> {
+  await loadSoftIds();
+  const st = useViewer.getState();
+  if (!isSoftId(id) || st.sel !== null) {
+    if (!isSoftId(id)) window.history.replaceState(window.history.state, "", urlWith({ sel: st.sel }));
+    return;
+  }
+  const layer = softLayerOf(id)!;
+  showLayerOf(id);
+  if (hasMesh(id)) await new Promise<void>((resolve) => {
+    if (useLayerBatches.getState()[layer]) return resolve();
+    const off = useLayerBatches.subscribe((b) => {
+      if (!b[layer]) return;
+      off();
+      resolve();
+    });
+  });
+  const now = useViewer.getState();
+  if (now.sel !== null) return; // the user selected something meanwhile
+  now.setIsolation({ sel: id, tier: 0 });
+  window.history.replaceState(window.history.state, "", urlWith({ sel: id, tier: 0, grp: null }));
+  if (hasMesh(id)) {
+    if (hasCam) now.requestCamera({ kind: "repivot", id });
+    else frameSoon();
+  }
 }
 
 /**

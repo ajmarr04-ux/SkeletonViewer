@@ -123,3 +123,148 @@ test("M6's debug format keeps the debug view and disables the panel", async ({ p
   await expect(page.getByTestId("layer-muscles-on")).toBeDisabled();
   await expect(page).toHaveURL(/layers=c(&|$)/);
 });
+
+// --- Session U (plan steps 4 to 6): layer-aware isolation, picking across layers, Hide ---------
+
+async function layerReady(page: Page, layer: Tissue) {
+  await expect(page.getByTestId("layers-report").locator(`[data-layer=${layer}]`)).toHaveAttribute("data-nodes", String(EXPECTED[layer]), {
+    timeout: 120_000,
+  });
+}
+
+/** A structure's centre on screen (from the debug hooks). */
+async function centreOf(page: Page, id: string) {
+  const b = await page.evaluate((i) => window.__viewer!.bone(i), id);
+  expect(b, id).not.toBeNull();
+  return b!.client;
+}
+
+const counts = async (page: Page) => (await page.getByTestId("debug").getAttribute("data-layer-counts")) ?? "";
+
+test("clicking a muscle over a bone selects the muscle; the placeholder panel and breadcrumb name it", async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.goto("./?lod=low&debug&layers=b:on,m:on");
+  await bonesShown(page);
+  await layerReady(page, "muscles");
+  const at = await centreOf(page, "biceps_brachii_short_head_left");
+  const picked = await page.evaluate(({ x, y }) => window.__viewer!.pick(x, y), at);
+  expect(picked).toMatch(/^biceps_brachii_(short|long)_head_left$/);
+  await page.mouse.click(at.x, at.y);
+  const panel = page.getByTestId("info-panel");
+  await expect(panel).toHaveAttribute("data-id", picked!);
+  await expect(page).toHaveURL(new RegExp(`sel=${picked}`));
+  await expect(page.getByTestId("breadcrumb")).toContainText("Muscles");
+  await expect(panel.getByTestId("part-of")).toHaveText(/Part of Biceps brachii/);
+  await expect(panel.getByTestId("show-related")).toBeDisabled();
+  await expect(panel.getByTestId("expand-region")).toBeDisabled();
+  await expect(page.getByTestId("tool-related")).toHaveCount(0);
+  const debug = page.getByTestId("debug");
+  await expect(debug).toHaveAttribute("data-focus", picked!);
+  await expect(debug).toHaveAttribute("data-outline-selected", picked!);
+  // Tier 0: the bones become ghosts, the muscle stays solid, the other muscles ghosted.
+  await expect(debug).toHaveAttribute("data-solid", "0");
+  await expect.poll(() => counts(page)).toMatch(/muscles:1\/476/);
+  // Same point with the muscles ghosted: no part of the biceps can be picked (a bone or nothing).
+  await page.keyboard.press("Escape");
+  await openPanel(page);
+  await page.getByTestId("layer-muscles-ghost").check();
+  await expect.poll(() => counts(page)).toMatch(/muscles:0\/477/);
+  expect((await page.evaluate(({ x, y }) => window.__viewer!.pick(x, y), at)) ?? "").not.toMatch(/^biceps/);
+});
+
+test("draw calls stay under 20 with every layer on and a selection active", async ({ page }) => {
+  test.setTimeout(240_000);
+  await page.goto("./?lod=low&debug&layers=b:on,c:on,l:on,m:on");
+  await bonesShown(page);
+  for (const l of TISSUE) await layerReady(page, l);
+  await page.evaluate(() => window.__viewer!.select("femur_left"));
+  const debug = page.getByTestId("debug");
+  await expect(debug).toHaveAttribute("data-focus", "femur_left");
+  await page.mouse.move(5, 400); // no hover outline from a stray pointer
+  // Bones solid + bone ghosts + three layer ghost batches + the selection outline = 6.
+  await expect.poll(async () => Number(await debug.getAttribute("data-draw-calls")), { timeout: 10_000 }).toBe(6);
+  expect(Number(await debug.getAttribute("data-draw-calls"))).toBeLessThan(20);
+});
+
+test("a link selecting a ligament turns its layer on and frames it", async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.goto("./?lod=low&debug&sel=inguinal_ligament_left");
+  await bonesShown(page);
+  await expect(page.getByTestId("info-panel")).toHaveAttribute("data-id", "inguinal_ligament_left", { timeout: 120_000 });
+  await expect(page).toHaveURL(/layers=b:on,c:off,l:on,m:off/);
+  await expect(page.getByTestId("debug")).toHaveAttribute("data-focus", "inguinal_ligament_left");
+  await expect(page.getByTestId("breadcrumb")).toContainText("Ligaments");
+  // An unknown ID is dropped, as for bones.
+  await page.goto("./?lod=low&debug&sel=not_a_structure");
+  await bonesShown(page);
+  await expect(page).not.toHaveURL(/sel=/, { timeout: 30_000 });
+});
+
+test("Hide: the button and X hide, the chip shows all, browser Back un-hides", async ({ page }) => {
+  await page.goto("./?lod=low&debug");
+  await bonesShown(page);
+  const debug = page.getByTestId("debug");
+  await page.evaluate(() => window.__viewer!.select("femur_left"));
+  await expect(page.getByTestId("info-panel")).toHaveAttribute("data-id", "femur_left");
+  await page.getByTestId("panel-hide").click();
+  await expect(page.getByTestId("info-panel")).toHaveCount(0);
+  await expect(page).toHaveURL(/hid=femur_left/);
+  await expect(page).not.toHaveURL(/sel=/);
+  await expect(debug).toHaveAttribute("data-solid", "233");
+  await expect(debug).toHaveAttribute("data-hidden", "1");
+  await expect(page.getByTestId("announcer")).toHaveText("Femur (left) hidden. 1 hidden.");
+  // A hidden bone can't be picked.
+  const femur = await centreOf(page, "femur_left");
+  expect(await page.evaluate(({ x, y }) => window.__viewer!.pick(x, y), femur)).not.toBe("femur_left");
+  // X on another selection; the chip counts both.
+  await page.evaluate(() => window.__viewer!.select("humerus_left"));
+  await expect(page.getByTestId("info-panel")).toHaveAttribute("data-id", "humerus_left");
+  await page.locator("canvas").focus();
+  await page.keyboard.press("x");
+  await expect(page).toHaveURL(/hid=femur_left,humerus_left/);
+  const chip = page.getByTestId("show-all-hidden");
+  await expect(chip).toHaveAccessibleName(/2 hidden/);
+  // Back: the humerus is back, selected; the femur stays hidden.
+  await page.goBack();
+  await expect(page.getByTestId("info-panel")).toHaveAttribute("data-id", "humerus_left");
+  await expect(debug).toHaveAttribute("data-hidden", "1");
+  // Show all: one replace, nothing hidden.
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("info-panel")).toHaveCount(0);
+  await page.getByTestId("show-all-hidden").click();
+  await expect(debug).toHaveAttribute("data-hidden", "0");
+  await expect(page).not.toHaveURL(/hid=/);
+  await expect(debug).toHaveAttribute("data-solid", "234");
+});
+
+test("a hid= link keeps bones and soft-tissue structures hidden", async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.goto("./?lod=low&debug&layers=b:on,l:on&hid=femur_left,inguinal_ligament_left");
+  await bonesShown(page);
+  await layerReady(page, "ligaments");
+  const debug = page.getByTestId("debug");
+  await expect(debug).toHaveAttribute("data-solid", "233");
+  await expect.poll(() => counts(page)).toMatch(new RegExp(`ligaments:${EXPECTED.ligaments - 1}/0`));
+  await expect(page.getByTestId("show-all-hidden")).toBeAttached();
+});
+
+test.describe("phone: hit proxies with the ligaments on (plan risk 3)", () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  test("small hand bones stay tappable among the ligaments' proxies", async ({ page }) => {
+    test.setTimeout(180_000);
+    await page.goto("./?lod=low&debug&layers=b:on,l:on");
+    await bonesShown(page);
+    await layerReady(page, "ligaments");
+    // Measured in session U (plan notes): proxies never took a tap from a bone in view; these are a sample.
+    const cases = ["lunate_left", "trapezium_left", "hamate_left", "pisiform_left", "distal_phalanx_hand_2_left"];
+    for (const id of cases) {
+      expect(await page.evaluate((i) => window.__viewer!.frameBone(i, "anterior"), id), id).toBe(true);
+      await page.waitForTimeout(150);
+      const got = await page.evaluate((i) => {
+        const b = window.__viewer!.bone(i)!;
+        return window.__viewer!.pick(b.client.x, b.client.y, true);
+      }, id);
+      expect(got, id).toBe(id);
+    }
+  });
+});

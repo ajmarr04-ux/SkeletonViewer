@@ -1,10 +1,12 @@
 import { useEffect, useRef } from "react";
 import { useThree } from "@react-three/fiber";
-import { hasMesh } from "../state/selection";
+import { hasMesh, layerOfId } from "../state/selection";
 import { useViewer } from "../state/store";
 import type { BatchedSkeleton } from "./batchSkeleton";
 import { Color } from "three";
-import { applyBaseColours, applyIsolationView, isPickable, isolationView, withBonesLayer, PLAIN, visibleCount, withJoint, type BaseTint } from "./isolation";
+import { applyBaseColours, applyLayerView, boneAccent, isPickableIn, PLAIN, viewOf, visibleCount, type BaseTint, type SceneView } from "./isolation";
+import { useLayerBatches, type LayerBatches } from "./layerRegistry";
+import { TISSUE_LAYERS, type TissueLayer } from "../state/url";
 import { tintFor } from "./material";
 import { REGIONS, regionColour, regionOf, type ColourMode, type Region } from "./regionColours";
 import { OUTLINE, setOutlineColour, setOutlineTarget, setOutlineViewport, type Outline } from "./outline";
@@ -35,6 +37,7 @@ export function baseTintFor(mode: ColourMode): BaseTint {
 
 /** What the debug overlay shows about isolation (and the e2e tests read). */
 export type IsolationStats = {
+  /** Bones drawn solid and as ghosts. */
   solid: number;
   ghost: number;
   focus: string | null;
@@ -46,12 +49,21 @@ export type IsolationStats = {
   highlightMs: number | null;
   /** The colour mode the instance colours were last written for. */
   colour: ColourMode;
+  /** Solid and ghost counts of each loaded soft-tissue layer (M7). */
+  layers: Partial<Record<TissueLayer, { solid: number; ghost: number }>>;
+  /** Structures hidden one by one (`hid=`). */
+  hidden: number;
 };
 
+/** The current view from the store (isolation, joint, layers, hidden structures). */
+export const currentView = (): SceneView => viewOf(useViewer.getState(), hasMesh);
+
 /**
- * Keeps the scene in step with the store: visibility of the solid and ghost
- * batches, the accent colour, the ghost opacity and the two outlines. Draws
- * nothing itself; the meshes are `<primitive>`s in the Viewer.
+ * Keeps the scene in step with the store: visibility of every layer's solid
+ * and ghost batches, the accent colour, the ghost opacity and the outlines
+ * (on whichever layer holds the focus or the hovered structure). Draws
+ * nothing itself; the meshes are `<primitive>`s in the Viewer and in
+ * `LayerScenes`.
  */
 export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onStats?: (s: IsolationStats) => void }) {
   const gl = useThree((s) => s.gl);
@@ -62,12 +74,13 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
   const highlightMs = useRef<number | null>(null);
   const statsRef = useRef(onStats);
   statsRef.current = onStats;
+  const tissue = useLayerBatches();
 
   // Outline width in CSS pixels whatever the canvas size and pixel ratio.
   useEffect(() => {
-    if (!scene) return;
-    for (const o of Object.values(scene.outlines)) setOutlineViewport(o, size.width, size.height, dpr);
-  }, [scene, size.width, size.height, dpr]);
+    const outlines = [...(scene ? Object.values(scene.outlines) : []), ...Object.values(tissue).flatMap((b) => (b ? Object.values(b.outlines) : []))];
+    for (const o of outlines) setOutlineViewport(o, size.width, size.height, dpr);
+  }, [scene, tissue, size.width, size.height, dpr]);
 
   // Compile the ghost and outline programs now, while loading, not on the first click.
   useEffect(() => {
@@ -84,9 +97,12 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
     let focus: string | null = null;
     let joint: readonly string[] = [];
     let colour: ColourMode = "bone";
+    /** The tissue batches the view was last applied to: new ones (a layer loaded, a LOD swap) get every colour afresh. */
+    const applied = new Set<LayerBatches>();
+    const counts: IsolationStats["layers"] = {};
     const apply = () => {
       const st = useViewer.getState();
-      const view = withJoint(withBonesLayer(isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp), st.layers.bones), st.joint, hasMesh);
+      const view = viewOf(st, hasMesh);
       const focusChanged = view.focus !== focus;
       const base = baseTintFor(st.colourMode);
       if (st.colourMode !== colour) {
@@ -94,22 +110,47 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
         applyBaseColours(scene.skeleton, base);
         colour = st.colourMode;
       }
-      applyIsolationView(scene.skeleton, scene.ghost, view, focus, joint, base);
+      const previous = focus === null ? joint : [focus, ...joint];
+      applyLayerView("bones", scene.skeleton, scene.ghost, view, previous, base, boneAccent());
+      const batches = useLayerBatches.getState();
+      for (const layer of TISSUE_LAYERS) {
+        const b = batches[layer];
+        if (!b) continue;
+        const fresh = !applied.has(b);
+        if (fresh) {
+          applyBaseColours(b.solid, b.base);
+          applied.add(b);
+        }
+        counts[layer] = applyLayerView(layer, b.solid, b.ghost, view, previous, b.base, b.accent);
+        b.ghost.mesh.material.opacity = st.ghostOpacity;
+      }
+      for (const b of applied) if (!Object.values(batches).includes(b)) applied.delete(b);
       focus = view.focus;
       joint = view.joint;
       const ghostMaterial = scene.ghost.mesh.material as { opacity: number };
       ghostMaterial.opacity = st.ghostOpacity;
-      setOutlineTarget(scene.outlines.selected, scene.skeleton, view.focus);
-      // The hover outline shows the joint's partner while a joint is highlighted, else the pointer's bone.
+      // Outlines: on whichever layer's batch holds the target, off on the others.
+      const hoverLayer = st.hovered === null ? null : layerOfId(st.hovered);
       const hover =
-        view.jointPartner ?? (st.hovered !== null && st.hovered !== view.focus && isPickable(view, st.hovered) ? st.hovered : null);
-      setOutlineColour(scene.outlines.hover, view.jointPartner !== null ? OUTLINE.joint.colour : OUTLINE.hover.colour);
-      setOutlineTarget(scene.outlines.hover, scene.skeleton, hover);
-      // Click → highlight (spec §8): from the pointer-up to the end of the next draw of the solid batch.
+        view.jointPartner ??
+        (st.hovered !== null && st.hovered !== view.focus && hoverLayer !== null && isPickableIn(view, hoverLayer, st.hovered) ? st.hovered : null);
+      const hoverColour = view.jointPartner !== null ? OUTLINE.joint.colour : OUTLINE.hover.colour;
+      const targets: { outlines: SkeletonScene["outlines"]; batch: BatchedSkeleton }[] = [{ outlines: scene.outlines, batch: scene.skeleton }];
+      for (const layer of TISSUE_LAYERS) {
+        const b = batches[layer];
+        if (b) targets.push({ outlines: b.outlines, batch: b.solid });
+      }
+      for (const t of targets) {
+        const has = (id: string | null) => (id !== null && t.batch.instanceOf.has(id) ? id : null);
+        setOutlineTarget(t.outlines.selected, t.batch, has(view.focus));
+        setOutlineColour(t.outlines.hover, hoverColour);
+        setOutlineTarget(t.outlines.hover, t.batch, has(hover));
+      }
+      // Click → highlight (spec §8): from the pointer-up to the end of the next draw of the focus's solid batch.
       const inputAt = st.inputAt;
       if (focusChanged && inputAt !== null) {
         st.markInput(null);
-        const mesh = scene.skeleton.mesh;
+        const mesh = targets.find((t) => view.focus !== null && t.batch.instanceOf.has(view.focus))?.batch.mesh ?? scene.skeleton.mesh;
         mesh.onAfterRender = () => {
           mesh.onAfterRender = () => {};
           highlightMs.current = performance.now() - inputAt;
@@ -118,20 +159,28 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
       }
       report();
     };
+    const outlineTarget = (key: "selected" | "hover") => {
+      if (scene.outlines[key].target) return scene.outlines[key].target;
+      for (const b of Object.values(useLayerBatches.getState())) if (b?.outlines[key].target) return b.outlines[key].target;
+      return null;
+    };
     const report = () => {
       statsRef.current?.({
         solid: visibleCount(scene.skeleton),
         ghost: visibleCount(scene.ghost),
         focus,
-        outlineSelected: scene.outlines.selected.target,
-        outlineHover: scene.outlines.hover.target,
+        outlineSelected: outlineTarget("selected"),
+        outlineHover: outlineTarget("hover"),
         joint: [...joint],
         highlightMs: highlightMs.current,
         colour,
+        layers: { ...counts },
+        hidden: useViewer.getState().hidden.size,
       });
     };
     apply();
-    return useViewer.subscribe((s, prev) => {
+    const unsubscribeLayers = useLayerBatches.subscribe(apply);
+    const unsubscribe = useViewer.subscribe((s, prev) => {
       if (
         s.sel !== prev.sel ||
         s.tier !== prev.tier ||
@@ -141,11 +190,16 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
         s.hovered !== prev.hovered ||
         s.joint !== prev.joint ||
         s.colourMode !== prev.colourMode ||
-        s.layers.bones !== prev.layers.bones
+        s.layers !== prev.layers ||
+        s.hidden !== prev.hidden
       ) {
         apply();
       }
     });
+    return () => {
+      unsubscribe();
+      unsubscribeLayers();
+    };
   }, [scene]);
 
   return null;

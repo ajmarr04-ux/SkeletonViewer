@@ -243,3 +243,16 @@ test.describe("contrast and 200% reflow: sidebar and legend", () => {
     await page.screenshot({ path: "test-results/sidebar-legend-200pct.png" });
   });
 });
+
+test.describe("axe: M7 session U", () => {
+  test("a ligament's placeholder panel and the hidden chip", async ({ page }) => {
+    test.setTimeout(180_000);
+    const errors = await open(page, "&sel=inguinal_ligament_left");
+    await expect(page.getByTestId("info-panel")).toHaveAttribute("data-id", "inguinal_ligament_left", { timeout: 120_000 });
+    await axe(page, "ligament placeholder panel");
+    await page.getByTestId("panel-hide").click();
+    await expect(page.getByTestId("show-all-hidden")).toBeVisible();
+    await axe(page, "hidden chip");
+    expect(errors).toEqual([]);
+  });
+});

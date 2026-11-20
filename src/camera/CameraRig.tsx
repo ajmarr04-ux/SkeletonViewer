@@ -15,11 +15,14 @@ import {
   type PerspectiveCamera,
 } from "three";
 import { ensureBoundsTrees, instanceWorldBounds, type BatchedSkeleton } from "../scene/batchSkeleton";
-import { PROXY_RADIUS_PX, pickWithProxies, tinyObjects, type Proxy, type RealHit } from "../scene/pick";
+import { nearestPickable, PROXY_RADIUS_PX, pickWithProxies, tinyObjects, type Proxy, type RealHit } from "../scene/pick";
 import ids from "../../content/ids.json";
 import { displayName } from "../content/names";
-import { goBack, hasMesh, selectObject } from "../state/selection";
-import { isPickable, isolationView, withBonesLayer } from "../scene/isolation";
+import { goBack, hasMesh, hideSelected, layerOfId, selectObject } from "../state/selection";
+import { isolationView, isPickableIn, viewOf } from "../scene/isolation";
+import { useLayerBatches } from "../scene/layerRegistry";
+import { softEntries } from "../content/softRegistry";
+import { TISSUE_LAYERS, type Layer } from "../state/url";
 
 /** Everything that covers the canvas for framing: the info panel, the breadcrumb and the sidebar. */
 function framingInset() {
@@ -28,10 +31,10 @@ function framingInset() {
 }
 
 /** The box around everything solid in the current isolation (tiers 1 and 2: the focus and its related bones). */
-function isolationBox(boneBoxes: Map<string, Box>, sel: string | null, tier: 0 | 1 | 2, grp: string | null = null): Box | undefined {
+function isolationBox(boxOf: (id: string) => Box | undefined, sel: string | null, tier: 0 | 1 | 2, grp: string | null = null): Box | undefined {
   const view = isolationView(sel, tier, "ghost", hasMesh, grp);
   if (!view.solid) return undefined;
-  const boxes = [...view.solid].map((id) => boneBoxes.get(id)).filter((b): b is Box => b !== undefined);
+  const boxes = [...view.solid].map((id) => boxOf(id)).filter((b): b is Box => b !== undefined);
   return boxes.length ? unionBoxes(boxes) : undefined;
 }
 import { BENCH_DURATION_MS, BENCH_WARMUP_MS, benchAzimuth, labelLayoutMs, summariseFrames, summariseTimes } from "../scene/bench";
@@ -181,7 +184,21 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
   const size = useThree((s) => s.size);
   const reducedMotion = useViewer((s) => s.reducedMotion);
   const geometry = useMemo(() => (skeleton ? skeletonGeometry(skeleton) : null), [skeleton]);
-  const tiny = useMemo(() => (geometry ? tinyObjects(geometry.radiusOf) : new Set<string>()), [geometry]);
+  // M7: the soft-tissue layers' solid batches, for picking, hit proxies and framing (plan decision 11).
+  const tissue = useLayerBatches();
+  const layerGeoms = useMemo(
+    () =>
+      TISSUE_LAYERS.flatMap((layer) => {
+        const b = tissue[layer];
+        return b ? [{ layer: layer as Layer, batch: b.solid, geometry: skeletonGeometry(b.solid) }] : [];
+      }),
+    [tissue],
+  );
+  const tiny = useMemo(() => {
+    const out = geometry ? tinyObjects(geometry.radiusOf) : new Set<string>();
+    for (const g of layerGeoms) for (const id of tinyObjects(g.geometry.radiusOf)) out.add(id);
+    return out;
+  }, [geometry, layerGeoms]);
   const aspect = size.width / Math.max(1, size.height);
   const heightFraction = framedHeightFraction(size.height);
   const limits = useMemo(
@@ -191,8 +208,8 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
 
   const controlsRef = useRef<CameraControls | null>(null);
   // Everything the event handlers need, read fresh each time.
-  const live = useRef({ skeleton, geometry, tiny, limits, aspect, heightFraction, reducedMotion, size });
-  live.current = { skeleton, geometry, tiny, limits, aspect, heightFraction, reducedMotion, size };
+  const live = useRef({ skeleton, geometry, layerGeoms, tiny, limits, aspect, heightFraction, reducedMotion, size });
+  live.current = { skeleton, geometry, layerGeoms, tiny, limits, aspect, heightFraction, reducedMotion, size };
   /** URL writes start with the first move the user (or a command) makes. */
   const armed = useRef(false);
   const framed = useRef(false);
@@ -201,7 +218,9 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
   /** Latest mouse position over the canvas for hover, picked once per frame. */
   const hoverAt = useRef<{ x: number; y: number } | null>(null);
   const userMoving = useRef(false);
-  const pickRef = useRef<(x: number, y: number, touch: boolean) => string | null>(() => null);
+  /** Box lookup across layers, set by the input effect. */
+  const boxOfRef = useRef<(id: string) => Box | undefined>((id) => geometry?.boneBoxes.get(id));
+  const pickRef = useRef<(x: number, y: number, touch: boolean, needBvh?: boolean) => string | null>(() => null);
 
   // --- create the controls and wire up every input --------------------------
   useEffect(() => {
@@ -224,7 +243,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     el.setAttribute("role", "img");
     el.setAttribute(
       "aria-label",
-      "3D skeleton. Click a bone to select it, Escape to go back. Arrow keys orbit, Shift and arrows pan, plus and minus zoom, H resets the view, F frames the selection. Tab moves through the visible bones and Enter selects one; Escape then Tab leaves the view.",
+      "3D skeleton. Click a bone to select it, Escape to go back. Arrow keys orbit, Shift and arrows pan, plus and minus zoom, H resets the view, F frames the selection, X hides it. Tab moves through the visible structures and Enter selects one; Escape then Tab leaves the view.",
     );
     el.style.touchAction = "none";
 
@@ -268,16 +287,51 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
 
     const raycaster = new Raycaster();
     (raycaster as Raycaster & { firstHitOnly?: boolean }).firstHitOnly = true;
-    /** Nearest bone surface under a client point, seen from `cam` (default: what is on screen). */
-    const surfaceAt = (clientX: number, clientY: number, cam: PerspectiveCamera = camera, needBvh = false) => {
+    /** A box by ID: a bone's, else a loaded soft-tissue structure's. */
+    const boxOf = (id: string): Box | undefined => {
+      const b = live.current.geometry?.boneBoxes.get(id);
+      if (b) return b;
+      for (const g of live.current.layerGeoms) {
+        const x = g.geometry.boneBoxes.get(id);
+        if (x) return x;
+      }
+      return undefined;
+    };
+    boxOfRef.current = boxOf;
+    /**
+     * The solid batches drawn now, bones and every soft-tissue layer (M7 plan
+     * decision 11): ghosts and switched-off batches are never pickable.
+     * `needBvh`: only those whose raycasting trees are built (hover, zoom, pan).
+     */
+    const pickable = (needBvh: boolean): BatchedSkeleton[] => {
+      const out: BatchedSkeleton[] = [];
       const sk = live.current.skeleton;
-      if (!sk) return null;
-      if (needBvh && !(sk.mesh.boundsTrees && sk.mesh.boundsTrees.every(Boolean))) return null;
+      for (const b of [...(sk ? [sk] : []), ...live.current.layerGeoms.map((g) => g.batch)]) {
+        if (!b.mesh.visible) continue;
+        const ready = !!b.mesh.boundsTrees && b.mesh.boundsTrees.every(Boolean);
+        if (needBvh && !ready) continue;
+        if (!ready) ensureBoundsTrees(b.mesh); // normally already built in an idle callback
+        out.push(b);
+      }
+      return out;
+    };
+    /** Nearest solid surface under a client point, across layers, seen from `cam` (default: what is on screen). */
+    const surfaceAt = (clientX: number, clientY: number, cam: PerspectiveCamera = camera, needBvh = false) => {
+      const batches = pickable(needBvh);
+      if (batches.length === 0) return null;
       raycaster.setFromCamera(ndc(clientX, clientY), cam);
-      const hit = raycaster.intersectObject(sk.mesh, false)[0];
-      if (!hit || hit.batchId === undefined) return null;
-      const id = sk.boneIds[hit.batchId];
-      return id ? { id, point: arr(hit.point) } : null;
+      const hits = raycaster.intersectObjects(
+        batches.map((b) => b.mesh),
+        false,
+      );
+      const view = viewOf(useViewer.getState(), hasMesh);
+      const named = hits.flatMap((hit) => {
+        const id = hit.batchId === undefined ? undefined : batches.find((x) => x.mesh === hit.object)?.boneIds[hit.batchId];
+        const layer = id === undefined ? null : layerOfId(id);
+        return id !== undefined && layer !== null ? [{ id, layer, distance: hit.distance, point: arr(hit.point) }] : [];
+      });
+      const best = nearestPickable(named, (layer, id) => isPickableIn(view, layer as Layer, id));
+      return best ? { id: best.id, point: best.point } : null;
     };
 
     // --- zoom toward the cursor (wheel, pinch, + / -) ---------------------------
@@ -461,6 +515,9 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
         case "frame":
           runCommand({ kind: "frame" });
           break;
+        case "hide":
+          hideSelected();
+          break;
       }
     };
     // --- Tab through the visible objects (spec §10, plan decision 6) ---------------
@@ -473,15 +530,19 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       if (st.hovered === st.keyCursor.id) st.setHovered(null);
       st.setKeyCursor(null);
     };
+    /** Everything drawn solid, bones first (anatomical order), then each loaded layer in table order. */
     const visibleIds = () => {
-      const st = useViewer.getState();
-      const view = withBonesLayer(isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp), st.layers.bones);
+      const view = viewOf(useViewer.getState(), hasMesh);
       const present = live.current.geometry?.boneBoxes;
-      return (ids as { id: string }[]).map((e) => e.id).filter((id) => hasMesh(id) && present?.has(id) && isPickable(view, id));
+      const bones = (ids as { id: string }[]).map((e) => e.id).filter((id) => hasMesh(id) && present?.has(id) && isPickableIn(view, "bones", id));
+      const soft = live.current.layerGeoms.length
+        ? softEntries().filter((e) => e.mesh && isPickableIn(view, e.layer, e.id) && live.current.layerGeoms.some((g) => g.geometry.boneBoxes.has(e.id)))
+        : [];
+      return [...bones, ...soft.map((e) => e.id)];
     };
-    /** Where a bone's box centre is on screen (client px), and whether it is in view. */
+    /** Where a structure's box centre is on screen (client px), and whether it is in view. */
     const onScreen = (id: string) => {
-      const box = live.current.geometry?.boneBoxes.get(id);
+      const box = boxOf(id);
       if (!box) return null;
       camera.updateMatrixWorld();
       const p = v(boxCentre(box)).project(camera);
@@ -580,7 +641,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
         window.history.replaceState(window.history.state, "", `${window.location.pathname}${search}${window.location.hash}`);
       }
     };
-    const boneBox = (id: string | null) => (id && hasMesh(id) ? live.current.geometry?.boneBoxes.get(id) : undefined);
+    const boneBox = (id: string | null) => (id && hasMesh(id) ? boxOf(id) : undefined);
 
     // Presets, reset, frame, repivot, centre and goto.
     const runCommand = (c: CameraCommand) => {
@@ -601,7 +662,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
           // The isolation (the selection, plus its related bones at tiers 1 and 2) is framed beside the info
           // panel; the skeleton (nothing selected) as before.
           const st = useViewer.getState();
-          const box = g ? isolationBox(g.boneBoxes, st.sel, st.tier, st.grp) : undefined;
+          const box = g ? isolationBox(boxOf, st.sel, st.tier, st.grp) : undefined;
           const dir = sub(now.position, now.target);
           cam = box ? frameBeside(box, dir, camera.fov, sz.width, sz.height, hf, inset) : frameFrom(g.box, dir, camera.fov, asp, hf);
           break;
@@ -640,25 +701,25 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     });
 
     // --- picking: clicks and taps select, double-click / double-tap centres ------
-    const pick = (clientX: number, clientY: number, touch: boolean): string | null => {
+    const pick = (clientX: number, clientY: number, touch: boolean, needBvh = false): string | null => {
       const { skeleton: sk, geometry: g, tiny: tinyIds } = live.current;
       if (!sk || !g) return null;
       if (useViewer.getState().explode > 0) return null; // picking is off while exploded (plan step 8)
-      ensureBoundsTrees(sk.mesh); // normally already built in an idle callback
       camera.updateMatrixWorld();
       const now: CameraState = { position: arr(camera.position), target: arr(camera.position.clone().add(camera.getWorldDirection(new Vector3()))) };
-      const surface = surfaceAt(clientX, clientY);
+      const surface = surfaceAt(clientX, clientY, camera, needBvh);
       const real: RealHit | null = surface ? { id: surface.id, depth: depthOf(now, surface.point) } : null;
       const r = el.getBoundingClientRect();
       const tanHalf = Math.tan((camera.fov * Math.PI) / 360);
       const proxies: Proxy[] = [];
-      // Ghosts and hidden bones are not pickable (the raycast already skips hidden instances).
-      const st = useViewer.getState();
-      const view = withBonesLayer(isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp), st.layers.bones);
+      // Ghosts and hidden structures are not pickable (the raycast already skips hidden instances):
+      // proxies only for tiny structures drawn solid, in any layer (plan decision 11).
+      const view = viewOf(useViewer.getState(), hasMesh);
       for (const id of tinyIds) {
-        if (!isPickable(view, id)) continue;
-        const box = g.boneBoxes.get(id);
-        const radius = g.radiusOf.get(id);
+        const layer = layerOfId(id);
+        if (layer === null || !isPickableIn(view, layer, id)) continue;
+        const box = boxOf(id);
+        const radius = box ? boxRadius(box) : undefined;
         if (!box || radius === undefined) continue;
         const centre = boxCentre(box);
         const depth = depthOf(now, centre);
@@ -745,7 +806,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
         camera: () => pose(false),
         eye: () => arr(camera.position),
         bone: (id) => {
-          const box = live.current.geometry?.boneBoxes.get(id);
+          const box = boxOf(id);
           if (!box) return null;
           const centre = boxCentre(box);
           return { centre, client: project(centre) };
@@ -756,7 +817,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
         select: (id) => selectObject(id),
         back: () => goBack(),
         frameBone: (id, from) => {
-          const boxes = (Array.isArray(id) ? id : [id]).map((i) => live.current.geometry?.boneBoxes.get(i));
+          const boxes = (Array.isArray(id) ? id : [id]).map((i) => boxOf(i));
           if (boxes.length === 0 || boxes.some((b) => !b)) return false;
           const box = unionBoxes(boxes as Box[]);
           const now = pose();
@@ -778,7 +839,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
           return [(b.min.x + b.max.x) / 2, (b.min.y + b.max.y) / 2, (b.min.z + b.max.z) / 2];
         },
         instanceColour: (id) => {
-          const sk = live.current.skeleton;
+          const sk = [live.current.skeleton, ...live.current.layerGeoms.map((g) => g.batch)].find((b) => b?.instanceOf.has(id));
           const i = sk?.instanceOf.get(id);
           if (!sk || i === undefined) return null;
           const c = sk.mesh.getColorAt(i, new Color());
@@ -836,7 +897,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     framed.current = true;
     const url = parseUrlState(window.location.search);
     const st = useViewer.getState();
-    const selBox = isolationBox(geometry.boneBoxes, st.sel, st.tier, st.grp);
+    const selBox = isolationBox((id) => boxOfRef.current(id), st.sel, st.tier, st.grp);
     const home = defaultView(geometry.box, camera.fov, aspect, heightFraction);
     const inset = framingInset();
     const start = url.cam ?? (selBox ? frameBeside(selBox, sub(home.position, home.target), camera.fov, size.width, size.height, heightFraction, inset) : home);
@@ -892,7 +953,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     // The Tab cursor's tooltip follows its bone on screen.
     const kc = useViewer.getState().keyCursor;
     if (kc && geometry) {
-      const box = geometry.boneBoxes.get(kc.id);
+      const box = boxOfRef.current(kc.id);
       if (box) {
         const p = v(boxCentre(box)).project(camera);
         const r = gl.domElement.getBoundingClientRect();
@@ -903,10 +964,10 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     }
     // Hover: one pick per frame at most, never while the camera is being moved.
     const at = hoverAt.current;
-    if (at && skeleton?.mesh.boundsTrees?.every(Boolean)) {
+    if (at) {
       hoverAt.current = null;
       const st = useViewer.getState();
-      st.setHovered(userMoving.current || st.explode > 0 ? null : pickRef.current(at.x, at.y, false));
+      st.setHovered(userMoving.current || st.explode > 0 ? null : pickRef.current(at.x, at.y, false, true));
     }
     if (!centreRadius) return;
     const o = c.getFocalOffset(new Vector3(), false);

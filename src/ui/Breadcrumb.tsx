@@ -1,5 +1,6 @@
 import { crumbGroups, ancestorsOf, groupAncestors, groupOf } from "../content/groups";
 import { panelModel } from "../content/placeholder";
+import { softPanelModel } from "../content/softPanel";
 import { goBack, isolateGroup } from "../state/selection";
 import { useViewer } from "../state/store";
 import { focusCanvas } from "./canvasFocus";
@@ -19,7 +20,7 @@ export function Breadcrumb() {
   let trail: string[];
   let links: (string | null)[];
   if (sel !== null) {
-    const model = panelModel(sel);
+    const model = panelModel(sel) ?? softPanelModel(sel);
     if (!model) return null;
     trail = tier > 0 ? [...model.trail, TIER_CRUMBS[tier]] : model.trail;
     links = crumbGroups(trail, ancestorsOf(sel));

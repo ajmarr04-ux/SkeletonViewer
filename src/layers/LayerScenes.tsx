@@ -7,20 +7,22 @@
 import { useEffect, useRef, useState } from "react";
 import { Color, type MeshStandardMaterial } from "three";
 import { create } from "zustand";
-import softIds from "virtual:skeleton-soft-ids";
 import type { Bounds } from "../../scripts/lib/model-checks";
-import { allInstanceBounds, batchLayer, disposeBatchedSkeleton, ensureBoundsTrees, type BatchedSkeleton } from "../scene/batchSkeleton";
+import { allInstanceBounds, batchLayer, disposeBatchedSkeleton, ensureBoundsTrees } from "../scene/batchSkeleton";
 import { layerReport, type LayerManifest, type LayerReport } from "../scene/debugLayers";
 import { disposeParts } from "../scene/loadSkeleton";
 import { lodsToLoad, type Lod } from "../scene/lod";
-import { createBoneMaterial, createGhostMaterial, tintFor } from "../scene/material";
+import { accentTint, createBoneMaterial, createGhostMaterial, tintFor } from "../scene/material";
+import { useLayerBatches, type LayerBatches } from "../scene/layerRegistry";
+import { createOutline, disposeOutline, OUTLINE } from "../scene/outline";
 import { useViewer } from "../state/store";
 import { TISSUE_LAYERS, type TissueLayer } from "../state/url";
 import { LAYER_COLOURS, TENDON_COLOUR } from "./colours";
 import { loadLayerParts } from "./loadLayer";
 import { isTendinous, type SoftId } from "./softIds";
+import { SOFT_IDS } from "./softTable";
 
-export const SOFT_IDS: readonly SoftId[] = softIds;
+export { SOFT_IDS };
 const BY_ID = new Map(SOFT_IDS.map((e) => [e.id, e]));
 export const softIdOf = (id: string): SoftId | undefined => BY_ID.get(id);
 
@@ -33,10 +35,6 @@ export const LAYER_NAMES: Record<TissueLayer, string> = { cartilage: "Cartilage"
  */
 const GHOST_ORDER: Record<TissueLayer, number> = { cartilage: 1, ligaments: 2, muscles: 3 };
 
-export type LayerBatches = { lod: Lod; solid: BatchedSkeleton; ghost: BatchedSkeleton };
-
-/** The batches on screen per layer, for the picking and isolation work of session U and for tests. */
-export const useLayerBatches = create<Partial<Record<TissueLayer, LayerBatches>>>(() => ({}));
 /** `?debug`: one bounds report per layer (the overlay line). */
 export const useLayerReports = create<Partial<Record<TissueLayer, LayerReport>>>(() => ({}));
 
@@ -67,6 +65,7 @@ function createMaterials(opacity: number): Materials {
 /** Instance colour of a structure in its layer: white, or the tendon tint for tendons and aponeuroses. */
 const TENDON_TINT = tintFor(TENDON_COLOUR, LAYER_COLOURS.muscles);
 const WHITE = new Color(1, 1, 1);
+const ACCENTS = Object.fromEntries(TISSUE_LAYERS.map((l) => [l, accentTint(LAYER_COLOURS[l])])) as Record<TissueLayer, Color>;
 export function layerBaseTint(id: string): Color {
   return isTendinous(softIdOf(id)) ? TENDON_TINT : WHITE;
 }
@@ -148,10 +147,15 @@ function TissueLayerScene({
         solid.boneIds.forEach((id, i) => solid.mesh.setColorAt(i, layerBaseTint(id)));
         const ghost = batchLayer(parts, materials.ghost, { name: `ghost-${layer}` });
         ghost.mesh.renderOrder = GHOST_ORDER[layer];
+        ghost.mesh.visible = false;
         disposeParts(parts);
-        const batches: LayerBatches = { lod, solid, ghost };
-        applyMode(layer, batches);
+        const outlines = {
+          selected: createOutline(solid, OUTLINE.selected.colour, OUTLINE.selected.widthPx, `outline-selected-${layer}`),
+          hover: createOutline(solid, OUTLINE.hover.colour, OUTLINE.hover.widthPx, `outline-hover-${layer}`),
+        };
+        const batches: LayerBatches = { lod, solid, ghost, outlines, base: layerBaseTint, accent: ACCENTS[layer] };
         setShown(batches);
+        // Isolation (main chunk) applies the view to the new batches as soon as they are registered.
         useLayerBatches.setState({ [layer]: batches });
         const now = useViewer.getState();
         const prev = now.layerLoad[layer];
@@ -182,37 +186,24 @@ function TissueLayerScene({
   useEffect(() => {
     if (!shown) return;
     return () => {
+      // The outlines share the solid batch's buffers: free them together.
+      disposeOutline(shown.outlines.selected);
+      disposeOutline(shown.outlines.hover);
       disposeBatchedSkeleton(shown.solid);
       disposeBatchedSkeleton(shown.ghost);
       if (useLayerBatches.getState()[layer] === shown) useLayerBatches.setState({ [layer]: undefined });
     };
   }, [shown, layer]);
 
-  // On / Ghost / Off and the ghost opacity follow the store.
-  useEffect(() => {
-    if (!shown) return;
-    applyMode(layer, shown);
-    materials.ghost.opacity = useViewer.getState().ghostOpacity;
-    return useViewer.subscribe((s, p) => {
-      if (s.layers[layer] !== p.layers[layer]) applyMode(layer, shown);
-      if (s.ghostOpacity !== p.ghostOpacity) materials.ghost.opacity = s.ghostOpacity;
-    });
-  }, [shown, layer, materials]);
-
   if (!shown) return null;
   return (
     <>
       <primitive object={shown.solid.mesh} />
+      <primitive object={shown.outlines.selected.mesh} />
+      <primitive object={shown.outlines.hover.mesh} />
       <primitive object={shown.ghost.mesh} />
     </>
   );
-}
-
-/** On: the solid batch; Ghost: the ghost batch, unpickable (spec §6.1); Off: neither. */
-function applyMode(layer: TissueLayer, b: LayerBatches): void {
-  const mode = useViewer.getState().layers[layer];
-  b.solid.mesh.visible = mode === "on";
-  b.ghost.mesh.visible = mode === "ghost";
 }
 
 function idle(fn: () => void): void {

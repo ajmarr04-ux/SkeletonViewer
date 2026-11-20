@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { isTendinous, meshIdsOf, trimSoftIds, type RawSoftId } from "../src/layers/softIds";
-import { FULL_VIEW, isPickable, withBonesLayer, type IsolationView } from "../src/scene/isolation";
 import { presetOf } from "../src/state/selection";
 import { DEFAULT_LAYERS, TISSUE_LAYERS } from "../src/state/url";
 import { modelSizes } from "../scripts/lib/model-versions-plugin";
@@ -35,27 +34,6 @@ describe("model sizes for the progress bar", () => {
   it("lists every committed model file with its size", () => {
     const sizes = modelSizes();
     for (const l of TISSUE_LAYERS) for (const lod of ["low", "high"]) expect(sizes[`${l}-${lod}`]).toBeGreaterThan(100_000);
-  });
-});
-
-describe("bones layer on top of isolation (plan decision 6)", () => {
-  const iso: IsolationView = { isolated: true, focus: "femur_left", solid: new Set(["femur_left"]), ghosts: false, joint: [], jointPartner: null };
-  it("leaves the view alone when the bones layer is on", () => {
-    expect(withBonesLayer(FULL_VIEW, "on")).toBe(FULL_VIEW);
-    expect(withBonesLayer(iso, "on")).toBe(iso);
-  });
-  it("ghosts or hides every bone when nothing is isolated, and none is pickable", () => {
-    const g = withBonesLayer(FULL_VIEW, "ghost");
-    expect(g.solid?.size).toBe(0);
-    expect(g.ghosts).toBe(true);
-    expect(isPickable(g, "femur_left")).toBe(false);
-    expect(withBonesLayer(FULL_VIEW, "off")).toMatchObject({ ghosts: false });
-  });
-  it("keeps an isolated bone solid (isolation overrides the layer)", () => {
-    const g = withBonesLayer(iso, "ghost");
-    expect(isPickable(g, "femur_left")).toBe(true);
-    expect(g.ghosts).toBe(true);
-    expect(withBonesLayer({ ...iso, ghosts: true }, "off").ghosts).toBe(false);
   });
 });
 

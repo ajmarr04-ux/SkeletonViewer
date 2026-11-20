@@ -4,7 +4,7 @@ import { Box3, Matrix4, Sphere, Vector3, type PerspectiveCamera } from "three";
 import { displayName } from "../content/names";
 import { relations } from "../content/relations";
 import type { BatchedSkeleton } from "../scene/batchSkeleton";
-import { isolationView, withBonesLayer } from "../scene/isolation";
+import { viewOf } from "../scene/isolation";
 import { recordLabelLayout } from "../scene/bench";
 import { LABEL, labelPriority, layoutLabels, leaderEnd, type LabelCandidate, type PlacedLabel, type Rect } from "../scene/labels";
 import { hasMesh } from "../state/selection";
@@ -105,7 +105,7 @@ function rectOf(el: Element): Rect {
 
 function computeLayout(skeleton: BatchedSkeleton, spheres: Sphere[], camera: PerspectiveCamera, canvas: HTMLCanvasElement): PlacedLabel[] {
   const st = useViewer.getState();
-  const view = withBonesLayer(isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp), st.layers.bones);
+  const view = viewOf(st, hasMesh);
   const tier1 = new Set(st.sel && view.isolated ? relations.visibleAt(st.sel, 1) : []);
   const tier2 = new Set(st.sel && view.isolated ? relations.visibleAt(st.sel, 2) : []);
   const area = rectOf(canvas);

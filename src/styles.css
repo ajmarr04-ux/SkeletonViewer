@@ -103,6 +103,8 @@ dialog.attribution::backdrop { background: rgb(0 0 0 / 0.5); }
 /* Icons only when the toolbar chose so (src/ui/toolbarFit.ts), always on phones (spec §7). */
 .toolbar:not([data-fit="labels"]) .tool-label { display: none; }
 .toolbar:not([data-fit="labels"]) .tool { padding: 0; }
+/* "N hidden · Show all" (M7): the count stays readable when the bar shows icons only. */
+.toolbar .hidden-chip { padding: 0 12px; white-space: nowrap; }
 /* "More" (plan decision 12): the overflow buttons and sliders, one section each. */
 .more-menu { display: flex; flex-direction: column; gap: 2px; min-width: 220px; }
 .more-item { display: flex; align-items: center; gap: 10px; min-height: 44px; }

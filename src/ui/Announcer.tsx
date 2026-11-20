@@ -3,6 +3,7 @@ import { groupAnnouncement, groupOf } from "../content/groups";
 import { announcement, jointAnnouncement } from "../content/placeholder";
 import { relations } from "../content/relations";
 import { isolationView } from "../scene/isolation";
+import { softAnnouncement } from "../content/softPanel";
 import { hasMesh } from "../state/selection";
 import { useViewer } from "../state/store";
 
@@ -25,6 +26,11 @@ export function Announcer() {
     if (sel === null && grp !== null) {
       // "Back to …" when returning from one of the group's own members.
       setText(groupAnnouncement(grp, before.sel !== null && (groupOf(grp)?.members.includes(before.sel) ?? false)));
+      return;
+    }
+    const soft = sel === null ? null : softAnnouncement(sel);
+    if (soft !== null) {
+      setText(soft);
       return;
     }
     const solid = isolationView(sel, tier, "ghost", hasMesh).solid;
