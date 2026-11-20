@@ -7,7 +7,11 @@ skeleton (bones and teeth).
 
 The bone and tooth meshes are derived from **Z-Anatomy**
 (https://github.com/Z-Anatomy/Models-of-human-anatomy), file `Startup.blend`,
-collection "1: Skeletal system", commit 71919ee.
+collection "1: Skeletal system", commit 71919ee. The soft-tissue layer files
+(muscles, ligaments, cartilage and muscle attachment areas, so far shown only
+in a debug view) come from the same file and commit, collections
+"2: Muscular insertions", "3: Joints" and "4: Muscular system", plus the
+costal cartilages in "1: Skeletal system".
 
 - Z-Anatomy by Gauthier Kervyn and Marcin Zielinski, licensed under
   Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0):
@@ -31,8 +35,10 @@ structures were left out. The source has no third molars, so teeth 18, 28,
 ## Licence of the derived model
 
 Under the share-alike terms, the derived models in `models/`
-(`skeleton-high.glb`, `skeleton-low.glb`) are distributed under
-CC BY-SA 4.0.
+(`skeleton-*.glb`, `muscles-*.glb`, `ligaments-*.glb`, `cartilage-*.glb`
+and `attachments-*.glb`) are distributed under CC BY-SA 4.0. The soft-tissue
+files were processed the same way as the bones (extracted, renamed, cleaned,
+ambient occlusion baked, decimated, compressed), with nothing moved.
 
 ## Text content
 

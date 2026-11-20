@@ -31,6 +31,9 @@ npm run e2e          # Playwright smoke test against a production build
 
 Viewer URL options: `?lod=low` or `?lod=high` loads only that model
 (`?lod=both` forces low then high); `?debug` shows the debug overlay;
+`?debug&layers=all` (or a subset, `layers=m,l,c,a`: muscles, ligaments, cartilage,
+attachment patches) also draws the M6 soft-tissue layer files over the bones in
+flat colours and checks every node's bounds against its manifest (debug only);
 `?bench` orbits the skeleton once over 10 s and reports FPS, frame times and
 draw calls; `?cam=px,py,pz,tx,ty,tz[,ox,oy]` sets the camera (orbit position,
 pivot, and an optional view shift); `?sel=<id>` selects an object; `?nowebgl` shows the

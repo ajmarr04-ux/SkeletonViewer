@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Lod, LodPlan, ObjectSummary } from "../scene/lod";
 import { formatCount, formatMs } from "../scene/lod";
 import { useViewer } from "../state/store";
@@ -21,6 +22,8 @@ type Props = {
   bounds?: BoundsReport | null;
   error: string | null;
   isolation?: IsolationStats | null;
+  /** Extra lines (the M6 layer view, a lazy chunk). */
+  children?: ReactNode;
 };
 
 /** Debug readout. data-* attributes are read by the Playwright tests. */
@@ -71,7 +74,7 @@ export function DebugOverlay(p: Props) {
       data-highlight-ms={iso?.highlightMs != null ? iso.highlightMs.toFixed(1) : ""}
       data-bounds-max-delta-mm={boundsDone ? (bounds.maxDelta * 1000).toFixed(4) : ""}
     >
-      <h1>Debug · Milestone 4</h1>
+      <h1>Debug · Milestone 6</h1>
       {error && <p className="error">Load failed: {error}</p>}
       <dl>
         <dt>LOD</dt>
@@ -138,6 +141,7 @@ export function DebugOverlay(p: Props) {
           </>
         )}
       </dl>
+      {p.children}
       <p className="hint">
         Try <a href="?lod=low&amp;debug">?lod=low</a> · <a href="?lod=high&amp;debug">?lod=high</a> ·{" "}
         <a href="?lod=both&amp;debug">both</a> · <a href="?debug">auto</a> · <a href="?bench&amp;debug">bench</a>

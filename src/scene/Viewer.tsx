@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { loadContent } from "../content/loader";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import ids from "../../content/ids.json";
@@ -35,6 +35,13 @@ import { Legend } from "../ui/Legend";
 import { Toast } from "../ui/Toast";
 import { ScreenshotService } from "./ScreenshotService";
 import { probeDevice, readStoredSetting } from "./webgl";
+import type { SoftLayer } from "./debugLayers";
+
+// M6 debug layer view (`?debug&layers=…`): lazy chunks, never fetched without the parameter.
+const DebugLayersScene = lazy(() => import("./DebugLayers").then((m) => ({ default: m.DebugLayersScene })));
+const DebugLayersPanel = lazy(() => import("./DebugLayers").then((m) => ({ default: m.DebugLayersPanel })));
+const debugLayersFrom = (search: string): Promise<SoftLayer[] | null> =>
+  import("./debugLayers").then((m) => m.parseDebugLayers(search));
 
 export type Shown = { lod: Lod } & SkeletonScene;
 
@@ -55,6 +62,12 @@ export function Viewer() {
   const debug = hasFlag(window.location.search, "debug");
   const bench = hasFlag(window.location.search, "bench");
   const [probe] = useState(probeDevice);
+  const [layers, setLayers] = useState<SoftLayer[] | null>(null);
+  useEffect(() => {
+    if (debug && new URLSearchParams(window.location.search).has("layers")) {
+      void debugLayersFrom(window.location.search).then(setLayers);
+    }
+  }, [debug]);
   // Selection, tier and ghost mode from the URL, before the first render of the scene.
   useState(initSelectionFromUrl);
   const [plan, setPlan] = useState(() => {
@@ -179,6 +192,11 @@ export function Viewer() {
         />
         <LabelProbe skeleton={shown?.skeleton ?? null} />
         <ScreenshotService />
+        {layers && layers.length > 0 && (
+          <Suspense fallback={null}>
+            <DebugLayersScene layers={layers} lod={shown?.lod ?? null} />
+          </Suspense>
+        )}
         <StatsProbe onStats={setStats} />
       </Canvas>
       <Labels />
@@ -208,7 +226,13 @@ export function Viewer() {
         bounds={debug ? bounds : undefined}
         isolation={isoStats}
         error={error}
-      />
+      >
+        {layers && layers.length > 0 && (
+          <Suspense fallback={null}>
+            <DebugLayersPanel layers={layers} lod={shown?.lod ?? null} />
+          </Suspense>
+        )}
+      </DebugOverlay>
       )}
     </>
   );

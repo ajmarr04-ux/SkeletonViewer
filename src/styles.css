@@ -19,6 +19,8 @@ a { color: #8ab4f8; }
 .debug .row { display: contents; }
 .debug dt { color: #9aa0a6; }
 .debug dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.debug .debug-layers { margin-top: 6px; }
+.debug .swatch { display: inline-block; width: 8px; height: 8px; border-radius: 2px; }
 .debug .hint { margin: 8px 0 0; color: #9aa0a6; }
 .error { color: #f28b82; }
 

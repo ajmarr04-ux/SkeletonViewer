@@ -16,7 +16,7 @@ Out of scope here (later milestones): the Layers panel, per-layer batches, ghost
 | P | 1 (soft-tissue audit), 2 (decision on `2: Muscular insertions`) | **Done.** See "Session P notes" and `assets/audit/REPORT-soft-tissue.md`. Checkpoint answered (go on without articular cartilage) |
 | Q | 3 (soft-tissue ID list and mapping), 4 (mapping checks and questions) | **Done.** See "Session Q notes" |
 | R | 5 (Blender pipeline for the new layers), 6 (compression and `check-models`), 7 (build report) | **Done.** See "Session R notes" and `assets/build/REPORT-soft-tissue.md` |
-| S | 8 (debug layer view), 9 (alignment and no-regression tests), 10 (report back with counts), 11 (hosted copy) | Not started |
+| S | 8 (debug layer view), 9 (alignment and no-regression tests), 10 (report back with counts), 11 (hosted copy) | **Steps 8–10 done**; see "Session S notes". Step 11 waits for the merge and the user's check of `/m6/`. **Counts reported; M8 content waits for the user's reply** |
 
 Triggers: "begin session P", "begin session Q", "begin session R" and "begin session S". Each session starts with `bash scripts/setup-blender.sh` (sessions P, Q and R need Blender; S only if it rebuilds) and by reading this file, then works through its steps without waiting for confirmation unless something blocks it or a **user checkpoint** below says to stop. Each ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models` and `npm run validate-content` passing (session S adds `npm run e2e`), then a commit, a push to the session branch and a PR to `main`.
 
@@ -30,9 +30,9 @@ Triggers: "begin session P", "begin session Q", "begin session R" and "begin ses
 - [x] `soft-to-id.json` with every mesh mapped, merged or excluded (with reasons). (Session Q; `tests/soft-ids.test.ts` checks that every audited mesh is used exactly once.)
 - [x] Decision recorded on `2: Muscular insertions` (patches usable or not). (**Usable**: 689 of 705 patches within 1 mm of a bone or cartilage surface; side from geometry. See the report.)
 - [x] Six layer files exported, compressed, under budget, passing `check-models`. (Eight with the patches; session R. Muscles 4.62 / 1.61 MB, ligaments 0.85 / 0.44, cartilage 0.44 / 0.20, patches 1.29 / 0.79.)
-- [ ] A debug view (`?debug&layers=all`) shows every layer in place with no visible misalignment against the bones.
-- [ ] **Report back** with counts per kind (muscles, parts, tendons, ligaments, cartilage, discs, menisci) before writing content.
-- [ ] No regression: the bone files in `public/models/` are byte-identical to M5, and with no `layers` parameter the app loads exactly what M5 loaded (same requests, same main chunk within 1 KB gzipped).
+- [x] A debug view (`?debug&layers=all`) shows every layer in place with no visible misalignment against the bones. (Session S: every node of all four layers within 0.02 mm of its manifest at both LODs; screenshots in `docs/m6/`.)
+- [x] **Report back** with counts per kind (muscles, parts, tendons, ligaments, cartilage, discs, menisci) before writing content. (Session S, "Final counts" below; sent to the user 2026-11-20. Awaiting the reply before M8.)
+- [x] No regression: the bone files in `public/models/` are byte-identical to M5, and with no `layers` parameter the app loads exactly what M5 loaded (same requests, same main chunk within 1 KB gzipped). (Session S: `git diff 71f04d0` on the bone files is empty; main chunk 457.84 → 458.20 kB gzipped; `layers-debug.spec.ts` checks no layer file or chunk is requested.)
 - [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
 
 ---
@@ -143,6 +143,41 @@ What was done, and where it differs from the plan (say if any should change):
 - **Different from the plan: normals of thin sheets.** For Solidify sheets the signed volume is unreliable, and the bone rule turned 6 correct sheets inside out (they baked black): the posterior sacro-iliac and radial collateral wrist ligaments, and the temporalis origin patch 3. The soft-tissue build now reverses any structure whose mean AO is under 0.3, re-bakes it, keeps the brighter orientation and logs it (`orientationFixedByAo`). The bone build is unchanged.
 - **Stray vertices.** Cleanup deleted loose vertices far from two structures, so their bbox shrinks without any face moving: `external_abdominal_oblique_*__origin_4` by 85 mm and `transverse_ligament_knee_*` by 16 mm (recorded in each manifest's `boundsCheck`).
 - **Counts:** final, the same as session Q's preliminary table (the report repeats it). M6's exit table for the report back is ready for session S.
+
+## Session S notes (steps 8 to 10 done; 11 after the merge)
+
+What was done, and where it differs from the plan (say if any should change):
+
+- **Debug view.** `src/scene/debugLayers.ts` (pure: the `layers` parameter, colours, the bounds report; `tests/debugLayers.test.ts`) and `src/scene/DebugLayers.tsx` (lazy: loads `<layer>-<lod>.glb` with the Meshopt decoder once the bones show that LOD, swaps low for high, flat layer colours times the baked AO, attachment patches in amber with a polygon offset so they sit on the bone, nothing pickable). The overlay gets one line per layer: LOD, nodes, triangles and the largest bounds error against `manifest-<layer>.json`, loaded as its own chunk. `layers=all` is every layer; `layers=m,l,c,a` (or full names) a subset. Without both `debug` and `layers`, nothing of it is requested.
+- **Patches are a fourth layer in the view** (`a`), since session R shipped them as `attachments-*.glb`.
+- **Results.** Both LODs: muscles 476 nodes, ligaments 300, cartilage 61, patches 697, each equal to the `meshAvailable` IDs (or the `attachments` map); every node's bounds within **0.02 mm** of its manifest (the 1 mm rule); triangle counts on target. The bones still pass their own bounds check with the layers loaded.
+- **Screenshots** (`docs/m6/`, high LOD, `deviceScaleFactor: 1`): `layers-all-{anterior,left}.png` and `layers-no-muscles-{anterior,left}.png` (ligaments, cartilage and patches on the bones). No misalignment is visible: the costal cartilages meet the ribs and sternum, the discs sit between the vertebrae, the patches lie on the bones.
+- **Seen in passing, for M7:** the debug ligament colour (pale grey-white) is close to the bone ivory, so ligaments are hard to pick out on the bones; spec §6.3 asks for "distinct from bone", which M7's real colours should check (ΔE). The draw count in the debug view is about 1,500 (one per node), as risk 4 expected.
+- **No regression.** Bone files byte-identical to M5 (`71f04d0`); main chunk +0.36 kB gzipped; the full e2e suite passes (see below); `perf-load` within the M5 figures.
+- **Attribution.** `public/ATTRIBUTION.md` names the collections used and the new files (decision 14). README lists `?debug&layers=all`.
+
+### Final counts (step 10, the report back)
+
+| Kind | IDs (both sides) | With a mesh |
+| --- | --- | --- |
+| Muscles, single mesh (leaves) | 348 | 348 |
+| Muscles with parts (parents, no mesh of their own) | 58 | 0 |
+| Muscle parts: heads | 58 | 58 |
+| Muscle parts: portions | 40 | 40 |
+| Muscle parts: bellies | 16 | 16 |
+| Tendons (parts) | 10 | 10 |
+| Aponeuroses (parts) | 4 | 4 |
+| Muscles absent from the source (articularis genus) | 2 | 0 |
+| Ligaments | 300 | 300 |
+| Ligaments absent from the source (patellar ligament) | 2 | 0 |
+| Cartilage (20 costal cartilages, 4 labra) | 24 | 24 |
+| Discs (23 intervertebral, interpubic, sacrococcygeal) | 25 | 25 |
+| Menisci and articular discs (4 menisci, 8 articular discs) | 12 | 12 |
+| **Total** | **899** | **837** |
+
+Plus **697 attachment patches** (origins and insertions; 12 more listed in `attachmentsMissing` have no twin). Source meshes: **46 merged into 23 discs** (each disc with its nucleus pulposus; the only merge), **270 excluded** with reasons (bursae 78, fascia 38 and septa 14, joint capsules 34, tendon sheaths 26, retinacula 18, laryngeal and nasal cartilage and their ligaments, sinus volumes, label meshes and others), **4 `missing` IDs** (patellar ligament, articularis genus) and **15 absent structures without an ID** (`missingNoId`: articular cartilage everywhere, the quadriceps tendon, the craniovertebral ligaments, the anterior tibiotalar ligament, ear and auricular muscles, most soft-palate and perineal muscles, styloglossus, palatoglossus, subcostales, psoas minor).
+
+Surprises from the audit, for the reply: names are English TA (no Latin yet); every paired muscle is already split left and right; no articular cartilage; no patellar ligament or quadriceps tendon; some source sides are wrong (`Lateral temporomandibular ligament`, 50 patches), corrected from geometry; the patch names can be wrong, so M8's origins and insertions come from references.
 
 ## Session P: audit (steps 1 and 2)
 
