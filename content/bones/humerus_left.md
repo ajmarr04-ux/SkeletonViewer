@@ -31,6 +31,8 @@ landmarks:
   - { id: olecranon_fossa, name: Olecranon fossa, position: null }
   - { id: coronoid_fossa, name: Coronoid fossa, position: null }
   - { id: radial_fossa, name: Radial fossa, position: null }
+  - { id: crest_of_greater_tubercle, name: Crest of greater tubercle, position: null }
+  - { id: crest_of_lesser_tubercle, name: Crest of lesser tubercle, position: null }
 muscleAttachments: [Supraspinatus, Infraspinatus, Teres minor, Subscapularis, Pectoralis major, Latissimus dorsi, Teres major, Deltoid, Coracobrachialis, Brachialis, Triceps brachii (lateral and medial heads), Brachioradialis, Extensor carpi radialis longus, Common flexor origin, Common extensor origin, Pronator teres, Anconeus]
 clinicalNote: "A fracture of the shaft can injure the radial nerve in the radial groove (wrist drop), and a fracture of the surgical neck can injure the axillary nerve."
 reviewed: false

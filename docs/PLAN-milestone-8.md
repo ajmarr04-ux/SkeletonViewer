@@ -27,7 +27,7 @@ Plus the migration: **200 distinct `muscleAttachments` strings** across the 238 
 | (planning) | 0 (Milestone 7 handover, this plan) | **Done.** See step 0 |
 | X | 1 (schemas and vocabulary files), 2 (compiler, mirror, derived data, panel text), 3 (migration table) | **Done.** See "Session X notes" |
 | Y | 4 (muscles: head and neck, about 84 files) | **Done.** See "Session Y notes" |
-| Z | 5 (muscles: back, thorax, abdomen and pelvis, about 66 files) | Not started |
+| Z | 5 (muscles: back, thorax, abdomen and pelvis, about 66 files) | **Done.** See "Session Z notes" |
 | AA | 6 (muscles: upper limb, about 62 files) | Not started |
 | AB | 7 (muscles: lower limb, about 67 files) | Not started |
 | AC | 8 (ligaments, 155 files; cartilage, discs and menisci, 43 files) | Not started |
@@ -110,6 +110,16 @@ What was built, and where it differs from the plan (say if any should change):
 - **Questions added:** 70 to 77, under the new headings *Joints*, *Muscles: attachment migration* and *Muscles: upper limb*.
 - **Tests:** `tests/softContent.test.ts` (33: one passing and one failing case per rule on a small fixture, derived data, compiler, the real triceps attachments, joint mirroring, the matcher); `tests/e2e/soft-content.spec.ts` (written part: Latin, Part of, summary; ligament common name; an unwritten structure keeps the placeholder).
 - **Size:** main chunk `index` 293.3 kB gzipped (+0.3 kB over M7; budget +5). Content chunks: muscles 1.2 kB, ligaments 0.6 kB, cartilage 0.6 kB gzipped with the seed files.
+
+## Session Z notes (step 5, done)
+
+- **59 left and midline files** (50 muscles, 9 parts; 57 mirrored): superficial back (5), serratus posterior (2), splenius (2), erector spinae (9), transversospinales (6), segmental back (6: interspinales, lateral intertransversarii lumborum, levatores costarum), pectoral region (4), thoracic wall (4), diaphragm, anterolateral abdominal wall (5) and linea alba, quadratus lumborum, pelvic floor (4), external anal sphincter. The pectoral muscles sit under *Thorax › Pectoral region* (as the source groups them); the diaphragm directly under *Thorax* (`compartment: null`).
+- **New functional joint:** `costovertebral_joints_{left,right}`, all 20 rib–vertebra pairs of a side, for muscles that move many ribs (QUESTIONS 80 and 71 updated). 29 functional joints in all.
+- **Two-way preview:** 285 old strings on the trunk bones matched; the only misses are the 15 marked `indirect` (costal cartilage, thoracolumbar fascia, anococcygeal ligament: QUESTIONS 92). The preview now uses session AD's rule: a string naming several muscles ("Multifidus", "Interspinales") is accounted for when any of them attaches to that bone.
+- **Landmarks added:** humerus (crests of the greater and lesser tubercles), hip bone (pubic crest).
+- **Questions 89 to 98.** Trunk movements name the thoracic and lumbar spine rather than the nested *vertebral column*, to keep neck muscles out of the trunk's synergists (89).
+- **Tests:** a real-content test of rib elevation across the functional and pair joints (external intercostals with the scalenes and levatores), scapular rotation (serratus anterior with trapezius, against the rhomboids), and a part's own action (clavicular head of pectoralis major against latissimus dorsi).
+- **Fixed from session X's full e2e run** (132 of 133): the M7 keyboard test timed out once under parallel load (60 s alone against a 90 s limit, while it loads the muscles layer); it now has the 180 s the other layer tests use.
 
 ## Session Y notes (step 4, done)
 

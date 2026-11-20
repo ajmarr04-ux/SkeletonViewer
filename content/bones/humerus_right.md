@@ -66,6 +66,12 @@ landmarks:
   - id: radial_fossa
     name: Radial fossa
     position: null
+  - id: crest_of_greater_tubercle
+    name: Crest of greater tubercle
+    position: null
+  - id: crest_of_lesser_tubercle
+    name: Crest of lesser tubercle
+    position: null
 muscleAttachments:
   - Supraspinatus
   - Infraspinatus

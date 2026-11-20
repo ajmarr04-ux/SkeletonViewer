@@ -155,32 +155,68 @@
       {
         "key": "superficial_back",
         "label": "Superficial back (extrinsic)",
-        "children": []
+        "children": [
+          "latissimus_dorsi_left",
+          "levator_scapulae_left",
+          "rhomboid_major_left",
+          "rhomboid_minor_left",
+          "trapezius_left"
+        ]
       },
       {
         "key": "intermediate_back",
         "label": "Intermediate back (serratus posterior)",
-        "children": []
+        "children": [
+          "serratus_posterior_inferior_left",
+          "serratus_posterior_superior_left"
+        ]
       },
       {
         "key": "spinotransversales",
         "label": "Splenius muscles",
-        "children": []
+        "children": [
+          "splenius_capitis_left",
+          "splenius_colli_left"
+        ]
       },
       {
         "key": "erector_spinae",
         "label": "Erector spinae",
-        "children": []
+        "children": [
+          "iliocostalis_colli_left",
+          "iliocostalis_lumborum_left",
+          "iliocostalis_thoracis_left",
+          "longissimus_capitis_left",
+          "longissimus_colli_left",
+          "longissimus_thoracis_left",
+          "spinalis_capitis_left",
+          "spinalis_colli_left",
+          "spinalis_thoracis_left"
+        ]
       },
       {
         "key": "transversospinales",
         "label": "Transversospinales",
-        "children": []
+        "children": [
+          "multifidus_colli_left",
+          "multifidus_lumborum_left",
+          "multifidus_thoracis_left",
+          "rotatores_left",
+          "semispinalis_colli_left",
+          "semispinalis_thoracis_left"
+        ]
       },
       {
         "key": "segmental_back",
         "label": "Segmental back muscles",
-        "children": []
+        "children": [
+          "interspinales_colli_left",
+          "interspinales_lumborum_left",
+          "interspinales_thoracis_left",
+          "lateral_intertransversarii_lumborum_left",
+          "levatores_breves_costarum_left",
+          "levatores_longi_costarum_left"
+        ]
       },
       {
         "key": "suboccipital",
@@ -201,13 +237,24 @@
       {
         "key": "pectoral",
         "label": "Pectoral region",
-        "children": []
+        "children": [
+          "pectoralis_major_left",
+          "pectoralis_minor_left",
+          "serratus_anterior_left",
+          "subclavius_left"
+        ]
       },
       {
         "key": "thoracic_wall",
         "label": "Thoracic wall",
-        "children": []
-      }
+        "children": [
+          "external_intercostal_left",
+          "innermost_intercostal_left",
+          "internal_intercostal_left",
+          "transversus_thoracis_left"
+        ]
+      },
+      "diaphragm"
     ]
   },
   {
@@ -217,12 +264,20 @@
       {
         "key": "anterolateral_abdominal_wall",
         "label": "Anterolateral abdominal wall",
-        "children": []
+        "children": [
+          "external_abdominal_oblique_left",
+          "internal_abdominal_oblique_left",
+          "pyramidalis_left",
+          "rectus_abdominis_left",
+          "transversus_abdominis_left"
+        ]
       },
       {
         "key": "posterior_abdominal_wall",
         "label": "Posterior abdominal wall",
-        "children": []
+        "children": [
+          "quadratus_lumborum_left"
+        ]
       }
     ]
   },
@@ -233,12 +288,19 @@
       {
         "key": "pelvic_floor",
         "label": "Pelvic floor",
-        "children": []
+        "children": [
+          "coccygeus_left",
+          "iliococcygeus_left",
+          "pubo_analis_left",
+          "pubococcygeus_left"
+        ]
       },
       {
         "key": "perineum",
         "label": "Perineum",
-        "children": []
+        "children": [
+          "external_anal_sphincter_left"
+        ]
       }
     ]
   },

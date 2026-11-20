@@ -363,6 +363,18 @@ describe("real soft-tissue content", () => {
     expect(m.derived!.antagonists.temporalis_left).toEqual(expect.arrayContaining(["digastric_left", "lateral_pterygoid_left"]));
     expect(m.derived!.attached.hyoid_bone!.insertions).toEqual(expect.arrayContaining(["digastric_intermediate_tendon_left", "sternohyoid_right"]));
   });
+  it("derives trunk and girdle relationships through the functional joints (session Z)", () => {
+    const m = compileSoftFromDisk("muscles");
+    // Rib elevation: the costovertebral_joints set overlaps the scalenes' single pairs.
+    expect(m.derived!.synergists.external_intercostal_left).toEqual(expect.arrayContaining(["scalenus_anterior_left", "levatores_breves_costarum_left"]));
+    expect(m.derived!.antagonists.external_intercostal_left).toContain("internal_intercostal_left");
+    // Scapular upward rotation: serratus anterior with trapezius; rhomboids oppose.
+    expect(m.derived!.synergists.serratus_anterior_left).toContain("trapezius_left");
+    expect(m.derived!.antagonists.serratus_anterior_left).toEqual(expect.arrayContaining(["rhomboid_major_left", "trapezius_transverse_part_left"]));
+    // A part's own action: the clavicular head of pectoralis major flexes the shoulder, against latissimus dorsi.
+    expect(m.derived!.antagonists.latissimus_dorsi_left).toContain("pectoralis_major_clavicular_head_left");
+    expect(m.derived!.attached.vertebra_l2!.origins).toContain("diaphragm");
+  });
   it("derives the triceps' attachments on the scapula, humerus and ulna", () => {
     const m = compileSoftFromDisk("muscles");
     expect(m.derived!.attached.scapula_left!.origins).toContain("triceps_brachii_long_head_left");

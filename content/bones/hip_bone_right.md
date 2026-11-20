@@ -63,6 +63,9 @@ landmarks:
   - id: pecten_pubis
     name: Pecten pubis
     position: null
+  - id: pubic_crest
+    name: Pubic crest
+    position: null
 muscleAttachments:
   - Gluteus maximus
   - Gluteus medius
