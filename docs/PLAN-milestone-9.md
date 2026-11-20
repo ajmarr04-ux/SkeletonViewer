@@ -1,0 +1,111 @@
+# Milestone 9 Plan: Interaction (Musculoskeletal spec, M9)
+
+Source of truth: `SPEC-musculoskeletal.md` §5 (selection, isolation and relationships), §7 (UI changes), §8 (layer-aware isolation, tints) and §11 (M9). Where that spec is silent, `SPEC (2).md` §6 (isolation, history, Back) and §12 still apply. Ground rules: no mesh is touched (`git diff public/models/` stays empty); no landmark, TA2 ID or articulation is invented; uncertain choices go in `content/QUESTIONS.md` (M9's start at **132**); **with every new layer off, the app loads, looks and behaves as M8 does** (spec §13), and every existing test keeps passing.
+
+## Goal
+
+Make the soft-tissue content usable. Clicking a muscle selects the whole muscle, and a second click selects the part. Every kind gets its own tier 1 and tier 2 (muscle: attachments, then functional group with an antagonist toggle; ligament and cartilage: the bones they join, then the joint's other structures). Origins and insertions are highlighted with M6's attachment patches. A bone's panel links to its muscles, and "Show attached muscles" isolates them. The info panel gets its kind-specific sections; the sidebar gets Muscles, Ligaments and Cartilage roots; search finds every structure, plus group terms such as "rotator cuff". The spec's Playwright journey passes, and the milestone ends with a hosted copy at `/m9/`.
+
+Out of scope here (M10): labels for the new kinds beyond what the existing layout already does, colour-vision polish of the new tints beyond the ΔE test each new colour gets here, screen-reader announcements for the new kinds and the part level beyond what the existing `Announcer` already says, the performance pass and `STATUS.md`. No Blender work, and no content rewriting except where a session finds an error (fixed, noted, `reviewed` untouched).
+
+## What exists already (from M7 and M8)
+
+- **Layers** (M7): per-layer solid and ghost batches, lazy layer chunks, picking across layers, Hide, muscle depth. A new-kind structure supports **tier 0 only** today ("Show related" and "Expand" disabled with `NEW_KIND_TIERS_REASON`). Selecting a soft structure turns its layer On (M7 decision 12). Group isolation (`grp=`) is bones only. `isolationView` already returns per-layer sets and an **empty `tints` map** for M9 to fill.
+- **Content** (M8): 900 soft-tissue files compiled into one lazy chunk per layer (`virtual:skeleton-soft-content-<layer>`); derived synergists, antagonists and bone attachments (`src/content/derive.ts`); functional joints (`content/joints.json`); muscle hierarchy (`content/muscle-hierarchy.json`). The bone panel's muscle list is derived plain text (`boneMuscleLists`).
+- **Assets** (M6): `public/models/attachments-{high,low}.glb`, 697 patches, mapped in `assets/mapping/soft-to-id.json` under `attachments` (each patch: the muscles or parts it serves, origin or insertion, its side, the bone it lies on). Shown today only in the debug view.
+
+## Progress
+
+| Session | Serial task (one sentence) | Fan-out step | Inputs | Done when | Status |
+| --- | --- | --- | --- | --- | --- |
+| (planning) | M8 close-out, M9 handover and this plan (step 0) | none | M8 plan, spec §11 | `/m8/` confirmed, `m8` frozen, plan written | **Done.** See step 0 |
+| AE | Nested muscle → part selection: reducer, picking rule, history, breadcrumb, URL (step 1) | none | decisions 1–2 | reducer tests for every §5.1 rule; e2e click muscle → part → Esc ×2 | |
+| AF | Tiers per kind and the relations behind them, with isolation overriding layer toggles (step 2) | none | decisions 3–5 | tier sets tested per kind; "Show related"/"Expand" enabled for soft kinds; layers loaded on demand | |
+| AG | Origin/insertion highlighting with the patches, antagonist toggle and tints, legend chips (step 3) | none | decisions 6–8 | tints tested; patch/content agreement report; e2e triceps tier 1 tints scapula and ulna | |
+| AH | Info panel sections per kind with links; bone panel Origins/Insertions links; "Show attached muscles" (step 4) | none | decisions 9–10 | every kind's panel tested; `grp=attached:<bone>` round-trips | |
+| AI | Sidebar roots for the three layers, soft groups, and search with synonyms and group synonyms (step 5) | none (see decision 12) | decisions 11–12 | tree and search e2e for the new kinds; chunk sizes recorded | |
+| AJ | Wrap-up: the spec's journey test, full e2e, no-regression, perf-load, hosted copy (step 6) | `verifier` × 1 for the full Playwright run | all of the above | exit criteria ticked; `/m9/` live | |
+
+Triggers: "begin session AE" to "begin session AJ". Every session follows `docs/WORKFLOW.md`: read `docs/HANDOFF.md` and this file, do the one serial task, end with `npx tsc --noEmit`, `npx vitest run`, `npm run check` and the e2e specs it touched (the full suite in AJ, through `verifier`), then commit, push to the session branch, write `docs/HANDOFF.md` and stop. A PR to `main` at the end of AJ (or earlier if the user wants intermediate deploys).
+
+**User checkpoints**
+- **Decisions 1 to 12 below** fill gaps in the spec. The sessions build them as written unless the user says otherwise; the ones most worth a look are 3 (isolation overriding layers loads the layer without turning it on), 6 (patches drawn only where they agree with the content) and 12 (no subagent fan-out for synonyms).
+- **After AG**: the patch/content agreement report (decision 6) lists every patch that disagrees with the content; the user can review it any time before AJ.
+- **Content review** stays the user's (spec §13 of `SPEC (2).md`); everything stays `reviewed: false`.
+
+## Exit criteria (from the musculoskeletal spec §11, M9)
+
+- [ ] Nested muscle → part selection with breadcrumb and history.
+- [ ] Tiers per kind (§5.2), antagonist toggle, origin/insertion highlighting (patches or fallback).
+- [ ] Bone panel attached-muscle links and "Show attached muscles".
+- [ ] Info panel sections per kind; sidebar roots; search and group synonyms.
+- [ ] Playwright: full skeleton → turn on muscles → click triceps → click long head → Show attachments (scapula + ulna tinted) → Show functional group → Back ×4 → full view.
+- [ ] No regression: with every new layer off, the main chunk grows by at most 10 kB gzipped over M8 (decision 13), no soft-tissue chunk is requested, and the full e2e suite passes.
+- [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
+
+---
+
+## Step 0: Milestone 8 close-out and handover (done in the planning session)
+
+- `/m8/`: #20 merged as `0833b48`; Deploy run 23 for that commit succeeded on 2026-11-20. "Hosted copy is live" ticked in `docs/PLAN-milestone-8.md`; `README.md` M8 row marked live and frozen.
+- `deploy/pages.json`: `m8` frozen at **`0833b48`** (the merge of #20, M8's last PR); `current` set to **9**, so the next deploy builds `/m9/` from `main`. `README.md`: M9 row added as "In progress".
+- `CLAUDE.md`: status and the M9 session triggers.
+- **Still open, carried over (needs the user, any time):** the per-browser `?bench` table in `docs/PLAN-milestone-5.md` step 12; the muscles layer's real-device load time from M7 (`?debug`, "low shown N s after turned on"); the content questions in `content/QUESTIONS.md` (1–131).
+
+## Decisions made in this plan (say if any should change)
+
+1. **Nested selection lives in `sel`** (spec §5.1). `sel` holds a muscle ID or a part ID; there is no new state field. The click rule is applied by the caller before the reducer, as a pure function `resolveClick(picked, sel)` in `src/state/isolation.ts`: a picked part becomes its parent muscle **unless** `sel` is that muscle or one of its parts, in which case it stays the part. Muscles without parts, ligaments and cartilage behave like bones. A link in the panel, a tree row or a search result selects exactly what it names (a part directly, no two-step).
+2. **History for the part level.** Muscle → its part is a `push`; part → a sibling part is a `replace`; **Back from a part at tier 0 goes to its muscle at tier 0** (`pop`), then to the full view. At tiers 1 and 2, Back steps down the tiers first (part tier 2 → part tier 1 → part tier 0 → muscle → full), as the spec's "up one level" reads. The reducer takes a `parentOf(id)` resolver as an argument so it stays pure and knows nothing of the soft table. `levelOf` counts a part as one level deeper than its muscle. The URL needs nothing new (`sel=` takes a part ID); the breadcrumb shows `Muscles › <region> › <muscle> › <part>`, from `muscle-hierarchy.json`, with each crumb clickable.
+3. **Isolation overrides layer toggles** (spec §5.2) without changing the Layers panel. When a tier set (or `grp=attached:`) includes structures whose layer is Off, those structures are drawn solid anyway, and their layer file is **loaded on demand** (with the panel's existing progress), but the layer's setting stays Off, so leaving the isolation shows the user's layers as they were. Ghosts are drawn only for layers that are On or Ghost. Hidden structures (`hid=`) stay hidden even inside a tier set (Hide is the user's explicit choice); the focus itself can't be hidden (hiding it already steps back, M7). A URL that opens straight into a soft tier loads the layers it needs the same way.
+4. **Tier sets per kind** (spec §5.2), pure functions next to `derive.ts`, compiled into the lazy content chunks and registered with the main chunk the way `softRegistry.ts` registers the ID table:
+   - **Muscle / part.** Tier 1: the structure (a muscle with parts shows all its parts) + every bone, cartilage, ligament or part named as a `structure` in its origin and resolved insertion (a part: its own origin + inherited insertion). Tier 2: + its derived synergists and their tier-1 attachment structures. `{ soft: … }` attachments add nothing.
+   - **Ligament.** Tier 1: + its `connects` structures. Tier 2: + every ligament and cartilage/disc/meniscus whose `joint` is in the same functional joint (decision 2 of M8: a pair inside a functional joint counts as that joint). A ligament with `joint: null` has no tier 2: "Expand" is disabled with the reason "Not part of a joint".
+   - **Cartilage / disc / meniscus.** Tier 1: + its `attachedTo` structures. Tier 2: as for ligaments. Costal cartilages 8–10 (`joint: null`) have no tier 2, same reason.
+   - Until the layer's content chunk has loaded, "Show related" and "Expand" stay disabled with the reason "Loading content…"; the chunk is already requested with the layer, so this is brief.
+5. **Button labels per kind.** Muscles and parts: "Show attachments" and "Show functional group" (spec §5.2). Ligaments and cartilage keep "Show related" and "Expand". The `R` and `E` keys do the same for every kind. `NEW_KIND_TIERS_REASON` is removed.
+6. **Origin and insertion highlighting uses the patches** (spec §5.3; M6 found them usable). The attachments layer files load lazily the first time a muscle reaches tier 1, into one more solid batch drawn only at muscle tier 1 and 2. Because M6 found some patch names wrong, **the content decides**: a patch is drawn as an origin (or insertion) of the selected muscle or part only if `soft-to-id.json` says it serves that structure **and** the content has that bone in that role. Where the content names a bone and no agreeing patch exists, that bone gets the **whole-bone tint fallback** in the same colour. A script, `npm run content:patch-check`, writes `assets/build/REPORT-patches.md` listing every disagreement (patch with no matching content attachment, content attachment with no patch); it is informational, not a failing check, and its open items become QUESTIONS entries. A bone that is both origin and insertion of the same structure takes the origin colour plus an outline (spec).
+7. **Antagonist toggle** (spec §5.2). Only at muscle tier 2; off by default; store `antagonists`, URL `ant=1` (dropped when not at muscle tier 2). On: the derived antagonists (and only them, not their attachments) are drawn solid in the antagonist tint. A structure that is both synergist and antagonist (possible through different actions) shows as a synergist, and a QUESTIONS entry records each one found.
+8. **Tints and legend.** `isolationView`'s `tints` map gets three values: `origin`, `insertion`, `antagonist`. Colours come from the Okabe–Ito set already used, chosen so that each differs from the layer colours, the focus colour and each other by ΔE2000 ≥ 20 under normal vision and the three CVD simulations (the existing `tests/layerColours.test.ts` method). The legend shows "Origin", "Insertion" and (when on) "Antagonist" chips whenever they're in use, beside the layer colours when more than one layer is on (spec §7).
+9. **Info panel sections** (spec §7), in the spec's order, built in `softPanel.ts` as a pure model (tested) and rendered by `InfoPanel.tsx`:
+   - Muscle / part: Parts (links) or "Part of …" (link), Origin, Insertion (each attachment: structure link + landmark, or the soft text), Actions (joint name · movement · role, from `joints.json`/`articulations.json` and `movements.json`), Synergists (links), Antagonists (links), Innervation, Clinical note.
+   - Ligament: Joint, Connects (links), Functions, Clinical note. Cartilage/disc/meniscus: Joint, Attached to (links), Functions, Clinical note.
+   - Bone: "Attached muscles" becomes two link lists, **Origins** and **Insertions** (spec §5.4), replacing M8's plain text; a muscle reached only through a part is listed by the part's name, as now. Hovering a row highlights that structure (the existing joint-hover mechanism, spec §5.3).
+   - A link selects its target (decision 1), loading and showing the target's layer as M7's selection already does.
+10. **"Show attached muscles"** (spec §5.4): a bone panel action that isolates the bone plus every muscle and part with an attachment on it, as a group: `grp=attached:<bone_id>` in the store, URL and reducer (a level like any group, Back returns). It works with the muscles layer off (decision 3). Disabled with "No muscles attach here" for bones with none (e.g. some carpals, teeth).
+11. **Sidebar** (spec §7): three new roots, **Muscles** (region → compartment → muscle → parts, from `muscle-hierarchy.json`), **Ligaments** (by functional joint, then pair joint; `joint: null` under "Other ligaments"), **Cartilage** (by kind, then joint). The soft tree data loads with a small lazy chunk the first time a new root is expanded (not with the sidebar), so the main chunk carries only the three root rows. Every inner node keeps "Isolate", which needs soft groups in `grp=` (`grp=muscles.upper_limb.rotator_cuff` and so on; keys from the hierarchy files) and the same layer-on-demand rule as decision 3. Left and right as in the bone tree.
+12. **Search** (spec §7). A second prebuilt index, `virtual:skeleton-search-soft`, loaded the first time the search box gets a keystroke (the bone index stays as it is), indexing every soft structure's name, Latin and common name, plus `content/synonyms.json`, which grows to accept soft-tissue IDs ("ACL", "MCL", "rotator cuff muscles", "calf muscle" …) and gains a `groups` section for the spec's group synonyms ("rotator cuff", "hamstrings", "quadriceps", "erector spinae", plus "triceps surae", "adductors", "hip flexors" if their groups exist in the hierarchy), each resolving to a group isolation. `validate-content` checks every key and target. **No subagent fan-out:** names, Latin and common names already come from the content files, so the hand-written synonyms are only real abbreviations and lay terms, a few dozen, which need consistent judgement; the session writes them itself (WORKFLOW §3: under about 5 batches' worth of genuinely independent items isn't worth briefing).
+13. **Size budget.** Main chunk ≤ **+10 kB gzipped over M8** for the whole milestone (the reducer, `resolveClick`, tint plumbing, panel sections and three root rows); everything soft-specific (tier functions, panel data, tree data, the soft search index, patch metadata) goes in lazy chunks. Each session records the main chunk size and the lazy chunk sizes it added (`npm run content`, `npm run search-index`). The spec's programme limit (+150 kB over M5) stays well clear.
+
+## Risks found while planning
+
+1. **Layer-on-demand loading** (decision 3) touches the M7 layer state, the loaders and the URL restore order. It is the riskiest part of the milestone, so it gets session AF to itself together with the tier sets that need it. The equivalence tests from M7 (bone selection with only bones on = M6) must keep passing.
+2. **Patches vs content.** M6 found wrong patch names; decision 6 makes the content win and reports the rest, so a bad patch can at worst fall back to a whole-bone tint.
+3. **Draw calls.** The attachments batch adds one (plus its outline if needed); spec §8's < 20 with every layer on and a selection active must still hold. Session AG measures it with `?debug`.
+4. **The journey test depends on content.** The triceps' origin (scapula, infraglenoid tubercle; humerus for the other heads) and insertion (ulna, olecranon) are in M8's content; the test asserts on the scapula and ulna being tinted for the **long head** (its own origin + inherited insertion), as the spec's test reads.
+
+## Step 1: Nested selection (session AE)
+- `resolveClick`, the reducer's part level and `parentOf`, history steps, `levelOf`; breadcrumb with the muscle → part crumbs; tree rows and links select directly. Picking returns the part's ID (the mesh is the part's), and the solid view colours all of a muscle's parts as focus when the muscle is selected (the outline covers every part, spec §8).
+- Tests: reducer unit tests for each §5.1 rule and decision 2; e2e: muscles on, click a part of triceps (muscle selected, all parts focus-coloured), click the long head (part selected, siblings normal), Esc (muscle), Esc (full view), browser Back walks the same.
+
+## Step 2: Tiers per kind (session AF)
+- Tier functions (decision 4), registered from the lazy chunk; `visibleAt` for soft IDs; layer-on-demand (decision 3); labels and reasons (decision 5).
+- Tests: tier sets per kind on real content (Vitest); e2e: a ligament's tiers with the bones layer off; a muscle's tier 1 with the muscles layer Off in the URL.
+
+## Step 3: Origins, insertions, antagonists (session AG)
+- Attachments batch, the agreement rule and report (decision 6), antagonist toggle (decision 7), tints and legend chips (decision 8); draw calls checked.
+- Tests: tint maps (Vitest, including the fallback and the both-roles case); colour ΔE test; e2e: triceps tier 1 tints, antagonist toggle at tier 2, `ant=1` round trip.
+
+## Step 4: Panels and the bone cross-link (session AH)
+- Panel sections (decision 9), bone Origins/Insertions links, "Show attached muscles" (decision 10).
+- Tests: panel models per kind (Vitest); e2e: panel sections, a link selecting a part, `grp=attached:femur_left` with the muscles layer off, 200% reflow and axe on the new sections.
+
+## Step 5: Sidebar and search (session AI)
+- Tree roots, soft groups, lazy tree chunk (decision 11); soft search index, synonyms and group synonyms (decision 12).
+- Tests: tree rows and keys (Vitest); e2e: expand Muscles → Upper limb → triceps → long head; search "ACL" selects the anterior cruciate ligament; "rotator cuff" isolates the group; keyboard pass through the new roots.
+
+## Step 6: Wrap-up (session AJ)
+- The spec's journey test (exit criterion 5) as `tests/e2e/interaction.spec.ts`. Full e2e through `verifier`; main chunk vs M8; lazy chunk sizes; `npm run perf-load` vs M8. PR to `main`, merge, deploy, confirm `/m9/`, README row and this plan updated.
+
+## Hosted copy
+
+Not yet deployed. When live: https://ajmarr04-ux.github.io/SkeletonViewer/m9/

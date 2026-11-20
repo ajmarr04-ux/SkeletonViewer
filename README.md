@@ -16,7 +16,8 @@ muscles, ligaments and cartilage, per [`SPEC-musculoskeletal.md`](SPEC-musculosk
 | 5: Polish (search and tree, labels, colour-by-region, screenshots, share links, accessibility) | https://ajmarr04-ux.github.io/SkeletonViewer/m5/ | Live (frozen at `71f04d0`) |
 | 6: Soft-tissue audit, mapping and assets (muscles, ligaments, cartilage; debug view only) | https://ajmarr04-ux.github.io/SkeletonViewer/m6/ | Live (frozen at `43dce0e`; [plan](docs/PLAN-milestone-6.md); layers with `?debug&layers=all`) |
 | 7: Layers and rendering (Layers panel, ghost per layer, muscle depth, Hide, picking across layers) | https://ajmarr04-ux.github.io/SkeletonViewer/m7/ | Live (frozen at `3af6d5a`; [plan](docs/PLAN-milestone-7.md)) |
-| 8: Content (muscle, ligament and cartilage files; movements and joints; attachment migration) | https://ajmarr04-ux.github.io/SkeletonViewer/m8/ | In progress ([plan](docs/PLAN-milestone-8.md)) |
+| 8: Content (muscle, ligament and cartilage files; movements and joints; attachment migration) | https://ajmarr04-ux.github.io/SkeletonViewer/m8/ | Live (frozen at `0833b48`; [plan](docs/PLAN-milestone-8.md)) |
+| 9: Interaction (muscle → part selection, tiers per kind, origins and insertions, panel sections, sidebar and search for the new kinds) | https://ajmarr04-ux.github.io/SkeletonViewer/m9/ | In progress ([plan](docs/PLAN-milestone-9.md)) |
 
 Known issues and requested changes for later milestones: [`docs/BACKLOG.md`](docs/BACKLOG.md).
 
