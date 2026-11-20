@@ -13,6 +13,7 @@ import {
   GhostIcon,
   HomeIcon,
   LabelsIcon,
+  LayersIcon,
   MoreIcon,
   OpacityIcon,
   RegionIcon,
@@ -22,6 +23,7 @@ import {
   ShareIcon,
   ViewsIcon,
 } from "./icons";
+import { LayersPanel } from "./LayersPanel";
 import { Popover } from "./Popover";
 import { Settings } from "./Settings";
 import { shareView } from "./share";
@@ -62,7 +64,7 @@ type Tool = ToolItem & { key: string; bar: ReactNode; more?: (close: () => void)
 /**
  * Floating toolbar, bottom centre (spec §7). Search, Home, Views, the isolation
  * button (Related / Region) and Ghosts always stay in the bar; Ghost opacity,
- * Explode, Labels, Colour by region, Screenshot, Share and Settings move into a
+ * Explode, Labels, Colour by region, Screenshot, Share, Layers (M7) and Settings move into a
  * "More" menu when the bar wouldn't fit (always on phones, plan decision 12).
  * With room to spare the buttons show their labels; else icons only.
  */
@@ -269,6 +271,17 @@ export function Toolbar() {
     { key: "colour", label: "Colour", overflow: true, bar: colourButton(false), more: () => colourButton(true) },
     { key: "screenshot", label: "Screenshot", overflow: true, bar: actionButton(false, none, "screenshot"), more: (c) => actionButton(true, c, "screenshot") },
     { key: "share", label: "Share", overflow: true, bar: actionButton(false, none, "share"), more: (c) => actionButton(true, c, "share") },
+    {
+      key: "layers",
+      label: "Layers",
+      overflow: true,
+      bar: (
+        <Popover label="Layers" icon={<LayersIcon />} kind="dialog">
+          {() => <LayersPanel />}
+        </Popover>
+      ),
+      more: () => <LayersPanel />,
+    },
     {
       key: "settings",
       label: "Settings",

@@ -13,8 +13,24 @@ import ids from "../../content/ids.json";
 import { isGroupKey } from "../content/groups";
 import { isolationStep, type IsolationAction } from "./isolation";
 import { COLOUR_MODE_KEY, type ColourMode } from "../scene/regionColours";
-import { storedFlag, useViewer } from "./store";
-import { parseUrlState, serialiseUrlState, type GhostMode, type UrlState } from "./url";
+import { LAYERS_KEY, storedFlag, useViewer } from "./store";
+import {
+  DEFAULT_LAYER_SETTING,
+  formatLayers,
+  isDefaultLayers,
+  isUserLayersValue,
+  LAYERS,
+  parseHidden,
+  parseLayers,
+  parseUrlState,
+  serialiseUrlState,
+  type GhostMode,
+  type Layer,
+  type LayerMode,
+  type LayerSetting,
+  type MuscleDepth,
+  type UrlState,
+} from "./url";
 
 type IdEntry = { id: string; meshAvailable: boolean };
 const ENTRIES = ids as IdEntry[];
@@ -116,6 +132,69 @@ export function setColourMode(mode: ColourMode): void {
   window.history.replaceState(window.history.state, "", urlWith({ color: mode === "region" ? "region" : null }));
 }
 
+/** The layer setting in the store. */
+function currentLayers(): LayerSetting {
+  const st = useViewer.getState();
+  return { layers: st.layers, depth: st.muscleDepth };
+}
+
+function storeLayers(setting: LayerSetting): void {
+  try {
+    if (isDefaultLayers(setting)) window.localStorage.removeItem(LAYERS_KEY);
+    else window.localStorage.setItem(LAYERS_KEY, formatLayers(setting));
+  } catch {
+    // Storage disabled: the URL still carries it.
+  }
+}
+
+/** The stored layer setting, if any (M7 plan decision 1). */
+function storedLayers(): LayerSetting | null {
+  try {
+    return parseLayers(window.localStorage.getItem(LAYERS_KEY));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Change the layers (M7 plan decision 1): store, localStorage and the URL
+ * (`layers=b:on,…`, no new history entry). Ignored while M6's debug layer
+ * view is on (plan decision 2).
+ */
+export function setLayerSetting(next: LayerSetting): void {
+  const st = useViewer.getState();
+  if (st.debugLayersView) return;
+  storeLayers(next);
+  const prev = currentLayers();
+  if (formatLayers(prev) === formatLayers(next)) return;
+  st.setLayerSetting(next.layers, next.depth);
+  window.history.replaceState(window.history.state, "", urlWith({ layers: next }));
+}
+
+export function setLayerMode(layer: Layer, mode: LayerMode): void {
+  const cur = currentLayers();
+  setLayerSetting({ ...cur, layers: { ...cur.layers, [layer]: mode } });
+}
+
+export function setMuscleDepth(depth: MuscleDepth): void {
+  setLayerSetting({ ...currentLayers(), depth });
+}
+
+/** The two presets above the toggles (spec §6.1). */
+export type LayerPreset = "skeleton" | "full";
+export function applyLayerPreset(preset: LayerPreset): void {
+  const cur = currentLayers();
+  if (preset === "skeleton") setLayerSetting({ ...cur, layers: { ...DEFAULT_LAYER_SETTING.layers } });
+  else setLayerSetting({ layers: Object.fromEntries(LAYERS.map((l) => [l, "on"])) as LayerSetting["layers"], depth: 0 });
+}
+
+/** Which preset the layers match, if any. */
+export function presetOf(layers: LayerSetting["layers"]): LayerPreset | null {
+  if (LAYERS.every((l) => layers[l] === DEFAULT_LAYER_SETTING.layers[l])) return "skeleton";
+  if (LAYERS.every((l) => layers[l] === "on")) return "full";
+  return null;
+}
+
 /**
  * Read the selection from the URL at start-up. Colour-by-region comes from the
  * URL when it says `color=region`, else from the stored preference (which is
@@ -131,6 +210,19 @@ export function initSelectionFromUrl(): UrlState {
   if (colour === "region" && url.color !== "region") {
     window.history.replaceState(window.history.state, "", urlWith({ color: "region" }));
   }
+  // Layers (M7 plan decision 1): the URL, else the stored setting (then written to the URL), else the default.
+  // M6's debug format (`?debug&layers=all`) keeps the real layers at their default (plan decision 2).
+  const rawLayers = new URLSearchParams(window.location.search).get("layers");
+  const debugView = rawLayers !== null && !isUserLayersValue(rawLayers) && new URLSearchParams(window.location.search).has("debug");
+  st.setDebugLayersView(debugView);
+  const layers = debugView ? DEFAULT_LAYER_SETTING : (url.layers ?? storedLayers() ?? DEFAULT_LAYER_SETTING);
+  st.setLayerSetting(layers.layers, layers.depth);
+  if (!debugView && url.layers === null && !isDefaultLayers(layers)) {
+    window.history.replaceState(window.history.state, "", urlWith({ layers }));
+  }
+  st.setHidden(url.hid);
+  const over = parseHidden(new URLSearchParams(window.location.search).get("hid")).dropped;
+  if (over > 0) st.showToast(`Only the first ${url.hid.length} hidden structures are kept in the link`);
   return url;
 }
 
@@ -146,6 +238,15 @@ export function onPopState(): void {
   // Colour-by-region isn't history: an older entry keeps today's colours, and its URL is brought up to date.
   const colour = st.colourMode === "region" ? "region" : null;
   if (url.color !== colour) window.history.replaceState(window.history.state, "", urlWith({ color: colour }));
+  // Nor are the layers (plan decision 1): the entry's `layers=` is brought up to date too.
+  if (!st.debugLayersView) {
+    const layers = currentLayers();
+    const want = isDefaultLayers(layers) ? null : formatLayers(layers);
+    const have = url.layers && !isDefaultLayers(url.layers) ? formatLayers(url.layers) : null;
+    if (want !== have) window.history.replaceState(window.history.state, "", urlWith({ layers }));
+  }
+  // Hidden structures belong to the history entry (spec §5.5: Back un-hides).
+  st.setHidden(url.hid);
   const isolationChanged = url.sel !== st.sel || url.tier !== st.tier || url.grp !== st.grp || url.ghost !== st.ghostMode;
   if (!isolationChanged) {
     st.requestCamera({ kind: "goto", cam: url.cam });

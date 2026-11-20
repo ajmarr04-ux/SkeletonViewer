@@ -19,7 +19,7 @@ import { PROXY_RADIUS_PX, pickWithProxies, tinyObjects, type Proxy, type RealHit
 import ids from "../../content/ids.json";
 import { displayName } from "../content/names";
 import { goBack, hasMesh, selectObject } from "../state/selection";
-import { isPickable, isolationView } from "../scene/isolation";
+import { isPickable, isolationView, withBonesLayer } from "../scene/isolation";
 
 /** Everything that covers the canvas for framing: the info panel, the breadcrumb and the sidebar. */
 function framingInset() {
@@ -475,7 +475,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     };
     const visibleIds = () => {
       const st = useViewer.getState();
-      const view = isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp);
+      const view = withBonesLayer(isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp), st.layers.bones);
       const present = live.current.geometry?.boneBoxes;
       return (ids as { id: string }[]).map((e) => e.id).filter((id) => hasMesh(id) && present?.has(id) && isPickable(view, id));
     };
@@ -654,7 +654,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       const proxies: Proxy[] = [];
       // Ghosts and hidden bones are not pickable (the raycast already skips hidden instances).
       const st = useViewer.getState();
-      const view = isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp);
+      const view = withBonesLayer(isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp), st.layers.bones);
       for (const id of tinyIds) {
         if (!isPickable(view, id)) continue;
         const box = g.boneBoxes.get(id);

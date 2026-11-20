@@ -16,9 +16,12 @@ describe("parseDebugLayers", () => {
     expect(parseDebugLayers("?debug&layers=c,m")).toEqual(["muscles", "cartilage"]);
     expect(parseDebugLayers("?debug&layers=ligaments,a")).toEqual(["ligaments", "attachments"]);
   });
-  it("ignores bones and unknown codes, and honours :off", () => {
+  it("ignores bones and unknown codes", () => {
     expect(parseDebugLayers("?debug&layers=b,x")).toEqual([]);
-    expect(parseDebugLayers("?debug&layers=b:on,m:on,l:off,c")).toEqual(["muscles", "cartilage"]);
+  });
+  it("leaves M7's user format (with colons) to the real layers", () => {
+    expect(parseDebugLayers("?debug&layers=b:on,m:on,l:off,c")).toBeNull();
+    expect(parseDebugLayers("?debug&layers=m:ghost")).toBeNull();
   });
 });
 

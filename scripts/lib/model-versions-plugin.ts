@@ -5,7 +5,7 @@
 // Only the debug layer view imports it (a lazy chunk); the bone files keep
 // their plain URLs, which index.html's preload has to match.
 import { createHash } from "node:crypto";
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { Plugin } from "vite";
 import { root } from "./content-files";
@@ -24,6 +24,13 @@ export function modelVersions(dir: string = modelsDir): Record<string, string> {
   return out;
 }
 
+/** File stem → size in bytes (the Layers panel's progress, M7 plan decision 3). */
+export function modelSizes(dir: string = modelsDir): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const f of readdirSync(dir).sort()) if (f.endsWith(".glb")) out[f.slice(0, -4)] = statSync(join(dir, f)).size;
+  return out;
+}
+
 export function modelVersionsPlugin(): Plugin {
   return {
     name: "skeleton-model-versions",
@@ -31,7 +38,7 @@ export function modelVersionsPlugin(): Plugin {
     load(id) {
       if (id !== RESOLVED) return null;
       this.addWatchFile(modelsDir);
-      return `export default ${JSON.stringify(modelVersions())};`;
+      return `export default ${JSON.stringify(modelVersions())};\nexport const sizes = ${JSON.stringify(modelSizes())};`;
     },
   };
 }

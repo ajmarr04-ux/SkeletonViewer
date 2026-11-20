@@ -82,7 +82,7 @@ test.describe("axe: desktop", () => {
     await open(page, "&sel=femur_left&tier=1");
     const bar = page.getByRole("navigation", { name: "View controls" });
     const checked: string[] = [];
-    for (const name of ["Views", "Ghost opacity", "Explode", "Settings", "More"]) {
+    for (const name of ["Views", "Ghost opacity", "Explode", "Layers", "Settings", "More"]) {
       const button = bar.getByRole("button", { name, exact: true });
       if ((await button.count()) === 0) continue; // in "More" at this width, or "More" isn't needed
       await button.click();
@@ -94,7 +94,7 @@ test.describe("axe: desktop", () => {
     }
     // Every popover was seen, either on its own or inside "More".
     expect(checked).toContain("Views");
-    if (!checked.includes("More")) expect(checked).toEqual(["Views", "Ghost opacity", "Explode", "Settings"]);
+    if (!checked.includes("More")) expect(checked).toEqual(["Views", "Ghost opacity", "Explode", "Layers", "Settings"]);
 
     await page.getByTestId("labels-toggle").click();
     await page.getByTestId("colour-toggle").click();

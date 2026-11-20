@@ -7,22 +7,13 @@ import { useEffect, useState } from "react";
 import { Box3, Group, Mesh, MeshStandardMaterial, type Object3D } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "meshoptimizer";
-import modelVersions from "virtual:skeleton-model-versions";
 import { create } from "zustand";
 import type { Bounds } from "../../scripts/lib/model-checks";
 import { DEBUG_LAYER_COLOURS, layerReport, type LayerManifest, type LayerReport, type SoftLayer } from "./debugLayers";
 import type { Lod } from "./lod";
+import { layerUrl } from "../layers/urls";
 
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-
-/**
- * The file's URL with its content hash, so a rebuilt file is never taken from
- * the HTTP cache next to the new manifest (the manifests are hashed chunks).
- */
-export function layerUrl(layer: SoftLayer, lod: Lod): string {
-  const v = modelVersions[`${layer}-${lod}`];
-  return `${import.meta.env.BASE_URL}models/${layer}-${lod}.glb${v ? `?v=${v}` : ""}`;
-}
 
 /** Each manifest is its own chunk, fetched only for the layers asked for. */
 function loadManifest(layer: SoftLayer): Promise<LayerManifest> {

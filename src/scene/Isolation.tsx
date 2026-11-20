@@ -4,7 +4,7 @@ import { hasMesh } from "../state/selection";
 import { useViewer } from "../state/store";
 import type { BatchedSkeleton } from "./batchSkeleton";
 import { Color } from "three";
-import { applyBaseColours, applyIsolationView, isPickable, isolationView, PLAIN, visibleCount, withJoint, type BaseTint } from "./isolation";
+import { applyBaseColours, applyIsolationView, isPickable, isolationView, withBonesLayer, PLAIN, visibleCount, withJoint, type BaseTint } from "./isolation";
 import { tintFor } from "./material";
 import { REGIONS, regionColour, regionOf, type ColourMode, type Region } from "./regionColours";
 import { OUTLINE, setOutlineColour, setOutlineTarget, setOutlineViewport, type Outline } from "./outline";
@@ -86,7 +86,7 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
     let colour: ColourMode = "bone";
     const apply = () => {
       const st = useViewer.getState();
-      const view = withJoint(isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp), st.joint, hasMesh);
+      const view = withJoint(withBonesLayer(isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp), st.layers.bones), st.joint, hasMesh);
       const focusChanged = view.focus !== focus;
       const base = baseTintFor(st.colourMode);
       if (st.colourMode !== colour) {
@@ -140,7 +140,8 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
         s.ghostOpacity !== prev.ghostOpacity ||
         s.hovered !== prev.hovered ||
         s.joint !== prev.joint ||
-        s.colourMode !== prev.colourMode
+        s.colourMode !== prev.colourMode ||
+        s.layers.bones !== prev.layers.bones
       ) {
         apply();
       }

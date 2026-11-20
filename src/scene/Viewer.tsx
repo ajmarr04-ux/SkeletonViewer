@@ -42,6 +42,9 @@ const DebugLayersScene = lazy(() => import("./DebugLayers").then((m) => ({ defau
 const DebugLayersPanel = lazy(() => import("./DebugLayers").then((m) => ({ default: m.DebugLayersPanel })));
 const debugLayersFrom = (search: string): Promise<SoftLayer[] | null> =>
   import("./debugLayers").then((m) => m.parseDebugLayers(search));
+// M7 soft-tissue layers: one lazy chunk, fetched the first time a layer is turned on (plan decision 3).
+const LayerScenes = lazy(() => import("../layers/LayerScenes").then((m) => ({ default: m.LayerScenes })));
+const LayersDebugPanel = lazy(() => import("../layers/LayerScenes").then((m) => ({ default: m.LayersDebugPanel })));
 
 export type Shown = { lod: Lod } & SkeletonScene;
 
@@ -64,7 +67,7 @@ export function Viewer() {
   const [probe] = useState(probeDevice);
   const [layers, setLayers] = useState<SoftLayer[] | null>(null);
   useEffect(() => {
-    if (debug && new URLSearchParams(window.location.search).has("layers")) {
+    if (debug && useViewer.getState().debugLayersView) {
       void debugLayersFrom(window.location.search).then(setLayers);
     }
   }, [debug]);
@@ -78,6 +81,12 @@ export function Viewer() {
   const [material] = useState(createBoneMaterial);
   const [ghostMaterial] = useState(() => createGhostMaterial(useViewer.getState().ghostOpacity));
   const [isoStats, setIsoStats] = useState<IsolationStats | null>(null);
+  // Sticky: once any soft-tissue layer has been on, its chunk stays mounted (turned-off layers keep their batches, hidden).
+  const anyTissue = useViewer((s) => s.layers.cartilage !== "off" || s.layers.ligaments !== "off" || s.layers.muscles !== "off");
+  const [tissueWanted, setTissueWanted] = useState(anyTissue);
+  useEffect(() => {
+    if (anyTissue) setTissueWanted(true);
+  }, [anyTissue]);
   const [shown, setShown] = useState<Shown | null>(null);
   const shownRef = useRef<Shown | null>(null);
   shownRef.current = shown;
@@ -192,6 +201,11 @@ export function Viewer() {
         />
         <LabelProbe skeleton={shown?.skeleton ?? null} />
         <ScreenshotService />
+        {tissueWanted && (
+          <Suspense fallback={null}>
+            <LayerScenes lods={plan.lods} ready={shown !== null} debug={debug} />
+          </Suspense>
+        )}
         {layers && layers.length > 0 && (
           <Suspense fallback={null}>
             <DebugLayersScene layers={layers} lod={shown?.lod ?? null} />
@@ -227,6 +241,11 @@ export function Viewer() {
         isolation={isoStats}
         error={error}
       >
+        {tissueWanted && (
+          <Suspense fallback={null}>
+            <LayersDebugPanel />
+          </Suspense>
+        )}
         {layers && layers.length > 0 && (
           <Suspense fallback={null}>
             <DebugLayersPanel layers={layers} lod={shown?.lod ?? null} />

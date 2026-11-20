@@ -35,6 +35,9 @@ Viewer URL options: `?lod=low` or `?lod=high` loads only that model
 `?debug&layers=all` (or a subset, `layers=m,l,c,a`: muscles, ligaments, cartilage,
 attachment patches) also draws the M6 soft-tissue layer files over the bones in
 flat colours and checks every node's bounds against its manifest (debug only);
+`?layers=b:on,c:off,l:on,m:ghost` sets the layers (bones, cartilage, ligaments,
+muscles: `on`, `ghost` or `off`; the Layers panel writes it), and with `?debug`
+the overlay adds a bounds line per loaded layer;
 `?bench` orbits the skeleton once over 10 s and reports FPS, frame times and
 draw calls; `?cam=px,py,pz,tx,ty,tz[,ox,oy]` sets the camera (orbit position,
 pivot, and an optional view shift); `?sel=<id>` selects an object; `?nowebgl` shows the

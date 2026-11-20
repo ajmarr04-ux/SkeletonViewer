@@ -48,7 +48,18 @@ export function prefetchModel(lod: Lod): Promise<ArrayBuffer> {
 export async function loadSkeleton(lod: Lod): Promise<LoadedParts> {
   const data = await prefetchModel(lod);
   downloads.delete(lod); // parsed once; a later reload of this LOD fetches again (from the HTTP cache)
-  const gltf = await loader.parseAsync(data, modelUrl(lod).replace(/[^/]*$/, ""));
+  const parts = await partsFromGlb(data, `skeleton-${lod}.glb`, modelUrl(lod).replace(/[^/]*$/, ""));
+  return { lod, parts, loadedAtMs: performance.now() };
+}
+
+/**
+ * Parse a model file (bones, or a soft-tissue layer, M7) into one part per
+ * named node: its geometry and the mesh's world matrix. The glTF scene graph
+ * and its materials are dropped. A node with several meshes would give
+ * several parts with the same ID, which the batcher refuses.
+ */
+export async function partsFromGlb(data: ArrayBuffer, label: string, baseUrl: string): Promise<BonePart[]> {
+  const gltf = await loader.parseAsync(data, baseUrl);
   const scene = gltf.scene;
   scene.updateMatrixWorld(true);
   const json = gltf.parser.json as { nodes?: { name?: string }[] };
@@ -60,17 +71,17 @@ export async function loadSkeleton(lod: Lod): Promise<LoadedParts> {
   const parts: BonePart[] = [];
   scene.traverse((o) => {
     if (!(o instanceof Mesh)) return;
-    // Each bone is a named node; gltfpack puts the mesh on an unnamed child.
+    // Each object is a named node; gltfpack puts the mesh on an unnamed child.
     let id: string | undefined;
     for (let n: Object3D | null = o; n && n !== scene && !id; n = n.parent) id = gltfNodeName(n);
-    if (!id) throw new Error(`A mesh in skeleton-${lod}.glb has no named bone node`);
+    if (!id) throw new Error(`A mesh in ${label} has no named node`);
     parts.push({ id, geometry: o.geometry, matrixWorld: o.matrixWorld.clone() });
   });
   // The glTF's own materials are not used.
   scene.traverse((o) => {
     if (o instanceof Mesh) for (const m of [o.material].flat()) m.dispose();
   });
-  return { lod, parts, loadedAtMs: performance.now() };
+  return parts;
 }
 
 /** Free the per-bone geometries once they have been copied into a BatchedMesh. */

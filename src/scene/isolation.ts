@@ -75,6 +75,18 @@ export function withJoint(view: IsolationView, joint: { a: string; b: string } |
   return { ...view, solid, joint: bones, jointPartner: partner };
 }
 
+/**
+ * The bones layer's own mode on top of the isolation view (M7 plan decision 6;
+ * session U makes the whole view layer-aware). On: unchanged. Ghost: every bone
+ * not kept solid is a ghost, whatever the ghost/hide setting. Off: those bones
+ * are hidden. Isolation overrides the layer: an isolated bone stays solid.
+ */
+export function withBonesLayer(view: IsolationView, mode: "on" | "ghost" | "off"): IsolationView {
+  if (mode === "on") return view;
+  const solid = view.solid ?? new Set<string>();
+  return { ...view, solid, ghosts: mode === "ghost" };
+}
+
 /** Can this bone be picked (clicked, tapped, hovered)? Ghosts and hidden bones cannot. */
 export function isPickable(view: IsolationView, id: string): boolean {
   return view.solid === null || view.solid.has(id);
