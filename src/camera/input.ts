@@ -82,7 +82,9 @@ export type KeyAction =
   /** Multiply the distance by `factor`. */
   | { kind: "dolly"; factor: number }
   | { kind: "reset" }
-  | { kind: "frame" };
+  | { kind: "frame" }
+  /** Hide the selected structure (spec §5.5, M7 plan decision 13). */
+  | { kind: "hide" };
 
 export type KeyInput = { key: string; shiftKey: boolean; ctrlKey?: boolean; metaKey?: boolean; altKey?: boolean };
 
@@ -92,7 +94,8 @@ export const DOLLY_STEP = 0.9;
 
 /**
  * The keyboard map (spec §6): arrows orbit by 5°, Shift + arrows pan by 2% of
- * the distance, + and - dolly by 10%, H resets and F frames. Anything with
+ * the distance, + and - dolly by 10%, H resets, F frames and X hides the
+ * selection (M7). Anything with
  * Ctrl, Alt or Meta held is left to the browser.
  */
 export function keyAction(e: KeyInput): KeyAction | null {
@@ -117,6 +120,9 @@ export function keyAction(e: KeyInput): KeyAction | null {
     case "f":
     case "F":
       return { kind: "frame" };
+    case "x":
+    case "X":
+      return { kind: "hide" };
     default:
       return null;
   }

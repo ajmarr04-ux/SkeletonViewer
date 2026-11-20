@@ -7,7 +7,7 @@ import { acceleratedRaycast, computeBatchedBoundsTree, disposeBatchedBoundsTree 
 Mesh.prototype.raycast = acceleratedRaycast;
 BatchedMesh.prototype.raycast = acceleratedRaycast;
 
-/** One bone (or tooth) from the glTF: its geometry and the mesh's world matrix. */
+/** One bone (or tooth, or soft-tissue structure in M7) from the glTF: its geometry and the mesh's world matrix. */
 export type BonePart = { id: string; geometry: BufferGeometry; matrixWorld: Matrix4 };
 
 export type BatchedSkeleton = {
@@ -31,6 +31,9 @@ function counts(g: BufferGeometry): { vertices: number; indices: number } {
  * is the glTF mesh's own world matrix (the named bone node times its unnamed
  * dequantising child), so every bone keeps its exact world position: nothing
  * is translated, rotated or re-posed (spec §12).
+ *
+ * M7: every soft-tissue layer is batched the same way (`batchLayer`); the
+ * field names still say "bone" for an object of any layer.
  */
 export function batchSkeleton(parts: BonePart[], material: Material, opts: { name?: string; instanceColours?: boolean } = {}): BatchedSkeleton {
   let maxVertices = 0;
@@ -62,6 +65,9 @@ export function batchSkeleton(parts: BonePart[], material: Material, opts: { nam
   }
   return { mesh, boneIds, instanceOf, triangles };
 }
+
+/** One layer's objects in one BatchedMesh (M7 plan decision 4): the same rules as the bones. */
+export const batchLayer = batchSkeleton;
 
 /** Build the raycasting BVH for every geometry (three-mesh-bvh). Safe to call twice. */
 export function ensureBoundsTrees(mesh: BatchedMesh): void {

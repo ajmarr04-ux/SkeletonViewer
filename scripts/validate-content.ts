@@ -5,6 +5,8 @@
 import { join } from "node:path";
 import { oppositeOf } from "../src/content/placeholder";
 import { validateContent } from "../src/content/validate";
+import type { DepthEntry } from "../src/content/muscleDepth";
+import { validateMuscleDepth } from "../src/content/muscleDepthRules";
 import { glbNodeNames, readContentFiles, readIds, readJson, root } from "./lib/content-files";
 
 const allowMissingContent = process.argv.includes("--allow-missing-content");
@@ -24,6 +26,9 @@ const report = validateContent(
   },
   { allowMissingContent },
 );
+
+// Muscle depth (spec §6.2 and §10; M7 plan decision 9).
+report.errors.push(...validateMuscleDepth(readJson("content/muscle-depth.json"), readJson("content/soft-ids.json") as DepthEntry[]));
 
 for (const w of report.warnings) console.warn(`warning: ${w}`);
 if (report.errors.length) {

@@ -3,7 +3,7 @@ import type { BenchResult, LayoutTimes } from "../scene/bench";
 import type { Lod, LodSetting } from "../scene/lod";
 import { NO_PANEL, type PanelInset, type Preset } from "../camera/math";
 import type { Tier } from "./isolation";
-import type { CameraState, GhostMode } from "./url";
+import { DEFAULT_LAYER_SETTING, type CameraState, type GhostMode, type Layer, type LayerMode, type LayerModes, type MuscleDepth, type TissueLayer } from "./url";
 import type { ColourMode } from "../scene/regionColours";
 import type { PlacedLabel } from "../scene/labels";
 
@@ -30,6 +30,26 @@ export type CameraCommand =
 /** Ghost opacity (spec §6 slider): default and range. Kept in localStorage, not the URL. */
 export const GHOST_OPACITY = { default: 0.1, min: 0.05, max: 0.5 } as const;
 export const GHOST_OPACITY_KEY = "skeleton-viewer:ghost-opacity";
+
+/** Layers and muscle depth (M7 plan decision 1): localStorage as well as the URL. */
+export const LAYERS_KEY = "skeleton-viewer:layers";
+
+/** Loading state of one soft-tissue layer (M7 plan decision 3), for its row in the Layers panel. */
+export type LayerLoad = {
+  status: "loading" | "ready" | "error";
+  /** The LOD on screen, or null before the first one arrives. */
+  lod: "low" | "high" | null;
+  /** The LOD being fetched, or null when nothing is. */
+  fetching: "low" | "high" | null;
+  /** Bytes received and expected for the file being fetched. */
+  received: number;
+  total: number;
+  error: string | null;
+  /** Grows by one on each Retry after an error, so the loader tries again. */
+  attempt: number;
+  /** `performance.now()` when a LOD of this layer was first drawn, by LOD (perf measurements). */
+  shownAt: Partial<Record<"low" | "high", number>>;
+};
 
 /**
  * App state (spec §2: zustand, mirrored to the URL): the camera, the LOD, the
@@ -116,6 +136,23 @@ export type ViewerState = {
   setLodSetting: (setting: LodSetting) => void;
   setLodActive: (lod: Lod | null) => void;
   setReducedMotion: (reduced: boolean) => void;
+  /** On / Ghost / Off per layer (musculoskeletal spec §6.1). */
+  layers: LayerModes;
+  /** Muscle depth control (spec §6.2), 0 = all. */
+  muscleDepth: MuscleDepth;
+  setLayerSetting: (layers: LayerModes, depth: MuscleDepth) => void;
+  /**
+   * True when the URL asks for M6's debug layer view (`?debug&layers=all`):
+   * the real layers then stay at their default and the Layers panel is disabled (plan decision 2).
+   */
+  debugLayersView: boolean;
+  setDebugLayersView: (on: boolean) => void;
+  /** Loading state of each soft-tissue layer once it has been turned on. */
+  layerLoad: Partial<Record<TissueLayer, LayerLoad>>;
+  setLayerLoad: (layer: TissueLayer, load: Partial<LayerLoad>) => void;
+  /** Structures hidden one by one (spec §5.5, `hid=`). */
+  hidden: ReadonlySet<string>;
+  setHidden: (ids: Iterable<string>) => void;
 };
 
 export const useViewer = create<ViewerState>()((set) => ({
@@ -190,7 +227,32 @@ export const useViewer = create<ViewerState>()((set) => ({
   setLodSetting: (lodSetting) => set({ lodSetting }),
   setLodActive: (lodActive) => set({ lodActive }),
   setReducedMotion: (reducedMotion) => set({ reducedMotion }),
+  layers: DEFAULT_LAYER_SETTING.layers,
+  muscleDepth: 0,
+  setLayerSetting: (layers, muscleDepth) =>
+    set((s) => (sameLayers(s.layers, layers) && s.muscleDepth === muscleDepth ? s : { layers: { ...layers }, muscleDepth })),
+  debugLayersView: false,
+  setDebugLayersView: (debugLayersView) => set({ debugLayersView }),
+  layerLoad: {},
+  setLayerLoad: (layer, load) =>
+    set((s) => {
+      const prev: LayerLoad = s.layerLoad[layer] ?? { status: "loading", lod: null, fetching: null, received: 0, total: 0, error: null, attempt: 0, shownAt: {} };
+      return { layerLoad: { ...s.layerLoad, [layer]: { ...prev, ...load } } };
+    }),
+  hidden: new Set(),
+  setHidden: (ids) =>
+    set((s) => {
+      const next = new Set(ids);
+      return next.size === s.hidden.size && [...next].every((id) => s.hidden.has(id)) ? s : { hidden: next };
+    }),
 }));
+
+function sameLayers(a: LayerModes, b: LayerModes): boolean {
+  return (Object.keys(a) as Layer[]).every((k) => a[k] === b[k]);
+}
+
+/** The mode of one layer: a selector helper for components. */
+export const layerMode = (layer: Layer) => (s: ViewerState): LayerMode => s.layers[layer];
 
 const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
 

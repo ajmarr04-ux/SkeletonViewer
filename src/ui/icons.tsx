@@ -102,3 +102,10 @@ export const MoreIcon = svg(
     <circle cx="19" cy="12" r="1.2" fill="currentColor" />
   </>,
 );
+export const LayersIcon = svg(
+  <>
+    <path d="M12 3 2 8l10 5 10-5-10-5Z" />
+    <path d="m2 12.5 10 5 10-5" />
+    <path d="m2 17 10 5 10-5" />
+  </>,
+);

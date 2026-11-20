@@ -69,6 +69,8 @@ export function DebugOverlay(p: Props) {
       data-outline-selected={iso?.outlineSelected ?? ""}
       data-outline-hover={iso?.outlineHover ?? ""}
       data-joint={iso ? iso.joint.join(",") : ""}
+      data-layer-counts={iso ? Object.entries(iso.layers).map(([l, c]) => `${l}:${c.solid}/${c.ghost}`).join(",") : ""}
+      data-hidden={iso ? iso.hidden : ""}
       data-colour={iso?.colour ?? ""}
       data-explode={explode}
       data-highlight-ms={iso?.highlightMs != null ? iso.highlightMs.toFixed(1) : ""}

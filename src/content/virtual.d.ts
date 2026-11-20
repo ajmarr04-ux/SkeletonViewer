@@ -14,4 +14,11 @@ declare module "virtual:skeleton-model-versions" {
   /** File stem (`muscles-high`) → content hash (scripts/lib/model-versions-plugin.ts). */
   const versions: Record<string, string>;
   export default versions;
+  /** File stem → size in bytes. */
+  export const sizes: Record<string, number>;
+}
+declare module "virtual:skeleton-soft-ids" {
+  /** content/soft-ids.json, trimmed (scripts/lib/soft-ids-plugin.ts). */
+  const table: import("../layers/softIds").SoftId[];
+  export default table;
 }

@@ -29,9 +29,13 @@ export const ACCENT_COLOUR = "#a7caf2";
  */
 export const ACCENT_GAIN: readonly [number, number, number] = [0.62, 1.2, 2.9];
 
-/** The instance colour for the selected bone: `tintFor(ACCENT_COLOUR)` with `ACCENT_GAIN`. */
-export function accentTint(): Color {
-  const t = tintFor(ACCENT_COLOUR);
+/**
+ * The instance colour for the selected bone: `tintFor(ACCENT_COLOUR)` with
+ * `ACCENT_GAIN`. M7: `base` is the layer's material colour for a soft-tissue
+ * structure (the same accent on a muscle; M10 revisits the colours).
+ */
+export function accentTint(base: string = BONE_COLOUR): Color {
+  const t = tintFor(ACCENT_COLOUR, base);
   return new Color(t.r * ACCENT_GAIN[0], t.g * ACCENT_GAIN[1], t.b * ACCENT_GAIN[2]);
 }
 
@@ -77,15 +81,19 @@ function replaceChunk(source: string, chunk: string, by: string, where: string):
   return source.replace(include, by);
 }
 
-/** The one material every opaque bone shares (instance colours tint it: the accent on the selection). */
-export function createBoneMaterial(): MeshStandardMaterial {
+/**
+ * The one material every opaque bone shares (instance colours tint it: the
+ * accent on the selection). The soft-tissue layers (M7) use the same material
+ * in their own colour, so they share its shader program and AO remap.
+ */
+export function createBoneMaterial(colour: string = BONE_COLOUR, name = "bone"): MeshStandardMaterial {
   const m = new MeshStandardMaterial({
-    color: new Color(BONE_COLOUR),
+    color: new Color(colour),
     roughness: 0.6,
     metalness: 0,
     vertexColors: true,
   });
-  m.name = "bone";
+  m.name = name;
   m.onBeforeCompile = (shader) => {
     shader.fragmentShader = replaceChunk(shader.fragmentShader, "color_fragment", AO_COLOR_FRAGMENT, "fragment");
     shader.fragmentShader = replaceChunk(shader.fragmentShader, "common", `#include <common>${VARYING}`, "fragment");
@@ -113,9 +121,9 @@ export function tintFor(target: string, base: string = BONE_COLOUR): Color {
  * Ghosts (spec §6 Isolation): translucent, depth-sorted, no depth writes, and
  * no baked AO (vertex colours off), so they stay light and even.
  */
-export function createGhostMaterial(opacity: number): MeshStandardMaterial {
+export function createGhostMaterial(opacity: number, colour: string = BONE_COLOUR, name = "ghost"): MeshStandardMaterial {
   const m = new MeshStandardMaterial({
-    color: new Color(BONE_COLOUR),
+    color: new Color(colour),
     roughness: 0.8,
     metalness: 0,
     transparent: true,
@@ -123,6 +131,6 @@ export function createGhostMaterial(opacity: number): MeshStandardMaterial {
     depthWrite: false,
     vertexColors: false,
   });
-  m.name = "ghost";
+  m.name = name;
   return m;
 }

@@ -19,8 +19,9 @@ const CODES: Record<string, SoftLayer | "bones"> = {
 /**
  * The soft-tissue layers a debug URL asks for, in file order, or null when the
  * view is off. Needs both `debug` and `layers`. `layers=all` is every layer;
- * otherwise a comma list of codes (`m,l,c,a`) or full names. M7's real format
- * (`b:on,c:off`) is not parsed here: an entry's `:on` is accepted and `:off` drops it.
+ * otherwise a comma list of codes (`m,l,c,a`) or full names. A value with a
+ * colon is M7's user format (`b:on,m:ghost`, `src/state/url.ts`), which drives
+ * the real layers instead, so the debug view stays off (M7 plan decision 2).
  */
 export function parseDebugLayers(search: string): SoftLayer[] | null {
   const params = new URLSearchParams(search);
@@ -29,11 +30,11 @@ export function parseDebugLayers(search: string): SoftLayer[] | null {
   const raw = params.get("layers");
   if (raw === null) return null;
   const value = raw.trim().toLowerCase();
+  if (value.includes(":")) return null;
   if (value === "" || value === "all") return [...SOFT_LAYERS];
   const wanted = new Set<SoftLayer>();
   for (const piece of value.split(",")) {
-    const [key = "", state] = piece.trim().split(":");
-    if (state === "off") continue;
+    const key = piece.trim();
     const layer = CODES[key] ?? ((SOFT_LAYERS as readonly string[]).includes(key) ? (key as SoftLayer) : undefined);
     if (layer && layer !== "bones") wanted.add(layer);
   }

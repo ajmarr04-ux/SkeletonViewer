@@ -82,7 +82,7 @@ test.describe("axe: desktop", () => {
     await open(page, "&sel=femur_left&tier=1");
     const bar = page.getByRole("navigation", { name: "View controls" });
     const checked: string[] = [];
-    for (const name of ["Views", "Ghost opacity", "Explode", "Settings", "More"]) {
+    for (const name of ["Views", "Ghost opacity", "Explode", "Layers", "Settings", "More"]) {
       const button = bar.getByRole("button", { name, exact: true });
       if ((await button.count()) === 0) continue; // in "More" at this width, or "More" isn't needed
       await button.click();
@@ -94,7 +94,7 @@ test.describe("axe: desktop", () => {
     }
     // Every popover was seen, either on its own or inside "More".
     expect(checked).toContain("Views");
-    if (!checked.includes("More")) expect(checked).toEqual(["Views", "Ghost opacity", "Explode", "Settings"]);
+    if (!checked.includes("More")) expect(checked).toEqual(["Views", "Ghost opacity", "Explode", "Layers", "Settings"]);
 
     await page.getByTestId("labels-toggle").click();
     await page.getByTestId("colour-toggle").click();
@@ -241,5 +241,18 @@ test.describe("contrast and 200% reflow: sidebar and legend", () => {
     const overlaps = lg.x < bar.x + bar.width && bar.x < lg.x + lg.width && lg.y < bar.y + bar.height && bar.y < lg.y + lg.height;
     expect(overlaps, "legend clear of the toolbar").toBe(false);
     await page.screenshot({ path: "test-results/sidebar-legend-200pct.png" });
+  });
+});
+
+test.describe("axe: M7 session U", () => {
+  test("a ligament's placeholder panel and the hidden chip", async ({ page }) => {
+    test.setTimeout(180_000);
+    const errors = await open(page, "&sel=inguinal_ligament_left");
+    await expect(page.getByTestId("info-panel")).toHaveAttribute("data-id", "inguinal_ligament_left", { timeout: 120_000 });
+    await axe(page, "ligament placeholder panel");
+    await page.getByTestId("panel-hide").click();
+    await expect(page.getByTestId("show-all-hidden")).toBeVisible();
+    await axe(page, "hidden chip");
+    expect(errors).toEqual([]);
   });
 });

@@ -4,7 +4,12 @@
 export type ToolbarFit = "labels" | "icons" | "more";
 
 /** One toolbar button: its label text and whether it moves into "More" when space is short. */
-export type ToolItem = { label: string; overflow: boolean };
+export type ToolItem = {
+  label: string;
+  overflow: boolean;
+  /** Width when the bar shows icons only, if not a plain icon (the "N hidden" chip keeps its count). */
+  iconWidth?: number;
+};
 
 /** Sizes from styles.css (`.toolbar`, `.tool`). */
 export const TOOL_SIZE = {
@@ -25,7 +30,7 @@ export const PHONE_MAX_WIDTH = 599;
 
 export function toolbarWidth(items: readonly ToolItem[], fit: ToolbarFit, measure: (text: string) => number): number {
   const shown = fit === "more" ? [...items.filter((i) => !i.overflow), { label: "More", overflow: false }] : items;
-  const buttons = shown.reduce((sum, i) => sum + (fit === "labels" ? TOOL_SIZE.labelledChrome + Math.ceil(measure(i.label)) : TOOL_SIZE.icon), 0);
+  const buttons = shown.reduce((sum, i) => sum + (fit === "labels" ? TOOL_SIZE.labelledChrome + Math.ceil(measure(i.label)) : (i.iconWidth ?? TOOL_SIZE.icon)), 0);
   return buttons + TOOL_SIZE.gap * Math.max(0, shown.length - 1) + TOOL_SIZE.frame;
 }
 

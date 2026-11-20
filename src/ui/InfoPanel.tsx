@@ -5,7 +5,8 @@ import { useContent } from "../content/loader";
 import { displayName } from "../content/names";
 import { panelModel, type PanelLink, type PanelModel } from "../content/panel";
 import { NOT_WRITTEN } from "../content/placeholder";
-import { expandRegion, goBack, hasMesh, selectObject, showRelated, switchSide } from "../state/selection";
+import { softPanelModel, type SoftPanelModel } from "../content/softPanel";
+import { expandRegion, goBack, hasMesh, hideSelected, NEW_KIND_TIERS_REASON, selectObject, showRelated, switchSide } from "../state/selection";
 import { useViewer, type JointHighlight } from "../state/store";
 import { focusCanvas } from "./canvasFocus";
 import { PHONE_QUERY, useMedia } from "./useMedia";
@@ -48,10 +49,12 @@ export function InfoPanel() {
   const phone = useMedia(PHONE_QUERY);
   const content = useContent();
   const model = sel === null ? null : panelModel(sel, content);
+  // M7: a muscle, ligament or cartilage structure gets the placeholder panel (plan decision 12).
+  const soft = sel === null || model ? null : softPanelModel(sel);
   // A group (plan step 3): its name, member count and members as links.
   const group = sel === null && grp !== null ? (groupOf(grp) ?? null) : null;
   const setInset = useViewer((s) => s.setPanelInset);
-  const open = model !== null || group !== null;
+  const open = model !== null || soft !== null || group !== null;
 
   // Clear the inset once the panel is gone.
   useEffect(() => {
@@ -62,6 +65,7 @@ export function InfoPanel() {
 
   let view: PanelView;
   if (model) view = { id: model.id, group: null, head: <Title model={model} />, body: <Body model={model} /> };
+  else if (soft) view = { id: soft.id, group: null, head: <SoftTitle model={soft} />, body: <SoftBody model={soft} /> };
   else if (group) view = { id: null, group: group.key, head: <GroupTitle group={group} />, body: <GroupBody group={group} /> };
   else return null;
   return phone ? <Sheet key="sheet" view={view} /> : <SidePanel key="side" view={view} />;
@@ -383,6 +387,7 @@ function Body({ model }: { model: PanelModel }) {
         >
           Expand region
         </button>
+        {model.meshAvailable && <HideButton />}
         <button type="button" className="button primary" data-testid="panel-back" onClick={back}>
           Back
         </button>
@@ -392,6 +397,77 @@ function Body({ model }: { model: PanelModel }) {
 }
 
 const Unwritten = () => <p className="muted">{NOT_WRITTEN}</p>;
+
+/** Hide the selected structure (spec §5.5); `X` does the same. Focus goes back to the 3D view. */
+function HideButton() {
+  return (
+    <button
+      type="button"
+      className="button"
+      data-testid="panel-hide"
+      aria-keyshortcuts="X"
+      title="Hide it (X). Browser Back or Show all brings it back"
+      onClick={() => {
+        hideSelected();
+        focusCanvas();
+      }}
+    >
+      Hide
+    </button>
+  );
+}
+
+function SoftTitle({ model }: { model: SoftPanelModel }) {
+  return (
+    <div className="panel-title">
+      <h2 id="panel-title" tabIndex={-1}>
+        {model.name}
+      </h2>
+      <p className="latin">{model.side === "midline" ? model.badges.kind : `${model.badges.kind}, ${model.side}`}</p>
+    </div>
+  );
+}
+
+/**
+ * The placeholder panel for a muscle, ligament or cartilage structure in M7
+ * (plan decision 12): kind, layer, side, the muscle a part belongs to, and
+ * "Not written yet". Related and Expand arrive with the muscle content (M9).
+ */
+function SoftBody({ model }: { model: SoftPanelModel }) {
+  return (
+    <>
+      {model.pair && <SideToggle pair={model.pair} current={model.id} />}
+      <ul className="badges" aria-label="Classification">
+        <li className="badge">{model.badges.layer}</li>
+        <li className="badge">{model.badges.kind}</li>
+        <li className="badge draft">Draft — not yet reviewed</li>
+      </ul>
+      {model.partOf && (
+        <p data-testid="part-of">
+          <span className="muted">Part of</span> {model.partOf.name}
+        </p>
+      )}
+      <Section title="Summary" testId="summary">
+        <Unwritten />
+      </Section>
+      <div className="panel-actions">
+        <button type="button" className="button" data-testid="show-related" disabled title={NEW_KIND_TIERS_REASON} aria-describedby="new-kind-reason">
+          Show related
+        </button>
+        <button type="button" className="button" data-testid="expand-region" disabled title={NEW_KIND_TIERS_REASON} aria-describedby="new-kind-reason">
+          Expand region
+        </button>
+        {model.meshAvailable && <HideButton />}
+        <button type="button" className="button primary" data-testid="panel-back" onClick={back}>
+          Back
+        </button>
+      </div>
+      <p className="muted" id="new-kind-reason" data-testid="new-kind-reason">
+        Show related and Expand region: {NEW_KIND_TIERS_REASON}.
+      </p>
+    </>
+  );
+}
 
 function List({ items, inline = false }: { items: string[]; inline?: boolean }) {
   return (

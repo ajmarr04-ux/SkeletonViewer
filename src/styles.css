@@ -72,6 +72,8 @@ dialog.attribution::backdrop { background: rgb(0 0 0 / 0.5); }
   position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
   min-width: 200px; padding: 6px; border-radius: 10px;
   background: #26292e; border: 1px solid #3c4043; box-shadow: 0 6px 20px rgb(0 0 0 / 0.4);
+  /* Tall panels (More with Layers in it, M7) scroll rather than run off the top of the screen. */
+  max-height: calc(100vh - 200px); max-height: calc(100dvh - 200px); overflow-y: auto; overscroll-behavior: contain;
 }
 .menu-item {
   display: block; width: 100%; min-height: 40px; padding: 0 12px; text-align: left;
@@ -101,6 +103,8 @@ dialog.attribution::backdrop { background: rgb(0 0 0 / 0.5); }
 /* Icons only when the toolbar chose so (src/ui/toolbarFit.ts), always on phones (spec §7). */
 .toolbar:not([data-fit="labels"]) .tool-label { display: none; }
 .toolbar:not([data-fit="labels"]) .tool { padding: 0; }
+/* "N hidden · Show all" (M7): the count stays readable when the bar shows icons only. */
+.toolbar .hidden-chip { padding: 0 12px; white-space: nowrap; }
 /* "More" (plan decision 12): the overflow buttons and sliders, one section each. */
 .more-menu { display: flex; flex-direction: column; gap: 2px; min-width: 220px; }
 .more-item { display: flex; align-items: center; gap: 10px; min-height: 44px; }
@@ -353,3 +357,19 @@ dialog.manual-share form { margin-top: 12px; text-align: right; }
 @media (prefers-reduced-motion: reduce) {
   .toast { animation: none; }
 }
+
+/* Layers panel (M7 plan step 3) */
+.layers-panel { padding: 4px 8px; font-size: 14px; min-width: 260px; max-width: min(360px, 90vw); }
+.layer-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.layer-presets .button[aria-pressed="true"] { outline: 2px solid #3d8bfd; outline-offset: 1px; }
+.layer-row { border: 0; border-top: 1px solid #3c4043; margin: 0; padding: 6px 0; }
+.layer-row > legend { font-weight: 600; padding: 0; float: left; width: 100%; margin-bottom: 2px; }
+.layer-modes { clear: both; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.layer-modes label, .layer-depth label { display: flex; align-items: center; gap: 6px; min-height: 32px; white-space: nowrap; }
+.layer-status { display: flex; align-items: center; gap: 8px; margin: 4px 0 0; }
+.layer-status progress { width: 120px; accent-color: #3d8bfd; }
+.layer-status.error { color: #f6aea9; flex-wrap: wrap; }
+.layer-depth { border: 0; margin: 6px 0 0; padding: 0; }
+.layer-depth legend { font-weight: 600; padding: 0; }
+.layer-depth p { margin: 2px 0 0; }
+.more-section .layers-panel { padding: 6px 8px; }

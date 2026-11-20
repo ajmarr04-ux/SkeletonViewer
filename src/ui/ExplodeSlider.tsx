@@ -1,6 +1,12 @@
 import { useEffect } from "react";
 import { EXPLODE, releaseValue } from "../scene/explode";
 import { useViewer } from "../state/store";
+import { TISSUE_LAYERS, type LayerModes } from "../state/url";
+
+/** Why Explode is off (M7 plan decision 14). */
+export const EXPLODE_LAYERS_NOTE = "Turn off the soft-tissue layers to explode";
+/** Is any soft-tissue layer On or Ghost? */
+export const anyTissueLayer = (layers: LayerModes): boolean => TISSUE_LAYERS.some((l) => layers[l] !== "off");
 
 let releaseToken = 0;
 
@@ -37,6 +43,8 @@ function holdExplode(): void {
 export function ExplodeSlider() {
   const value = useViewer((s) => s.explode);
   const setExplode = useViewer((s) => s.setExplode);
+  // M7 plan decision 14: moving bones away from their muscles would show them misaligned.
+  const tissueOn = useViewer((s) => anyTissueLayer(s.layers));
   // Closing the popover (unmount) lets go too.
   useEffect(() => () => releaseExplode(), []);
   return (
@@ -50,6 +58,8 @@ export function ExplodeSlider() {
         max={1}
         step={0.01}
         value={value}
+        disabled={tissueOn}
+        aria-describedby={tissueOn ? "explode-note" : undefined}
         aria-valuetext={value === 0 ? "Together" : `${Math.round(value * 100)}% apart`}
         onPointerDown={holdExplode}
         onKeyDown={holdExplode}
@@ -63,6 +73,11 @@ export function ExplodeSlider() {
         onBlur={releaseExplode}
       />
       <output htmlFor="explode">{Math.round(value * 100)}%</output>
+      {tissueOn && (
+        <p className="muted" id="explode-note" data-testid="explode-note">
+          {EXPLODE_LAYERS_NOTE}
+        </p>
+      )}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { PRESETS, type Preset } from "../camera/math";
 import { explodeMovers } from "../scene/Explode";
 import { isolationView } from "../scene/isolation";
-import { expandRegion, hasMesh, setColourMode, setGhostMode, showRelated } from "../state/selection";
+import { expandRegion, hasMesh, isNewKind, setColourMode, setGhostMode, showAllHidden, showRelated } from "../state/selection";
 import { GHOST_OPACITY, useViewer } from "../state/store";
 import { takeScreenshot } from "./capture";
 import { ExplodeSlider } from "./ExplodeSlider";
@@ -13,6 +13,7 @@ import {
   GhostIcon,
   HomeIcon,
   LabelsIcon,
+  LayersIcon,
   MoreIcon,
   OpacityIcon,
   RegionIcon,
@@ -22,6 +23,7 @@ import {
   ShareIcon,
   ViewsIcon,
 } from "./icons";
+import { LayersPanel } from "./LayersPanel";
 import { Popover } from "./Popover";
 import { Settings } from "./Settings";
 import { shareView } from "./share";
@@ -62,7 +64,7 @@ type Tool = ToolItem & { key: string; bar: ReactNode; more?: (close: () => void)
 /**
  * Floating toolbar, bottom centre (spec §7). Search, Home, Views, the isolation
  * button (Related / Region) and Ghosts always stay in the bar; Ghost opacity,
- * Explode, Labels, Colour by region, Screenshot, Share and Settings move into a
+ * Explode, Labels, Colour by region, Screenshot, Share, Layers (M7) and Settings move into a
  * "More" menu when the bar wouldn't fit (always on phones, plan decision 12).
  * With room to spare the buttons show their labels; else icons only.
  */
@@ -73,6 +75,7 @@ export function Toolbar() {
   const tier = useViewer((s) => s.tier);
   const isolated = useViewer((s) => isolationView(s.sel, s.tier, "ghost", hasMesh, s.grp).isolated);
   const ghostMode = useViewer((s) => s.ghostMode);
+  const hiddenCount = useViewer((s) => s.hidden.size);
   const labelsOn = useViewer((s) => s.labelsOn);
   const colourOn = useViewer((s) => s.colourMode === "region");
   const panelRight = useViewer((s) => s.panelInset.right);
@@ -143,7 +146,9 @@ export function Toolbar() {
     },
   ];
   // Show related / Expand region (spec §7 toolbar: one button, the next tier). A group has no tiers.
-  if (sel !== null && tier === 0) {
+  // The new kinds have tier 0 only in M7 (plan decision 8): no Related button.
+  const tiers = sel !== null && !isNewKind(sel);
+  if (tiers && tier === 0) {
     tools.push({
       key: "related",
       label: "Related",
@@ -156,7 +161,7 @@ export function Toolbar() {
       ),
     });
   }
-  if (sel !== null && tier === 1) {
+  if (tiers && tier === 1) {
     tools.push({
       key: "region",
       label: "Region",
@@ -264,11 +269,48 @@ export function Toolbar() {
     </button>
   );
   const none = () => {};
+  // "N hidden · Show all" (spec §5.5, plan decision 13), while anything is hidden.
+  if (hiddenCount > 0) {
+    const chip = (inMore: boolean, close: () => void) => (
+      <button
+        type="button"
+        className={inMore ? "menu-item more-item" : "tool hidden-chip"}
+        data-testid="show-all-hidden"
+        aria-label={`${hiddenCount} hidden · Show all`}
+        title="Show every hidden structure again"
+        onClick={() => {
+          close();
+          showAllHidden();
+        }}
+      >
+        {inMore ? (
+          <span>{`${hiddenCount} hidden · Show all`}</span>
+        ) : (
+          <>
+            <span className="chip-count">{`${hiddenCount} hidden`}</span>
+            <span className="tool-label">· Show all</span>
+          </>
+        )}
+      </button>
+    );
+    tools.push({ key: "hidden", label: `${hiddenCount} hidden · Show all`, overflow: true, iconWidth: 24 + Math.ceil(measureLabel(`${hiddenCount} hidden`)), bar: chip(false, none), more: (c) => chip(true, c) });
+  }
   tools.push(
     { key: "labels", label: "Labels", overflow: true, bar: labelsButton(false), more: () => labelsButton(true) },
     { key: "colour", label: "Colour", overflow: true, bar: colourButton(false), more: () => colourButton(true) },
     { key: "screenshot", label: "Screenshot", overflow: true, bar: actionButton(false, none, "screenshot"), more: (c) => actionButton(true, c, "screenshot") },
     { key: "share", label: "Share", overflow: true, bar: actionButton(false, none, "share"), more: (c) => actionButton(true, c, "share") },
+    {
+      key: "layers",
+      label: "Layers",
+      overflow: true,
+      bar: (
+        <Popover label="Layers" icon={<LayersIcon />} kind="dialog">
+          {() => <LayersPanel />}
+        </Popover>
+      ),
+      more: () => <LayersPanel />,
+    },
     {
       key: "settings",
       label: "Settings",
