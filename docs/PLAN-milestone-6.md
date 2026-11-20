@@ -15,7 +15,7 @@ Out of scope here (later milestones): the Layers panel, per-layer batches, ghost
 | (planning) | 0 (Milestone 5 handover, this plan) | **Done.** See step 0 |
 | P | 1 (soft-tissue audit), 2 (decision on `2: Muscular insertions`) | **Done.** See "Session P notes" and `assets/audit/REPORT-soft-tissue.md`. Checkpoint answered (go on without articular cartilage) |
 | Q | 3 (soft-tissue ID list and mapping), 4 (mapping checks and questions) | **Done.** See "Session Q notes" |
-| R | 5 (Blender pipeline for the new layers), 6 (compression and `check-models`), 7 (build report) | Not started |
+| R | 5 (Blender pipeline for the new layers), 6 (compression and `check-models`), 7 (build report) | **Done.** See "Session R notes" and `assets/build/REPORT-soft-tissue.md` |
 | S | 8 (debug layer view), 9 (alignment and no-regression tests), 10 (report back with counts), 11 (hosted copy) | Not started |
 
 Triggers: "begin session P", "begin session Q", "begin session R" and "begin session S". Each session starts with `bash scripts/setup-blender.sh` (sessions P, Q and R need Blender; S only if it rebuilds) and by reading this file, then works through its steps without waiting for confirmation unless something blocks it or a **user checkpoint** below says to stop. Each ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models` and `npm run validate-content` passing (session S adds `npm run e2e`), then a commit, a push to the session branch and a PR to `main`.
@@ -29,7 +29,7 @@ Triggers: "begin session P", "begin session Q", "begin session R" and "begin ses
 - [x] Soft-tissue audit report and JSON for collections 2, 3, 4 and the cartilage in 1. (`assets/audit/REPORT-soft-tissue.md`, `assets/audit/soft-tissue.json`; session P.)
 - [x] `soft-to-id.json` with every mesh mapped, merged or excluded (with reasons). (Session Q; `tests/soft-ids.test.ts` checks that every audited mesh is used exactly once.)
 - [x] Decision recorded on `2: Muscular insertions` (patches usable or not). (**Usable**: 689 of 705 patches within 1 mm of a bone or cartilage surface; side from geometry. See the report.)
-- [ ] Six layer files exported, compressed, under budget, passing `check-models`.
+- [x] Six layer files exported, compressed, under budget, passing `check-models`. (Eight with the patches; session R. Muscles 4.62 / 1.61 MB, ligaments 0.85 / 0.44, cartilage 0.44 / 0.20, patches 1.29 / 0.79.)
 - [ ] A debug view (`?debug&layers=all`) shows every layer in place with no visible misalignment against the bones.
 - [ ] **Report back** with counts per kind (muscles, parts, tendons, ligaments, cartilage, discs, menisci) before writing content.
 - [ ] No regression: the bone files in `public/models/` are byte-identical to M5, and with no `layers` parameter the app loads exactly what M5 loaded (same requests, same main chunk within 1 KB gzipped).
@@ -67,6 +67,8 @@ These fill gaps the spec leaves open. Each is the smallest choice that fits the 
    | `attachments` (decision 12, added in session P) | ~150k | ~50k | < 3 MB | < 1 MB |
 
    **Session P measured** (viewport-evaluated source, as the bone build evaluates): muscles 1.88M triangles, ligaments 172k, cartilage 171k, patches 931k (64k before their Subdivision and Solidify). So **every layer is over its high target** and is decimated; none keeps its source geometry. The targets stand. The per-object floor for patches is 64 triangles (a solidified sheet shows each face twice).
+
+   **Session R:** the per-object floor for ligaments is **100** (300 ligaments at 300 would already be 46k, over the 40k low target). All four layers landed within 0.5% of their targets.
 
    Triangle counts must land within ±15% of the target (as for bones). If a layer's source total is below its high target, the high file keeps the source geometry and the target becomes the source count. The per-object floor is 300 triangles or the source count if lower, and LOD weights favour small structures (as for bones). Sizes extrapolate from the bones (500k tris = 2.6 MB) with headroom.
 9. **The bone pipeline is not re-run.** The shared Blender helpers (extract, clean, origins, AO, LOD, export) move into `scripts/blender/pipeline_lib.py`, imported by both `build_skeleton.py` and a new `build_soft_tissue.py`. The bone `.glb` files and `assets/build/manifest.json` are not rebuilt in M6, and `git diff --stat public/models/skeleton-*` must be empty at the end of every session. (Session R runs `build_skeleton.py --dry-run` or a single-bone build once after the refactor to prove it still works, writing outside the repo.)
@@ -130,6 +132,17 @@ What was done, and where it differs from the plan (say if any should change):
 | **Total** | **899** | **837** |
 
 Meshes per layer file: **muscles 476, ligaments 300, cartilage 61**, plus **697 attachment patches**. Source meshes: 860 joined into those 837 nodes (the 23 nucleus pulposus meshes go into their discs), 262 excluded.
+
+## Session R notes (steps 5 to 7, done)
+
+What was done, and where it differs from the plan (say if any should change):
+
+- **Refactor.** The shared Blender code moved from `build_skeleton.py` into `scripts/blender/pipeline_lib.py`. A scratch rebuild of the bones matches the committed `manifest.json` for every object, LOD, triangle count and bound. The bone files and manifest were not rebuilt, and `git diff public/models/skeleton-*` is empty. An existing nondeterminism was found along the way (the order in which `boundary_loops` walks a set of edges) and left alone; see the report.
+- **Build.** `scripts/blender/build_soft_tissue.py` with `npm run build-soft` (`scripts/build-soft-tissue.sh`, `--layer` to rebuild one) builds all four layers in about 8 minutes. `compress-models.sh` takes file stems, and `check-models` checks all ten files: names per layer, budgets (`LAYER_BUDGETS`, with the triangle target capped at the source total), `COLOR_0` and bounds. There are 5 new Vitest cases.
+- **Results.** All within 0.5% of their triangle targets and far under their byte budgets; max bounds drift 0.285 mm (muscles low), with `-vp 14` unchanged. AO is a per-structure Cycles bake.
+- **Different from the plan: normals of thin sheets.** For Solidify sheets the signed volume is unreliable, and the bone rule turned 6 correct sheets inside out (they baked black): the posterior sacro-iliac and radial collateral wrist ligaments, and the temporalis origin patch 3. The soft-tissue build now reverses any structure whose mean AO is under 0.3, re-bakes it, keeps the brighter orientation and logs it (`orientationFixedByAo`). The bone build is unchanged.
+- **Stray vertices.** Cleanup deleted loose vertices far from two structures, so their bbox shrinks without any face moving: `external_abdominal_oblique_*__origin_4` by 85 mm and `transverse_ligament_knee_*` by 16 mm (recorded in each manifest's `boundsCheck`).
+- **Counts:** final, the same as session Q's preliminary table (the report repeats it). M6's exit table for the report back is ready for session S.
 
 ## Session P: audit (steps 1 and 2)
 
