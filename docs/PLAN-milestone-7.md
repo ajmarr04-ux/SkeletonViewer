@@ -15,13 +15,13 @@ Out of scope here (later milestones): content files, schemas, `movements.json`, 
 | (planning) | 0 (Milestone 6 handover, this plan) | **Done.** See step 0 |
 | T | 1 (layer state, URL, `localStorage`), 2 (layer loader and per-layer batches), 3 (Layers panel) | **Done.** See "Session T notes" |
 | U | 4 (layer-aware isolation and ghosts), 5 (picking across layers; placeholder panel for the new kinds), 6 (per-structure Hide) | **Done.** See "Session U notes" |
-| V | 7 (muscle depth data and control), 8 (interplay with the existing tools) | Not started |
+| V | 7 (muscle depth data and control), 8 (interplay with the existing tools) | **Done.** See "Session V notes" |
 | W | 9 (bench and load measurements), 10 (tests and no-regression), 11 (hosted copy; the user's bench on PC and iPhone) | Not started |
 
 Triggers: "begin session T", "begin session U", "begin session V" and "begin session W". Each session starts by reading this file and ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models`, `npm run validate-content` and `npm run e2e` passing, then a commit, a push to the session branch and a PR to `main`. No Blender work is planned: the layer files from M6 are used as they are (`git diff` on `public/models/` must stay empty).
 
 **User checkpoints**
-- **Decision 9 (muscle depth data comes forward from M8).** If the user would rather keep `muscle-depth.json` in M8, session V builds the depth control against a test fixture and ships it disabled ("Depth data arrives in M8").
+- **Decision 9 (muscle depth data comes forward from M8).** If the user would rather keep `muscle-depth.json` in M8, session V builds the depth control against a test fixture and ships it disabled ("Depth data arrives in M8"). **Decided 2026-11-20: bring it forward** (the user chose option A).
 - **After session W's deploy**: the user runs `?bench` on PC and iPhone with the two layer presets (step 11). If the muscles-ghosted run misses ≥ 30 fps on the iPhone, the spec's fallback is taken (decision 7) before the milestone closes.
 
 ## Exit criteria (from the musculoskeletal spec §11, M7)
@@ -104,6 +104,22 @@ What was done, and where it differs from the plan (say if any should change):
 - **Debug overlay**: `data-layer-counts` (`muscles:1/476,…`, solid/ghost per loaded layer) and `data-hidden`.
 - **Size:** main chunk `index` 294.7 kB + vendor 171.1 kB gzipped (+2.5 kB over session T, **+7.8 kB over M6**, budget +15).
 - **Tests:** `tests/sceneView.test.ts` (equivalence with M6, every layer-mode and isolation combination, hidden vs focus and joint, `applyLayerView`, the registry and placeholder, cross-layer nearest hit, a near muscle beating a tiny ligament's proxy); `tests/e2e/layers.spec.ts` +6 (muscle picked over the humerus with panel, breadcrumb and disabled tiers, then unpickable when ghosted; 6 draw calls with every layer on and a selection; `sel=` a ligament turns its layer on; Hide button, `X`, chip, Back, Show all; a `hid=` link with a bone and a ligament; the phone proxy check); `tests/e2e/a11y.spec.ts` (axe on a ligament's panel and the hidden chip).
+
+## Session V notes (steps 7 and 8, done)
+
+What was done, and where it differs from the plan (say if any should change):
+
+- **`content/muscle-depth.json`** (decision 9, brought forward as the user chose): 209 side-free entries, every muscle (205) plus the linea alba, and three part overrides (deep head of flexor pollicis brevis, medial head of triceps, short head of biceps femoris, all 2). Depths by regional convention from the skin over the whole body; spanning muscles take their most superficial portion. Every call I'm unsure of is in `content/QUESTIONS.md` under **Muscles: depth** (63 to 69). To be reviewed with the M8 content.
+- **Rules** (`src/content/muscleDepthRules.ts`, in `validate-content`): the schema (1, 2 or 3); every muscle and every part without a muscle has a depth (spec §10); keys are real muscle or part IDs without a side; a part's entry must differ from its muscle's. The lookup and peel rules (`src/content/muscleDepth.ts`) have no zod, so the main chunk stays small (a first build that let zod in through the registry cost 28 kB, caught and split).
+- **Data path:** `virtual:skeleton-soft-ids` now carries each muscle's and part's resolved `depth` (a part inherits its muscle's), so the depth arrives with the lazy table; nothing new in the main chunk but the peel code.
+- **Peel:** the muscles at a stop are added to the hidden set in `viewOf` (`peeledAt` in `softRegistry.ts`, cached per stop): hidden, not ghosted, never pickable, so the layer below can be clicked; the selected structure is never peeled. Works with the layer On or Ghost.
+- **Control** (Layers panel, Muscles row): the four stops as radios, enabled while the muscles are On or Ghost ("Turn the muscles on to peel them by depth" otherwise); `layers=…,m:on:2` and `localStorage` as decided in session T. Announcements: "Superficial muscles hidden: N muscles", "Superficial and intermediate muscles hidden: N muscles", "Deep muscles only: N muscles hidden", "All muscles shown" (a muscle's parts count once).
+- **Open: two stops coincide.** With three depths, *Hide superficial + intermediate* and *Deep only* show the same thing (QUESTIONS 69). The four stops are kept as the spec lists them until the user says otherwise.
+- **Explode** (decision 14): the slider is disabled with "Turn off the soft-tissue layers to explode" while any soft-tissue layer is On or Ghost, and turning one on resets Explode to 0.
+- **Labels** (decision 14): candidates from every layer's solid batch (names from the soft-tissue table). With the muscles On, a bone is labelled only when isolation keeps it solid. The layout is re-run on hide and depth changes too.
+- **Checked with layers on:** screenshots (named after a muscle: `skeleton-gluteus-maximus-left.png`); the legend is unchanged and still isolates bone regions; joint highlighting stays a bone feature and works with the muscles on (they ghost with the selection).
+- **Size:** main chunk `index` 295.4 kB + vendor 171.1 kB gzipped, **+8.5 kB over M6** (budget +15). The lazy soft-tissue table is 11.1 kB gzipped.
+- **Tests:** `tests/muscleDepth.test.ts` (the real file passes; every muscle and part resolves; each rule on fixtures; peel per stop; the view hides, never ghosts, and spares the selection; counts and announcements); `tests/e2e/layers.spec.ts` +3 (the depth control end to end: disabled when Off, URL, announcement, a peeled deltoid unpickable, Ghost keeps the peel, storage, All; Explode disabled and labels from the solid layers; a screenshot named after a muscle).
 
 ## Session T: layer state, loader and panel (steps 1 to 3)
 

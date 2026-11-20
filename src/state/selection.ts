@@ -25,6 +25,7 @@ import {
   isUserLayersValue,
   LAYERS,
   HIDDEN_URL_CAP,
+  TISSUE_LAYERS,
   parseHidden,
   parseLayers,
   parseUrlState,
@@ -223,6 +224,8 @@ export function setLayerSetting(next: LayerSetting): void {
   const prev = currentLayers();
   if (formatLayers(prev) === formatLayers(next)) return;
   st.setLayerSetting(next.layers, next.depth);
+  // Explode is bones only and off while a soft-tissue layer shows (plan decision 14).
+  if (TISSUE_LAYERS.some((l) => next.layers[l] !== "off")) st.setExplode(0);
   window.history.replaceState(window.history.state, "", urlWith({ layers: next }));
 }
 

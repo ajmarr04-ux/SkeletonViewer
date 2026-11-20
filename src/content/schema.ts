@@ -83,3 +83,10 @@ export function wordCount(markdown: string): number {
  */
 export const synonymsSchema = z.record(snake, z.array(z.string()));
 export type Synonyms = z.infer<typeof synonymsSchema>;
+
+/**
+ * Muscle depth (musculoskeletal spec §6.2; brought into M7, plan decision 9):
+ * side-free muscle or part ID → 1 superficial, 2 intermediate, 3 deep.
+ */
+export const muscleDepthSchema = z.record(snake, z.union([z.literal(1), z.literal(2), z.literal(3)]));
+export type MuscleDepthTable = z.infer<typeof muscleDepthSchema>;

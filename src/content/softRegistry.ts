@@ -7,6 +7,7 @@
 
 import type { SoftId } from "../layers/softIds";
 import type { Layer, TissueLayer } from "../state/url";
+import { peeled } from "./muscleDepth";
 
 let table: Map<string, SoftId> | null = null;
 let order: readonly SoftId[] = [];
@@ -22,6 +23,7 @@ export function registerSoftIds(entries: readonly SoftId[]): void {
 export function resetSoftIds(): void {
   table = null;
   order = [];
+  peelCache.clear();
 }
 
 export const softEntry = (id: string): SoftId | undefined => table?.get(id);
@@ -52,4 +54,25 @@ export function softOpposite(id: string): string | null {
 export function hideTargets(id: string): string[] {
   const parts = softEntry(id)?.parts;
   return parts && parts.length > 0 ? [...parts] : [id];
+}
+
+/**
+ * The muscles (and parts) peeled away at a depth stop (spec §6.2): hidden,
+ * not ghosted. Empty until the table is loaded. Cached per stop.
+ */
+const peelCache = new Map<number, ReadonlySet<string>>();
+export function peeledAt(stop: 0 | 1 | 2 | 3): ReadonlySet<string> {
+  if (stop === 0 || !table) return EMPTY;
+  let s = peelCache.get(stop);
+  if (!s) {
+    s = new Set(order.filter((e) => e.mesh && peeled(e.depth, stop)).map((e) => e.id));
+    peelCache.set(stop, s);
+  }
+  return s;
+}
+const EMPTY: ReadonlySet<string> = new Set();
+
+/** How many muscles a stop peels (a muscle's parts count once), for the announcement. */
+export function peeledMuscleCount(stop: 0 | 1 | 2 | 3): number {
+  return new Set([...peeledAt(stop)].map((id) => softEntry(id)?.parent ?? id)).size;
 }

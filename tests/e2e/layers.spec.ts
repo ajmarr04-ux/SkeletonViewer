@@ -268,3 +268,88 @@ test.describe("phone: hit proxies with the ligaments on (plan risk 3)", () => {
     }
   });
 });
+
+// --- Session V (plan steps 7 and 8): muscle depth and the existing tools with layers on -----------
+
+const muscleCounts = async (page: Page) => {
+  const m = /muscles:(\d+)\/(\d+)/.exec(await counts(page));
+  return m ? { solid: Number(m[1]), ghost: Number(m[2]) } : null;
+};
+
+test("the depth control peels muscles away (hidden, not ghosted), in the URL and announced", async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.goto("./?lod=low&debug&layers=b:on,m:off");
+  await bonesShown(page);
+  await openPanel(page);
+  await expect(page.getByTestId("muscle-depth-1")).toBeDisabled();
+  await page.getByTestId("layer-muscles-on").check();
+  await expect(page.getByTestId("muscle-depth-1")).toBeEnabled();
+  await layerReady(page, "muscles");
+  await expect.poll(() => muscleCounts(page)).toEqual({ solid: EXPECTED.muscles, ghost: 0 });
+  await page.getByTestId("muscle-depth-1").check();
+  await expect(page).toHaveURL(/layers=b:on,c:off,l:off,m:on:1/);
+  await expect(page.getByTestId("announcer")).toHaveText(/^Superficial muscles hidden: \d+ muscles$/);
+  const s1 = (await muscleCounts(page))!;
+  expect(s1.ghost).toBe(0);
+  expect(s1.solid).toBeLessThan(EXPECTED.muscles);
+  // The deltoid is superficial: peeled, so the supraspinatus under it can be picked.
+  const deltoid = await centreOf(page, "deltoid_acromial_part_left");
+  expect(await page.evaluate(({ x, y }) => window.__viewer!.pick(x, y), deltoid)).not.toMatch(/^deltoid/);
+  await page.getByTestId("muscle-depth-2").check();
+  const s2 = (await muscleCounts(page))!;
+  expect(s2.solid).toBeLessThan(s1.solid);
+  await page.getByTestId("muscle-depth-3").check();
+  await expect(page).toHaveURL(/m:on:3/);
+  expect((await muscleCounts(page))!.solid).toBe(s2.solid); // QUESTIONS 69
+  // Ghost keeps the peel; All brings everything back; storage remembers the stop.
+  await page.getByTestId("layer-muscles-ghost").check();
+  await expect.poll(() => muscleCounts(page)).toEqual({ solid: 0, ghost: s2.solid });
+  expect(await page.evaluate(() => localStorage.getItem("skeleton-viewer:layers"))).toBe("b:on,c:off,l:off,m:ghost:3");
+  await page.getByTestId("muscle-depth-0").check();
+  await expect(page.getByTestId("announcer")).toHaveText("All muscles shown");
+  await expect.poll(() => muscleCounts(page)).toEqual({ solid: 0, ghost: EXPECTED.muscles });
+  await expect(page).toHaveURL(/m:ghost(&|$)/);
+});
+
+test("Explode is off while a soft-tissue layer shows; labels come from every solid layer", async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.goto("./?lod=low&debug&sel=femur_left&tier=1&layers=b:on,m:on");
+  await bonesShown(page);
+  await layerReady(page, "muscles");
+  await page.getByRole("button", { name: "Explode" }).click();
+  await expect(page.getByTestId("explode")).toBeDisabled();
+  await expect(page.getByTestId("explode-note")).toHaveText("Turn off the soft-tissue layers to explode");
+  await page.keyboard.press("Escape");
+  // Labels: with a bone isolated its bones are labelled; nothing selected and the muscles solid, only muscles are.
+  await page.getByTestId("labels-toggle").click();
+  const labels = page.getByTestId("labels").locator("[data-label]");
+  await expect.poll(async () => labels.evaluateAll((els) => els.map((e) => e.getAttribute("data-label")))).toContain("femur_left");
+  await page.evaluate(() => window.__viewer!.back());
+  await page.evaluate(() => window.__viewer!.back());
+  await expect(page.getByTestId("info-panel")).toHaveCount(0);
+  await expect
+    .poll(async () => {
+      const ids = await labels.evaluateAll((els) => els.map((e) => e.getAttribute("data-label") ?? ""));
+      return ids.length > 0 && ids.every((id) => softIds.some((e) => (e as { id: string }).id === id));
+    })
+    .toBe(true);
+  // Turning the muscles off gives Explode back.
+  await openPanel(page);
+  await page.getByTestId("layer-muscles-off").check();
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => window.__viewer!.select("femur_left"));
+  await page.getByTestId("tool-related").click();
+  await page.getByRole("button", { name: "Explode" }).click();
+  await expect(page.getByTestId("explode")).toBeEnabled();
+});
+
+test("a screenshot with the muscles on is named after a selected muscle", async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.goto("./?lod=low&debug&sel=gluteus_maximus_left");
+  await bonesShown(page);
+  await expect(page.getByTestId("info-panel")).toHaveAttribute("data-id", "gluteus_maximus_left", { timeout: 120_000 });
+  const shot = page.getByTestId("screenshot");
+  if (!(await shot.isVisible())) await page.getByRole("button", { name: "More", exact: true }).click();
+  const [download] = await Promise.all([page.waitForEvent("download"), page.getByTestId("screenshot").click()]);
+  expect(download.suggestedFilename()).toBe("skeleton-gluteus-maximus-left.png");
+});

@@ -2,6 +2,7 @@
 // Pure: no three.js or React, so Vitest covers it directly.
 
 import type { TissueLayer } from "../state/url";
+import { depthOf, type Depth } from "../content/muscleDepth";
 
 export type SoftKind = "muscle" | "muscle_part" | "ligament" | "cartilage" | "disc" | "meniscus";
 export type PartType = "head" | "belly" | "portion" | "tendon" | "aponeurosis";
@@ -32,14 +33,18 @@ export type SoftId = {
   parent?: string;
   parts?: string[];
   partType?: PartType;
+  /** Muscles and parts: their depth from content/muscle-depth.json, resolved (a part inherits its muscle's). */
+  depth?: Depth;
 };
 
-export function trimSoftIds(raw: readonly RawSoftId[]): SoftId[] {
+export function trimSoftIds(raw: readonly RawSoftId[], depths: Readonly<Record<string, Depth>> = {}): SoftId[] {
   return raw.map((e) => {
     const out: SoftId = { id: e.id, name: e.name, kind: e.kind, layer: e.layer, side: e.side, mesh: e.meshAvailable };
     if (e.parent) out.parent = e.parent;
     if (e.parts && e.parts.length > 0) out.parts = [...e.parts];
     if (e.partType) out.partType = e.partType;
+    const depth = depthOf(e, depths);
+    if (depth !== undefined) out.depth = depth;
     return out;
   });
 }

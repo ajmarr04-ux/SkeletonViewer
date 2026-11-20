@@ -191,7 +191,8 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
         s.joint !== prev.joint ||
         s.colourMode !== prev.colourMode ||
         s.layers !== prev.layers ||
-        s.hidden !== prev.hidden
+        s.hidden !== prev.hidden ||
+        s.muscleDepth !== prev.muscleDepth
       ) {
         apply();
       }

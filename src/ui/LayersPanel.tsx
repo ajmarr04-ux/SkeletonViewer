@@ -4,9 +4,10 @@
 // the layer files and their code load only when a layer is turned on.
 
 import { useId } from "react";
-import { applyLayerPreset, presetOf, setLayerMode, type LayerPreset } from "../state/selection";
+import { peeledMuscleCount, softTableLoaded } from "../content/softRegistry";
+import { applyLayerPreset, presetOf, setLayerMode, setMuscleDepth, type LayerPreset } from "../state/selection";
 import { useViewer, type LayerLoad } from "../state/store";
-import { LAYERS, type Layer, type LayerMode, type TissueLayer } from "../state/url";
+import { LAYERS, type Layer, type LayerMode, type MuscleDepth, type TissueLayer } from "../state/url";
 
 export const LAYER_LABELS: Record<Layer, string> = { bones: "Bones", cartilage: "Cartilage", ligaments: "Ligaments", muscles: "Muscles" };
 const MODE_LABELS: Record<LayerMode, string> = { on: "On", ghost: "Ghost", off: "Off" };
@@ -111,19 +112,44 @@ function LoadStatus({ layer, load }: { layer: TissueLayer; load: LayerLoad }) {
   );
 }
 
-/** The muscle depth control (spec §6.2). Its data, `content/muscle-depth.json`, comes in session V. */
+/**
+ * The muscle depth control (spec §6.2, M7 plan decision 10): four stops; the
+ * peeled muscles are hidden, not ghosted, so the next layer down can be
+ * clicked. Enabled while the muscles layer is On or Ghost.
+ */
 function DepthControl() {
   const name = useId();
+  const depth = useViewer((s) => s.muscleDepth);
+  const off = useViewer((s) => s.layers.muscles === "off" || s.debugLayersView);
+  const say = useViewer((s) => s.say);
   return (
-    <fieldset className="layer-depth" disabled>
+    <fieldset className="layer-depth" disabled={off} data-testid="muscle-depth">
       <legend>Depth</legend>
       {DEPTH_STOPS.map((label, i) => (
         <label key={label}>
-          <input type="radio" name={name} value={i} checked={i === 0} readOnly />
+          <input
+            type="radio"
+            name={name}
+            value={i}
+            checked={i === depth}
+            data-testid={`muscle-depth-${i}`}
+            onChange={() => {
+              const stop = i as MuscleDepth;
+              setMuscleDepth(stop);
+              say(depthAnnouncement(stop, softTableLoaded() ? peeledMuscleCount(stop) : null));
+            }}
+          />
           {label}
         </label>
       ))}
-      <p className="muted">Not available yet: needs the muscle depth data.</p>
+      {off && <p className="muted">Turn the muscles on to peel them by depth.</p>}
     </fieldset>
   );
+}
+
+/** "Superficial muscles hidden: 41 muscles." (plan step 7). */
+export function depthAnnouncement(stop: MuscleDepth, count: number | null): string {
+  if (stop === 0) return "All muscles shown";
+  const what = stop === 1 ? "Superficial muscles hidden" : stop === 2 ? "Superficial and intermediate muscles hidden" : "Deep muscles only";
+  return count === null ? what : `${what}: ${count} ${count === 1 ? "muscle" : "muscles"}${stop === 3 ? " hidden" : ""}`;
 }

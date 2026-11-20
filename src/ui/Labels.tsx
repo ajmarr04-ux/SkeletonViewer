@@ -8,6 +8,8 @@ import { viewOf } from "../scene/isolation";
 import { recordLabelLayout } from "../scene/bench";
 import { LABEL, labelPriority, layoutLabels, leaderEnd, type LabelCandidate, type PlacedLabel, type Rect } from "../scene/labels";
 import { hasMesh } from "../state/selection";
+import { useLayerBatches } from "../scene/layerRegistry";
+import { TISSUE_LAYERS, type Layer } from "../state/url";
 import { useViewer } from "../state/store";
 
 /** Re-layout at most this often while the camera moves (plan decision 7). */
@@ -51,25 +53,35 @@ const _camPos = new Vector3();
 export function LabelProbe({ skeleton }: { skeleton: BatchedSkeleton | null }) {
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
   const gl = useThree((s) => s.gl);
-  const spheres = useMemo(() => (skeleton ? localSpheres(skeleton) : null), [skeleton]);
+  const tissue = useLayerBatches();
+  // M7 (plan decision 14): every layer's solid batch gives candidates, bones first.
+  const sources = useMemo<Source[] | null>(() => {
+    if (!skeleton) return null;
+    const out: Source[] = [{ layer: "bones", batch: skeleton, spheres: localSpheres(skeleton) }];
+    for (const layer of TISSUE_LAYERS) {
+      const b = tissue[layer];
+      if (b) out.push({ layer, batch: b.solid, spheres: localSpheres(b.solid) });
+    }
+    return out;
+  }, [skeleton, tissue]);
   const last = useRef({ at: 0, key: "", dirty: true });
   const labelsOn = useViewer((s) => s.labelsOn);
 
   useEffect(() => {
     last.current.dirty = true;
     if (!labelsOn) useViewer.getState().setLabelLayout([]);
-  }, [labelsOn, skeleton]);
+  }, [labelsOn, sources]);
   useEffect(
     () =>
       useViewer.subscribe((s, p) => {
-        if (s.sel !== p.sel || s.tier !== p.tier || s.grp !== p.grp || s.ghostMode !== p.ghostMode || s.explode !== p.explode || s.panelInset !== p.panelInset || s.sidebarLeft !== p.sidebarLeft || s.colourMode !== p.colourMode || s.layers !== p.layers) last.current.dirty = true;
+        if (s.sel !== p.sel || s.tier !== p.tier || s.grp !== p.grp || s.ghostMode !== p.ghostMode || s.explode !== p.explode || s.panelInset !== p.panelInset || s.sidebarLeft !== p.sidebarLeft || s.colourMode !== p.colourMode || s.layers !== p.layers || s.hidden !== p.hidden || s.muscleDepth !== p.muscleDepth) last.current.dirty = true;
       }),
     [],
   );
 
   useFrame(() => {
     const st = useViewer.getState();
-    if (!st.labelsOn || !skeleton || !spheres) return;
+    if (!st.labelsOn || !sources) return;
     const now = performance.now();
     const e = camera.matrixWorld.elements;
     const p = camera.projectionMatrix.elements;
@@ -83,7 +95,7 @@ export function LabelProbe({ skeleton }: { skeleton: BatchedSkeleton | null }) {
       return;
     }
     last.current = { at: now, key, dirty: false };
-    const next = computeLayout(skeleton, spheres, camera, gl.domElement);
+    const next = computeLayout(sources, camera, gl.domElement);
     if (!sameLayout(st.labelLayout, next)) st.setLabelLayout(next);
     recordLabelLayout(performance.now() - now); // for ?bench (plan step 12)
   });
@@ -103,7 +115,10 @@ function rectOf(el: Element): Rect {
   return { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
 }
 
-function computeLayout(skeleton: BatchedSkeleton, spheres: Sphere[], camera: PerspectiveCamera, canvas: HTMLCanvasElement): PlacedLabel[] {
+/** One layer's solid batch and its instances' local bounding spheres. */
+type Source = { layer: Layer; batch: BatchedSkeleton; spheres: Sphere[] };
+
+function computeLayout(sources: readonly Source[], camera: PerspectiveCamera, canvas: HTMLCanvasElement): PlacedLabel[] {
   const st = useViewer.getState();
   const view = viewOf(st, hasMesh);
   const tier1 = new Set(st.sel && view.isolated ? relations.visibleAt(st.sel, 1) : []);
@@ -114,22 +129,28 @@ function computeLayout(skeleton: BatchedSkeleton, spheres: Sphere[], camera: Per
   const pxPerUnit = height / 2 / Math.tan((camera.fov * Math.PI) / 360);
   camera.getWorldPosition(_camPos);
   const candidates: LabelCandidate[] = [];
-  skeleton.boneIds.forEach((id, i) => {
-    if (!skeleton.mesh.getVisibleAt(i)) return;
-    skeleton.mesh.getMatrixAt(i, _m);
-    _sphere.copy(spheres[i]!).applyMatrix4(_m);
-    _c.copy(_sphere.center).project(camera);
-    if (_c.z < -1 || _c.z > 1) return;
-    const dist = _camPos.distanceTo(_sphere.center);
-    candidates.push({
-      id,
-      text: displayName(id),
-      x: area.left + ((_c.x + 1) / 2) * width,
-      y: area.top + ((1 - _c.y) / 2) * height,
-      sizePx: dist > 0 ? (_sphere.radius / dist) * pxPerUnit : Infinity,
-      priority: labelPriority(id, view.focus, tier1, tier2),
+  // Occlusion isn't tested (as in M5): with the muscles solid, a bone is labelled only when isolation keeps it solid.
+  const musclesSolid = st.layers.muscles === "on";
+  for (const { layer, batch: skeleton, spheres } of sources) {
+    if (!skeleton.mesh.visible) continue;
+    skeleton.boneIds.forEach((id, i) => {
+      if (!skeleton.mesh.getVisibleAt(i)) return;
+      if (layer === "bones" && musclesSolid && !(view.isolated && view.layers.bones.solid?.has(id))) return;
+      skeleton.mesh.getMatrixAt(i, _m);
+      _sphere.copy(spheres[i]!).applyMatrix4(_m);
+      _c.copy(_sphere.center).project(camera);
+      if (_c.z < -1 || _c.z > 1) return;
+      const dist = _camPos.distanceTo(_sphere.center);
+      candidates.push({
+        id,
+        text: displayName(id),
+        x: area.left + ((_c.x + 1) / 2) * width,
+        y: area.top + ((1 - _c.y) / 2) * height,
+        sizePx: dist > 0 ? (_sphere.radius / dist) * pxPerUnit : Infinity,
+        priority: labelPriority(id, view.focus, tier1, tier2),
+      });
     });
-  });
+  }
   const obstacles = [...document.querySelectorAll(OBSTACLES)].map(rectOf).filter((r) => r.right > r.left && r.bottom > r.top);
   return layoutLabels(candidates, area, {
     minSizePx: view.isolated ? LABEL.minSizeIsolatedPx : LABEL.minSizePx,

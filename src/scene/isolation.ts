@@ -7,7 +7,8 @@ import { Color } from "three";
 import { groupOf } from "../content/groups";
 import { relations } from "../content/relations";
 import type { Tier } from "../state/isolation";
-import { DEFAULT_LAYERS, LAYERS, type GhostMode, type Layer, type LayerModes } from "../state/url";
+import { DEFAULT_LAYERS, LAYERS, type GhostMode, type Layer, type LayerModes, type MuscleDepth } from "../state/url";
+import { peeledAt } from "../content/softRegistry";
 import type { BatchedSkeleton } from "./batchSkeleton";
 import { accentTint as makeAccentTint } from "./material";
 
@@ -158,10 +159,24 @@ export function viewOf(
     joint: { a: string; b: string } | null;
     layers: LayerModes;
     hidden: ReadonlySet<string>;
+    muscleDepth?: MuscleDepth;
   },
   hasMesh: (id: string) => boolean,
+  peel: (stop: MuscleDepth) => ReadonlySet<string> = peeledAt,
 ): SceneView {
-  return sceneView(withJoint(isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp), st.joint, hasMesh), st.layers, st.hidden);
+  const iso = withJoint(isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp), st.joint, hasMesh);
+  return sceneView(iso, st.layers, withPeeled(st.hidden, peel(st.muscleDepth ?? 0)));
+}
+
+/** Hidden structures plus the muscles peeled by the depth control (cached for the same two sets). */
+let lastUnion: { a: ReadonlySet<string>; b: ReadonlySet<string>; out: ReadonlySet<string> } | null = null;
+function withPeeled(hidden: ReadonlySet<string>, peeledSet: ReadonlySet<string>): ReadonlySet<string> {
+  if (peeledSet.size === 0) return hidden;
+  if (hidden.size === 0) return peeledSet;
+  if (lastUnion && lastUnion.a === hidden && lastUnion.b === peeledSet) return lastUnion.out;
+  const out = new Set([...hidden, ...peeledSet]);
+  lastUnion = { a: hidden, b: peeledSet, out };
+  return out;
 }
 
 /** Can this bone be picked (clicked, tapped, hovered)? Ghosts and hidden bones cannot. */

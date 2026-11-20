@@ -12,7 +12,7 @@ describe("trimmed soft-tissue IDs (M7 plan decision 15)", () => {
   it("keeps every ID and only the fields the viewer uses", () => {
     expect(table).toHaveLength(raw.length);
     for (const e of table) {
-      expect(Object.keys(e).every((k) => ["id", "name", "kind", "layer", "side", "mesh", "parent", "parts", "partType"].includes(k))).toBe(true);
+      expect(Object.keys(e).every((k) => ["id", "name", "kind", "layer", "side", "mesh", "parent", "parts", "partType", "depth"].includes(k))).toBe(true);
     }
     expect(JSON.stringify(table).length).toBeLessThan(JSON.stringify(raw).length * 0.75);
   });
