@@ -21,6 +21,7 @@
   "intra_articular_ligament_head_rib_left": "source name has no side suffix; left from geometry",
   "lateral_temporomandibular_ligament_left": "source name says right, geometry says left: side taken from geometry",
   "lateral_temporomandibular_ligament_right": "source name says left, geometry says right: side taken from geometry",
+  "linea_alba": "one midline mesh; no single parent, serves both sides' flat abdominal muscles (alsoServes); rectus abdominis lies either side of it",
   "lumbrical_foot_left": "one mesh for the four lumbricals of the foot",
   "lumbrical_foot_right": "one mesh for the four lumbricals of the foot",
   "lumbrical_hand_left": "one mesh for the four lumbricals of the hand",
@@ -1343,6 +1344,9 @@
   ],
   "ligamenta_flava": [
    "Ligamenta flava"
+  ],
+  "linea_alba": [
+   "Linea alba"
   ],
   "long_plantar_ligament_left": [
    "Long plantar ligament.l"
@@ -2945,7 +2949,6 @@
   "Lateral subtendinous bursa of gastrocnemius muscle.r": "bursa (deferred, spec §1)",
   "Lateral thyrohyoid ligament.l": "joins the hyoid to the excluded thyroid cartilage",
   "Lateral thyrohyoid ligament.r": "joins the hyoid to the excluded thyroid cartilage",
-  "Linea alba": "one midline mesh shared by both sides' abdominal muscles, so it can't be a part of one rectus abdominis (the data model needs a sided parent); see QUESTIONS.md",
   "Major alar cartilage.l": "nasal cartilage (deferred, spec §1/§12)",
   "Major alar cartilage.r": "nasal cartilage (deferred, spec §1/§12)",
   "Masseteric fascia.l": "fascia (deferred, spec §1)",

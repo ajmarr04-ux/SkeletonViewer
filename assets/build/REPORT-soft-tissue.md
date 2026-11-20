@@ -14,8 +14,8 @@ The bone files (`public/models/skeleton-*.glb`) and `assets/build/manifest.json`
 
 | File | Nodes | Triangles | Target | Uncompressed | Compressed | Budget | Max bounds drift |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| muscles-high | 476 | 799,742 | ~800k | 18.1 MB | **4.62 MB** | < 10 MiB | 0.020 mm |
-| muscles-low | 476 | 229,816 | ~230k | 5.5 MB | **1.61 MB** | < 4 MiB | 0.285 mm |
+| muscles-high | 477 | 799,750 | ~800k | 18.1 MB | **4.62 MB** | < 10 MiB | 0.020 mm |
+| muscles-low | 477 | 229,800 | ~230k | 5.5 MB | **1.61 MB** | < 4 MiB | 0.285 mm |
 | ligaments-high | 300 | 119,938 | ~120k | 3.0 MB | **0.85 MB** | < 2.5 MiB | 0.019 mm |
 | ligaments-low | 300 | 39,934 | ~40k | 1.2 MB | **0.44 MB** | < 1 MiB | 0.019 mm |
 | cartilage-high | 61 | 79,965 | ~80k | 1.8 MB | **0.44 MB** | < 2 MiB | 0.004 mm |
@@ -104,12 +104,12 @@ Unchanged from session Q's preliminary table (`docs/PLAN-milestone-6.md`). Every
 | --- | --- | --- |
 | Muscles, single mesh | 348 | 348 |
 | Muscles with parts (parents, no node) | 58 | 0 |
-| Muscle parts: heads 58, portions 40, bellies 16, tendons 10, aponeuroses 4 | 128 | 128 |
+| Muscle parts: heads 58, portions 40, bellies 16, tendons 10, aponeuroses 5 (incl. the linea alba, added after M6 session S) | 129 | 129 |
 | Muscles absent from the source (articularis genus) | 2 | 0 |
 | Ligaments | 300 | 300 |
 | Ligaments absent from the source (patellar ligament) | 2 | 0 |
 | Cartilage (20 costal cartilages, 4 labra) | 24 | 24 |
 | Discs (23 intervertebral, interpubic, sacrococcygeal) | 25 | 25 |
 | Menisci and articular discs | 12 | 12 |
-| **Total** | **899** | **837** (muscles 476, ligaments 300, cartilage 61) |
+| **Total** | **900** | **838** (muscles 477, ligaments 300, cartilage 61) |
 | Insertion patches (`attachments` file) | 697 | 697 |

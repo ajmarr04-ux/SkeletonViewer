@@ -85,6 +85,7 @@ Muscle (selectable, no own mesh if it has parts)
 ```
 - A muscle with no anatomical divisions is a single leaf with its own mesh.
 - A tendon shared by two muscles (calcaneal tendon) belongs to **one** parent in the data (`parent`), and lists the other under `alsoServes`.
+- A midline aponeurosis shared by both sides (the linea alba) is a part with **no parent** (`parent: null`), listing the muscles it serves on both sides under `alsoServes`. (Added in M6 by the user's decision of 2026-11-20; `content/QUESTIONS.md` 40.)
 
 ---
 

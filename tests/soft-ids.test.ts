@@ -15,7 +15,7 @@ type Soft = {
   layer: "muscles" | "ligaments" | "cartilage";
   side: "left" | "right" | "midline";
   group: string[];
-  parent?: string;
+  parent?: string | null;
   partType?: "head" | "belly" | "portion" | "tendon" | "aponeurosis";
   alsoServes?: string[];
   parts?: string[];
@@ -70,11 +70,17 @@ describe("soft-tissue ID list", () => {
 
   it("links parts and parent muscles both ways (spec §3)", () => {
     for (const e of entries.filter((x) => x.kind === "muscle_part")) {
+      for (const s of e.alsoServes ?? []) expect(byId.has(s), `${e.id} alsoServes ${s}`).toBe(true);
+      if (e.parent === null) {
+        // A midline part with no single parent (the linea alba, QUESTIONS 40) serves muscles of both sides.
+        expect(e.side, e.id).toBe("midline");
+        expect(new Set((e.alsoServes ?? []).map((s) => byId.get(s)?.side)), e.id).toEqual(new Set(["left", "right"]));
+        continue;
+      }
       const parent = byId.get(e.parent!);
       expect(parent?.kind, e.id).toBe("muscle");
       expect(parent?.parts, e.id).toContain(e.id);
       expect(parent?.side).toBe(e.side);
-      for (const s of e.alsoServes ?? []) expect(byId.has(s), `${e.id} alsoServes ${s}`).toBe(true);
     }
     for (const m of entries.filter((x) => x.parts)) {
       expect(m.kind).toBe("muscle");
@@ -84,6 +90,14 @@ describe("soft-tissue ID list", () => {
         expect(byId.get(p)?.meshAvailable, p).toBe(true);
       }
     }
+  });
+
+  it("keeps the linea alba as one midline aponeurosis serving both sides' flat abdominal muscles", () => {
+    const la = byId.get("linea_alba");
+    expect(la).toMatchObject({ kind: "muscle_part", layer: "muscles", side: "midline", parent: null, partType: "aponeurosis", meshAvailable: true });
+    expect([...la!.alsoServes!].sort()).toEqual(
+      ["external_abdominal_oblique", "internal_abdominal_oblique", "transversus_abdominis"].flatMap((m) => [`${m}_left`, `${m}_right`]).sort(),
+    );
   });
 
   it("gives the calcaneal tendon to gastrocnemius, also serving soleus (plan decision 5)", () => {

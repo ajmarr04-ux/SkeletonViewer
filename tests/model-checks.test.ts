@@ -102,7 +102,7 @@ describe("soft-tissue layers (M6)", () => {
     const real = softIds as SoftIdEntry[];
     const att = Object.keys(softMapping.attachments);
     const n = (l: SoftLayer) => expectedLayerNodeNames(l, real, att).length;
-    expect([n("muscles"), n("ligaments"), n("cartilage"), n("attachments")]).toEqual([476, 300, 61, 697]);
+    expect([n("muscles"), n("ligaments"), n("cartilage"), n("attachments")]).toEqual([477, 300, 61, 697]); // muscles include the linea alba (QUESTIONS 40)
   });
   it("caps the triangle target at the source total", () => {
     expect(layerBudget("ligaments", "high", 1_000_000).targetTris).toBe(120_000);
