@@ -24,12 +24,14 @@ async function openLayers(page: Page, query: string) {
   await page.goto(`./${query}`);
   await expect(page.getByTestId("debug")).toHaveAttribute("data-complete", "true", { timeout: 60_000 });
   const panel = page.getByTestId("debug-layers");
-  await expect(panel).toHaveAttribute("data-complete", "true", { timeout: 90_000 });
+  await expect(panel).toHaveAttribute("data-complete", "true", { timeout: 180_000 });
   return { errors, panel };
 }
 
 for (const lod of ["low", "high"] as const) {
   test(`?lod=${lod}&layers=all: every layer loads, every node where the manifest says`, async ({ page }) => {
+    // About 1.3M triangles at high LOD under a software renderer, sharing the CPU with another worker.
+    test.setTimeout(240_000);
     const { errors, panel } = await openLayers(page, `?lod=${lod}&debug&layers=all`);
     await expect(panel).toHaveAttribute("data-layers", SOFT_LAYERS.join(","));
     for (const layer of SOFT_LAYERS) {
