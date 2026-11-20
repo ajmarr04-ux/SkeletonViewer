@@ -394,6 +394,27 @@ describe("real soft-tissue content", () => {
     expect(d.attached.radius_right!.insertions).toEqual(expect.arrayContaining(["biceps_brachii_right", "supinator_right", "pronator_quadratus_right"]));
     expect(d.attached.flexor_digitorum_profundus_left!.origins).toContain("lumbrical_hand_left");
   });
+  it("derives hip, knee, ankle and foot relationships (session AB, spec §10)", () => {
+    const d = compileSoftFromDisk("muscles").derived!;
+    // Spec §10's own example: the femur's origins include the vasti.
+    expect(d.attached.femur_left!.origins).toEqual(
+      expect.arrayContaining(["vastus_lateralis_left", "vastus_medialis_left", "vastus_intermedius_left", "biceps_femoris_short_head_left"]),
+    );
+    expect(d.attached.femur_right!.insertions).toEqual(expect.arrayContaining(["psoas_major_right", "iliacus_right", "gluteus_medius_right"]));
+    // Knee: quadriceps against the hamstrings, same side only.
+    expect(d.synergists.vastus_lateralis_left).toEqual(expect.arrayContaining(["rectus_femoris_left", "vastus_medialis_left"]));
+    expect(d.synergists.vastus_lateralis_left).not.toContain("vastus_medialis_right");
+    expect(d.antagonists.vastus_lateralis_left).toEqual(expect.arrayContaining(["biceps_femoris_left", "semitendinosus_left"]));
+    // A part's own action: the long head of biceps femoris extends the hip, against iliopsoas.
+    expect(d.antagonists.psoas_major_left).toContain("biceps_femoris_long_head_left");
+    // Ankle and foot: dorsiflexors against the calf; invertors against evertors.
+    expect(d.antagonists.tibialis_anterior_left).toEqual(expect.arrayContaining(["gastrocnemius_left", "soleus_left", "fibularis_longus_left"]));
+    expect(d.synergists.tibialis_anterior_left).toContain("tibialis_posterior_left");
+    expect(d.antagonists.dorsal_interossei_foot_left).toContain("plantar_interossei_left");
+    // The calcaneal tendon carries gastrocnemius and soleus to the calcaneus.
+    expect(d.attached.calcaneal_tendon_left!.insertions).toEqual(expect.arrayContaining(["gastrocnemius_left", "soleus_left"]));
+    expect(d.attached.calcaneus_left!.insertions).toContain("calcaneal_tendon_left");
+  });
   it("derives the triceps' attachments on the scapula, humerus and ulna", () => {
     const m = compileSoftFromDisk("muscles");
     expect(m.derived!.attached.scapula_left!.origins).toContain("triceps_brachii_long_head_left");

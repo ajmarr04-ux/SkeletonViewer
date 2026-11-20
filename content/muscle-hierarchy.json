@@ -451,17 +451,31 @@
           {
             "key": "iliopsoas",
             "label": "Iliopsoas",
-            "children": []
+            "children": [
+              "psoas_major_left",
+              "iliacus_left"
+            ]
           },
           {
             "key": "gluteal_superficial",
             "label": "Gluteal, superficial",
-            "children": []
+            "children": [
+              "gluteus_maximus_left",
+              "gluteus_medius_left",
+              "gluteus_minimus_left",
+              "tensor_fasciae_latae_left"
+            ]
           },
           {
             "key": "gluteal_deep",
             "label": "Gluteal, deep (short lateral rotators)",
-            "children": []
+            "children": [
+              "piriformis_left",
+              "superior_gemellus_left",
+              "obturator_internus_left",
+              "inferior_gemellus_left",
+              "quadratus_femoris_left"
+            ]
           }
         ]
       },
@@ -472,17 +486,35 @@
           {
             "key": "thigh_anterior",
             "label": "Anterior compartment of the thigh",
-            "children": []
+            "children": [
+              "sartorius_left",
+              "rectus_femoris_left",
+              "vastus_lateralis_left",
+              "vastus_intermedius_left",
+              "vastus_medialis_left",
+              "articularis_genus_left"
+            ]
           },
           {
             "key": "thigh_medial",
             "label": "Medial compartment of the thigh",
-            "children": []
+            "children": [
+              "pectineus_left",
+              "adductor_longus_left",
+              "adductor_brevis_left",
+              "adductor_magnus_left",
+              "gracilis_left",
+              "obturator_externus_left"
+            ]
           },
           {
             "key": "thigh_posterior",
             "label": "Posterior compartment of the thigh",
-            "children": []
+            "children": [
+              "biceps_femoris_left",
+              "semitendinosus_left",
+              "semimembranosus_left"
+            ]
           }
         ]
       },
@@ -493,22 +525,39 @@
           {
             "key": "leg_anterior",
             "label": "Anterior compartment of the leg",
-            "children": []
+            "children": [
+              "tibialis_anterior_left",
+              "extensor_hallucis_longus_left",
+              "extensor_digitorum_longus_left",
+              "fibularis_tertius_left"
+            ]
           },
           {
             "key": "leg_lateral",
             "label": "Lateral compartment of the leg",
-            "children": []
+            "children": [
+              "fibularis_longus_left",
+              "fibularis_brevis_left"
+            ]
           },
           {
             "key": "leg_posterior_superficial",
             "label": "Posterior leg, superficial",
-            "children": []
+            "children": [
+              "gastrocnemius_left",
+              "soleus_left",
+              "plantaris_left"
+            ]
           },
           {
             "key": "leg_posterior_deep",
             "label": "Posterior leg, deep",
-            "children": []
+            "children": [
+              "popliteus_left",
+              "tibialis_posterior_left",
+              "flexor_digitorum_longus_left",
+              "flexor_hallucis_longus_left"
+            ]
           }
         ]
       },
@@ -519,12 +568,27 @@
           {
             "key": "foot_dorsum",
             "label": "Dorsum of the foot",
-            "children": []
+            "children": [
+              "extensor_digitorum_brevis_left",
+              "extensor_hallucis_brevis_left"
+            ]
           },
           {
             "key": "foot_sole",
             "label": "Sole of the foot",
-            "children": []
+            "children": [
+              "abductor_hallucis_left",
+              "flexor_digitorum_brevis_left",
+              "abductor_digiti_minimi_foot_left",
+              "quadratus_plantae_left",
+              "lumbrical_foot_left",
+              "flexor_hallucis_brevis_left",
+              "adductor_hallucis_left",
+              "flexor_digiti_minimi_foot_left",
+              "opponens_digiti_minimi_foot_left",
+              "dorsal_interossei_foot_left",
+              "plantar_interossei_left"
+            ]
           }
         ]
       }

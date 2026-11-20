@@ -31,6 +31,11 @@ landmarks:
   - { id: symphyseal_surface, name: Symphyseal surface, position: null }
   - { id: pecten_pubis, name: Pecten pubis, position: null }
   - { id: pubic_crest, name: Pubic crest, position: null }
+  - { id: gluteal_surface, name: Gluteal surface, position: null }
+  - { id: body_of_the_pubis, name: Body of the pubis, position: null }
+  - { id: superior_pubic_ramus, name: Superior pubic ramus, position: null }
+  - { id: inferior_pubic_ramus, name: Inferior pubic ramus, position: null }
+  - { id: ischial_ramus, name: Ischial ramus, position: null }
 muscleAttachments: [Gluteus maximus, Gluteus medius, Gluteus minimus, Iliacus, Tensor fasciae latae, Sartorius, Rectus femoris, Biceps femoris (long head), Semitendinosus, Semimembranosus, Adductor longus, Adductor brevis, Adductor magnus, Gracilis, Pectineus, Obturator internus, Obturator externus, Quadratus femoris, Rectus abdominis, External oblique, Internal oblique, Transversus abdominis, Quadratus lumborum, Levator ani]
 clinicalNote: "In adolescent sprinters and footballers a sudden pull of sartorius or rectus femoris can tear off the anterior superior or anterior inferior iliac spine (an avulsion fracture)."
 reviewed: false

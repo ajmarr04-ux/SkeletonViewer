@@ -66,6 +66,30 @@ landmarks:
   - id: patellar_surface
     name: Patellar surface
     position: null
+  - id: trochanteric_fossa
+    name: Trochanteric fossa
+    position: null
+  - id: quadrate_tubercle
+    name: Quadrate tubercle
+    position: null
+  - id: pectineal_line
+    name: Pectineal line
+    position: null
+  - id: anterior_surface
+    name: Anterior surface
+    position: null
+  - id: lateral_surface
+    name: Lateral surface
+    position: null
+  - id: medial_supracondylar_line
+    name: Medial supracondylar line
+    position: null
+  - id: lateral_supracondylar_line
+    name: Lateral supracondylar line
+    position: null
+  - id: popliteal_surface
+    name: Popliteal surface
+    position: null
 muscleAttachments:
   - Gluteus maximus
   - Gluteus medius

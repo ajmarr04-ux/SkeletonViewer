@@ -29,7 +29,7 @@ Plus the migration: **200 distinct `muscleAttachments` strings** across the 238 
 | Y | 4 (muscles: head and neck, about 84 files) | **Done.** See "Session Y notes" |
 | Z | 5 (muscles: back, thorax, abdomen and pelvis, about 66 files) | **Done.** See "Session Z notes" |
 | AA | 6 (muscles: upper limb, about 62 files) | **Done.** See "Session AA notes" |
-| AB | 7 (muscles: lower limb, about 67 files) | Not started |
+| AB | 7 (muscles: lower limb, about 67 files) | **Done.** See "Session AB notes" |
 | AC | 8 (ligaments, 155 files; cartilage, discs and menisci, 43 files) | Not started |
 | AD | 9 (migration finished, `muscleAttachments` removed, strict validation), 10 (tests and no-regression), 11 (hosted copy) | Not started |
 
@@ -110,6 +110,16 @@ What was built, and where it differs from the plan (say if any should change):
 - **Questions added:** 70 to 77, under the new headings *Joints*, *Muscles: attachment migration* and *Muscles: upper limb*.
 - **Tests:** `tests/softContent.test.ts` (33: one passing and one failing case per rule on a small fixture, derived data, compiler, the real triceps attachments, joint mirroring, the matcher); `tests/e2e/soft-content.spec.ts` (written part: Latin, Part of, summary; ligament common name; an unwritten structure keeps the placeholder).
 - **Size:** main chunk `index` 293.3 kB gzipped (+0.3 kB over M7; budget +5). Content chunks: muscles 1.2 kB, ligaments 0.6 kB, cartilage 0.6 kB gzipped with the seed files.
+
+## Session AB notes (step 7, done)
+
+- **67 left files** (52 muscles, 15 parts; 67 mirrored), which completes the muscles layer's hand-written files: iliopsoas (2); gluteal, superficial (gluteus maximus, medius, minimus; tensor fasciae latae with its belly and the iliotibial tract) and deep (piriformis, the gemelli, obturator internus, quadratus femoris); the thigh, anterior (sartorius, the four quadriceps, articularis genus), medial (pectineus, the three adductors with adductor magnus's two portions, gracilis, obturator externus) and posterior (biceps femoris with 2 heads, semitendinosus, semimembranosus); the leg, anterior (4), lateral (2), posterior superficial (gastrocnemius with 2 heads and the calcaneal tendon, soleus, plantaris) and deep (4); the foot, dorsum (2) and sole (11). `muscle-hierarchy.json` is filled for every lower-limb compartment, so **every muscle in `soft-ids.json` now has a file and a place in the tree**.
+- **No new functional joints:** hip and knee are single pairs; the ankle, subtalar/transverse tarsal and toe 2–5 sets from session X cover the rest; the big and little toes use pair joints (QUESTIONS 113).
+- **Two-way preview:** every old string on a lower-limb bone is matched by an origin or insertion, with two expected exceptions: "Soleus" on the calcaneus is matched through the calcaneal tendon's `alsoServes` (soleus inserts on the tendon, QUESTIONS 109; **session AD's check should count `alsoServes`**), and the quadriceps → tibia string stays `indirect` (QUESTIONS 110). Over the whole tree, 540 matched; the other misses are still session Z's `indirect` strings.
+- **Landmarks added:** hip bone (5), femur (8), tibia (3), fibula (3); listed in QUESTIONS 119.
+- **Questions 108 to 119.**
+- **Tests:** the real-content test from spec §10: the femur's origins include the vasti; quadriceps against the hamstrings (same side only); the long head of biceps femoris against psoas (a part's own action); dorsiflexors against the calf, invertors against evertors; dorsal against plantar interossei of the foot; the calcaneal tendon carrying gastrocnemius and soleus.
+- **Size:** the muscles content chunk is 84.8 kB gzipped with 537 files (lazy).
 
 ## Session AA notes (step 6, done)
 
