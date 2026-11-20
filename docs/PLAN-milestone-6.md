@@ -1,0 +1,154 @@
+# Milestone 6 Plan: Soft-tissue audit, mapping and assets (Musculoskeletal spec, M6)
+
+Source of truth: `SPEC-musculoskeletal.md` §1 (scope), §2 (source and pipeline), §3 (object model: kinds and IDs), §9 (triangle budgets) and §11 (M6). Where that spec is silent, `SPEC (2).md` and `STATUS.md` still apply. Ground rules throughout: no mesh is moved, re-posed or re-scaled; no anatomy, landmark coordinates or IDs are invented; anything uncertain goes in `content/QUESTIONS.md`; if an asset problem blocks the work, stop and describe it instead of working around it.
+
+## Goal
+
+Turn the soft tissue in the pinned Z-Anatomy `Startup.blend` (`71919ee`) into assets the viewer can use later, without changing anything the user sees today. That means: an audit of collections `2: Muscular insertions`, `3: Joints`, `4: Muscular system` and the cartilage meshes in `1: Skeletal system`; a mapping from every source mesh to a stable ID (or a recorded merge or exclusion); a decision on the muscular-insertion patches; six compressed layer files (muscles, ligaments, cartilage, each at two LODs) that pass an extended `check-models`; and a debug view (`?debug&layers=all`) that shows every layer in place over the bones. The milestone ends by **reporting real counts per kind back to the user**, before any content is written (spec §13), and with a hosted copy at `/m6/`.
+
+Out of scope here (later milestones): the Layers panel, per-layer batches, ghosting and picking of the new layers (M7); content files, schemas, `movements.json`, depth data and the `muscleAttachments` migration (M8); selection and tiers for the new kinds (M9); labels, legend and performance polish (M10). The bones layer, its files, its content and every existing behaviour stay exactly as in M5.
+
+## Progress
+
+| Session | Steps | Status |
+| --- | --- | --- |
+| (planning) | 0 (Milestone 5 handover, this plan) | **Done.** See step 0 |
+| P | 1 (soft-tissue audit), 2 (decision on `2: Muscular insertions`) | Not started |
+| Q | 3 (soft-tissue ID list and mapping), 4 (mapping checks and questions) | Not started |
+| R | 5 (Blender pipeline for the new layers), 6 (compression and `check-models`), 7 (build report) | Not started |
+| S | 8 (debug layer view), 9 (alignment and no-regression tests), 10 (report back with counts), 11 (hosted copy) | Not started |
+
+Triggers: "begin session P", "begin session Q", "begin session R" and "begin session S". Each session starts with `bash scripts/setup-blender.sh` (sessions P, Q and R need Blender; S only if it rebuilds) and by reading this file, then works through its steps without waiting for confirmation unless something blocks it or a **user checkpoint** below says to stop. Each ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models` and `npm run validate-content` passing (session S adds `npm run e2e`), then a commit, a push to the session branch and a PR to `main`.
+
+**User checkpoints**
+- **After session P**, if any of the spec's stop conditions hold (muscles not separated left/right, a major muscle missing, parts unmatchable for a large share of muscles), or if articular cartilage turns out to be mostly absent from the source (see risk 1): stop, write it up in `assets/audit/REPORT-soft-tissue.md` and ask the user before session Q.
+- **After session S**: the counts per kind go to the user (spec §11, "Report back"). M7 can start straight away (it needs no content), but **M8 content waits for the user's reply.**
+
+## Exit criteria (from the musculoskeletal spec §11, M6)
+
+- [ ] Soft-tissue audit report and JSON for collections 2, 3, 4 and the cartilage in 1.
+- [ ] `soft-to-id.json` with every mesh mapped, merged or excluded (with reasons).
+- [ ] Decision recorded on `2: Muscular insertions` (patches usable or not).
+- [ ] Six layer files exported, compressed, under budget, passing `check-models`.
+- [ ] A debug view (`?debug&layers=all`) shows every layer in place with no visible misalignment against the bones.
+- [ ] **Report back** with counts per kind (muscles, parts, tendons, ligaments, cartilage, discs, menisci) before writing content.
+- [ ] No regression: the bone files in `public/models/` are byte-identical to M5, and with no `layers` parameter the app loads exactly what M5 loaded (same requests, same main chunk within 1 KB gzipped).
+- [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
+
+---
+
+## Step 0: Milestone 5 handover (done in the planning session)
+
+- `deploy/pages.json`: `m1`–`m5` already frozen (M5 at `71f04d0`, done when M5 closed). `current` set from `null` to **6**, so the next deploy builds `/m6/` from `main`.
+- `/m5/` was confirmed live by the user on 2026-11-19 (`docs/PLAN-milestone-5.md`). `README.md`: Milestone 6 row added as "In progress"; the README now names both specs.
+- `SPEC-musculoskeletal.md` (uploaded to `main` in `4509e2e`) is the spec for M6–M10. `CLAUDE.md` updated: status, the spec, the reopened cartilage decision (bones unchanged; cartilage now comes in as its own layer), and the M6 session triggers.
+- `docs/BACKLOG.md` has no open entries.
+- **Still open, carried over (needs the user, any time):** the per-browser `?bench` table in `docs/PLAN-milestone-5.md` step 12; the 36 content questions in `content/QUESTIONS.md`.
+
+## Decisions made in this plan (say if any should change)
+
+These fill gaps the spec leaves open. Each is the smallest choice that fits the spec; the sessions build them as written unless the user says otherwise.
+
+1. **A separate ID list for soft tissue.** `content/ids.json` (the 238 bones and teeth) stays as it is, so nothing bone-side changes. The new structures go in a generated `content/soft-ids.json`, one entry per ID: `id`, `name` (English), `latin` (source name where it is Latin), `kind` (`muscle | muscle_part | ligament | cartilage | disc | meniscus`), `layer` (`muscles | ligaments | cartilage`), `side`, `parent` and `partType` (parts only), `parts` (muscles with parts), and `meshAvailable`. Written by `scripts/mapping/generate_soft_ids.py` (`npm run soft-ids`), the counterpart of `generate_ids.py`. IDs never collide with bone IDs (checked).
+2. **Parent muscles have no node.** `meshAvailable` means "this ID has its own node in a layer file". A muscle with parts has `meshAvailable: false` and a non-empty `parts` list whose members all have meshes; a muscle with no parts is a leaf with `meshAvailable: true`. A structure the anatomy has but the source lacks is listed in `missing` with `meshAvailable: false` (as for the wisdom teeth), never modelled.
+3. **Parts come only from source splits that match anatomy.** Meshes are never cut. If the source models triceps as one mesh, triceps is a leaf with no parts, even though it has three heads; that is recorded in the mapping (`notes`) so M8's content can still describe the heads in text. A source split that is anatomical (a named head, belly, portion, tendon or aponeurosis) becomes a part; a modelling-only split is `merged` into one node (joined like `sternum`). Doubtful cases stay separate and get a `QUESTIONS.md` entry (spec §2.3). The generator holds a curated table of known divisions (for example triceps and biceps heads, deltoid and pectoralis major portions, gastrocnemius heads, trapezius parts, adductor magnus parts, the digastric bellies) and matches source names against it; anything unmatched is listed for a decision rather than guessed.
+4. **Side from name, checked against geometry.** The side comes from the source name's suffix and is checked against the centroid's x (patient's right is −X in the source). A disagreement fails the generator. A structure whose mesh crosses the midline and is not anatomically midline (a paired muscle joined left and right) is a spec stop condition: report it, don't split it.
+5. **Tendons go with muscles.** Tendons and aponeuroses are `muscle_part`s (`partType: tendon | aponeurosis`) in the muscles layer. A shared tendon has one `parent` and lists the other muscle(s) in `alsoServes` (spec §3). Default for the calcaneal tendon: parent `gastrocnemius_<side>`, `alsoServes: [soleus_<side>]`, with a `QUESTIONS.md` entry. The linea alba, if present as a mesh, is an aponeurosis part of rectus abdominis only if the source models it that way; otherwise it is `excluded` as fascia-like and recorded.
+6. **Exclusions** (spec §1, §12), each with its reason in `excluded`: joint capsules, synovial membranes, bursae, fascia and retinacula; nasal, laryngeal and auricular cartilage; anything not skeletal muscle (smooth muscle, organ walls, if the collection has any). Muscles of the larynx, pharynx, soft palate, tongue, middle ear and eye are **included** where the source has them (spec §12 default).
+7. **Cartilage layer contents.** Costal cartilages (from `1: Skeletal system`), intervertebral discs, menisci and articular discs (knee, TMJ, sternoclavicular, acromioclavicular, wrist), the pubic symphysis disc, and whatever articular cartilage the source has. Articular cartilage the source lacks goes in `missing` (risk 1). Kinds: `cartilage` (costal, articular), `disc` (intervertebral, pubic symphysis), `meniscus` (menisci and articular discs, spec §3).
+8. **Triangle and file budgets per file** (spec §9 gives layer totals; the audit may move them, and any change is recorded here):
+
+   | File | High (tris) | Low (tris) | High size | Low size |
+   | --- | --- | --- | --- | --- |
+   | `muscles` | ~800k | ~230k | < 10 MB | < 4 MB |
+   | `ligaments` | ~120k | ~40k | < 2.5 MB | < 1 MB |
+   | `cartilage` | ~80k | ~30k | < 2 MB | < 1 MB |
+
+   Triangle counts must land within ±15% of the target (as for bones). If a layer's source total is below its high target, the high file keeps the source geometry and the target becomes the source count. The per-object floor is 300 triangles or the source count if lower, and LOD weights favour small structures (as for bones). Sizes extrapolate from the bones (500k tris = 2.6 MB) with headroom.
+9. **The bone pipeline is not re-run.** The shared Blender helpers (extract, clean, origins, AO, LOD, export) move into `scripts/blender/pipeline_lib.py`, imported by both `build_skeleton.py` and a new `build_soft_tissue.py`. The bone `.glb` files and `assets/build/manifest.json` are not rebuilt in M6, and `git diff --stat public/models/skeleton-*` must be empty at the end of every session. (Session R runs `build_skeleton.py --dry-run` or a single-bone build once after the refactor to prove it still works, writing outside the repo.)
+10. **AO per structure**, as for bones (spec §2.6): Cycles bake with only that structure visible; if that is too slow for about 1,000 structures (bones took about 45 s for the whole build), fall back to the scripted ray-cast AO already in `build_skeleton.py`, and record which was used per layer.
+11. **Manifests per layer**: `assets/build/manifest-<layer>.json` (same shape as the bone manifest: per ID, per LOD, triangle count, world bounds and centroid in glTF Y-up). `check-models` checks all eight files (two bone, six layer): node names exactly match the `meshAvailable: true` IDs of that layer in `soft-ids.json`, budgets, and bounds within 1 mm of the manifest.
+12. **Muscular-insertion patches (step 2).** Usable means: (a) most patches are thin surface meshes lying on a bone (median vertex distance to the nearest bone surface under 1 mm, measured with a `BVHTree` over the bones), (b) their names identify a muscle and say whether it is an origin or an insertion (or that can be read reliably), and (c) they are split left and right. If usable, session R exports them as a seventh pair of files, `attachments-{high,low}.glb` (one node per patch, ID `<muscle_or_part_id>__origin` / `__insertion`, with a running number when there are several), mapped in `soft-to-id.json` under `attachments`, so M9 can draw them; if not, they are ignored and M9 uses the whole-bone tint fallback (spec §5.3). The decision and the measurements go in `REPORT-soft-tissue.md`.
+13. **Debug view.** `?debug&layers=all` (also `layers=m,l,c` for a subset) lazily loads the layer files after the bones, as plain glTF scenes with flat layer colours (muted red, pale grey-white, pale blue-grey; spec §6.3), and the debug overlay gains a per-layer line: nodes loaded, triangles, and the largest bounds error against the manifest. It is a debug tool only: nothing is pickable, no batching, no draw-call budget, no UI. The real `layers=` URL format (`b:on,c:off,…`) and the loader for users are M7's; `layers=all` stays as a debug alias. The code is a lazy chunk imported only when the parameter is present, so the default load is unchanged.
+14. **Attribution.** `public/ATTRIBUTION.md` gains one line naming the collections now used (spec §2), in session S, when the files first ship.
+
+## Risks found while planning
+
+1. **Articular cartilage is probably thin in the source.** `STATUS.md` §2 counts only 2 meshes named cartilage in `3: Joints` and 31 cartilage meshes in `1: Skeletal system` (costal, nasal, laryngeal). The spec lists articular cartilage in scope. If the audit confirms it's mostly absent, it's recorded as `missing` per joint and raised at the session P checkpoint; it is not modelled.
+2. **Naming.** Many muscle names are Latin only, some may be fragments with numbered suffixes, and some may be one mesh for both sides. The generator fails on anything it can't place, and those go in the plan's notes and `QUESTIONS.md` for a decision.
+3. **Volume of mapping.** About 670 muscle meshes and 410 joint meshes. Session Q may run long; if it does, it finishes the muscles first and records where it stopped (the joints and cartilage mapping are simpler).
+4. **Draw cost of the debug view.** About a thousand separate meshes is fine for a debug view on desktop; it isn't a performance measure (that is M7, with batches).
+
+## Session P: audit (steps 1 and 2)
+
+## Step 1: Soft-tissue audit (spec §2.1)
+
+- Extend `scripts/blender/audit_source.py` (or add `audit_soft_tissue.py` that reuses its `mesh_stats`) to cover `2: Muscular insertions`, `3: Joints`, `4: Muscular system` and the meshes in `1: Skeletal system` whose names say cartilage. Per mesh with faces: name, collection path, triangle count, world bounds and centroid, side from the name and side from the centroid x, holes and non-manifold edges, loose vertices, modifiers, negative scale, linked-duplicate data, and a first classification: **whole structure**, **part** (name matches an anatomical division), **fragment** (numbered or unnamed split of one structure), **excluded type** (capsule, membrane, bursa, fascia, retinaculum, nasal/laryngeal/auricular cartilage).
+- Output `assets/audit/soft-tissue.json` and `assets/audit/REPORT-soft-tissue.md`: totals per collection and per class; triangle totals per proposed layer against decision 8; left/right pairing (every left mesh has a right twin, and where not); the side disagreements; which major muscles are present (a fixed checklist: deltoid, pectoralis major, latissimus dorsi, trapezius, biceps, triceps, gluteus maximus, quadriceps, hamstrings, gastrocnemius, soleus, rectus abdominis, diaphragm, …); the articular cartilage found per major joint; and the spec's stop conditions, each answered yes or no with the evidence.
+- Vitest is not needed for the Blender script; the JSON is checked by step 4's tests.
+
+## Step 2: Decision on `2: Muscular insertions` (decision 12)
+
+- In the same audit run: measure each patch's distance to the bones (median and 95th percentile per patch), read what its name says (muscle, origin or insertion), and its side.
+- Record the decision with the numbers in `REPORT-soft-tissue.md` and tick the exit criterion. If the answer is "usable", list how the patch names map to muscles, for session Q.
+- **Checkpoint:** stop here and ask the user if a stop condition holds or articular cartilage is largely missing (see "User checkpoints"). Otherwise continue to session Q next time.
+
+## Session Q: mapping (steps 3 and 4)
+
+## Step 3: Soft-tissue ID list and mapping (spec §2.2–2.3, §3; decisions 1–7)
+
+- `scripts/mapping/generate_soft_ids.py` (`npm run soft-ids`) reads the audit JSON and writes:
+  - `content/soft-ids.json` (decision 1), ordered by layer, then region, then anatomical order (so later tree and Tab order follow it).
+  - `assets/mapping/soft-to-id.json`: `map` (ID → source object names to join), `merged` (ID → the fragment names joined, with the reason), `missing` (anatomical structures the source lacks, with the joint or region), `excluded` (source name → reason), `attachments` (if step 2 said usable) and `notes` (ID → free text, for example "single mesh; heads not separated in the source").
+- The generator's curated tables: Latin → English names; known anatomical divisions (decision 3); excluded types; midline structures. It fails if any audited mesh is unaccounted for, if an ID repeats or collides with a bone ID, if a side disagrees with the geometry, or if a part's parent is missing.
+- English names and Latin are from standard terminology (TA); where a translation is uncertain, keep the Latin as the name and add a question.
+
+## Step 4: Mapping checks and questions
+
+- `tests/soft-ids.test.ts` (Vitest, like `tests/ids.test.ts`): every audited mesh is mapped, merged or excluded exactly once; IDs are snake_case with the side suffix last; left and right sets mirror each other (except listed midline structures); every part's parent is a muscle and is listed in that muscle's `parts`; muscles with parts have `meshAvailable: false`; no ID collides with `content/ids.json`; the calcaneal tendon follows decision 5.
+- `content/QUESTIONS.md`: new headings **Muscles**, **Ligaments**, **Cartilage** and **Mapping**, one entry per doubtful merge, part or name.
+- At the end of the session, put a **preliminary count table** per kind in this plan (it is final after session R).
+
+## Session R: pipeline and compression (steps 5 to 7)
+
+## Step 5: Blender pipeline for the new layers (spec §2.4–2.7; decisions 8–11)
+
+- Refactor the shared code of `build_skeleton.py` into `scripts/blender/pipeline_lib.py` with no change in behaviour (decision 9).
+- `scripts/blender/build_soft_tissue.py <Startup.blend> <out_dir> [--layer muscles|ligaments|cartilage|attachments]`: for each layer, per ID: evaluated mesh of every source object (modifiers applied), world transform applied, winding flipped for negative determinants, parts joined (merged fragments only), named by ID. Clean-up as for bones (merge by distance, loose geometry, duplicate faces, outward normals, small holes capped and logged; leftover non-manifold logged). Origin to the bounds centre (origin only), then the **bounds assertion against the audit within 1e-4 m**, failing loudly. AO per structure (decision 10). LODs by Decimate (collapse) to the budgets in decision 8. Export `<layer>-{high,low}.glb` (+Y up, one node per ID, `COLOR_0`, no materials, cameras or lights) and `assets/build/manifest-<layer>.json`.
+- `scripts/build-models.sh` gains a `--soft` option (or a new `build-soft-tissue.sh`, `npm run build-soft`) that runs the build, compression and checks for the layers only, never touching the bone files.
+
+## Step 6: Compression and `check-models` (spec §2.7–2.8)
+
+- `scripts/compress-models.sh` handles the layer files with the same `gltfpack -cc -kn` settings (and `-vp 14` or higher if bounds drift).
+- `scripts/check-models.ts` checks all files (decision 11). The pure parts (name sets per layer, budget check, bounds comparison) get Vitest cases next to the existing ones.
+- Commit the compressed `.glb` files directly (no LFS).
+
+## Step 7: Build report
+
+- `assets/build/REPORT-soft-tissue.md`: per layer and LOD, triangles and file size against budget; the AO method; objects still non-manifold; holes filled; anything the bounds check needed (`-vp`); build time. Final count table per kind (it goes into this plan too).
+
+## Session S: debug view, checks and hosted copy (steps 8 to 11)
+
+## Step 8: Debug layer view (decision 13)
+
+- `src/scene/debugLayers.ts` (+ a small component in the Canvas), imported dynamically only when `?debug` and `layers` are both present. Loads the requested layer files after the bones (low LOD, then high as for bones), adds them as plain meshes with flat layer colours, and extends the debug overlay with per-layer counts and the largest bounds error against `manifest-<layer>.json`.
+- `README.md`'s URL options list `?debug&layers=all`.
+
+## Step 9: Alignment and no-regression tests
+
+- `tests/e2e/layers-debug.spec.ts`: with `?debug&layers=all`, every layer loads, node counts equal the `meshAvailable` counts in `soft-ids.json`, and every node's world bounds match its manifest within 1 mm (as `smoke.spec.ts` does for bones). A screenshot pair (front and side, `deviceScaleFactor: 1`) is attached to the test report and saved for the user to look at for misalignment.
+- No regression: `smoke.spec.ts` and the rest of the suite pass unchanged; without `layers`, the page requests no layer file (checked in the test); `git diff` on the bone `.glb` files is empty; `npm run perf-load` stays within the M5 figures (first skeleton about 1.9 s in the container); the main chunk stays within 1 KB gzipped of M5.
+- `public/ATTRIBUTION.md`: the line on the collections used (decision 14).
+
+## Step 10: Report back (spec §11, §13)
+
+- A count table per kind in this plan and in the final message to the user: muscles (leaves and parents), parts (by `partType`, tendons and aponeuroses separately), ligaments, cartilage, discs, menisci, plus `missing`, `merged` and `excluded` totals and the audit's surprises. Also the screenshots from step 9.
+- **Stop for the user's reply before M8 content.** M7 (layers and rendering) can be planned meanwhile, since it depends only on the assets.
+
+## Step 11: Hosted copy
+
+- After the PR merges, the deploy builds `/m6/` from `main` (`current` is 6). Ask the user to open `https://ajmarr04-ux.github.io/SkeletonViewer/m6/?debug&layers=all` and confirm. Then tick the exit criterion and update `README.md`'s row. Freezing `m6` happens at the start of M7 (Milestone handover in `CLAUDE.md`).
+
+## Hosted copy
+
+- Milestone 6: https://ajmarr04-ux.github.io/SkeletonViewer/m6/ (not yet deployed). The new layers are only visible with `?debug&layers=all`.

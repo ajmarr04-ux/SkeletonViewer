@@ -1,6 +1,6 @@
 # Skeleton Viewer: notes for Claude Code
 
-A static browser app: a 3D atlas of the adult human skeleton (bones and teeth only). The full spec is `SPEC (2).md` and is the source of truth. The Milestone 1 plan and its progress table are in `docs/PLAN-milestone-1.md`.
+A static browser app: a 3D atlas of the adult human skeleton (bones and teeth), growing muscle, ligament and cartilage layers in milestones 6 to 10. The bone spec is `SPEC (2).md`; `SPEC-musculoskeletal.md` extends it for the new layers and wins where they conflict. `STATUS.md` describes the build as of M5. The Milestone 1 plan and its progress table are in `docs/PLAN-milestone-1.md`.
 
 ## Ground rules (from the spec, §12)
 - Never translate, rotate or re-pose a bone. Every object keeps its world position exactly. Moving an object's *origin* is fine; moving its geometry in world space is not.
@@ -14,7 +14,7 @@ A static browser app: a 3D atlas of the adult human skeleton (bones and teeth on
 - **Source:** Z-Anatomy `Startup.blend`, pinned to commit `71919ee`, collection `1: Skeletal system`. The audit is in `assets/audit/REPORT.md`.
 - **Wisdom teeth:** there are none. `tooth_18`, `tooth_28`, `tooth_38` and `tooth_48` stay in `content/ids.json` with `meshAvailable: false`. Milestone 1 ships **234 meshes** (206 bones and 28 teeth). The app must cope with these 4 IDs having no mesh.
 - **Sternum:** the source's manubrium, body and xiphoid are joined into one object, `sternum`.
-- **Cartilage:** all cartilage is excluded, including the costal cartilages. It may be revisited if the project later grows beyond the skeleton.
+- **Cartilage:** excluded from the *bones* layer (bone files and the 238 IDs stay as they are). `SPEC-musculoskeletal.md` brings costal cartilage, discs, menisci and articular cartilage in as a separate cartilage layer from M6; nasal, laryngeal and auricular cartilage stay excluded.
 - **Hallux sesamoids** are excluded, since they aren't part of the 206.
 - **Hosting:** the repo is public, and the site deploys to GitHub Pages through GitHub Actions.
 
@@ -80,7 +80,7 @@ When milestone N is merged and milestone N+1 begins:
 2. **Confirm that milestone N's hosted copy is live** at `https://ajmarr04-ux.github.io/SkeletonViewer/m<N>/`. The container can't reach `github.io`, so ask the user (or check the latest Deploy run with the GitHub tools). Then tick "Hosted copy is live" in that milestone's plan and update its row in `README.md`.
 3. Write the new milestone's plan as `docs/PLAN-milestone-<N+1>.md`, following the spec's §11 phase.
 
-Status: **all five milestones are done; the spec's phases are complete.** Milestones 1 to 5 are frozen at `b1392fa`, `eb3e8ff`, `d377478`, `db07f62` and `71f04d0`, and `/m1/` to `/m5/` are live (confirmed by the user). `deploy/pages.json` has `"current": null`: no milestone is in progress, so a deploy builds the live site from `main` plus the frozen snapshots. New work goes through `docs/BACKLOG.md`; if it becomes a new milestone, set `current` to 6 and write `docs/PLAN-milestone-6.md`. Still open, any time: the per-browser `?bench` table in `docs/PLAN-milestone-5.md` step 12, and the content questions in `content/QUESTIONS.md` (spec §13 review). Milestone 5's "Decisions made in this plan" list fills gaps in the spec; open content choices are in `content/QUESTIONS.md`.
+Status: **Milestone 6 is in progress** (`SPEC-musculoskeletal.md` §11, M6: soft-tissue audit, mapping and assets). Milestones 1 to 5 are frozen at `b1392fa`, `eb3e8ff`, `d377478`, `db07f62` and `71f04d0`, and `/m1/` to `/m5/` are live (confirmed by the user). `deploy/pages.json` has `"current": 6`. The plan is `docs/PLAN-milestone-6.md`; its sessions are P (audit), Q (mapping), R (Blender pipeline and compression) and S (debug layer view, checks, report back, hosted copy), started by "begin session P" and so on. Read the plan's decisions and user checkpoints first: stop after P if a spec stop condition holds, and **M8 content waits for the user's reply to the counts reported at the end of S**. Still open, any time: the per-browser `?bench` table in `docs/PLAN-milestone-5.md` step 12, and the content questions in `content/QUESTIONS.md` (spec §13 review).
 
 ## Environment notes
 - The cloud container is temporary, so **run `bash scripts/setup-blender.sh` first in every session**. It takes about a minute and is safe to re-run.
