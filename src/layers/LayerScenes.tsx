@@ -13,7 +13,7 @@ import { layerReport, type LayerManifest, type LayerReport } from "../scene/debu
 import { disposeParts } from "../scene/loadSkeleton";
 import { lodsToLoad, type Lod } from "../scene/lod";
 import { accentTint, createBoneMaterial, createGhostMaterial, tintFor } from "../scene/material";
-import { useLayerBatches, type LayerBatches } from "../scene/layerRegistry";
+import { MAX_PARTS, useLayerBatches, type LayerBatches } from "../scene/layerRegistry";
 import { createOutline, disposeOutline, OUTLINE } from "../scene/outline";
 import { useViewer } from "../state/store";
 import { TISSUE_LAYERS, type TissueLayer } from "../state/url";
@@ -156,7 +156,10 @@ function TissueLayerScene({
           selected: createOutline(solid, OUTLINE.selected.colour, OUTLINE.selected.widthPx, `outline-selected-${layer}`),
           hover: createOutline(solid, OUTLINE.hover.colour, OUTLINE.hover.widthPx, `outline-hover-${layer}`),
         };
-        const batches: LayerBatches = { lod, solid, ghost, outlines, base: layerBaseTint, accent: ACCENTS[layer] };
+        const moreSelected = Array.from({ length: layer === "muscles" ? MAX_PARTS - 1 : 0 }, (_, i) =>
+          createOutline(solid, OUTLINE.selected.colour, OUTLINE.selected.widthPx, `outline-selected-${layer}-${i + 2}`),
+        );
+        const batches: LayerBatches = { lod, solid, ghost, outlines, moreSelected, base: layerBaseTint, accent: ACCENTS[layer] };
         setShown(batches);
         // Isolation (main chunk) applies the view to the new batches as soon as they are registered.
         useLayerBatches.setState({ [layer]: batches });
@@ -192,6 +195,7 @@ function TissueLayerScene({
       // The outlines share the solid batch's buffers: free them together.
       disposeOutline(shown.outlines.selected);
       disposeOutline(shown.outlines.hover);
+      shown.moreSelected.forEach(disposeOutline);
       disposeBatchedSkeleton(shown.solid);
       disposeBatchedSkeleton(shown.ghost);
       if (useLayerBatches.getState()[layer] === shown) useLayerBatches.setState({ [layer]: undefined });
@@ -204,6 +208,9 @@ function TissueLayerScene({
       <primitive object={shown.solid.mesh} />
       <primitive object={shown.outlines.selected.mesh} />
       <primitive object={shown.outlines.hover.mesh} />
+      {shown.moreSelected.map((o) => (
+        <primitive key={o.mesh.name} object={o.mesh} />
+      ))}
       <primitive object={shown.ghost.mesh} />
     </>
   );

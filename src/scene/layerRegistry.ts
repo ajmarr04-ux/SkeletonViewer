@@ -9,12 +9,21 @@ import type { BatchedSkeleton } from "./batchSkeleton";
 import type { Lod } from "./lod";
 import type { Outline } from "./outline";
 
+/** The most parts any muscle has (checked against content/soft-ids.json in tests/nestedSelection.test.ts). */
+export const MAX_PARTS = 3;
+
 export type LayerBatches = {
   lod: Lod;
   solid: BatchedSkeleton;
   ghost: BatchedSkeleton;
   /** Selection and hover outlines over the solid batch's buffers (drawn only while they have a target). */
   outlines: { selected: Outline; hover: Outline };
+  /**
+   * More selection outlines, for a selected muscle's other parts (spec §5.1,
+   * §8: one hull per selected part). `MAX_PARTS - 1` for the muscles layer,
+   * none for the others; each costs a draw call only while it has a target.
+   */
+  moreSelected: Outline[];
   /** A structure's own instance colour (white, or the tendon tint). */
   base: (id: string) => Color;
   /** The instance colour of the selected structure in this layer's material. */

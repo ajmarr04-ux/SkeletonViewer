@@ -15,7 +15,7 @@ import { displayName } from "../content/names";
 import { hideTargets, isSoftId, softEntry, softLayerOf } from "../content/softRegistry";
 import { loadSoftIds } from "../content/loadSoftIds";
 import { useLayerBatches } from "../scene/layerRegistry";
-import { FULL_SKELETON, isolationStep, type IsolationAction } from "./isolation";
+import { FULL_SKELETON, isolationStep, resolveClick, type HistoryStep, type Isolation, type IsolationAction, type ParentOf } from "./isolation";
 import { COLOUR_MODE_KEY, type ColourMode } from "../scene/regionColours";
 import { LAYERS_KEY, storedFlag, useViewer } from "./store";
 import {
@@ -49,6 +49,15 @@ export const isKnownId = (id: string): boolean => KNOWN.has(id) || isSoftId(id);
 export const hasMesh = (id: string): boolean => WITH_MESH.has(id) || softEntry(id)?.mesh === true;
 /** The layer an object is drawn in: bones (and teeth), or its soft-tissue layer; null if unknown. */
 export const layerOfId = (id: string): Layer | null => (KNOWN.has(id) ? "bones" : softLayerOf(id));
+/** A muscle part's muscle (spec §5.1), else null. */
+export const parentOf: ParentOf = (id) => softEntry(id)?.parent ?? null;
+/** The structures drawn for a selection: itself if it has a mesh, else its parts that do (a muscle with parts). */
+export function drawnIds(id: string): string[] {
+  if (hasMesh(id)) return [id];
+  return (softEntry(id)?.parts ?? []).filter(hasMesh);
+}
+/** Something is drawn for this selection (a mesh of its own or of its parts). */
+export const isDrawn = (id: string): boolean => drawnIds(id).length > 0;
 /** True for a structure of the new kinds (M7: tier 0 only, plan decision 8). */
 export const isNewKind = (id: string | null): boolean => id !== null && !KNOWN.has(id) && isSoftId(id);
 
@@ -62,17 +71,24 @@ function urlWith(state: Partial<UrlState>): string {
 /** Apply an isolation action: store, URL and history, and move the pivot to a newly selected bone. */
 export function dispatchIsolation(action: IsolationAction): void {
   const st = useViewer.getState();
-  const { state, history } = isolationStep({ sel: st.sel, tier: st.tier, grp: st.grp }, action);
+  const { state, history, via } = isolationStep({ sel: st.sel, tier: st.tier, grp: st.grp }, action, parentOf);
   if (history === "none") return;
   if (history === "pop" && depthNow() > 0) {
     window.history.back(); // `popstate` applies the previous entry
     return;
   }
   st.setIsolation(state);
-  const url = urlWith({ sel: state.sel, tier: state.tier, grp: state.grp });
-  if (history === "push") window.history.pushState({ ...window.history.state, skvDepth: depthNow() + 1 }, "", url);
-  else window.history.replaceState(window.history.state, "", url);
-  if (state.sel !== null && state.sel !== st.sel && hasMesh(state.sel)) st.requestCamera({ kind: "repivot", id: state.sel });
+  const write = (step: HistoryStep, s: Isolation) => {
+    const url = urlWith({ sel: s.sel, tier: s.tier, grp: s.grp });
+    if (step === "push") window.history.pushState({ ...window.history.state, skvDepth: depthNow() + 1 }, "", url);
+    else window.history.replaceState(window.history.state, "", url);
+  };
+  if (via) {
+    // A part chosen from elsewhere: its muscle's entry first, then the part's (plan decision 2).
+    write(history, via);
+    write("push", state);
+  } else write(history, state);
+  if (state.sel !== null && state.sel !== st.sel && isDrawn(state.sel)) st.requestCamera({ kind: "repivot", id: state.sel });
   // A group is framed when it is isolated: it may be small or off screen (the ossicles, a quadrant's molars).
   if (state.grp !== null && state.grp !== st.grp) frameSoon();
 }
@@ -90,6 +106,12 @@ export const selectObject = (id: string): void => {
   showLayerOf(id);
   dispatchIsolation({ type: "select", id });
 };
+
+/**
+ * A click, tap or Enter on the Tab cursor (spec §5.1): a part of a muscle
+ * selects the whole muscle first, and the part on a second click.
+ */
+export const clickObject = (id: string): void => selectObject(resolveClick(id, useViewer.getState().sel, parentOf));
 
 /** A soft-tissue structure is selected with its layer showing: an Off layer is turned On (plan decision 12). */
 function showLayerOf(id: string): void {
@@ -115,7 +137,7 @@ export function selectAndFrame(id: string): void {
       window.history.replaceState(window.history.state, "", urlWith({ sel: id, tier: 0, grp: null }));
     } else dispatchIsolation({ type: "select", id });
   }
-  if (hasMesh(id)) frameSoon();
+  if (isDrawn(id)) frameSoon();
 }
 /** Tier 1 (spec §6 "Show related"). The new kinds have tier 0 only in M7 (plan decision 8). */
 export const showRelated = (): void => {
@@ -138,7 +160,7 @@ export const NEW_KIND_TIERS_REASON = "Arrives with muscle content (M9)";
 export function hideSelected(): void {
   const st = useViewer.getState();
   const id = st.sel;
-  if (id === null || !hasMesh(id)) return;
+  if (id === null || !isDrawn(id)) return;
   const hidden = new Set(st.hidden);
   for (const t of hideTargets(id)) hidden.add(t);
   const all = [...hidden];
@@ -301,7 +323,7 @@ export async function selectSoftFromUrl(id: string, hasCam: boolean): Promise<vo
   }
   const layer = softLayerOf(id)!;
   showLayerOf(id);
-  if (hasMesh(id)) await new Promise<void>((resolve) => {
+  if (isDrawn(id)) await new Promise<void>((resolve) => {
     if (useLayerBatches.getState()[layer]) return resolve();
     const off = useLayerBatches.subscribe((b) => {
       if (!b[layer]) return;
@@ -313,7 +335,7 @@ export async function selectSoftFromUrl(id: string, hasCam: boolean): Promise<vo
   if (now.sel !== null) return; // the user selected something meanwhile
   now.setIsolation({ sel: id, tier: 0 });
   window.history.replaceState(window.history.state, "", urlWith({ sel: id, tier: 0, grp: null }));
-  if (hasMesh(id)) {
+  if (isDrawn(id)) {
     if (hasCam) now.requestCamera({ kind: "repivot", id });
     else frameSoon();
   }
@@ -349,7 +371,7 @@ export function onPopState(): void {
   st.setIsolation({ sel: url.sel, tier: url.tier, grp: url.grp });
   st.setGhostMode(url.ghost);
   if (st.camera) window.history.replaceState(window.history.state, "", urlWith({ cam: st.camera }));
-  if (newSel !== null && hasMesh(newSel)) st.requestCamera({ kind: "repivot", id: newSel });
+  if (newSel !== null && isDrawn(newSel)) st.requestCamera({ kind: "repivot", id: newSel });
 }
 
 /** Start listening to Back / Forward. Returns an unsubscribe function. */

@@ -67,6 +67,8 @@ export function DebugOverlay(p: Props) {
       data-ghosts={iso ? iso.ghost : ""}
       data-focus={iso?.focus ?? ""}
       data-outline-selected={iso?.outlineSelected ?? ""}
+      data-outlines-selected={iso ? iso.outlinesSelected.join(",") : ""}
+      data-focus-ids={iso ? iso.focusIds.join(",") : ""}
       data-outline-hover={iso?.outlineHover ?? ""}
       data-joint={iso ? iso.joint.join(",") : ""}
       data-layer-counts={iso ? Object.entries(iso.layers).map(([l, c]) => `${l}:${c.solid}/${c.ghost}`).join(",") : ""}

@@ -8,15 +8,20 @@ import { groupOf } from "../content/groups";
 import { relations } from "../content/relations";
 import type { Tier } from "../state/isolation";
 import { DEFAULT_LAYERS, LAYERS, type GhostMode, type Layer, type LayerModes, type MuscleDepth } from "../state/url";
-import { peeledAt } from "../content/softRegistry";
+import { peeledAt, softEntry } from "../content/softRegistry";
 import type { BatchedSkeleton } from "./batchSkeleton";
 import { accentTint as makeAccentTint } from "./material";
 
 export type IsolationView = {
   /** True when a bone with a mesh is isolated (a wisdom tooth isolates nothing). */
   isolated: boolean;
-  /** The bone with the accent colour and the selection outline, or null. */
+  /** The selection when something of it is drawn (a muscle with parts included), or null. */
   focus: string | null;
+  /**
+   * The structures drawn with the accent colour and the selection outline:
+   * `[focus]`, or a selected muscle's parts (spec §5.1); empty with no focus.
+   */
+  focusIds: readonly string[];
   /** Bones drawn solid (and pickable). Null means all of them. */
   solid: ReadonlySet<string> | null;
   /** Whether the ghost batch is drawn (ghost mode, with something isolated). */
@@ -27,7 +32,12 @@ export type IsolationView = {
   jointPartner: string | null;
 };
 
-export const FULL_VIEW: IsolationView = { isolated: false, focus: null, solid: null, ghosts: false, joint: [], jointPartner: null };
+export const FULL_VIEW: IsolationView = { isolated: false, focus: null, focusIds: [], solid: null, ghosts: false, joint: [], jointPartner: null };
+
+/** A structure's parts (a muscle with parts), else none. */
+export type PartsOf = (id: string) => readonly string[];
+const softParts: PartsOf = (id) => softEntry(id)?.parts ?? [];
+const softParent = (id: string): string | null => softEntry(id)?.parent ?? null;
 
 /**
  * The view for a selection (spec §6). Tier 0 isolates the selected bone alone,
@@ -42,11 +52,19 @@ export function isolationView(
   ghostMode: GhostMode,
   hasMesh: (id: string) => boolean,
   grp: string | null = null,
+  partsOf: PartsOf = softParts,
+  parentOf: (id: string) => string | null = softParent,
 ): IsolationView {
   if (sel === null) return grp === null ? FULL_VIEW : groupView(grp, ghostMode, hasMesh);
-  const solid = new Set(relations.visibleAt(sel, tier).filter(hasMesh));
+  // A muscle with parts is drawn as its parts (spec §5.1 rule 1); a selected part keeps its siblings solid,
+  // in the muscle colour (rule 2).
+  const focusIds = hasMesh(sel) ? [sel] : partsOf(sel).filter(hasMesh);
+  const parent = parentOf(sel);
+  const siblings = parent === null ? [] : partsOf(parent);
+  const solid = new Set([...relations.visibleAt(sel, tier), ...focusIds, ...siblings].filter(hasMesh));
   if (solid.size === 0) return FULL_VIEW;
-  return { isolated: true, focus: hasMesh(sel) ? sel : null, solid, ghosts: ghostMode === "ghost", joint: [], jointPartner: null };
+  const focus = focusIds.length > 0 ? sel : null;
+  return { isolated: true, focus, focusIds, solid, ghosts: ghostMode === "ghost", joint: [], jointPartner: null };
 }
 
 /**
@@ -58,7 +76,7 @@ export function groupView(grp: string, ghostMode: GhostMode, hasMesh: (id: strin
   const g = groupOf(grp);
   const solid = new Set((g?.members ?? []).filter(hasMesh));
   if (solid.size === 0) return FULL_VIEW;
-  return { isolated: true, focus: null, solid, ghosts: ghostMode === "ghost", joint: [], jointPartner: null };
+  return { isolated: true, focus: null, focusIds: [], solid, ghosts: ghostMode === "ghost", joint: [], jointPartner: null };
 }
 
 /**
@@ -95,6 +113,8 @@ export type Shown = "solid" | "ghost" | "hidden";
 export type SceneView = {
   isolated: boolean;
   focus: string | null;
+  /** Drawn with the accent and the selection outline (see `IsolationView.focusIds`). */
+  focusIds: readonly string[];
   layers: Record<Layer, LayerShow>;
   hidden: ReadonlySet<string>;
   joint: readonly string[];
@@ -131,12 +151,12 @@ export function sceneView(iso: IsolationView, modes: LayerModes, hidden: Readonl
       layers[layer] = { solid: iso.solid, rest };
     }
   }
-  return { isolated: iso.isolated, focus: iso.focus, layers, hidden, joint: iso.joint, jointPartner: iso.jointPartner, tints: NO_TINTS };
+  return { isolated: iso.isolated, focus: iso.focus, focusIds: iso.focusIds, layers, hidden, joint: iso.joint, jointPartner: iso.jointPartner, tints: NO_TINTS };
 }
 
 /** Where one structure of `layer` is drawn in a view. */
 export function shownIn(view: SceneView, layer: Layer, id: string): Shown {
-  if (id === view.focus || view.joint.includes(id)) return "solid";
+  if (view.focusIds.includes(id) || view.joint.includes(id)) return "solid";
   if (view.hidden.has(id)) return "hidden";
   const show = view.layers[layer];
   if (show.solid === null || show.solid.has(id)) return "solid";
@@ -257,18 +277,18 @@ export function applyLayerView(
   solid.mesh.visible = nSolid > 0;
   if (ghost) ghost.mesh.visible = nGhost > 0;
   for (const id of previous) {
-    if (id === view.focus || view.joint.includes(id)) continue;
+    if (view.focusIds.includes(id) || view.joint.includes(id)) continue;
     const i = solid.instanceOf.get(id);
     if (i !== undefined) solid.mesh.setColorAt(i, base(id));
   }
-  if (view.focus !== null) {
-    const i = solid.instanceOf.get(view.focus);
+  for (const id of view.focusIds) {
+    const i = solid.instanceOf.get(id);
     if (i !== undefined) solid.mesh.setColorAt(i, accent);
   }
   for (const id of view.joint) {
     const i = solid.instanceOf.get(id);
     if (i === undefined) continue;
-    _tint.copy(id === view.focus ? accent : base(id)).multiplyScalar(JOINT_GAIN);
+    _tint.copy(view.focusIds.includes(id) ? accent : base(id)).multiplyScalar(JOINT_GAIN);
     solid.mesh.setColorAt(i, _tint);
   }
   return { solid: nSolid, ghost: nGhost };

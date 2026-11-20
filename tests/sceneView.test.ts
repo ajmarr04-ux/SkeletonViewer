@@ -147,7 +147,7 @@ describe("soft-tissue registry and placeholder (plan decisions 12, 13)", () => {
     const m = softPanelModel("cricothyroid_oblique_part_left")!;
     expect(m.badges).toEqual({ layer: "Muscles", kind: "Muscle part: portion" });
     expect(m.partOf).toEqual({ id: "cricothyroid_left", name: "Cricothyroid" });
-    expect(m.trail).toEqual(["Muscles", "Oblique part of cricothyroid"]);
+    expect(m.trail).toEqual(["Muscles", "Cricothyroid", "Oblique part"]); // M9: the part level (spec §5.1)
     expect(m.pair).toEqual({ left: "cricothyroid_oblique_part_left", right: "cricothyroid_oblique_part_right" });
     // Without its content (unwritten, or the layer's chunk not loaded yet) the panel falls back to "Not written yet".
     expect(m.written).toBe(false);

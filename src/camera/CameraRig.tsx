@@ -18,7 +18,7 @@ import { ensureBoundsTrees, instanceWorldBounds, type BatchedSkeleton } from "..
 import { nearestPickable, PROXY_RADIUS_PX, pickWithProxies, tinyObjects, type Proxy, type RealHit } from "../scene/pick";
 import ids from "../../content/ids.json";
 import { displayName } from "../content/names";
-import { goBack, hasMesh, hideSelected, layerOfId, selectObject } from "../state/selection";
+import { clickObject, drawnIds, goBack, hasMesh, hideSelected, layerOfId, selectObject } from "../state/selection";
 import { isolationView, isPickableIn, viewOf } from "../scene/isolation";
 import { useLayerBatches } from "../scene/layerRegistry";
 import { softEntries } from "../content/softRegistry";
@@ -137,6 +137,8 @@ export type ViewerDebugApi = {
   pick: (x: number, y: number, touch?: boolean) => string | null;
   command: (c: CameraCommand) => void;
   select: (id: string) => void;
+  /** As a click on the structure would (a muscle's part selects the muscle first, spec §5.1). */
+  click: (id: string) => void;
   /** Step back one isolation level (as Esc). */
   back: () => void;
   /**
@@ -581,7 +583,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         clearCursor();
-        selectObject(cur);
+        clickObject(cur);
         return true;
       }
       if (e.key === "Escape") {
@@ -641,7 +643,12 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
         window.history.replaceState(window.history.state, "", `${window.location.pathname}${search}${window.location.hash}`);
       }
     };
-    const boneBox = (id: string | null) => (id && hasMesh(id) ? boxOf(id) : undefined);
+    /** A selection's box: its own, or the union of its parts' (a muscle with parts). */
+    const boneBox = (id: string | null): Box | undefined => {
+      if (!id) return undefined;
+      const boxes = drawnIds(id).map((i) => boxOf(i)).filter((b): b is Box => b !== undefined);
+      return boxes.length > 0 ? unionBoxes(boxes) : undefined;
+    };
 
     // Presets, reset, frame, repivot, centre and goto.
     const runCommand = (c: CameraCommand) => {
@@ -752,7 +759,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       if (r.tap && !exploded) {
         const id = pick(r.tap.x, r.tap.y, lastPointerType !== "mouse");
         useViewer.getState().markInput(e.timeStamp);
-        if (id) selectObject(id);
+        if (id) clickObject(id); // a muscle's part selects the muscle first (spec §5.1)
         else goBack(); // empty space (spec §6)
         useViewer.getState().markInput(null); // consumed by the highlight if anything changed
       }
@@ -815,6 +822,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
         pick: (x, y, touch = false) => pick(x, y, touch),
         command: (c) => useViewer.getState().requestCamera(c),
         select: (id) => selectObject(id),
+        click: (id) => clickObject(id),
         back: () => goBack(),
         frameBone: (id, from) => {
           const boxes = (Array.isArray(id) ? id : [id]).map((i) => boxOf(i));

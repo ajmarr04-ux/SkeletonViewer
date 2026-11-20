@@ -42,6 +42,10 @@ export type IsolationStats = {
   ghost: number;
   focus: string | null;
   outlineSelected: string | null;
+  /** Every structure with a selection outline (a selected muscle's parts each have one), sorted. */
+  outlinesSelected: string[];
+  /** The structures drawn with the accent (`SceneView.focusIds`). */
+  focusIds: string[];
   outlineHover: string | null;
   /** Bones of the joint highlighted from the panel (plan step 7). */
   joint: string[];
@@ -78,7 +82,10 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
 
   // Outline width in CSS pixels whatever the canvas size and pixel ratio.
   useEffect(() => {
-    const outlines = [...(scene ? Object.values(scene.outlines) : []), ...Object.values(tissue).flatMap((b) => (b ? Object.values(b.outlines) : []))];
+    const outlines = [
+      ...(scene ? Object.values(scene.outlines) : []),
+      ...Object.values(tissue).flatMap((b) => (b ? [...Object.values(b.outlines), ...b.moreSelected] : [])),
+    ];
     for (const o of outlines) setOutlineViewport(o, size.width, size.height, dpr);
   }, [scene, tissue, size.width, size.height, dpr]);
 
@@ -95,6 +102,7 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
   useEffect(() => {
     if (!scene) return;
     let focus: string | null = null;
+    let focusIds: readonly string[] = [];
     let joint: readonly string[] = [];
     let colour: ColourMode = "bone";
     /** The tissue batches the view was last applied to: new ones (a layer loaded, a LOD swap) get every colour afresh. */
@@ -110,7 +118,7 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
         applyBaseColours(scene.skeleton, base);
         colour = st.colourMode;
       }
-      const previous = focus === null ? joint : [focus, ...joint];
+      const previous = [...focusIds, ...joint];
       applyLayerView("bones", scene.skeleton, scene.ghost, view, previous, base, boneAccent());
       const batches = useLayerBatches.getState();
       for (const layer of TISSUE_LAYERS) {
@@ -126,6 +134,7 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
       }
       for (const b of applied) if (!Object.values(batches).includes(b)) applied.delete(b);
       focus = view.focus;
+      focusIds = view.focusIds;
       joint = view.joint;
       const ghostMaterial = scene.ghost.mesh.material as { opacity: number };
       ghostMaterial.opacity = st.ghostOpacity;
@@ -133,16 +142,21 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
       const hoverLayer = st.hovered === null ? null : layerOfId(st.hovered);
       const hover =
         view.jointPartner ??
-        (st.hovered !== null && st.hovered !== view.focus && hoverLayer !== null && isPickableIn(view, hoverLayer, st.hovered) ? st.hovered : null);
+        (st.hovered !== null && !view.focusIds.includes(st.hovered) && hoverLayer !== null && isPickableIn(view, hoverLayer, st.hovered) ? st.hovered : null);
       const hoverColour = view.jointPartner !== null ? OUTLINE.joint.colour : OUTLINE.hover.colour;
-      const targets: { outlines: SkeletonScene["outlines"]; batch: BatchedSkeleton }[] = [{ outlines: scene.outlines, batch: scene.skeleton }];
+      const targets: { outlines: SkeletonScene["outlines"]; more: readonly Outline[]; batch: BatchedSkeleton }[] = [
+        { outlines: scene.outlines, more: [], batch: scene.skeleton },
+      ];
       for (const layer of TISSUE_LAYERS) {
         const b = batches[layer];
-        if (b) targets.push({ outlines: b.outlines, batch: b.solid });
+        if (b) targets.push({ outlines: b.outlines, more: b.moreSelected, batch: b.solid });
       }
       for (const t of targets) {
         const has = (id: string | null) => (id !== null && t.batch.instanceOf.has(id) ? id : null);
-        setOutlineTarget(t.outlines.selected, t.batch, has(view.focus));
+        // One hull per focused structure in this batch: a muscle's parts each get one (spec §8).
+        const mine = view.focusIds.filter((id) => t.batch.instanceOf.has(id));
+        setOutlineTarget(t.outlines.selected, t.batch, mine[0] ?? null);
+        t.more.forEach((o, i) => setOutlineTarget(o, t.batch, mine[i + 1] ?? null));
         setOutlineColour(t.outlines.hover, hoverColour);
         setOutlineTarget(t.outlines.hover, t.batch, has(hover));
       }
@@ -150,7 +164,8 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
       const inputAt = st.inputAt;
       if (focusChanged && inputAt !== null) {
         st.markInput(null);
-        const mesh = targets.find((t) => view.focus !== null && t.batch.instanceOf.has(view.focus))?.batch.mesh ?? scene.skeleton.mesh;
+        const first = view.focusIds[0];
+        const mesh = targets.find((t) => first !== undefined && t.batch.instanceOf.has(first))?.batch.mesh ?? scene.skeleton.mesh;
         mesh.onAfterRender = () => {
           mesh.onAfterRender = () => {};
           highlightMs.current = performance.now() - inputAt;
@@ -164,12 +179,25 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
       for (const b of Object.values(useLayerBatches.getState())) if (b?.outlines[key].target) return b.outlines[key].target;
       return null;
     };
+    const allSelectedOutlines = () => {
+      const out: string[] = [];
+      const add = (t: string | null) => t !== null && out.push(t);
+      add(scene.outlines.selected.target);
+      for (const b of Object.values(useLayerBatches.getState())) {
+        if (!b) continue;
+        add(b.outlines.selected.target);
+        b.moreSelected.forEach((o) => add(o.target));
+      }
+      return out.sort();
+    };
     const report = () => {
       statsRef.current?.({
         solid: visibleCount(scene.skeleton),
         ghost: visibleCount(scene.ghost),
         focus,
         outlineSelected: outlineTarget("selected"),
+        outlinesSelected: allSelectedOutlines(),
+        focusIds: [...focusIds],
         outlineHover: outlineTarget("hover"),
         joint: [...joint],
         highlightMs: highlightMs.current,
