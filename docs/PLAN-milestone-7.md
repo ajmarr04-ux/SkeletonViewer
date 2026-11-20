@@ -16,7 +16,7 @@ Out of scope here (later milestones): content files, schemas, `movements.json`, 
 | T | 1 (layer state, URL, `localStorage`), 2 (layer loader and per-layer batches), 3 (Layers panel) | **Done.** See "Session T notes" |
 | U | 4 (layer-aware isolation and ghosts), 5 (picking across layers; placeholder panel for the new kinds), 6 (per-structure Hide) | **Done.** See "Session U notes" |
 | V | 7 (muscle depth data and control), 8 (interplay with the existing tools) | **Done.** See "Session V notes" |
-| W | 9 (bench and load measurements), 10 (tests and no-regression), 11 (hosted copy; the user's bench on PC and iPhone) | **Steps 9 and 10 done; step 11 waits for the merge and the user's runs.** See "Session W notes" |
+| W | 9 (bench and load measurements), 10 (tests and no-regression), 11 (hosted copy; the user's bench on PC and iPhone) | **Done.** See "Session W notes" and the bench results under step 11 |
 
 Triggers: "begin session T", "begin session U", "begin session V" and "begin session W". Each session starts by reading this file and ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models`, `npm run validate-content` and `npm run e2e` passing, then a commit, a push to the session branch and a PR to `main`. No Blender work is planned: the layer files from M6 are used as they are (`git diff` on `public/models/` must stay empty).
 
@@ -29,10 +29,10 @@ Triggers: "begin session T", "begin session U", "begin session V" and "begin ses
 - [x] Layers panel, presets, URL and `localStorage` state, lazy layer loading.
 - [x] Per-layer batches, ghost mode per layer, muscle depth control, per-structure Hide.
 - [x] Picking across layers; hit proxies for small structures.
-- [ ] Bench results (all solid; muscles ghosted) on PC and iPhone recorded in this plan.
+- [x] Bench results (all solid; muscles ghosted) on PC and iPhone recorded in this plan.
 - [x] Draw calls < 20 with every layer on and a selection active (spec §8), measured in the e2e suite.
 - [x] No regression: with every new layer off, no layer file or layer chunk is requested, the bone files are byte-identical to M5, the main chunk grows by at most 15 kB gzipped over M6 (458.40 kB), `npm run perf-load` stays within run-to-run noise of M6, and the full e2e suite passes.
-- [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
+- [x] **Hosted copy is live and linked below** (extra requirement for every milestone).
 
 ---
 
@@ -215,11 +215,13 @@ What was done, and where it differs from the plan (say if any should change):
 
 | Preset | Device | LOD | Median FPS | 5th pct FPS | Draw calls | Triangles | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| All solid | PC | | | | | | |
-| All solid | iPhone | | | | | | |
-| Muscles ghosted over bones | PC | | | | | | |
-| Muscles ghosted over bones | iPhone | | | | | | |
+| All solid | PC | high | 75.2 | 74.1 | 4 | not in the paste | vsync-limited (75 Hz); frame time median 13.3 ms, p95 13.5 ms, max 69.6 ms (one hitch); 729 frames; pixel ratio 1 |
+| All solid | iPhone | low | 58.8 | 58.8 | 4 | 449,623 | vsync-limited (60 Hz) |
+| Muscles ghosted over bones | PC | high | 75.2 | 74.1 | 2 | 1,299,731 | vsync-limited; median 13.3 ms, p95 13.5 ms, max 13.9 ms; 733 frames |
+| Muscles ghosted over bones | iPhone | low | 58.8 | 58.8 | 2 | 379,713 | vsync-limited |
+
+Run by the user on `/m7/` on 2026-11-20. **Every run is at the display's refresh rate**, so the iPhone's muscles-ghosted run is far above 30 fps and **no ghost fallback is needed (decision 7: none taken)**. The `?debug` overlay's skeleton load lines read low 360 ms and high 483 ms on the PC, and low 176 ms on the iPhone. The muscles layer's own "low shown N s after turned on" figure wasn't reported, so the 3 s / 5 s layer budget is still unmeasured on a real device. Nothing suggests a problem, given how fast the skeleton loads. The iPhone ran the low LOD, as the LOD plan chooses. Risk 2 (the high layer files on a phone, through Settings) wasn't tried.
 
 ## Hosted copy
 
-- Milestone 7: https://ajmarr04-ux.github.io/SkeletonViewer/m7/ (not yet deployed).
+- Milestone 7: https://ajmarr04-ux.github.io/SkeletonViewer/m7/ (live; the user ran the bench there on 2026-11-20).
