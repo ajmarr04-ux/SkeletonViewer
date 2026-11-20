@@ -160,6 +160,8 @@ What was done, and where it differs from the plan (say if any should change):
 
 **Linea alba added (2026-11-20, after the merge).** The user saw the gap it left between the recti in `/m6/` and chose (QUESTIONS 40) to include it in the muscles layer as `linea_alba`: a midline aponeurosis part with **no parent**, listing the six flat abdominal muscles it joins (external and internal oblique and transversus abdominis, both sides) under `alsoServes`. `SPEC-musculoskeletal.md` §3 records the extension; the generator checks that a parentless part is midline and serves both sides. Only the muscles layer was rebuilt (`npm run build-soft -- --layer muscles`): 477 nodes, 799,750 / 229,800 triangles, 4.62 / 1.61 MB, max bounds drift 0.285 mm (low), as before. The bone files and the other layers are unchanged. The counts below include it.
 
+**Stale layer file after the rebuild (2026-11-20).** On `/m6/` after #14 the overlay said "muscles high: 476 nodes … linea_alba is missing". The deploy was correct. The browser had reused its cached `muscles-high.glb` (Pages sends `max-age=600`, and the file's URL hadn't changed), while the manifest, a hashed chunk, was new. Fix: the debug view now requests `<layer>-<lod>.glb?v=<content hash>` (`scripts/lib/model-versions-plugin.ts`, `virtual:skeleton-model-versions`, only in the lazy chunk), so a rebuilt file always gets a new URL. The bone files keep their plain URLs (index.html preloads one, and they don't change in M6). M7's real layer loader should keep the hashed URLs. Main chunk: 458.40 kB gzipped, +0.56 kB on M5 (the longer attribution text).
+
 ### Final counts (step 10, the report back)
 
 | Kind | IDs (both sides) | With a mesh |

@@ -61,3 +61,15 @@ describe("layerReport", () => {
     expect(r.errors.join("\n")).toMatch(/a bounds differ.*\n.*z is not in the manifest\n.*b is missing/);
   });
 });
+
+describe("modelVersions (cache-busting the layer files)", async () => {
+  const { modelVersions } = await import("../scripts/lib/model-versions-plugin");
+  const { SOFT_LAYERS } = await import("../scripts/lib/model-checks");
+  it("has a content hash for every layer file and LOD", () => {
+    const v = modelVersions();
+    for (const layer of SOFT_LAYERS) {
+      for (const lod of ["low", "high"]) expect(v[`${layer}-${lod}`], `${layer}-${lod}`).toMatch(/^[0-9a-f]{10}$/);
+    }
+    expect(new Set(Object.values(v)).size).toBe(Object.keys(v).length);
+  });
+});
