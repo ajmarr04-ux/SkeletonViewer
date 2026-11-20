@@ -81,8 +81,13 @@ DOUBTFUL = {
     "Acetabular labrum": ("whole", dict(layer="cartilage", kind="cartilage")),
     "Glenoid labrum": ("whole", dict(layer="cartilage", kind="cartilage")),
     "Sacrococcygeal symphysis": ("whole", dict(layer="cartilage", kind="disc")),
-    "Linea alba": ("excluded", "one midline mesh shared by both sides' abdominal muscles, so it can't be a "
-                               "part of one rectus abdominis (the data model needs a sided parent); see QUESTIONS.md"),
+    # One midline mesh shared by both sides' flat abdominal muscles: a midline aponeurosis part with
+    # no parent, serving all six (user decision 2026-11-20, QUESTIONS 40; spec §3 extended).
+    "Linea alba": ("midline_part", dict(id="linea_alba", partType="aponeurosis",
+                                        alsoServes=[f"{m}_{side}" for m in ("external_abdominal_oblique",
+                                                                           "internal_abdominal_oblique",
+                                                                           "transversus_abdominis")
+                                                    for side in ("left", "right")])),
     "Plantar aponeurosis": ("excluded", "deep fascia of the sole (fascia, deferred); user default 2026-11-20"),
     "Tendinous arch of levator ani": ("excluded", "thickening of the obturator fascia (fascia, deferred)"),
     "Superficial transverse metacarpal ligament": ("excluded", "fascial band of the palmar aponeurosis, not a joint ligament"),
@@ -327,6 +332,17 @@ def main() -> int:
             nuclei.append(o)
             continue
 
+        if override and cls == "midline_part":
+            if side != "midline":
+                fail(f"{name}: a midline part must lie on the midline (got {side})")
+                continue
+            add(extra["id"], {"name": b, "latin": None, "side": side, "kind": "muscle_part", "layer": "muscles",
+                              "group": group_of(o), "parent": None, "partType": extra["partType"],
+                              "alsoServes": list(extra["alsoServes"]), "meshAvailable": True}, [name])
+            notes[extra["id"]].append("one midline mesh; no single parent, serves both sides' flat abdominal "
+                                      "muscles (alsoServes); rectus abdominis lies either side of it")
+            continue
+
         inconstant = c.get("inconstant", False)
         common = {"latin": None, "side": side}
         if inconstant:
@@ -518,8 +534,13 @@ def main() -> int:
             fail(f"{n} used {used[n]} times")
     for e in entries.values():
         if e["kind"] == "muscle_part":
-            par = entries.get(e["parent"])
-            if not par or par["kind"] != "muscle" or e["id"] not in par["parts"]:
+            par = entries.get(e["parent"]) if e["parent"] else None
+            if e["parent"] is None:
+                # Midline parts with no parent: on the midline, serving muscles of both sides.
+                served = {entries.get(x, {}).get("side") for x in e["alsoServes"]}
+                if e["side"] != "midline" or served != {"left", "right"}:
+                    fail(f"part {e['id']} has no parent but isn't a midline part serving both sides")
+            elif not par or par["kind"] != "muscle" or e["id"] not in par["parts"]:
                 fail(f"part {e['id']} has a bad parent {e['parent']}")
             for s in e["alsoServes"]:
                 if s not in entries:

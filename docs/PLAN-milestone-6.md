@@ -150,13 +150,15 @@ What was done, and where it differs from the plan (say if any should change):
 
 - **Debug view.** `src/scene/debugLayers.ts` (pure: the `layers` parameter, colours, the bounds report; `tests/debugLayers.test.ts`) and `src/scene/DebugLayers.tsx` (lazy: loads `<layer>-<lod>.glb` with the Meshopt decoder once the bones show that LOD, swaps low for high, flat layer colours times the baked AO, attachment patches in amber with a polygon offset so they sit on the bone, nothing pickable). The overlay gets one line per layer: LOD, nodes, triangles and the largest bounds error against `manifest-<layer>.json`, loaded as its own chunk. `layers=all` is every layer; `layers=m,l,c,a` (or full names) a subset. Without both `debug` and `layers`, nothing of it is requested.
 - **Patches are a fourth layer in the view** (`a`), since session R shipped them as `attachments-*.glb`.
-- **Results.** Both LODs: muscles 476 nodes, ligaments 300, cartilage 61, patches 697, each equal to the `meshAvailable` IDs (or the `attachments` map); every node's bounds within **0.02 mm** of its manifest (the 1 mm rule); triangle counts on target. The bones still pass their own bounds check with the layers loaded.
+- **Results.** Both LODs: muscles 476 nodes (477 with the linea alba, below), ligaments 300, cartilage 61, patches 697, each equal to the `meshAvailable` IDs (or the `attachments` map); every node's bounds within **0.02 mm** of its manifest (the 1 mm rule); triangle counts on target. The bones still pass their own bounds check with the layers loaded.
 - **Screenshots** (`docs/m6/`, high LOD, `deviceScaleFactor: 1`): `layers-all-{anterior,left}.png` and `layers-no-muscles-{anterior,left}.png` (ligaments, cartilage and patches on the bones). No misalignment is visible: the costal cartilages meet the ribs and sternum, the discs sit between the vertebrae, the patches lie on the bones.
 - **Seen in passing, for M7:** the debug ligament colour (pale grey-white) is close to the bone ivory, so ligaments are hard to pick out on the bones; spec §6.3 asks for "distinct from bone", which M7's real colours should check (ΔE). The draw count in the debug view is about 1,500 (one per node), as risk 4 expected.
 - **No regression.** Bone files byte-identical to M5 (`71f04d0`); main chunk +0.36 kB gzipped; the full e2e suite passes (112 tests; the high-LOD layer test needed a 240 s timeout under two workers); `npm run perf-load` passes: desktop 2.02 s to the skeleton and 6.42 s to full detail, phone profile 1.97 s and 6.47 s (M5: 1.90 / 5.96 and 1.91 / 6.08). The low file arrives at about 1.72 s in both, and the requests are the same, so the difference is run-to-run noise from the software GPU's shader compilation (one run blocked 2.9 s).
 - **Attribution.** `public/ATTRIBUTION.md` names the collections used and the new files (decision 14). README lists `?debug&layers=all`.
 
 **User's reply (2026-11-20):** "looking good, counts seem fine to me. still hitting 60fps on phone, 75 on pc. some loading latency but thats acceptable." The counts stand; M8 content is unblocked. `m6` is frozen at the start of M7 (handover step 1, at `e9da664` unless more lands on `main` first).
+
+**Linea alba added (2026-11-20, after the merge).** The user saw the gap it left between the recti in `/m6/` and chose (QUESTIONS 40) to include it in the muscles layer as `linea_alba`: a midline aponeurosis part with **no parent**, listing the six flat abdominal muscles it joins (external and internal oblique and transversus abdominis, both sides) under `alsoServes`. `SPEC-musculoskeletal.md` §3 records the extension; the generator checks that a parentless part is midline and serves both sides. Only the muscles layer was rebuilt (`npm run build-soft -- --layer muscles`): 477 nodes, 799,750 / 229,800 triangles, 4.62 / 1.61 MB, max bounds drift 0.285 mm (low), as before. The bone files and the other layers are unchanged. The counts below include it.
 
 ### Final counts (step 10, the report back)
 
@@ -168,16 +170,16 @@ What was done, and where it differs from the plan (say if any should change):
 | Muscle parts: portions | 40 | 40 |
 | Muscle parts: bellies | 16 | 16 |
 | Tendons (parts) | 10 | 10 |
-| Aponeuroses (parts) | 4 | 4 |
+| Aponeuroses (parts, incl. the linea alba) | 5 | 5 |
 | Muscles absent from the source (articularis genus) | 2 | 0 |
 | Ligaments | 300 | 300 |
 | Ligaments absent from the source (patellar ligament) | 2 | 0 |
 | Cartilage (20 costal cartilages, 4 labra) | 24 | 24 |
 | Discs (23 intervertebral, interpubic, sacrococcygeal) | 25 | 25 |
 | Menisci and articular discs (4 menisci, 8 articular discs) | 12 | 12 |
-| **Total** | **899** | **837** |
+| **Total** | **900** | **838** |
 
-Plus **697 attachment patches** (origins and insertions; 12 more listed in `attachmentsMissing` have no twin). Source meshes: **46 merged into 23 discs** (each disc with its nucleus pulposus; the only merge), **270 excluded** with reasons (bursae 78, fascia 38 and septa 14, joint capsules 34, tendon sheaths 26, retinacula 18, laryngeal and nasal cartilage and their ligaments, sinus volumes, label meshes and others), **4 `missing` IDs** (patellar ligament, articularis genus) and **15 absent structures without an ID** (`missingNoId`: articular cartilage everywhere, the quadriceps tendon, the craniovertebral ligaments, the anterior tibiotalar ligament, ear and auricular muscles, most soft-palate and perineal muscles, styloglossus, palatoglossus, subcostales, psoas minor).
+Plus **697 attachment patches** (origins and insertions; 12 more listed in `attachmentsMissing` have no twin). Source meshes: **46 merged into 23 discs** (each disc with its nucleus pulposus; the only merge), **269 excluded** with reasons (bursae 78, fascia 38 and septa 14, joint capsules 34, tendon sheaths 26, retinacula 18, laryngeal and nasal cartilage and their ligaments, sinus volumes, label meshes and others), **4 `missing` IDs** (patellar ligament, articularis genus) and **15 absent structures without an ID** (`missingNoId`: articular cartilage everywhere, the quadriceps tendon, the craniovertebral ligaments, the anterior tibiotalar ligament, ear and auricular muscles, most soft-palate and perineal muscles, styloglossus, palatoglossus, subcostales, psoas minor).
 
 Surprises from the audit, for the reply: names are English TA (no Latin yet); every paired muscle is already split left and right; no articular cartilage; no patellar ligament or quadriceps tendon; some source sides are wrong (`Lateral temporomandibular ligament`, 50 patches), corrected from geometry; the patch names can be wrong, so M8's origins and insertions come from references.
 
