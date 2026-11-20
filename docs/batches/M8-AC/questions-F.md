@@ -1,0 +1,8 @@
+- `patellar_ligament_left`: no pair joint joins patella and tibia, so I used `knee_joint_left` (tibiofemoral); `patellofemoral_joint_left` is the alternative.
+- `meniscopatellar_ligament_left`: source object is a single unit; Gray's describes it as bands to both menisci, so `connects` lists patella and both menisci, with `knee_joint_left`. Not every text names it.
+- `arcuate_popliteal_ligament_left`: texts differ on its attachments (fibular head to posterior capsule, lateral femoral condyle, sometimes tibia). I listed fibula and femur.
+- `oblique_popliteal_ligament_left`: described as an expansion of semimembranosus; I listed femur and tibia, not `semimembranosus_left`.
+- `transverse_tibiofibular_ligament_left`: often described as the deep part of the posterior tibiofibular ligament, and not named in every text; described plainly.
+- `anterior_meniscotibial_*`, `posterior_meniscotibial_*` (lateral and medial): the source's "horn attachment" ligaments are not named identically in all texts; names in items.json are truncated ("(Lateral meniscus") and I kept them exactly.
+- `tibiofibular_joints_left` was used for the five tibiofibular ligaments and the two fibular-head ligaments; the pair joint covers both proximal and distal joints.
+- `commonName`: "lateral/medial collateral ligament" are alternative names rather than lay names; PCL is an abbreviation like the ACL example.
