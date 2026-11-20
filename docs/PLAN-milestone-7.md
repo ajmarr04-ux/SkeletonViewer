@@ -16,7 +16,7 @@ Out of scope here (later milestones): content files, schemas, `movements.json`, 
 | T | 1 (layer state, URL, `localStorage`), 2 (layer loader and per-layer batches), 3 (Layers panel) | **Done.** See "Session T notes" |
 | U | 4 (layer-aware isolation and ghosts), 5 (picking across layers; placeholder panel for the new kinds), 6 (per-structure Hide) | **Done.** See "Session U notes" |
 | V | 7 (muscle depth data and control), 8 (interplay with the existing tools) | **Done.** See "Session V notes" |
-| W | 9 (bench and load measurements), 10 (tests and no-regression), 11 (hosted copy; the user's bench on PC and iPhone) | Not started |
+| W | 9 (bench and load measurements), 10 (tests and no-regression), 11 (hosted copy; the user's bench on PC and iPhone) | **Steps 9 and 10 done; step 11 waits for the merge and the user's runs.** See "Session W notes" |
 
 Triggers: "begin session T", "begin session U", "begin session V" and "begin session W". Each session starts by reading this file and ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models`, `npm run validate-content` and `npm run e2e` passing, then a commit, a push to the session branch and a PR to `main`. No Blender work is planned: the layer files from M6 are used as they are (`git diff` on `public/models/` must stay empty).
 
@@ -26,12 +26,12 @@ Triggers: "begin session T", "begin session U", "begin session V" and "begin ses
 
 ## Exit criteria (from the musculoskeletal spec §11, M7)
 
-- [ ] Layers panel, presets, URL and `localStorage` state, lazy layer loading.
-- [ ] Per-layer batches, ghost mode per layer, muscle depth control, per-structure Hide.
-- [ ] Picking across layers; hit proxies for small structures.
+- [x] Layers panel, presets, URL and `localStorage` state, lazy layer loading.
+- [x] Per-layer batches, ghost mode per layer, muscle depth control, per-structure Hide.
+- [x] Picking across layers; hit proxies for small structures.
 - [ ] Bench results (all solid; muscles ghosted) on PC and iPhone recorded in this plan.
-- [ ] Draw calls < 20 with every layer on and a selection active (spec §8), measured in the e2e suite.
-- [ ] No regression: with every new layer off, no layer file or layer chunk is requested, the bone files are byte-identical to M5, the main chunk grows by at most 15 kB gzipped over M6 (458.40 kB), `npm run perf-load` stays within run-to-run noise of M6, and the full e2e suite passes.
+- [x] Draw calls < 20 with every layer on and a selection active (spec §8), measured in the e2e suite.
+- [x] No regression: with every new layer off, no layer file or layer chunk is requested, the bone files are byte-identical to M5, the main chunk grows by at most 15 kB gzipped over M6 (458.40 kB), `npm run perf-load` stays within run-to-run noise of M6, and the full e2e suite passes.
 - [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
 
 ---
@@ -122,6 +122,22 @@ What was done, and where it differs from the plan (say if any should change):
 - **Fix to session U:** hover again waits (keeping the pointer position) until every solid batch drawn has its raycasting trees, as M6 did for the bones; session U had dropped the wait, so a hover in the first moments after load was lost (`isolate.spec.ts` caught it).
 - **Checks:** `tsc`, Vitest (370 tests), `check-models`, `validate-content` pass. Full e2e: 127 of 128 on the first pass; the one failure was the hover fix above, after which `isolate`, `select`, `layers` and `keyboard` (37 tests) all pass. The model files are unchanged.
 - **Tests:** `tests/muscleDepth.test.ts` (the real file passes; every muscle and part resolves; each rule on fixtures; peel per stop; the view hides, never ghosts, and spares the selection; counts and announcements); `tests/e2e/layers.spec.ts` +3 (the depth control end to end: disabled when Off, URL, announcement, a peeled deltoid unpickable, Ghost keeps the peel, storage, All; Explode disabled and labels from the solid layers; a screenshot named after a muscle).
+
+## Session W notes (steps 9 and 10, done; step 11 waits for the user)
+
+What was done, and where it differs from the plan (say if any should change):
+
+- **Bench** (`src/scene/bench.ts`, `BenchPanel.tsx`, `CameraRig.tsx`): `?bench` reads the user `layers=` format as any link does, and the orbit starts only once every layer that isn't Off has the final LOD on screen (`benchLayersState`; "Loading the layers (…) before the orbit starts" meanwhile; a layer that fails to load stops the bench with a note). The result adds **Layers** (`bones on · muscles ghost (depth 1)`) and **Triangles** (the most drawn in one frame) beside the FPS and draw calls. The two links for the user:
+  - all solid: `https://ajmarr04-ux.github.io/SkeletonViewer/m7/?bench&layers=b:on,c:on,l:on,m:on`
+  - muscles ghosted over bones: `https://ajmarr04-ux.github.io/SkeletonViewer/m7/?bench&layers=b:on,c:off,l:off,m:ghost`
+  
+  In the container (SwiftShader, low LOD, FPS meaningless): all solid 4 draw calls and 449,623 triangles; muscles ghosted 2 draw calls and 379,713 triangles.
+- **Load** (`scripts/perf-load.ts`): each run now also turns the muscles on from the Layers panel after full detail and times the change to the muscles' low LOD on screen (budget 3 s desktop, 5 s phone), with the layer chunks' and the file's arrival times and the main-thread time beside it. Results and the M6 comparison are in `STATUS.md` §6:
+  - **Every layer off, M6 against M7, same container, same day:** desktop 3.48 / 6.68 s (M6) and 3.25 / 6.50 s (M7); phone profile 3.42 / 6.54 s and 3.19 / 6.43 s. No slower than M6. This container is slower than M5's, whose 1.90 s isn't comparable, which is why M6 was rebuilt and measured here.
+  - **Muscles on → low LOD shown: 7.4 s desktop, 7.8 s phone, missing the budget in the container.** It isn't the network: with throttling off the 1.6 MB file still arrives 5.4 s after the click. SwiftShader spends hundreds of milliseconds of main-thread time per frame, and the streamed file is read between frames. A real GPU doesn't, so **the real figure is the user's**: with `?debug`, each layer's overlay line now ends "low shown N s after turned on" (store `layerOnAt`; `data-low-shown-ms`). If the iPhone misses 5 s, the next step would be reading the file in fewer, larger pieces or off the main thread; nothing is changed until it's measured.
+- **Tests:** `tests/bench.test.ts` (`benchLayersState`, `benchLayersLabel`); `tests/e2e/layers.spec.ts` +2 (both bench links wait for their layers, report the layers, < 20 draw calls and the triangles) and the debug timing; `tests/e2e/keyboard.spec.ts` +1 (the Layers panel by keys: Tab to the muscles' radios with a focus ring, arrows to Ghost and On, Escape back to the button; X hides the selection; Tab to the chip and Enter shows all). Step 10's other items were already covered by sessions T to V (panel, presets, URL and storage, files requested only when first on, Ghost unpickable, a muscle over a bone, Hide / X / chip / Back, depth stops, 6 draw calls with everything on and a selection, every node of each loaded layer within 1 mm through the real loader, axe on the Layers popover, the ligament panel and the chip).
+- **No regression** (exit criterion): with every layer off no layer file or chunk is requested (`layers.spec.ts`); the bone files are byte-identical to M5's (`git diff 71f04d0 -- public/models/skeleton-*.glb` empty) and nothing in `public/models/` changed since M6; main chunk `index` 295.9 kB + vendor 171.1 kB + runtime 0.4 kB gzipped = **467.4 kB, +9.0 kB over M6** (budget +15); `perf-load` as above.
+- **Checks:** `tsc`, Vitest (374 tests), `check-models`, `validate-content` pass. Full e2e suite: running at the time of this commit; its result follows in the next commit.
 
 ## Session T: layer state, loader and panel (steps 1 to 3)
 

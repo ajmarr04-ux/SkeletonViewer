@@ -1,9 +1,12 @@
-import { BENCH_DURATION_MS } from "../scene/bench";
+import { BENCH_DURATION_MS, benchLayersLabel } from "../scene/bench";
 import { useViewer } from "../state/store";
 
 /** `?bench`: the result of the 360° orbit, or a note that it is running. */
-export function BenchPanel() {
+export function BenchPanel({ layersState = "ready" }: { layersState?: "ready" | "waiting" | "error" }) {
   const bench = useViewer((s) => s.bench);
+  const layers = useViewer((s) => s.layers);
+  const depth = useViewer((s) => s.muscleDepth);
+  const layersLabel = benchLayersLabel(layers, depth);
   const active = useViewer((s) => s.lodActive);
   const sel = useViewer((s) => s.sel);
   const ghostMode = useViewer((s) => s.ghostMode);
@@ -13,7 +16,11 @@ export function BenchPanel() {
   return (
     <aside className="bench" aria-label="Benchmark" aria-live="polite" data-testid="bench">
       <h2>Benchmark</h2>
-      {!bench ? (
+      {!bench && layersState === "error" ? (
+        <p>A layer failed to load, so the benchmark can't run. Retry it in the Layers panel.</p>
+      ) : !bench && layersState === "waiting" ? (
+        <p>Loading the layers ({layersLabel}) before the orbit starts.</p>
+      ) : !bench ? (
         <p>
           Orbiting 360° over {BENCH_DURATION_MS / 1000} s on {active ?? "…"} detail. Don't touch the view.
         </p>
@@ -21,6 +28,8 @@ export function BenchPanel() {
         <dl>
           <dt>LOD</dt>
           <dd>{bench.lod}</dd>
+          <dt>Layers</dt>
+          <dd data-testid="bench-layers">{layersLabel}</dd>
           <dt>Isolated</dt>
           <dd data-testid="bench-isolation">{isolation}</dd>
           <dt>Median FPS</dt>
@@ -35,7 +44,9 @@ export function BenchPanel() {
           <dt>Frames</dt>
           <dd>{bench.frames}</dd>
           <dt>Draw calls</dt>
-          <dd>{bench.drawCalls}</dd>
+          <dd data-testid="bench-draw-calls">{bench.drawCalls}</dd>
+          <dt>Triangles</dt>
+          <dd data-testid="bench-triangles">{bench.triangles.toLocaleString("en-GB")}</dd>
           <dt>Labels</dt>
           <dd data-testid="bench-labels">
             {!labelsOn

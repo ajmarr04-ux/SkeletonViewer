@@ -19,6 +19,7 @@ import { checkInstanceBounds } from "./boundsCheck";
 import { Lighting } from "./Lighting";
 import { disposeParts, loadSkeleton, prefetchModel } from "./loadSkeleton";
 import { BenchPanel } from "../ui/BenchPanel";
+import { benchLayersState } from "./bench";
 import { Toolbar } from "../ui/Toolbar";
 import { LOD_SETTING_KEY, lodPlan, lodsToLoad, parseLodSetting, summariseObjects, withoutLodParam, type Lod } from "./lod";
 import { createBoneMaterial, createGhostMaterial } from "./material";
@@ -177,6 +178,8 @@ export function Viewer() {
   const objects = shown ? summariseObjects(shown.skeleton.boneIds, ids) : null;
   const finalLod = plan.lods[plan.lods.length - 1] ?? null;
   const finalShown = shown !== null && shown.lod === finalLod;
+  // `?bench` (M7 step 9): the orbit starts once every layer the link turns on has its final LOD on screen too.
+  const benchLayers = useViewer((s) => (bench ? benchLayersState(s.layers, s.layerLoad, finalLod) : "ready"));
 
   return (
     <>
@@ -197,7 +200,7 @@ export function Viewer() {
         <CameraRig
           skeleton={shown?.skeleton ?? null}
           debug={debug}
-          bench={bench && finalShown ? shown.lod : null}
+          bench={bench && finalShown && benchLayers === "ready" ? shown.lod : null}
         />
         <LabelProbe skeleton={shown?.skeleton ?? null} />
         <ScreenshotService />
@@ -227,7 +230,7 @@ export function Viewer() {
           The skeleton could not be loaded: {error}
         </p>
       )}
-      {bench && <BenchPanel />}
+      {bench && <BenchPanel layersState={benchLayers} />}
       {debug && (
       <DebugOverlay
         plan={plan}

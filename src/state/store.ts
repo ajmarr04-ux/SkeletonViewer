@@ -129,7 +129,7 @@ export type ViewerState = {
   setGhostOpacity: (opacity: number) => void;
   setHovered: (id: string | null) => void;
   /** `?bench` result once the orbit is done, with the LOD and draw calls it ran at. */
-  bench: (BenchResult & { lod: Lod; drawCalls: number; labels: LayoutTimes | null }) | null;
+  bench: (BenchResult & { lod: Lod; drawCalls: number; triangles: number; labels: LayoutTimes | null }) | null;
   setBench: (bench: ViewerState["bench"]) => void;
   requestCamera: (command: CameraCommand) => void;
   setCamera: (camera: CameraState | null) => void;
@@ -140,6 +140,8 @@ export type ViewerState = {
   layers: LayerModes;
   /** Muscle depth control (spec §6.2), 0 = all. */
   muscleDepth: MuscleDepth;
+  /** `performance.now()` when each soft-tissue layer was first turned on (or the start, for a link). */
+  layerOnAt: Partial<Record<TissueLayer, number>>;
   setLayerSetting: (layers: LayerModes, depth: MuscleDepth) => void;
   /**
    * True when the URL asks for M6's debug layer view (`?debug&layers=all`):
@@ -229,8 +231,17 @@ export const useViewer = create<ViewerState>()((set) => ({
   setReducedMotion: (reducedMotion) => set({ reducedMotion }),
   layers: DEFAULT_LAYER_SETTING.layers,
   muscleDepth: 0,
+  layerOnAt: {},
   setLayerSetting: (layers, muscleDepth) =>
-    set((s) => (sameLayers(s.layers, layers) && s.muscleDepth === muscleDepth ? s : { layers: { ...layers }, muscleDepth })),
+    set((s) => {
+      if (sameLayers(s.layers, layers) && s.muscleDepth === muscleDepth) return s;
+      // The first time each soft-tissue layer is turned on, for the `?debug` load time (M7 step 9).
+      let layerOnAt = s.layerOnAt;
+      for (const l of ["cartilage", "ligaments", "muscles"] as const) {
+        if (layers[l] !== "off" && layerOnAt[l] === undefined) layerOnAt = { ...layerOnAt, [l]: performance.now() };
+      }
+      return { layers: { ...layers }, muscleDepth, layerOnAt };
+    }),
   debugLayersView: false,
   setDebugLayersView: (debugLayersView) => set({ debugLayersView }),
   layerLoad: {},

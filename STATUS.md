@@ -287,6 +287,8 @@ How it behaves:
 | M3, one bone isolated | PC / iPhone | 75 / 59 | | 3 | |
 | M4, `sel=femur_left&tier=2` | PC | 75.2 | 73.5 | 3 | p95 13.6 ms |
 | M4, `sel=femur_left&tier=2` | iPhone | 58.8 | 58.8 | 3 | 17 ms per frame throughout |
+| M7, all layers solid (`?bench&layers=b:on,c:on,l:on,m:on`) | PC / iPhone | | | | Waiting for the user's run on `/m7/` (`docs/PLAN-milestone-7.md`, step 11). Container, low LOD: 4 draw calls, 449,623 triangles |
+| M7, muscles ghosted over bones (`?bench&layers=b:on,c:off,l:off,m:ghost`) | PC / iPhone | | | | As above. Container, low LOD: 2 draw calls, 379,713 triangles |
 
 **Click → highlight** (M3, measured by the user): PC 10 ms, iPhone 55 ms. The budgets are 50 ms and 100 ms.
 
@@ -296,6 +298,15 @@ How it behaves:
 | --- | --- | --- | --- |
 | Desktop 1280 × 800 | 1.90 s | 5.96 s | 3 s / 8 s |
 | Phone profile (iPhone 13 emulation) | 1.91 s | 6.08 s | 5 s / 12 s |
+
+**M7, every layer off, against M6 in the same container on the same day** (2026-11-20; this container is slower than M5's, so the figures above aren't comparable):
+
+| Profile | M6 (`43dce0e`): skeleton / full detail | M7: skeleton / full detail | M7: muscles on → low LOD shown | Budget (layer) |
+| --- | --- | --- | --- | --- |
+| Desktop 1280 × 800 | 3.48 s / 6.68 s | 3.25 s / 6.50 s | 7.38 s | 3 s |
+| Phone profile | 3.42 s / 6.54 s | 3.19 s / 6.43 s | 7.77 s | 5 s |
+
+With every layer off, M7 loads no slower than M6 (within run-to-run noise), requests no layer file or layer chunk, and its bone files are byte-identical to M5's. The muscles layer misses its budget **in the container only**: its 1.6 MB file arrives about 6 s after the click (still 5.4 s with network throttling off), because SwiftShader takes hundreds of milliseconds of main-thread time per frame and the streamed file is read between frames. A real GPU doesn't do that. The real figure comes from the user's devices: with `?debug`, the layer line in the overlay reads "low shown N s after turned on".
 
 The container renders with SwiftShader, a software GPU, which adds main-thread time a real GPU doesn't spend. Real devices should load faster. Before session O's preload and prefetch changes, the desktop first skeleton took 3.7 s. The user reported that `/m5/` "loads great on smartphone and pc", but didn't give timings.
 
