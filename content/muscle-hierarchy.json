@@ -1,0 +1,345 @@
+[
+  {
+    "key": "head",
+    "label": "Head",
+    "children": [
+      {
+        "key": "scalp",
+        "label": "Scalp (epicranius)",
+        "children": []
+      },
+      {
+        "key": "facial_expression",
+        "label": "Muscles of facial expression",
+        "children": []
+      },
+      {
+        "key": "extraocular",
+        "label": "Extra-ocular muscles",
+        "children": []
+      },
+      {
+        "key": "mastication",
+        "label": "Muscles of mastication",
+        "children": []
+      },
+      {
+        "key": "tongue",
+        "label": "Muscles of the tongue",
+        "children": []
+      },
+      {
+        "key": "soft_palate",
+        "label": "Muscles of the soft palate",
+        "children": []
+      }
+    ]
+  },
+  {
+    "key": "neck",
+    "label": "Neck",
+    "children": [
+      {
+        "key": "superficial_neck",
+        "label": "Superficial and lateral neck",
+        "children": []
+      },
+      {
+        "key": "suprahyoid",
+        "label": "Suprahyoid muscles",
+        "children": []
+      },
+      {
+        "key": "infrahyoid",
+        "label": "Infrahyoid muscles",
+        "children": []
+      },
+      {
+        "key": "prevertebral",
+        "label": "Prevertebral muscles",
+        "children": []
+      },
+      {
+        "key": "scalene",
+        "label": "Scalene muscles",
+        "children": []
+      },
+      {
+        "key": "pharynx",
+        "label": "Muscles of the pharynx",
+        "children": []
+      },
+      {
+        "key": "larynx",
+        "label": "Muscles of the larynx",
+        "children": []
+      }
+    ]
+  },
+  {
+    "key": "back",
+    "label": "Back",
+    "children": [
+      {
+        "key": "superficial_back",
+        "label": "Superficial back (extrinsic)",
+        "children": []
+      },
+      {
+        "key": "intermediate_back",
+        "label": "Intermediate back (serratus posterior)",
+        "children": []
+      },
+      {
+        "key": "spinotransversales",
+        "label": "Splenius muscles",
+        "children": []
+      },
+      {
+        "key": "erector_spinae",
+        "label": "Erector spinae",
+        "children": []
+      },
+      {
+        "key": "transversospinales",
+        "label": "Transversospinales",
+        "children": []
+      },
+      {
+        "key": "segmental_back",
+        "label": "Segmental back muscles",
+        "children": []
+      },
+      {
+        "key": "suboccipital",
+        "label": "Suboccipital muscles",
+        "children": []
+      }
+    ]
+  },
+  {
+    "key": "thorax",
+    "label": "Thorax",
+    "children": [
+      {
+        "key": "pectoral",
+        "label": "Pectoral region",
+        "children": []
+      },
+      {
+        "key": "thoracic_wall",
+        "label": "Thoracic wall",
+        "children": []
+      }
+    ]
+  },
+  {
+    "key": "abdomen",
+    "label": "Abdomen",
+    "children": [
+      {
+        "key": "anterolateral_abdominal_wall",
+        "label": "Anterolateral abdominal wall",
+        "children": []
+      },
+      {
+        "key": "posterior_abdominal_wall",
+        "label": "Posterior abdominal wall",
+        "children": []
+      }
+    ]
+  },
+  {
+    "key": "pelvis_perineum",
+    "label": "Pelvis and perineum",
+    "children": [
+      {
+        "key": "pelvic_floor",
+        "label": "Pelvic floor",
+        "children": []
+      },
+      {
+        "key": "perineum",
+        "label": "Perineum",
+        "children": []
+      }
+    ]
+  },
+  {
+    "key": "upper_limb",
+    "label": "Upper limb",
+    "children": [
+      {
+        "key": "shoulder",
+        "label": "Shoulder",
+        "children": [
+          {
+            "key": "scapulohumeral",
+            "label": "Scapulohumeral muscles",
+            "children": []
+          },
+          {
+            "key": "rotator_cuff",
+            "label": "Rotator cuff",
+            "children": []
+          }
+        ]
+      },
+      {
+        "key": "arm",
+        "label": "Arm",
+        "children": [
+          {
+            "key": "arm_anterior",
+            "label": "Anterior compartment of the arm",
+            "children": []
+          },
+          {
+            "key": "arm_posterior",
+            "label": "Posterior compartment of the arm",
+            "children": [
+              "triceps_brachii_left"
+            ]
+          }
+        ]
+      },
+      {
+        "key": "forearm",
+        "label": "Forearm",
+        "children": [
+          {
+            "key": "forearm_anterior_superficial",
+            "label": "Anterior forearm, superficial",
+            "children": []
+          },
+          {
+            "key": "forearm_anterior_deep",
+            "label": "Anterior forearm, deep",
+            "children": []
+          },
+          {
+            "key": "forearm_posterior_superficial",
+            "label": "Posterior forearm, superficial",
+            "children": []
+          },
+          {
+            "key": "forearm_posterior_deep",
+            "label": "Posterior forearm, deep",
+            "children": []
+          }
+        ]
+      },
+      {
+        "key": "hand",
+        "label": "Hand",
+        "children": [
+          {
+            "key": "thenar",
+            "label": "Thenar muscles",
+            "children": []
+          },
+          {
+            "key": "hypothenar",
+            "label": "Hypothenar muscles",
+            "children": []
+          },
+          {
+            "key": "central_hand",
+            "label": "Central hand muscles",
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "lower_limb",
+    "label": "Lower limb",
+    "children": [
+      {
+        "key": "hip",
+        "label": "Hip and gluteal region",
+        "children": [
+          {
+            "key": "iliopsoas",
+            "label": "Iliopsoas",
+            "children": []
+          },
+          {
+            "key": "gluteal_superficial",
+            "label": "Gluteal, superficial",
+            "children": []
+          },
+          {
+            "key": "gluteal_deep",
+            "label": "Gluteal, deep (short lateral rotators)",
+            "children": []
+          }
+        ]
+      },
+      {
+        "key": "thigh",
+        "label": "Thigh",
+        "children": [
+          {
+            "key": "thigh_anterior",
+            "label": "Anterior compartment of the thigh",
+            "children": []
+          },
+          {
+            "key": "thigh_medial",
+            "label": "Medial compartment of the thigh",
+            "children": []
+          },
+          {
+            "key": "thigh_posterior",
+            "label": "Posterior compartment of the thigh",
+            "children": []
+          }
+        ]
+      },
+      {
+        "key": "leg",
+        "label": "Leg",
+        "children": [
+          {
+            "key": "leg_anterior",
+            "label": "Anterior compartment of the leg",
+            "children": []
+          },
+          {
+            "key": "leg_lateral",
+            "label": "Lateral compartment of the leg",
+            "children": []
+          },
+          {
+            "key": "leg_posterior_superficial",
+            "label": "Posterior leg, superficial",
+            "children": []
+          },
+          {
+            "key": "leg_posterior_deep",
+            "label": "Posterior leg, deep",
+            "children": []
+          }
+        ]
+      },
+      {
+        "key": "foot",
+        "label": "Foot",
+        "children": [
+          {
+            "key": "foot_dorsum",
+            "label": "Dorsum of the foot",
+            "children": []
+          },
+          {
+            "key": "foot_sole",
+            "label": "Sole of the foot",
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+]

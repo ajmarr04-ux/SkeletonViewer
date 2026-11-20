@@ -1,8 +1,14 @@
 // File access for the content scripts: the ID list, content/bones/*.md and the
-// model node names. The rules themselves are in src/content/validate.ts.
+// model node names; the soft-tissue folders (M8). The rules themselves are in
+// src/content/validate.ts and softValidate.ts.
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { splitFrontMatter } from "../../src/content/frontmatter";
+import { oppositeOf } from "../../src/content/placeholder";
+import { compileSoftLayer, type SoftLayerContent } from "../../src/content/softCompile";
+import { LAYER_FOLDERS, type SoftLayer } from "../../src/content/softSchema";
+import type { SoftIdEntry } from "../../src/content/softValidate";
 import type { IdEntry } from "../../src/content/validate";
 
 export const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -32,4 +38,72 @@ export function glbNodeNames(file: string): string[] {
   };
   const scene = gltf.scenes[gltf.scene ?? 0]!;
   return (scene.nodes ?? []).map((i) => gltf.nodes[i]!.name ?? "").filter((n) => n !== "");
+}
+
+// --- Soft-tissue content (M8 plan decision 1) ---
+
+export const softDir = (layer: SoftLayer): string => join(root, "content", LAYER_FOLDERS[layer]);
+export const SOFT_LAYERS = Object.keys(LAYER_FOLDERS) as SoftLayer[];
+export const readSoftIds = (): SoftIdEntry[] => readJson("content/soft-ids.json") as SoftIdEntry[];
+
+/** content/<layer folder>/<name>.md, by layer and name. */
+export function readSoftFiles(): Record<SoftLayer, Map<string, string>> {
+  const out = {} as Record<SoftLayer, Map<string, string>>;
+  for (const layer of SOFT_LAYERS) {
+    const m = new Map<string, string>();
+    const dir = softDir(layer);
+    if (existsSync(dir)) for (const f of readdirSync(dir).sort()) if (f.endsWith(".md")) m.set(f.slice(0, -3), readFileSync(join(dir, f), "utf8"));
+    out[layer] = m;
+  }
+  return out;
+}
+
+/** Bone ID → landmark IDs from the bone content files (files that don't parse are skipped; validate-content reports them). */
+export function readBoneLandmarks(files: Map<string, string> = readContentFiles()): Map<string, ReadonlySet<string>> {
+  const out = new Map<string, ReadonlySet<string>>();
+  for (const [name, text] of files) {
+    try {
+      const data = splitFrontMatter(text).data as { landmarks?: { id: string }[] };
+      out.set(name, new Set((data.landmarks ?? []).map((l) => l.id)));
+    } catch {
+      /* reported by validate-content */
+    }
+  }
+  return out;
+}
+
+/**
+ * The opposite side's ID for a bone (ids.json), a soft-tissue structure
+ * (soft-ids.json) or a joint (articulations.json, joints.json), else null.
+ */
+export function makeOpposite(soft: SoftIdEntry[] = readSoftIds()): (id: string) => string | null {
+  const bySide = new Map<string, string>(soft.map((e) => [e.id, e.side]));
+  const joints = [
+    ...(readJson("content/articulations.json") as { joint: string }[]).map((a) => a.joint),
+    ...(readJson("content/joints.json") as { id: string }[]).map((j) => j.id),
+  ];
+  for (const j of joints) {
+    const m = /_(left|right)$/.exec(j);
+    if (m) bySide.set(j, m[1]!);
+  }
+  return (id) => {
+    const bone = oppositeOf(id);
+    if (bone !== null) return bone;
+    const side = bySide.get(id);
+    if (side !== "left" && side !== "right") return null;
+    const other = side === "left" ? id.replace(/_left$/, "_right") : id.replace(/_right$/, "_left");
+    return other !== id && bySide.get(other) === (side === "left" ? "right" : "left") ? other : null;
+  };
+}
+
+/** One layer's compiled soft-tissue content, read from disk (the Vite plugin and `npm run content`). */
+export function compileSoftFromDisk(layer: SoftLayer, files = readSoftFiles()[layer]): SoftLayerContent {
+  const kinds = new Map(readSoftIds().map((e) => [e.id, e.kind]));
+  const movements = readJson("content/movements.json") as { antagonistPairs: [string, string][] };
+  return compileSoftLayer(layer, files, {
+    kindOf: (id) => kinds.get(id),
+    pairJoints: (readJson("content/articulations.json") as { joint: string }[]).map((a) => a.joint),
+    functionalJoints: Object.fromEntries((readJson("content/joints.json") as { id: string; articulations: string[] }[]).map((j) => [j.id, j.articulations])),
+    antagonistPairs: movements.antagonistPairs,
+  });
 }

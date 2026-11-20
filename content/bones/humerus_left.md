@@ -23,6 +23,7 @@ landmarks:
   - { id: intertubercular_sulcus, name: Intertubercular sulcus, position: null }
   - { id: deltoid_tuberosity, name: Deltoid tuberosity, position: null }
   - { id: radial_groove, name: Radial groove, position: null }
+  - { id: posterior_surface, name: Posterior surface, position: null }
   - { id: medial_epicondyle, name: Medial epicondyle, position: null }
   - { id: lateral_epicondyle, name: Lateral epicondyle, position: null }
   - { id: capitulum, name: Capitulum, position: null }

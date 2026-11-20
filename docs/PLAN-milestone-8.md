@@ -25,7 +25,7 @@ Plus the migration: **200 distinct `muscleAttachments` strings** across the 238 
 | Session | Steps | Status |
 | --- | --- | --- |
 | (planning) | 0 (Milestone 7 handover, this plan) | **Done.** See step 0 |
-| X | 1 (schemas and vocabulary files), 2 (compiler, mirror, derived data, panel text), 3 (migration table) | Not started |
+| X | 1 (schemas and vocabulary files), 2 (compiler, mirror, derived data, panel text), 3 (migration table) | **Done.** See "Session X notes" |
 | Y | 4 (muscles: head and neck, about 84 files) | Not started |
 | Z | 5 (muscles: back, thorax, abdomen and pelvis, about 66 files) | Not started |
 | AA | 6 (muscles: upper limb, about 62 files) | Not started |
@@ -37,7 +37,7 @@ Triggers: "begin session X" to "begin session AD". Each session starts by readin
 
 **User checkpoints**
 - **Decisions 2, 3 and 5: decided by the user on 2026-11-20.** Functional joints in `content/joints.json` (decision 2) and `joint: null` for ligaments at no joint (decision 3) as written; ligament and cartilage summaries 40–80 words, like muscles (decision 5).
-- **After session X**: the migration table (step 3) lists every old string with its match. Strings that match nothing are in `QUESTIONS.md`; the user can answer them any time before session AD.
+- **After session X**: the migration table (step 3) lists every old string with its match. The six that match nothing are QUESTIONS 70; the user can answer them any time before session AD.
 - **Content review** is the user's, as for bones (spec §13 of `SPEC (2).md`): everything ships `reviewed: false`.
 
 ## Exit criteria (from the musculoskeletal spec §11, M8)
@@ -93,6 +93,23 @@ These fill gaps the spec leaves open. Each is the smallest choice that fits the 
 2. **Source grouping vs anatomy.** Some source objects are odd units (e.g. `hypaxial_back`, `fasciae_upper_limb`, muscles split into "portions" the textbooks don't name). The content follows the object as it is (spec: no re-mapping in M8) and describes it plainly; each oddity is a question.
 3. **Joint vocabulary.** Settled (decision 2 accepted); the remaining risk is that individual functional-joint entries need correcting at review, which changes `joints.json` only.
 4. **Landmark growth in bone files.** Adding landmark names changes bone files the user may already have reviewed. Only `landmarks` lists change, never `reviewed`, and each session lists the added landmarks in its notes.
+
+## Session X notes (steps 1 to 3, done)
+
+What was built, and where it differs from the plan (say if any should change):
+
+- **Schemas** (`src/content/softSchema.ts`): muscle, part, ligament and cartilage front matter as spec §4.1 to §4.5, plus `movementsSchema`, `jointsSchema` and the muscle hierarchy. Kept out of `schema.ts` (and the main chunk). Choices the spec left open: parts may carry `commonName`, `innervation` (only where it differs, e.g. the heads of pectoralis major) and `clinicalNote` but needn't; `parent` is null only for the linea alba; cartilage `commonName` is optional (the spec's example has none).
+- **Vocabulary files.** `content/movements.json` is the spec's list verbatim. `content/joints.json` has **27 functional joints** (11 per side, 5 midline: craniovertebral, cervical, thoracic and lumbar spine, vertebral column), each a set of existing pair joints; listed in QUESTIONS 71. Derived data treats two joint IDs as the same joint when their pairs **overlap** (QUESTIONS 72), which is how "a pair inside a functional joint counts as that joint" (decision 2) is implemented, and also lets the spine entries nest. `content/muscle-hierarchy.json` has the 8 regions, 4 sub-regions in each limb and 49 compartments, all empty except `triceps_brachii_left`; the content sessions fill them and may add compartments.
+- **Validation** (`src/content/softValidate.ts`, in `validate-content`): every spec §10 rule, plus: file in its layer's folder; `id`, `name`, `side`, `kind`, `parts`, `parent`, `partType` and `alsoServes` equal `soft-ids.json`; per-kind summary length (decision 5); references to the wrong side fail (a left muscle naming `ulna_right` or `elbow_joint_right`); landmarks only on bones; a part can't inherit an empty origin or insertion; duplicate actions; `joint: null` only for the listed structures (decision 3; QUESTIONS 73); `synergistOverrides` needs a QUESTIONS.md line naming `synergistOverrides` and the muscle; `joints.json` members exist and each side has its mirrored twin; the hierarchy's path for each muscle must equal its `region` + `compartment`, and (strictly) no empty node. **`--allow-missing-soft` is in the `validate-content` npm script itself** (so `check`, `prebuild` and CI all use it); session AD removes it there.
+- **Mirroring** covers the three new folders. The opposite-ID function (`makeOpposite` in `scripts/lib/content-files.ts`) also swaps **joint IDs** (pair and functional), which the first mirror run missed and the validator caught.
+- **Derived data** (`src/content/derive.ts`): `synergistsOf`, `antagonistsOf`, `actionsOf`, `attachedMuscles`. Only prime and assist actions count, on both sides of the match (a stabiliser is neither a synergist nor an antagonist). A muscle's own parts and sibling parts are never its synergists. A part is listed beside its muscle only when one of its **own** actions matches; otherwise the muscle stands for it. A part's own action replaces the parent's for the same joint and movement (its role wins). Bone attachments list each structure by its own declaration: a part with `origin: inherit` is not listed (its muscle is).
+- **Compiler and chunks** (`src/content/softCompile.ts`, `scripts/lib/content-plugin.ts`): `virtual:skeleton-soft-content-{muscles,ligaments,cartilage}`, each with every entry's front matter and summary HTML; the muscles chunk also carries `derived` (synergists, antagonists, structure → attached muscles). `npm run content` prints all four sizes. The chunk is fetched by `LayerScenes` when the layer starts loading, and by the panel (`useSoftContent`, `src/content/softContentLoader.ts`) when a soft-tissue structure is selected.
+- **Panel** (`softPanel.ts`, `InfoPanel.tsx`): when written, the Latin name replaces the kind line under the title, "Part of *Muscle*" moves under it (spec §4.7), the common name and summary show. Unwritten structures keep the M7 placeholder.
+- **Seed content:** `triceps_brachii_left` and its three heads, `anterior_cruciate_ligament_left`, `medial_meniscus_left` (+ 6 mirrored). The humerus gained one landmark, `posterior_surface` (QUESTIONS 77).
+- **Migration table** (`scripts/content/attachment-match.ts`, `migrate-attachments.ts`, `npm run content:migrate-attachments`, `--check` in `npm run check`): `content/attachment-migration.json` lists each of the **200** strings with its `rule`, the IDs **per bone** (needed because e.g. "Abductor digiti minimi" means the hand muscle on the pisiform and the foot muscle on the calcaneus), an `indirect` flag for attachments through a costal cartilage, ligament or fascia, and a note. **133 by name, 61 by variant, 6 unmatched** (muscles the source doesn't have: QUESTIONS 70). Variant calls worth checking: QUESTIONS 74 to 76.
+- **Questions added:** 70 to 77, under the new headings *Joints*, *Muscles: attachment migration* and *Muscles: upper limb*.
+- **Tests:** `tests/softContent.test.ts` (33: one passing and one failing case per rule on a small fixture, derived data, compiler, the real triceps attachments, joint mirroring, the matcher); `tests/e2e/soft-content.spec.ts` (written part: Latin, Part of, summary; ligament common name; an unwritten structure keeps the placeholder).
+- **Size:** main chunk `index` 293.3 kB gzipped (+0.3 kB over M7; budget +5). Content chunks: muscles 1.2 kB, ligaments 0.6 kB, cartilage 0.6 kB gzipped with the seed files.
 
 ## Session X: model, tooling and migration table (steps 1 to 3)
 

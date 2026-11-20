@@ -1,10 +1,12 @@
-// The info panel's placeholder for the new kinds in M7 (plan decision 12):
-// built from the soft-tissue table only (name, kind, layer, side, the muscle a
-// part belongs to). The written content arrives in M8 and M9; nothing is
+// The info panel's model for the new kinds: built from the soft-tissue table
+// (name, kind, layer, side, the muscle a part belongs to; M7 plan decision 12)
+// plus, once its layer's content chunk is loaded, the written Latin name and
+// summary (M8 plan decision 11). The kind-specific sections are M9's. Nothing is
 // invented here (spec §12).
 
 import { LAYER_LABELS, softEntry, softOpposite } from "./softRegistry";
 import type { SoftKind, SoftId } from "../layers/softIds";
+import type { SoftLayerContent } from "./softCompile";
 
 export const KIND_LABELS: Record<SoftKind, string> = {
   muscle: "Muscle",
@@ -36,13 +38,21 @@ export type SoftPanelModel = {
   /** Both sides of a pair, left first (for the side toggle); else null. */
   pair: { left: string; right: string } | null;
   meshAvailable: boolean;
+  /** From the content file, or null while it is unwritten (or its chunk not loaded). */
+  latin: string | null;
+  common: string | null;
+  /** The summary as HTML, or null. */
+  summary: string | null;
+  /** The content file exists (and is loaded). */
+  written: boolean;
 };
 
-export function softPanelModel(id: string): SoftPanelModel | null {
+export function softPanelModel(id: string, content: SoftLayerContent | null = null): SoftPanelModel | null {
   const e = softEntry(id);
   if (!e) return null;
   const parent = e.parent ? softEntry(e.parent) : undefined;
   const opposite = softOpposite(id);
+  const written = content?.entries[id];
   const kind = e.kind === "muscle_part" && e.partType ? `Muscle part: ${PART_LABELS[e.partType].toLowerCase()}` : KIND_LABELS[e.kind];
   return {
     id,
@@ -53,6 +63,10 @@ export function softPanelModel(id: string): SoftPanelModel | null {
     trail: [LAYER_LABELS[e.layer], e.name],
     pair: opposite === null ? null : e.side === "left" ? { left: id, right: opposite } : { left: opposite, right: id },
     meshAvailable: e.mesh,
+    latin: written?.latin ?? null,
+    common: written?.common ?? null,
+    summary: written?.summary ?? null,
+    written: written !== undefined,
   };
 }
 

@@ -42,6 +42,9 @@ landmarks:
   - id: radial_groove
     name: Radial groove
     position: null
+  - id: posterior_surface
+    name: Posterior surface
+    position: null
   - id: medial_epicondyle
     name: Medial epicondyle
     position: null
