@@ -60,7 +60,7 @@ function LayerRow({ layer, mode, disabled }: { layer: Layer; mode: LayerMode; di
   const say = useViewer((s) => s.say);
   const load = useViewer((s) => (layer === "bones" ? undefined : s.layerLoad[layer as TissueLayer]));
   return (
-    <fieldset className="layer-row" data-layer={layer} data-mode={mode} data-status={load?.status ?? ""} data-lod={load?.lod ?? ""}>
+    <fieldset className="layer-row" data-layer={layer} data-mode={mode} data-status={load?.status ?? ""} data-lod={load?.lod ?? ""} data-shown-low={load?.shownAt.low?.toFixed(0) ?? ""}>
       <legend>{LAYER_LABELS[layer]}</legend>
       <div className="layer-modes">
         {(Object.keys(MODE_LABELS) as LayerMode[]).map((m) => (

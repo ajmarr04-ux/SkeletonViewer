@@ -923,7 +923,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
   // --- per frame: advance the controls, keep the clip planes snug, hover -------
   const centreRadius = useMemo(() => (geometry ? { c: boxCentre(geometry.box), r: boxRadius(geometry.box) } : null), [geometry]);
   // `?bench`: orbit 360° about the vertical axis over 10 s, timing every frame.
-  const benchRun = useRef<{ lod: Lod; start: number; azimuth: number; last: number; frames: number[]; drawCalls: number } | null>(null);
+  const benchRun = useRef<{ lod: Lod; start: number; azimuth: number; last: number; frames: number[]; drawCalls: number; triangles: number } | null>(null);
   const benchDone = useRef<Lod | null>(null);
   useFrame(({ gl: renderer }, delta) => {
     const c = controlsRef.current;
@@ -932,13 +932,14 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       const now = performance.now();
       let run = benchRun.current;
       if (!run || run.lod !== bench) {
-        run = benchRun.current = { lod: bench, start: now, azimuth: c.azimuthAngle, last: now, frames: [], drawCalls: 0 };
+        run = benchRun.current = { lod: bench, start: now, azimuth: c.azimuthAngle, last: now, frames: [], drawCalls: 0, triangles: 0 };
         useViewer.getState().setBench(null);
         labelLayoutMs.length = 0;
       } else {
         if (now - run.start > BENCH_WARMUP_MS) run.frames.push(now - run.last);
         run.last = now;
         run.drawCalls = Math.max(run.drawCalls, renderer.info.render.calls);
+        run.triangles = Math.max(run.triangles, renderer.info.render.triangles);
       }
       const elapsed = now - run.start;
       void c.rotateTo(run.azimuth + benchAzimuth(elapsed), c.polarAngle, false);
@@ -946,7 +947,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
         benchDone.current = bench;
         benchRun.current = null;
         const result = summariseFrames(run.frames);
-        if (result) useViewer.getState().setBench({ ...result, lod: run.lod, drawCalls: run.drawCalls, labels: summariseTimes(labelLayoutMs) });
+        if (result) useViewer.getState().setBench({ ...result, lod: run.lod, drawCalls: run.drawCalls, triangles: run.triangles, labels: summariseTimes(labelLayoutMs) });
       }
     }
     c.update(delta);

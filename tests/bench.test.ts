@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BENCH_DURATION_MS, benchAzimuth, percentile, summariseFrames, summariseTimes, recordLabelLayout, labelLayoutMs, LABEL_TIMES_CAP } from "../src/scene/bench";
+import { BENCH_DURATION_MS, benchAzimuth, benchLayersState, benchLayersLabel, percentile, summariseFrames, summariseTimes, recordLabelLayout, labelLayoutMs, LABEL_TIMES_CAP } from "../src/scene/bench";
 
 describe("percentile", () => {
   it("uses the nearest rank", () => {
@@ -52,5 +52,33 @@ describe("label layout times (plan step 12)", () => {
     for (let i = 0; i < LABEL_TIMES_CAP + 50; i++) recordLabelLayout(1);
     expect(labelLayoutMs.length).toBe(LABEL_TIMES_CAP);
     labelLayoutMs.length = 0;
+  });
+});
+
+describe("benchLayersState (M7 step 9)", () => {
+  const off = { cartilage: "off", ligaments: "off", muscles: "off" } as const;
+  const ready = (lod: "low" | "high") => ({ status: "ready" as const, lod, fetching: null });
+  it("is ready at once with every soft-tissue layer off", () => {
+    expect(benchLayersState(off, {}, "high")).toBe("ready");
+  });
+  it("waits for each layer that isn't off to reach the final LOD", () => {
+    const layers = { ...off, muscles: "ghost", ligaments: "on" } as const;
+    expect(benchLayersState(layers, {}, "high")).toBe("waiting");
+    expect(benchLayersState(layers, { muscles: ready("high"), ligaments: ready("low") }, "high")).toBe("waiting");
+    expect(benchLayersState(layers, { muscles: ready("high"), ligaments: { status: "loading", lod: "low", fetching: "high" } }, "high")).toBe("waiting");
+    expect(benchLayersState(layers, { muscles: ready("high"), ligaments: ready("high") }, "high")).toBe("ready");
+    expect(benchLayersState(layers, { muscles: ready("low"), ligaments: ready("low") }, "low")).toBe("ready");
+  });
+  it("ignores layers that are off and reports an error", () => {
+    expect(benchLayersState({ ...off, muscles: "on" }, { muscles: ready("low"), cartilage: { status: "error", lod: null, fetching: null } }, "low")).toBe("ready");
+    expect(benchLayersState({ ...off, muscles: "on" }, { muscles: { status: "error", lod: null, fetching: null } }, "low")).toBe("error");
+  });
+});
+
+describe("benchLayersLabel", () => {
+  it("names the layers drawn and the depth", () => {
+    expect(benchLayersLabel({ bones: "on", cartilage: "off", ligaments: "off", muscles: "ghost" }, 1)).toBe("bones on · muscles ghost (depth 1)");
+    expect(benchLayersLabel({ bones: "on", cartilage: "on", ligaments: "on", muscles: "on" }, 0)).toBe("bones on · cartilage on · ligaments on · muscles on");
+    expect(benchLayersLabel({ bones: "off", cartilage: "off", ligaments: "off", muscles: "off" }, 0)).toBe("none");
   });
 });

@@ -14,6 +14,13 @@
 // Targets (spec §8): desktop ≤ 3 s to the skeleton and ≤ 8 s to full detail;
 // phone ≤ 5 s and ≤ 12 s. Both profiles load both LODs (?lod=both), so "full
 // detail" is the high LOD even where the automatic choice would stop at low.
+//
+// M7 step 9: after full detail, each run turns the muscles layer (the largest)
+// on from the Layers panel and times the change to its low LOD on screen
+// (lazy chunk, soft-ID table and file included). Budget: 3 s desktop, 5 s
+// phone. The skeleton figures are taken first, with every layer off, so
+// they compare directly with M6's. PERF_SETTLE=<ms> waits that long after
+// full detail before turning the muscles on (diagnosis).
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import { extname, join, normalize } from "node:path";
@@ -51,9 +58,9 @@ const RUNS = Number(process.env.RUNS ?? 3);
 /** For diagnosis: PERF_NET=0 or PERF_CPU=1 turn one kind of throttling off. */
 const NET = process.env.PERF_NET !== "0";
 const CPU = Number(process.env.PERF_CPU ?? 4);
-const profiles: { name: string; ctx: BrowserContextOptions; first: number; full: number }[] = [
-  { name: "desktop", ctx: { viewport: { width: 1280, height: 800 } }, first: 3000, full: 8000 },
-  { name: "phone", ctx: { ...devices["iPhone 13"], defaultBrowserType: undefined } as BrowserContextOptions, first: 5000, full: 12000 },
+const profiles: { name: string; ctx: BrowserContextOptions; first: number; full: number; layer: number }[] = [
+  { name: "desktop", ctx: { viewport: { width: 1280, height: 800 } }, first: 3000, full: 8000, layer: 3000 },
+  { name: "phone", ctx: { ...devices["iPhone 13"], defaultBrowserType: undefined } as BrowserContextOptions, first: 5000, full: 12000, layer: 5000 },
 ];
 
 const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]!;
@@ -65,7 +72,7 @@ async function main() {
   const browser = await chromium.launch();
   let ok = true;
   for (const p of profiles) {
-    const rows: { low: number; high: number; lowBytes: number; highBytes: number; blocked: number }[] = [];
+    const rows: { low: number; high: number; lowBytes: number; highBytes: number; blocked: number; muscles: number }[] = [];
     let renderer = "";
     for (let i = 0; i < RUNS; i++) {
       const context = await browser.newContext(p.ctx);
@@ -108,19 +115,52 @@ async function main() {
         };
       }, low);
       renderer = t.renderer;
-      rows.push({ low, high, ...t });
+      // Let the work that follows full detail finish (raycasting trees, at idle), as a user would.
+      await page.waitForTimeout(Number(process.env.PERF_SETTLE ?? 0));
+      // Turn the muscles on from the Layers panel ("More" on the phone), timing from the change event.
+      await page.evaluate(() => {
+        const w = window as unknown as { __layerOnAt?: number };
+        document.addEventListener("change", () => (w.__layerOnAt ??= performance.now()), { capture: true });
+      });
+      const direct = page.getByRole("button", { name: "Layers", exact: true });
+      if (await direct.isVisible()) await direct.click();
+      else await page.getByRole("button", { name: "More", exact: true }).click();
+      await page.getByTestId("layer-muscles-on").check();
+      const row = page.locator(".layer-row[data-layer=muscles]:not([data-shown-low=''])");
+      await row.waitFor({ timeout: 120_000 });
+      const shown = Number(await row.getAttribute("data-shown-low"));
+      const onAt = await page.evaluate(() => (window as unknown as { __layerOnAt: number }).__layerOnAt);
+      const muscles = shown - onAt;
+      const mt = await page.evaluate((from) => {
+        const res = performance.getEntriesByType("resource") as PerformanceResourceTiming[];
+        const file = res.find((r) => r.name.includes("muscles-low.glb"));
+        const chunks = res.filter((r) => /\/assets\/(LayerScenes|softTable)-/.test(r.name));
+        const tasks = (window as unknown as { __longTasks: [number, number][] }).__longTasks;
+        return {
+          file: (file?.responseEnd ?? NaN) - from,
+          chunks: Math.max(...chunks.map((r) => r.responseEnd)) - from,
+          blocked: tasks.filter(([s]) => s >= from).reduce((a, [, d]) => a + d, 0),
+        };
+      }, onAt);
+      rows.push({ low, high, ...t, muscles });
       console.log(
         `${p.name} run ${i + 1}: skeleton ${low} ms, full detail ${high} ms ` +
           `(low file received ${Math.round(t.lowBytes)} ms, high file ${Math.round(t.highBytes)} ms; ` +
-          `main thread blocked ${Math.round(t.blocked)} ms before the skeleton)`,
+          `main thread blocked ${Math.round(t.blocked)} ms before the skeleton); ` +
+          `muscles on → low LOD shown ${Math.round(muscles)} ms (layer chunks received ${Math.round(mt.chunks)} ms, ` +
+          `file ${Math.round(mt.file)} ms; main thread blocked ${Math.round(mt.blocked)} ms meanwhile)`,
       );
       await context.close();
     }
     const f = median(rows.map((r) => r.low));
     const h = median(rows.map((r) => r.high));
-    const pass = f <= p.first && h <= p.full;
+    const m = median(rows.map((r) => r.muscles));
+    const pass = f <= p.first && h <= p.full && m <= p.layer;
     ok &&= pass;
-    console.log(`${p.name}: median skeleton ${(f / 1000).toFixed(2)} s (≤ ${p.first / 1000} s), full detail ${(h / 1000).toFixed(2)} s (≤ ${p.full / 1000} s): ${pass ? "PASS" : "FAIL"}`);
+    console.log(
+      `${p.name}: median skeleton ${(f / 1000).toFixed(2)} s (≤ ${p.first / 1000} s), full detail ${(h / 1000).toFixed(2)} s (≤ ${p.full / 1000} s), ` +
+        `muscles layer ${(m / 1000).toFixed(2)} s (≤ ${p.layer / 1000} s): ${pass ? "PASS" : "FAIL"}`,
+    );
     if (/swiftshader|llvmpipe|software/i.test(renderer)) {
       console.log(
         `  note: the GPU here is ${renderer}, a software renderer. Its shader compilation shows up as main-thread time ` +

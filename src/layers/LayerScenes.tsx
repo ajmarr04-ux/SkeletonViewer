@@ -214,6 +214,8 @@ function idle(fn: () => void): void {
 /** `?debug`: one overlay line per loaded layer (LOD, nodes, triangles, bounds against the manifest). */
 export function LayersDebugPanel() {
   const reports = useLayerReports();
+  const onAt = useViewer((s) => s.layerOnAt);
+  const load = useViewer((s) => s.layerLoad);
   const layers = TISSUE_LAYERS.filter((l) => reports[l]);
   if (layers.length === 0) return null;
   return (
@@ -222,6 +224,10 @@ export function LayersDebugPanel() {
         {layers.map((layer) => {
           const r = reports[layer]!;
           const ok = r.errors.length === 0;
+          // Turned on → low LOD on screen (perf-load's measure, on the real device).
+          const lowShown = load[layer]?.shownAt.low;
+          const start = onAt[layer] ?? 0;
+          const lowMs = lowShown !== undefined ? Math.max(0, lowShown - start) : null;
           return (
             <div
               key={layer}
@@ -233,13 +239,15 @@ export function LayersDebugPanel() {
               data-bounds-ok={String(ok)}
               data-bounds-max-delta-mm={(r.maxDelta * 1000).toFixed(4)}
               data-errors={r.errors.slice(0, 20).join(" | ")}
+              data-low-shown-ms={lowMs !== null ? lowMs.toFixed(0) : ""}
             >
               <dt>
                 <span className="swatch" style={{ background: LAYER_COLOURS[layer] }} aria-hidden="true" /> {layer}
               </dt>
               <dd className={ok ? undefined : "error"}>
                 {`${r.lod}: ${r.nodes} nodes, ${r.triangles.toLocaleString("en")} tris, ` +
-                  (ok ? `bounds max ${(r.maxDelta * 1000).toFixed(3)} mm` : `${r.errors.length} errors: ${r.errors.slice(0, 2).join("; ")}`)}
+                  (ok ? `bounds max ${(r.maxDelta * 1000).toFixed(3)} mm` : `${r.errors.length} errors: ${r.errors.slice(0, 2).join("; ")}`) +
+                  (lowMs !== null ? `; low shown ${(lowMs / 1000).toFixed(2)} s after turned on` : "")}
               </dd>
             </div>
           );

@@ -182,4 +182,43 @@ test.describe("keyboard only", () => {
     expect((await focused(page))?.name).toBe("Attribution");
     expect(errors).toEqual([]);
   });
+
+  test("M7: the Layers panel, Hide and Show all by keyboard", async ({ page }) => {
+    const errors = await open(page);
+    await page.locator("body").focus();
+    // Layers: Enter opens it; Tab reaches the muscles' radio group; the arrows choose Ghost, then On.
+    await tabTo(page, "Layers");
+    await page.keyboard.press("Enter");
+    await expect(page.getByTestId("layers-panel")).toBeVisible();
+    const rowOfFocus = () => page.evaluate(() => (document.activeElement?.closest(".layer-row") as HTMLElement | null)?.dataset.layer ?? null);
+    for (let i = 0; i < 12 && (await rowOfFocus()) !== "muscles"; i++) await page.keyboard.press("Tab");
+    expect(await rowOfFocus()).toBe("muscles");
+    expect((await focused(page))?.ring, "focus ring on the radio").toBe(true);
+    await page.keyboard.press("ArrowLeft");
+    await expect(page).toHaveURL(/layers=b:on,c:off,l:off,m:ghost/);
+    await page.keyboard.press("ArrowLeft");
+    await expect(page).toHaveURL(/layers=b:on,c:off,l:off,m:on/);
+    await expect(page.locator(".layer-row[data-layer=muscles]")).toHaveAttribute("data-status", "ready", { timeout: 60_000 });
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("layers-panel")).toHaveCount(0);
+    expect((await focused(page))?.name).toBe("Layers");
+
+    // Select a bone by search, hide it with X from the canvas, then Show all from the chip.
+    await page.keyboard.press("/");
+    await page.keyboard.type("femur left");
+    await expect(page.getByTestId("search-results").getByRole("option").first()).toBeVisible();
+    await page.keyboard.press("Enter");
+    await expect.poll(async () => (await state(page)).sel).toBe("femur_left");
+    await tabTo(page, /^3D skeleton/);
+    await page.keyboard.press("x");
+    await expect.poll(async () => (await state(page)).sel).toBeNull();
+    await expect(page).toHaveURL(/hid=femur_left/);
+    await page.locator("body").focus();
+    const chip = await tabTo(page, /hidden · Show all$/);
+    expect(chip.ring).toBe(true);
+    await page.keyboard.press("Enter");
+    await expect(page).not.toHaveURL(/hid=/);
+    await expect(page.getByTestId("show-all-hidden")).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
 });

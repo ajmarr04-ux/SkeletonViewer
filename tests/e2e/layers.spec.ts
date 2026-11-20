@@ -57,6 +57,8 @@ test("turning a layer on from the panel loads it once, puts it in the URL and lo
   await expect(row).toHaveAttribute("data-nodes", String(EXPECTED.ligaments), { timeout: 60_000 });
   await expect(row).toHaveAttribute("data-bounds-ok", "true");
   await expect(page.locator(".layer-row[data-layer=ligaments]")).toHaveAttribute("data-status", "ready");
+  // Session W: the debug line times "turned on → low LOD shown", the measure for the user's devices.
+  await expect(row).toHaveAttribute("data-low-shown-ms", /^\d+$/);
   expect(await page.evaluate(() => localStorage.getItem("skeleton-viewer:layers"))).toBe("b:on,c:off,l:on,m:off");
   // Ghost, Off and On again: no second download.
   await page.getByTestId("layer-ligaments-ghost").check();
@@ -353,3 +355,26 @@ test("a screenshot with the muscles on is named after a selected muscle", async 
   const [download] = await Promise.all([page.waitForEvent("download"), page.getByTestId("screenshot").click()]);
   expect(download.suggestedFilename()).toBe("skeleton-gluteus-maximus-left.png");
 });
+
+// Session W, plan step 9: the two bench links for the user wait for their layers, then orbit.
+for (const preset of [
+  { name: "all solid", layers: "b:on,c:on,l:on,m:on", label: "bones on · cartilage on · ligaments on · muscles on", tissue: ["cartilage", "ligaments", "muscles"] },
+  { name: "muscles ghosted over bones", layers: "b:on,c:off,l:off,m:ghost", label: "bones on · muscles ghost", tissue: ["muscles"] },
+]) {
+  test(`?bench with the layers ${preset.name}: waits for them, then reports FPS, draw calls and triangles`, async ({ page }) => {
+    test.setTimeout(150_000);
+    await page.goto(`./?lod=low&debug&bench&layers=${preset.layers}`);
+    const debug = page.getByTestId("debug");
+    await expect(debug).toHaveAttribute("data-bench-done", "true", { timeout: 120_000 });
+    // Every layer was on screen before the orbit ended (the bench doesn't start before).
+    const counts = (await debug.getAttribute("data-layer-counts"))!;
+    for (const l of preset.tissue) expect(counts, l).toMatch(new RegExp(`${l}:\\d+/\\d+`));
+    await expect(page.getByTestId("bench-layers")).toHaveText(preset.label);
+    const drawCalls = Number(await page.getByTestId("bench-draw-calls").textContent());
+    expect(drawCalls).toBeGreaterThan(0);
+    expect(drawCalls).toBeLessThan(20);
+    const triangles = Number((await page.getByTestId("bench-triangles").textContent())!.replace(/,/g, ""));
+    expect(triangles).toBeGreaterThan(150_000); // more than the low skeleton alone
+    console.log(`bench ${preset.name} (SwiftShader, low):`, await debug.getAttribute("data-bench-median-fps"), "median FPS,", drawCalls, "draw calls,", triangles, "triangles");
+  });
+}
