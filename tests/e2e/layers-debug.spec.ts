@@ -59,7 +59,11 @@ test("layers=l,c loads only the ligament and cartilage files", async ({ page }) 
   const files: string[] = [];
   page.on("request", (r) => {
     const m = LAYER_FILE.exec(r.url());
-    if (m) files.push(`${m[1]}-${m[2]}`);
+    if (m) {
+      files.push(`${m[1]}-${m[2]}`);
+      // Content-hashed URLs, so a rebuilt file never comes from the HTTP cache.
+      expect(new URL(r.url()).searchParams.get("v"), r.url()).toMatch(/^[0-9a-f]{10}$/);
+    }
   });
   const { panel } = await openLayers(page, "?lod=low&debug&layers=l,c");
   await expect(panel).toHaveAttribute("data-layers", "ligaments,cartilage");

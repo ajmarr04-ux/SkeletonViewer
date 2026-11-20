@@ -10,3 +10,8 @@ declare module "virtual:skeleton-attribution" {
   const html: string;
   export default html;
 }
+declare module "virtual:skeleton-model-versions" {
+  /** File stem (`muscles-high`) → content hash (scripts/lib/model-versions-plugin.ts). */
+  const versions: Record<string, string>;
+  export default versions;
+}
