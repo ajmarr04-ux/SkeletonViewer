@@ -31,7 +31,7 @@ Plus the migration: **200 distinct `muscleAttachments` strings** across the 238 
 | AA | Upper-limb muscles (step 6) | none (written before the workflow) | all upper-limb files validate | **Done.** See "Session AA notes" |
 | AB | Lower-limb muscles (step 7) | none (written before the workflow) | all lower-limb files validate | **Done.** See "Session AB notes" |
 | AC | Ligament and cartilage content (step 8) | `content-writer` × 10 batches by joint region, in waves of 4 (`docs/batches/M8-AC/`) | every ligament, cartilage, disc and meniscus file validates; `joint: null` list final; `npm run check` passes | **Done.** See "Session AC notes" |
-| AD | Migration finished, `muscleAttachments` removed, strict validation, tests, no-regression, hosted copy (steps 9–11) | `verifier` × 1 for the full Playwright run | strict `validate-content`; full e2e; `/m8/` live | Not started |
+| AD | Migration finished, `muscleAttachments` removed, strict validation, tests, no-regression, hosted copy (steps 9–11) | `verifier` × 1 for the full Playwright run | strict `validate-content`; full e2e; `/m8/` live | **Done except the hosted copy** (waiting on the merge). See "Session AD notes" |
 
 Triggers: "begin session X" to "begin session AD". **From session AC the sessions follow `docs/WORKFLOW.md`** (adopted 2026-11-20): one serial task per session, Sonnet subagents for parallel batches, `docs/HANDOFF.md` written at the end. Sessions X to AB predate it, so their fan-out column says none. Each session starts by reading this file and ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models`, `npm run validate-content` (with `--allow-missing-soft` until session AD, decision 10) and `npm run e2e` passing, then a commit, a push to the session branch and a PR to `main`. Content sessions (Y to AC) run the e2e smoke and panel specs only, plus the full suite if they touched `src/`.
 
@@ -42,12 +42,12 @@ Triggers: "begin session X" to "begin session AD". **From session AC the session
 
 ## Exit criteria (from the musculoskeletal spec §11, M8)
 
-- [ ] Schemas, `movements.json`, `muscle-hierarchy.json`, `muscle-depth.json` (the depth file already exists from M7; its validation stays).
-- [ ] All muscle, part, ligament and cartilage content drafted (left and midline written; right mirrored), `reviewed: false`.
-- [ ] `muscleAttachments` migration done and the field removed.
-- [ ] `validate-content` passes (strict: no `--allow-missing-soft`); derived synergist/antagonist tests pass.
-- [ ] Uncertain choices added to `QUESTIONS.md` under new headings per layer.
-- [ ] No regression: with every new layer off, the main chunk grows by at most 5 kB gzipped over M7, no soft-tissue content chunk is requested, and the full e2e suite passes.
+- [x] Schemas, `movements.json`, `muscle-hierarchy.json`, `muscle-depth.json` (the depth file already exists from M7; its validation stays).
+- [x] All muscle, part, ligament and cartilage content drafted (left and midline written; right mirrored), `reviewed: false`.
+- [x] `muscleAttachments` migration done and the field removed.
+- [x] `validate-content` passes (strict: no `--allow-missing-soft`); derived synergist/antagonist tests pass.
+- [x] Uncertain choices added to `QUESTIONS.md` under new headings per layer.
+- [x] No regression: with every new layer off, the main chunk grows by at most 5 kB gzipped over M7, no soft-tissue content chunk is requested, and the full e2e suite passes.
 - [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
 
 ---
@@ -118,7 +118,9 @@ What was built, and where it differs from the plan (say if any should change):
 - **Field removed** from all 238 bone files, from `frontMatterSchema` and from the compiler. `validate-content` names the field if it ever comes back (spec §10). `content/attachment-migration.json` is now **frozen** as the migration's record: the script rebuilds it only while a bone file still has the field, and otherwise checks the committed table.
 - **The bone panel's "Major muscle attachments"** is now derived (`boneMuscleLists` in `src/content/compile.ts`, fed by `readBoneMuscles` in `scripts/lib/content-files.ts`): each muscle or part by its content name, with "(origin)", "(insertion)" or "(origin and insertion)"; the two sides' muscles on a midline bone show once. Plain text; links are M9's. The derivation runs at build time, so only the bones' lazy content chunk grows (30.6 → 32.3 kB gzipped) and the muscles layer isn't loaded for it. A muscle that reaches a bone only through a part is listed under the part's name (e.g. the sternum shows "Sternocostal head of pectoralis major").
 - **Strict validation:** `--allow-missing-soft` is gone from the `validate-content` script (the flag itself stays, like `--allow-missing-content`). 238 bone files and 900 of 900 soft-tissue files, 0 warnings.
-- **No regression.** Main chunk, gzipped (`gzip -9`, both built the same way): M7 (`3af6d5a`) `index` 291.8 + vendor 168.2 + runtime 0.5 kB; M8 `index` 292.1 + 168.2 + 0.5 kB, **+0.3 kB** (budget +5). Lazy content chunks: muscles 86.0, ligaments 31.2, cartilage 5.8 kB. The layers e2e test "the default view requests no layer file…" now also fails on any `_virtual_skeleton-soft-content-*` chunk.
+- **No regression.** Main chunk, gzipped (`gzip -9`, both built the same way): M7 (`3af6d5a`) `index` 291.8 + vendor 168.2 + runtime 0.5 kB; M8 `index` 292.1 + 168.2 + 0.5 kB, **+0.3 kB** (budget +5). Lazy content chunks: muscles 86.0, ligaments 31.2, cartilage 5.8 kB. **`perf-load`** (Fast 4G, 4× CPU, SwiftShader, medians of 3), M7 → M8: desktop skeleton 3.90 → 3.94 s, full detail 7.39 → 7.33 s, muscles layer 9.06 → 9.18 s; phone 3.90 → 3.89, 7.32 → 7.24, 9.41 → 9.48 s: the same within run-to-run noise. The muscles-layer budget (3 s / 5 s) is missed equally by M7 here, as recorded in M7 (software renderer; the file alone takes about 8.5 s at Fast 4G); the real-device time is still the open M7 item. The layers e2e test "the default view requests no layer file…" now also fails on any `_virtual_skeleton-soft-content-*` chunk.
+- **Full e2e suite: 133 / 133 passed** (22.5 min, through the `verifier` agent), plus the renamed layers test on its own. `tsc`, Vitest (417 tests), `check-models`, strict `validate-content` and the migration check pass.
+- **Hosted copy:** the PR to `main` is open; `/m8/` deploys on merge (`deploy/pages.json` already has `current: 8`). Still to do after the merge: confirm it's live, tick the exit criterion, mark the README row.
 
 ## Session AC notes (step 8, done; the first session under `docs/WORKFLOW.md`)
 

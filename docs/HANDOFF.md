@@ -1,19 +1,20 @@
-# Handoff — written 2026-11-20 at the end of M8-AC
+# Handoff — written 2026-11-20 at the end of M8-AD
 
 ## Next session
-M8-AD: finish the `muscleAttachments` migration, remove the field, make validation strict, run the no-regression checks and ship `/m8/` (plan steps 9–11).
-Done when: `validate-content` passes without `--allow-missing-soft`; no bone file has `muscleAttachments`; the full e2e suite passes (run it through the `verifier` agent); main chunk ≤ +5 kB gzipped over M7; `/m8/` is live and linked in `README.md`.
+M8 close-out (short): once the M8 PR is merged and deployed, confirm `/m8/` is live, tick "Hosted copy is live" in `docs/PLAN-milestone-8.md`, and mark the M8 row in `README.md` as live. Then the M9 handover (CLAUDE.md "Milestone handover": freeze `m8` at the merge commit, `current: 9`, write `docs/PLAN-milestone-9.md`).
+Done when: `/m8/` confirmed live by the user; M9 plan written.
 
 ## State
-- Last commit: d7bd73a M8-AC: ligament and cartilage content (batches H, I, J + integration), 9 functional joints per side, questions 120-131
-- `npm run check`: pass (still with `--allow-missing-soft`; 0 soft-tissue files missing)
+- Last commit: see `git log` (M8-AD: notes and handoff), on `claude/keen-clarke-32a10a`
+- `npm run check`: pass (strict `validate-content`, migration two-way check)
+- Full e2e: 133/133 pass. Main chunk +0.3 kB gzipped over M7. perf-load same as M7.
 - Open fan-out work: none
 
 ## Waiting on the user
-Nothing blocks AD from starting. Before `muscleAttachments` is removed, the user should answer QUESTIONS 70 (6 old strings naming muscles the source doesn't have); if unanswered, ask at the start of AD.
+Merge the M8 PR to `main`, then say whether https://ajmarr04-ux.github.io/SkeletonViewer/m8/ is live.
 
 ## Things the next session must know
-- Two-way migration check: a string is accounted for when the muscle **or one of its parts** attaches to that bone, **or** a part it is listed in `alsoServes` of does (soleus → calcaneus through the calcaneal tendon, QUESTIONS 109). The `indirect` strings (costal cartilage, fascia, patellar ligament) are expected misses.
-- `--allow-missing-soft` lives in the `validate-content` npm script itself (plan decision 10); remove it there.
-- `content-writer`, `verifier` and `mesh-auditor` are in `.claude/agents/`; this session couldn't call them by type (created mid-session), a fresh session should.
-- The M8 PR (#19) merged sessions X–AB; X–AC's later commits (workflow setup + AC) are on `claude/keen-clarke-32a10a`, not yet in a PR.
+- `muscleAttachments` is gone; `validate-content` rejects it. `content/attachment-migration.json` is frozen (the script only checks it now).
+- Bone panel muscle lists come from `boneMuscleLists` (`src/content/compile.ts`), computed at build time from the muscle files.
+- QUESTIONS 70 answered: the six source-less muscles were dropped.
+- The muscles-layer load time misses its budget under perf-load in M7 and M8 alike (software GPU); the real-device number is still open from M7.
