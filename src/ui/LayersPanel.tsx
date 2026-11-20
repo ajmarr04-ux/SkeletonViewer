@@ -15,7 +15,8 @@ const PRESETS: { key: LayerPreset; label: string }[] = [
   { key: "skeleton", label: "Skeleton" },
   { key: "full", label: "Full musculoskeletal" },
 ];
-const DEPTH_STOPS = ["All", "Hide superficial", "Hide superficial + intermediate", "Deep only"];
+/** Three stops, each one layer deeper (the user's choice in session V; the spec's fourth stop, "Deep only", was the same as the third). */
+const DEPTH_STOPS = ["All", "Hide superficial", "Hide superficial + intermediate"];
 
 export function LayersPanel() {
   const layers = useViewer((s) => s.layers);
@@ -113,7 +114,7 @@ function LoadStatus({ layer, load }: { layer: TissueLayer; load: LayerLoad }) {
 }
 
 /**
- * The muscle depth control (spec §6.2, M7 plan decision 10): four stops; the
+ * The muscle depth control (spec §6.2, M7 plan decision 10): three stops; the
  * peeled muscles are hidden, not ghosted, so the next layer down can be
  * clicked. Enabled while the muscles layer is On or Ghost.
  */
@@ -150,6 +151,6 @@ function DepthControl() {
 /** "Superficial muscles hidden: 41 muscles." (plan step 7). */
 export function depthAnnouncement(stop: MuscleDepth, count: number | null): string {
   if (stop === 0) return "All muscles shown";
-  const what = stop === 1 ? "Superficial muscles hidden" : stop === 2 ? "Superficial and intermediate muscles hidden" : "Deep muscles only";
-  return count === null ? what : `${what}: ${count} ${count === 1 ? "muscle" : "muscles"}${stop === 3 ? " hidden" : ""}`;
+  const what = stop === 1 ? "Superficial muscles hidden" : "Superficial and intermediate muscles hidden: deep muscles only";
+  return count === null ? what : `${what}. ${count} ${count === 1 ? "muscle" : "muscles"} hidden`;
 }

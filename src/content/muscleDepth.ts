@@ -17,10 +17,10 @@ export function depthOf(e: DepthEntry, table: Readonly<Record<string, Depth>>): 
 }
 
 /**
- * Is a muscle (or part) at this depth peeled away by the control's stop?
- * 0 All; 1 hides superficial; 2 hides superficial and intermediate; 3 deep only.
+ * Is a muscle (or part) at this depth peeled away by the control's stop? Each
+ * stop goes one layer deeper: 0 all; 1 hides the superficial muscles; 2 hides
+ * the intermediate ones too, leaving the deep.
  */
-export function peeled(depth: Depth | undefined, stop: 0 | 1 | 2 | 3): boolean {
-  if (depth === undefined || stop === 0) return false;
-  return stop === 1 ? depth === 1 : depth < 3;
+export function peeled(depth: Depth | undefined, stop: 0 | 1 | 2): boolean {
+  return depth !== undefined && depth <= stop;
 }

@@ -54,17 +54,17 @@ describe("the rules on fixtures", () => {
     expect(depthOf(entries[2]!, { deltoid: 1 })).toBe(1);
     expect(depthOf(entries[2]!, { deltoid: 1, deltoid_acromial_part: 2 })).toBe(2);
     expect(depthOf(entries[4]!, { inguinal_ligament: 1 })).toBeUndefined();
-    expect([0, 1, 2, 3].map((s) => peeled(1, s as 0))).toEqual([false, true, true, true]);
-    expect([0, 1, 2, 3].map((s) => peeled(2, s as 0))).toEqual([false, false, true, true]);
-    expect([0, 1, 2, 3].map((s) => peeled(3, s as 0))).toEqual([false, false, false, false]);
-    expect(peeled(undefined, 3)).toBe(false);
+    expect([0, 1, 2].map((s) => peeled(1, s as 0))).toEqual([false, true, true]);
+    expect([0, 1, 2].map((s) => peeled(2, s as 0))).toEqual([false, false, true]);
+    expect([0, 1, 2].map((s) => peeled(3, s as 0))).toEqual([false, false, false]);
+    expect(peeled(undefined, 2)).toBe(false);
   });
 });
 
 describe("peeling in the view", () => {
   beforeAll(() => registerSoftIds(trimSoftIds(raw, depths)));
   afterAll(() => resetSoftIds());
-  const st = (muscleDepth: 0 | 1 | 2 | 3, sel: string | null = null) => ({
+  const st = (muscleDepth: 0 | 1 | 2, sel: string | null = null) => ({
     sel,
     tier: 0 as const,
     ghostMode: "ghost" as const,
@@ -80,12 +80,12 @@ describe("peeling in the view", () => {
     expect(shownIn(viewOf(st(1), hasMesh), "muscles", "deltoid_acromial_part_left")).toBe("hidden");
     expect(shownIn(viewOf(st(1), hasMesh), "muscles", "supraspinatus_left")).toBe("solid");
     expect(shownIn(viewOf(st(2), hasMesh), "muscles", "supraspinatus_left")).toBe("hidden");
-    expect(shownIn(viewOf(st(3), hasMesh), "muscles", "subscapularis_left")).toBe("solid");
+    expect(shownIn(viewOf(st(2), hasMesh), "muscles", "subscapularis_left")).toBe("solid");
   });
   it("never peels the selected structure, ligaments or bones", () => {
-    expect(shownIn(viewOf(st(3, "deltoid_acromial_part_left"), hasMesh), "muscles", "deltoid_acromial_part_left")).toBe("solid");
-    expect(shownIn(viewOf(st(3), hasMesh), "ligaments", "inguinal_ligament_left")).toBe("hidden"); // the ligaments layer is Off
-    expect(shownIn(viewOf(st(3), hasMesh), "bones", "femur_left")).toBe("solid");
+    expect(shownIn(viewOf(st(2, "deltoid_acromial_part_left"), hasMesh), "muscles", "deltoid_acromial_part_left")).toBe("solid");
+    expect(shownIn(viewOf(st(2), hasMesh), "ligaments", "inguinal_ligament_left")).toBe("hidden"); // the ligaments layer is Off
+    expect(shownIn(viewOf(st(2), hasMesh), "bones", "femur_left")).toBe("solid");
     expect(viewOf({ ...st(0), muscleDepth: undefined }, hasMesh).hidden.size).toBe(0);
     expect(FULL_VIEW.isolated).toBe(false);
   });
@@ -94,10 +94,9 @@ describe("peeling in the view", () => {
     const n2 = peeledMuscleCount(2);
     expect(n1).toBeGreaterThan(50);
     expect(n2).toBeGreaterThan(n1);
-    expect(peeledMuscleCount(3)).toBe(n2); // QUESTIONS 69: the last two stops coincide
     expect(peeledAt(1).has("deltoid_acromial_part_left")).toBe(true);
-    expect(depthAnnouncement(1, 41)).toBe("Superficial muscles hidden: 41 muscles");
-    expect(depthAnnouncement(3, 150)).toBe("Deep muscles only: 150 muscles hidden");
+    expect(depthAnnouncement(1, 41)).toBe("Superficial muscles hidden. 41 muscles hidden");
+    expect(depthAnnouncement(2, 150)).toBe("Superficial and intermediate muscles hidden: deep muscles only. 150 muscles hidden");
     expect(depthAnnouncement(0, 0)).toBe("All muscles shown");
   });
 });

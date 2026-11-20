@@ -69,8 +69,11 @@ export const TISSUE_LAYERS = ["cartilage", "ligaments", "muscles"] as const sati
 export type TissueLayer = (typeof TISSUE_LAYERS)[number];
 export type LayerMode = "on" | "ghost" | "off";
 export type LayerModes = Record<Layer, LayerMode>;
-/** Muscle depth control (spec §6.2): 0 = all, 1 = hide superficial, 2 = hide superficial + intermediate, 3 = deep only. */
-export type MuscleDepth = 0 | 1 | 2 | 3;
+/**
+ * Muscle depth control (spec §6.2, three stops as the user chose in session V):
+ * 0 = all, 1 = hide superficial, 2 = hide superficial + intermediate (deep only).
+ */
+export type MuscleDepth = 0 | 1 | 2;
 export type LayerSetting = { layers: LayerModes; depth: MuscleDepth };
 
 export const DEFAULT_LAYERS: LayerModes = { bones: "on", cartilage: "off", ligaments: "off", muscles: "off" };
@@ -106,7 +109,9 @@ export function parseLayers(value: string | null | undefined): LayerSetting | nu
     any = true;
     if (layer === "muscles" && extra !== undefined) {
       const d = Number(extra);
-      if (d === 1 || d === 2 || d === 3) depth = d;
+      // `3` was "Deep only" while the control had four stops (session V's first build): the same as 2.
+      if (d === 1 || d === 2) depth = d;
+      else if (d === 3) depth = 2;
     }
   }
   return any ? { layers, depth } : null;

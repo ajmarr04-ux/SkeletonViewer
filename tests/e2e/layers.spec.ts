@@ -288,23 +288,23 @@ test("the depth control peels muscles away (hidden, not ghosted), in the URL and
   await expect.poll(() => muscleCounts(page)).toEqual({ solid: EXPECTED.muscles, ghost: 0 });
   await page.getByTestId("muscle-depth-1").check();
   await expect(page).toHaveURL(/layers=b:on,c:off,l:off,m:on:1/);
-  await expect(page.getByTestId("announcer")).toHaveText(/^Superficial muscles hidden: \d+ muscles$/);
+  await expect(page.getByTestId("announcer")).toHaveText(/^Superficial muscles hidden\. \d+ muscles hidden$/);
   const s1 = (await muscleCounts(page))!;
   expect(s1.ghost).toBe(0);
   expect(s1.solid).toBeLessThan(EXPECTED.muscles);
   // The deltoid is superficial: peeled, so the supraspinatus under it can be picked.
   const deltoid = await centreOf(page, "deltoid_acromial_part_left");
   expect(await page.evaluate(({ x, y }) => window.__viewer!.pick(x, y), deltoid)).not.toMatch(/^deltoid/);
+  // Three stops, each one layer deeper (the user's choice in session V).
+  await expect(page.getByTestId("muscle-depth-3")).toHaveCount(0);
   await page.getByTestId("muscle-depth-2").check();
+  await expect(page).toHaveURL(/m:on:2/);
+  await expect.poll(async () => (await muscleCounts(page))!.solid).toBeLessThan(s1.solid);
   const s2 = (await muscleCounts(page))!;
-  expect(s2.solid).toBeLessThan(s1.solid);
-  await page.getByTestId("muscle-depth-3").check();
-  await expect(page).toHaveURL(/m:on:3/);
-  expect((await muscleCounts(page))!.solid).toBe(s2.solid); // QUESTIONS 69
   // Ghost keeps the peel; All brings everything back; storage remembers the stop.
   await page.getByTestId("layer-muscles-ghost").check();
   await expect.poll(() => muscleCounts(page)).toEqual({ solid: 0, ghost: s2.solid });
-  expect(await page.evaluate(() => localStorage.getItem("skeleton-viewer:layers"))).toBe("b:on,c:off,l:off,m:ghost:3");
+  expect(await page.evaluate(() => localStorage.getItem("skeleton-viewer:layers"))).toBe("b:on,c:off,l:off,m:ghost:2");
   await page.getByTestId("muscle-depth-0").check();
   await expect(page.getByTestId("announcer")).toHaveText("All muscles shown");
   await expect.poll(() => muscleCounts(page)).toEqual({ solid: 0, ghost: EXPECTED.muscles });

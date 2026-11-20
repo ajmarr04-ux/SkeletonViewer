@@ -133,8 +133,10 @@ describe("layers (M7 plan decision 1)", () => {
     expect(parseLayers(null)).toBeNull();
   });
   it("formats every layer in panel order, depth on muscles", () => {
-    const s = parseLayers("m:ghost:3,l:on")!;
-    expect(formatLayers(s)).toBe("b:on,c:off,l:on,m:ghost:3");
+    const s = parseLayers("m:ghost:2,l:on")!;
+    expect(formatLayers(s)).toBe("b:on,c:off,l:on,m:ghost:2");
+    // A link from the four-stop control's build: "Deep only" (3) is the third stop now.
+    expect(parseLayers("m:on:3")?.depth).toBe(2);
     expect(parseLayers(formatLayers(s))).toEqual(s);
     expect(isDefaultLayers(DEFAULT_LAYER_SETTING)).toBe(true);
     expect(isDefaultLayers(s)).toBe(false);

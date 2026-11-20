@@ -61,7 +61,7 @@ export function hideTargets(id: string): string[] {
  * not ghosted. Empty until the table is loaded. Cached per stop.
  */
 const peelCache = new Map<number, ReadonlySet<string>>();
-export function peeledAt(stop: 0 | 1 | 2 | 3): ReadonlySet<string> {
+export function peeledAt(stop: 0 | 1 | 2): ReadonlySet<string> {
   if (stop === 0 || !table) return EMPTY;
   let s = peelCache.get(stop);
   if (!s) {
@@ -73,6 +73,6 @@ export function peeledAt(stop: 0 | 1 | 2 | 3): ReadonlySet<string> {
 const EMPTY: ReadonlySet<string> = new Set();
 
 /** How many muscles a stop peels (a muscle's parts count once), for the announcement. */
-export function peeledMuscleCount(stop: 0 | 1 | 2 | 3): number {
+export function peeledMuscleCount(stop: 0 | 1 | 2): number {
   return new Set([...peeledAt(stop)].map((id) => softEntry(id)?.parent ?? id)).size;
 }
