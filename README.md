@@ -14,7 +14,7 @@ muscles, ligaments and cartilage, per [`SPEC-musculoskeletal.md`](SPEC-musculosk
 | 3: Select and isolate (picking, tier-0 isolation, info panel, fixed orbit pivot) | https://ajmarr04-ux.github.io/SkeletonViewer/m3/ | Live (frozen at `d377478`) |
 | 4: Related isolation and content (tiers 1 and 2, joints, Explode, 238 content files) | https://ajmarr04-ux.github.io/SkeletonViewer/m4/ | Live (frozen at `db07f62`) |
 | 5: Polish (search and tree, labels, colour-by-region, screenshots, share links, accessibility) | https://ajmarr04-ux.github.io/SkeletonViewer/m5/ | Live (frozen at `71f04d0`) |
-| 6: Soft-tissue audit, mapping and assets (muscles, ligaments, cartilage; debug view only) | https://ajmarr04-ux.github.io/SkeletonViewer/m6/ | In progress ([plan](docs/PLAN-milestone-6.md)) |
+| 6: Soft-tissue audit, mapping and assets (muscles, ligaments, cartilage; debug view only) | https://ajmarr04-ux.github.io/SkeletonViewer/m6/ | Live ([plan](docs/PLAN-milestone-6.md); layers with `?debug&layers=all`; frozen at the start of M7) |
 
 Known issues and requested changes for later milestones: [`docs/BACKLOG.md`](docs/BACKLOG.md).
 

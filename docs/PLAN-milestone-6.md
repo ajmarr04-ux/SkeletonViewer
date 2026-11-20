@@ -16,7 +16,7 @@ Out of scope here (later milestones): the Layers panel, per-layer batches, ghost
 | P | 1 (soft-tissue audit), 2 (decision on `2: Muscular insertions`) | **Done.** See "Session P notes" and `assets/audit/REPORT-soft-tissue.md`. Checkpoint answered (go on without articular cartilage) |
 | Q | 3 (soft-tissue ID list and mapping), 4 (mapping checks and questions) | **Done.** See "Session Q notes" |
 | R | 5 (Blender pipeline for the new layers), 6 (compression and `check-models`), 7 (build report) | **Done.** See "Session R notes" and `assets/build/REPORT-soft-tissue.md` |
-| S | 8 (debug layer view), 9 (alignment and no-regression tests), 10 (report back with counts), 11 (hosted copy) | **Steps 8–10 done**; see "Session S notes". Step 11 waits for the merge and the user's check of `/m6/`. **Counts reported; M8 content waits for the user's reply** |
+| S | 8 (debug layer view), 9 (alignment and no-regression tests), 10 (report back with counts), 11 (hosted copy) | **Done.** See "Session S notes". Merged in [#13](https://github.com/ajmarr04-ux/SkeletonViewer/pull/13) (`e9da664`); `/m6/` confirmed live and the counts accepted by the user |
 
 Triggers: "begin session P", "begin session Q", "begin session R" and "begin session S". Each session starts with `bash scripts/setup-blender.sh` (sessions P, Q and R need Blender; S only if it rebuilds) and by reading this file, then works through its steps without waiting for confirmation unless something blocks it or a **user checkpoint** below says to stop. Each ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models` and `npm run validate-content` passing (session S adds `npm run e2e`), then a commit, a push to the session branch and a PR to `main`.
 
@@ -31,9 +31,9 @@ Triggers: "begin session P", "begin session Q", "begin session R" and "begin ses
 - [x] Decision recorded on `2: Muscular insertions` (patches usable or not). (**Usable**: 689 of 705 patches within 1 mm of a bone or cartilage surface; side from geometry. See the report.)
 - [x] Six layer files exported, compressed, under budget, passing `check-models`. (Eight with the patches; session R. Muscles 4.62 / 1.61 MB, ligaments 0.85 / 0.44, cartilage 0.44 / 0.20, patches 1.29 / 0.79.)
 - [x] A debug view (`?debug&layers=all`) shows every layer in place with no visible misalignment against the bones. (Session S: every node of all four layers within 0.02 mm of its manifest at both LODs; screenshots in `docs/m6/`.)
-- [x] **Report back** with counts per kind (muscles, parts, tendons, ligaments, cartilage, discs, menisci) before writing content. (Session S, "Final counts" below; sent to the user 2026-11-20. Awaiting the reply before M8.)
+- [x] **Report back** with counts per kind (muscles, parts, tendons, ligaments, cartilage, discs, menisci) before writing content. (Session S, "Final counts" below; sent to the user 2026-11-20. **Accepted by the user the same day**, so M8 content can go ahead.)
 - [x] No regression: the bone files in `public/models/` are byte-identical to M5, and with no `layers` parameter the app loads exactly what M5 loaded (same requests, same main chunk within 1 KB gzipped). (Session S: `git diff 71f04d0` on the bone files is empty; main chunk 457.84 → 458.20 kB gzipped; `layers-debug.spec.ts` checks no layer file or chunk is requested.)
-- [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
+- [x] **Hosted copy is live and linked below** (extra requirement for every milestone). (Confirmed by the user on 2026-11-20 with `?debug&layers=all`: all four layers in place, 60 fps on a phone and 75 on a PC, some loading latency judged acceptable.)
 
 ---
 
@@ -156,6 +156,8 @@ What was done, and where it differs from the plan (say if any should change):
 - **No regression.** Bone files byte-identical to M5 (`71f04d0`); main chunk +0.36 kB gzipped; the full e2e suite passes (112 tests; the high-LOD layer test needed a 240 s timeout under two workers); `npm run perf-load` passes: desktop 2.02 s to the skeleton and 6.42 s to full detail, phone profile 1.97 s and 6.47 s (M5: 1.90 / 5.96 and 1.91 / 6.08). The low file arrives at about 1.72 s in both, and the requests are the same, so the difference is run-to-run noise from the software GPU's shader compilation (one run blocked 2.9 s).
 - **Attribution.** `public/ATTRIBUTION.md` names the collections used and the new files (decision 14). README lists `?debug&layers=all`.
 
+**User's reply (2026-11-20):** "looking good, counts seem fine to me. still hitting 60fps on phone, 75 on pc. some loading latency but thats acceptable." The counts stand; M8 content is unblocked. `m6` is frozen at the start of M7 (handover step 1, at `e9da664` unless more lands on `main` first).
+
 ### Final counts (step 10, the report back)
 
 | Kind | IDs (both sides) | With a mesh |
@@ -251,4 +253,4 @@ Surprises from the audit, for the reply: names are English TA (no Latin yet); ev
 
 ## Hosted copy
 
-- Milestone 6: https://ajmarr04-ux.github.io/SkeletonViewer/m6/ (not yet deployed). The new layers are only visible with `?debug&layers=all`.
+- Milestone 6: https://ajmarr04-ux.github.io/SkeletonViewer/m6/ (live, confirmed 2026-11-20). The new layers are only visible with `?debug&layers=all`: https://ajmarr04-ux.github.io/SkeletonViewer/m6/?debug&layers=all
