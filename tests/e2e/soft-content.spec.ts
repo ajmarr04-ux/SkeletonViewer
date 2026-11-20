@@ -1,8 +1,9 @@
 import { expect, test } from "@playwright/test";
 
 // M8 session X (plan step 2): a soft-tissue structure's panel shows its written
-// Latin name, "Part of …" and summary from the layer's content chunk, and
-// keeps "Not written yet" for a structure without a file.
+// Latin name, "Part of …" and summary from the layer's content chunk. Since
+// session AC every structure has a file, so the "Not written yet" fallback is
+// covered by the panel model's unit test (tests/sceneView.test.ts) instead.
 
 test("a written part shows its Latin name, its muscle and its summary", async ({ page }) => {
   test.setTimeout(120_000);
@@ -15,7 +16,7 @@ test("a written part shows its Latin name, its muscle and its summary", async ({
   await expect(panel).not.toContainText("Not written yet");
 });
 
-test("a written ligament shows its common name; an unwritten structure keeps the placeholder", async ({ page }) => {
+test("written ligaments show their Latin and common names (session AC: every structure is written)", async ({ page }) => {
   test.setTimeout(120_000);
   await page.goto("./?lod=low&sel=anterior_cruciate_ligament_left");
   const panel = page.getByTestId("info-panel");
@@ -23,5 +24,8 @@ test("a written ligament shows its common name; an unwritten structure keeps the
   await expect(panel.getByTestId("common-name")).toContainText("ACL");
   await page.goto("./?lod=low&sel=posterior_cruciate_ligament_left");
   await expect(panel).toHaveAttribute("data-id", "posterior_cruciate_ligament_left", { timeout: 60_000 });
-  await expect(page.getByTestId("section-summary")).toContainText("Not written yet");
+  await expect(panel.locator(".latin")).toHaveText("Ligamentum cruciatum posterius", { timeout: 30_000 });
+  await expect(panel.getByTestId("common-name")).toContainText("PCL");
+  await expect(page.getByTestId("section-summary")).toContainText("posterior intercondylar area");
+  await expect(panel).not.toContainText("Not written yet");
 });

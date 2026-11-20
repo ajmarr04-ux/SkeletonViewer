@@ -52,7 +52,6 @@ landmarks:
   - id: pulp_cavity
     name: Pulp cavity
     position: null
-muscleAttachments: []
 clinicalNote: Its roots lie close to the maxillary sinus; removing the tooth can open a passage between the mouth and the sinus (oro-antral communication).
 reviewed: false
 ---

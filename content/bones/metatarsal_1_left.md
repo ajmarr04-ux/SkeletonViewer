@@ -18,7 +18,6 @@ landmarks:
   - { id: shaft, name: Shaft, position: null }
   - { id: head, name: Head, position: null }
   - { id: sesamoid_grooves, name: Sesamoid grooves, position: null }
-muscleAttachments: [Tibialis anterior, Fibularis longus, First dorsal interosseous]
 clinicalNote: "In hallux valgus (a bunion), the first metatarsal drifts towards the midline while the big toe turns outwards, and the head forms a painful bump."
 reviewed: false
 ---

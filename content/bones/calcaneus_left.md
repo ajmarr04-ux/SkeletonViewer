@@ -21,7 +21,6 @@ landmarks:
   - { id: middle_talar_articular_surface, name: Middle talar articular surface, position: null }
   - { id: anterior_talar_articular_surface, name: Anterior talar articular surface, position: null }
   - { id: cuboid_articular_surface, name: Cuboid articular surface, position: null }
-muscleAttachments: [Gastrocnemius, Soleus, Plantaris, Abductor hallucis, Flexor digitorum brevis, Abductor digiti minimi, Quadratus plantae, Extensor digitorum brevis]
 clinicalNote: "A fall from a height on to the heels can shatter the calcaneus; the same force can also fracture the lumbar spine, so both are checked."
 reviewed: false
 ---

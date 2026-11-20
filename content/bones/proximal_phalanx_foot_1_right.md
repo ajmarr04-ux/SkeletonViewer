@@ -27,11 +27,6 @@ landmarks:
   - id: head
     name: Head
     position: null
-muscleAttachments:
-  - Abductor hallucis
-  - Adductor hallucis
-  - Flexor hallucis brevis
-  - Extensor hallucis brevis
 clinicalNote: A forced upward bend of the big toe on a hard surface sprains the joint between the first metatarsal and this phalanx (turf toe).
 reviewed: false
 ---

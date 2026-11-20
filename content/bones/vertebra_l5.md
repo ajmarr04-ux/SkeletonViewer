@@ -24,7 +24,6 @@ landmarks:
   - { id: accessory_process, name: Accessory process, position: null }
   - { id: transverse_process, name: Transverse process, position: null }
   - { id: spinous_process, name: Spinous process, position: null }
-muscleAttachments: [Psoas major, Erector spinae, Multifidus, Interspinales]
 clinicalNote: A stress fracture of the pars interarticularis (spondylolysis) is most common at L5 and can let the vertebra slip forwards on the sacrum (spondylolisthesis).
 reviewed: false
 ---

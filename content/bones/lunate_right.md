@@ -30,7 +30,6 @@ landmarks:
   - id: triquetral_facet
     name: Triquetral facet
     position: null
-muscleAttachments: []
 clinicalNote: The lunate is the carpal bone most often dislocated, usually forwards into the carpal tunnel, where it can press on the median nerve. Loss of its blood supply causes Kienböck disease.
 reviewed: false
 ---

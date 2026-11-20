@@ -17,7 +17,6 @@ landmarks:
   - { id: base, name: Base, position: null }
   - { id: shaft, name: Shaft, position: null }
   - { id: head, name: Head, position: null }
-muscleAttachments: [Third dorsal interosseous, First plantar interosseous]
 clinicalNote: null
 reviewed: false
 ---

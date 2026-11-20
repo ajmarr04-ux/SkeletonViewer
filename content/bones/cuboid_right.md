@@ -27,9 +27,6 @@ landmarks:
   - id: calcaneal_articular_surface
     name: Calcaneal articular surface
     position: null
-muscleAttachments:
-  - Flexor hallucis brevis
-  - Tibialis posterior
 clinicalNote: null
 reviewed: false
 ---

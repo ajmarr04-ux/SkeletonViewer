@@ -22,18 +22,18 @@ Plus the migration: **200 distinct `muscleAttachments` strings** across the 238 
 
 ## Progress
 
-| Session | Steps | Status |
-| --- | --- | --- |
-| (planning) | 0 (Milestone 7 handover, this plan) | **Done.** See step 0 |
-| X | 1 (schemas and vocabulary files), 2 (compiler, mirror, derived data, panel text), 3 (migration table) | **Done.** See "Session X notes" |
-| Y | 4 (muscles: head and neck, about 84 files) | **Done.** See "Session Y notes" |
-| Z | 5 (muscles: back, thorax, abdomen and pelvis, about 66 files) | **Done.** See "Session Z notes" |
-| AA | 6 (muscles: upper limb, about 62 files) | **Done.** See "Session AA notes" |
-| AB | 7 (muscles: lower limb, about 67 files) | **Done.** See "Session AB notes" |
-| AC | 8 (ligaments, 155 files; cartilage, discs and menisci, 43 files) | Not started |
-| AD | 9 (migration finished, `muscleAttachments` removed, strict validation), 10 (tests and no-regression), 11 (hosted copy) | Not started |
+| Session | Serial task (one sentence) | Fan-out step | Done when | Status |
+| --- | --- | --- | --- | --- |
+| (planning) | Milestone 7 handover and this plan (step 0) | none | plan written, `m7` frozen | **Done.** See step 0 |
+| X | Schemas, vocabulary files, compiler, mirror, derived data, panel text and the migration table (steps 1–3) | none | `npm run check` passes with the seed files | **Done.** See "Session X notes" |
+| Y | Head and neck muscles (step 4) | none (written before the workflow) | all head and neck files validate | **Done.** See "Session Y notes" |
+| Z | Back, thorax, abdomen and pelvis muscles (step 5) | none (written before the workflow) | all trunk files validate | **Done.** See "Session Z notes" |
+| AA | Upper-limb muscles (step 6) | none (written before the workflow) | all upper-limb files validate | **Done.** See "Session AA notes" |
+| AB | Lower-limb muscles (step 7) | none (written before the workflow) | all lower-limb files validate | **Done.** See "Session AB notes" |
+| AC | Ligament and cartilage content (step 8) | `content-writer` × 10 batches by joint region, in waves of 4 (`docs/batches/M8-AC/`) | every ligament, cartilage, disc and meniscus file validates; `joint: null` list final; `npm run check` passes | **Done.** See "Session AC notes" |
+| AD | Migration finished, `muscleAttachments` removed, strict validation, tests, no-regression, hosted copy (steps 9–11) | `verifier` × 1 for the full Playwright run | strict `validate-content`; full e2e; `/m8/` live | **Done except the hosted copy** (waiting on the merge). See "Session AD notes" |
 
-Triggers: "begin session X" to "begin session AD". Each session starts by reading this file and ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models`, `npm run validate-content` (with `--allow-missing-soft` until session AD, decision 10) and `npm run e2e` passing, then a commit, a push to the session branch and a PR to `main`. Content sessions (Y to AC) run the e2e smoke and panel specs only, plus the full suite if they touched `src/`.
+Triggers: "begin session X" to "begin session AD". **From session AC the sessions follow `docs/WORKFLOW.md`** (adopted 2026-11-20): one serial task per session, Sonnet subagents for parallel batches, `docs/HANDOFF.md` written at the end. Sessions X to AB predate it, so their fan-out column says none. Each session starts by reading this file and ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models`, `npm run validate-content` (with `--allow-missing-soft` until session AD, decision 10) and `npm run e2e` passing, then a commit, a push to the session branch and a PR to `main`. Content sessions (Y to AC) run the e2e smoke and panel specs only, plus the full suite if they touched `src/`.
 
 **User checkpoints**
 - **Decisions 2, 3 and 5: decided by the user on 2026-11-20.** Functional joints in `content/joints.json` (decision 2) and `joint: null` for ligaments at no joint (decision 3) as written; ligament and cartilage summaries 40–80 words, like muscles (decision 5).
@@ -42,12 +42,12 @@ Triggers: "begin session X" to "begin session AD". Each session starts by readin
 
 ## Exit criteria (from the musculoskeletal spec §11, M8)
 
-- [ ] Schemas, `movements.json`, `muscle-hierarchy.json`, `muscle-depth.json` (the depth file already exists from M7; its validation stays).
-- [ ] All muscle, part, ligament and cartilage content drafted (left and midline written; right mirrored), `reviewed: false`.
-- [ ] `muscleAttachments` migration done and the field removed.
-- [ ] `validate-content` passes (strict: no `--allow-missing-soft`); derived synergist/antagonist tests pass.
-- [ ] Uncertain choices added to `QUESTIONS.md` under new headings per layer.
-- [ ] No regression: with every new layer off, the main chunk grows by at most 5 kB gzipped over M7, no soft-tissue content chunk is requested, and the full e2e suite passes.
+- [x] Schemas, `movements.json`, `muscle-hierarchy.json`, `muscle-depth.json` (the depth file already exists from M7; its validation stays).
+- [x] All muscle, part, ligament and cartilage content drafted (left and midline written; right mirrored), `reviewed: false`.
+- [x] `muscleAttachments` migration done and the field removed.
+- [x] `validate-content` passes (strict: no `--allow-missing-soft`); derived synergist/antagonist tests pass.
+- [x] Uncertain choices added to `QUESTIONS.md` under new headings per layer.
+- [x] No regression: with every new layer off, the main chunk grows by at most 5 kB gzipped over M7, no soft-tissue content chunk is requested, and the full e2e suite passes.
 - [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
 
 ---
@@ -110,6 +110,28 @@ What was built, and where it differs from the plan (say if any should change):
 - **Questions added:** 70 to 77, under the new headings *Joints*, *Muscles: attachment migration* and *Muscles: upper limb*.
 - **Tests:** `tests/softContent.test.ts` (33: one passing and one failing case per rule on a small fixture, derived data, compiler, the real triceps attachments, joint mirroring, the matcher); `tests/e2e/soft-content.spec.ts` (written part: Latin, Part of, summary; ligament common name; an unwritten structure keeps the placeholder).
 - **Size:** main chunk `index` 293.3 kB gzipped (+0.3 kB over M7; budget +5). Content chunks: muscles 1.2 kB, ligaments 0.6 kB, cartilage 0.6 kB gzipped with the seed files.
+
+## Session AD notes (steps 9 to 11)
+
+- **QUESTIONS 70 answered by the user (2026-11-20): drop them.** The six muscles the source doesn't have (musculus uvulae, semispinalis capitis, stapedius, styloglossus, tensor tympani, tensor veli palatini) get no ID; they leave the bones' derived lists, and the bone summaries keep mentioning them where they did.
+- **Two-way check** (`scripts/content/attachment-check.ts`, pure, tested; run by `content:migrate-attachments --check` in `npm run check`): a matched string is confirmed when its muscle, one of its parts, or a part serving it (`alsoServes`) has an origin or insertion on the bone. **541 string–bone pairs confirmed, 16 `indirect` (expected misses), 6 unmatched with an answered question, 0 failures.** The first run failed 52 pairs, all from strings naming a *series* split by region in the source (multifidus, interspinales, levatores costarum, the three intercostal layers, iliocostalis, and erector spinae's common origin): only one regional muscle reaches a given vertebra or rib. Those six variants now carry `series: true` (any one member attaching is enough); composites such as the common flexor and extensor origins still need every member. No content error was found.
+- **Field removed** from all 238 bone files, from `frontMatterSchema` and from the compiler. `validate-content` names the field if it ever comes back (spec §10). `content/attachment-migration.json` is now **frozen** as the migration's record: the script rebuilds it only while a bone file still has the field, and otherwise checks the committed table.
+- **The bone panel's "Major muscle attachments"** is now derived (`boneMuscleLists` in `src/content/compile.ts`, fed by `readBoneMuscles` in `scripts/lib/content-files.ts`): each muscle or part by its content name, with "(origin)", "(insertion)" or "(origin and insertion)"; the two sides' muscles on a midline bone show once. Plain text; links are M9's. The derivation runs at build time, so only the bones' lazy content chunk grows (30.6 → 32.3 kB gzipped) and the muscles layer isn't loaded for it. A muscle that reaches a bone only through a part is listed under the part's name (e.g. the sternum shows "Sternocostal head of pectoralis major").
+- **Strict validation:** `--allow-missing-soft` is gone from the `validate-content` script (the flag itself stays, like `--allow-missing-content`). 238 bone files and 900 of 900 soft-tissue files, 0 warnings.
+- **No regression.** Main chunk, gzipped (`gzip -9`, both built the same way): M7 (`3af6d5a`) `index` 291.8 + vendor 168.2 + runtime 0.5 kB; M8 `index` 292.1 + 168.2 + 0.5 kB, **+0.3 kB** (budget +5). Lazy content chunks: muscles 86.0, ligaments 31.2, cartilage 5.8 kB. **`perf-load`** (Fast 4G, 4× CPU, SwiftShader, medians of 3), M7 → M8: desktop skeleton 3.90 → 3.94 s, full detail 7.39 → 7.33 s, muscles layer 9.06 → 9.18 s; phone 3.90 → 3.89, 7.32 → 7.24, 9.41 → 9.48 s: the same within run-to-run noise. The muscles-layer budget (3 s / 5 s) is missed equally by M7 here, as recorded in M7 (software renderer; the file alone takes about 8.5 s at Fast 4G); the real-device time is still the open M7 item. The layers e2e test "the default view requests no layer file…" now also fails on any `_virtual_skeleton-soft-content-*` chunk.
+- **Full e2e suite: 133 / 133 passed** (22.5 min, through the `verifier` agent), plus the renamed layers test on its own. `tsc`, Vitest (417 tests), `check-models`, strict `validate-content` and the migration check pass.
+- **Hosted copy:** the PR to `main` is open; `/m8/` deploys on merge (`deploy/pages.json` already has `current: 8`). Still to do after the merge: confirm it's live, tick the exit criterion, mark the README row.
+
+## Session AC notes (step 8, done; the first session under `docs/WORKFLOW.md`)
+
+- **Workflow adopted** (commit `workflow: sessions, handoffs and subagents`): the three agent definitions in `.claude/agents/`, the SessionStart hook in `.claude/settings.json` that prints `docs/HANDOFF.md`, `docs/batches/`, and this table in the workflow's Sessions format. The `content-writer` definition was created in this session, so it wasn't yet registered as an agent type: each batch ran as a Sonnet general-purpose agent told to follow `.claude/agents/content-writer.md`. Later sessions should be able to call `content-writer` directly.
+- **Fan-out:** 196 items in 10 batches by joint region (`docs/batches/M8-AC/items.json`, `BRIEF.md`), in waves of at most 4. All 10 came back complete (0 skipped); only one validation error came back, a deliberate `joint: null` (below). Two files or more per batch were read in full. Fixes made by the main session: the iliofemoral ligament's *descending* part is the **medial** band (the draft said lateral) and its non-clinical "clinical note" became `null`; "Ligamentum teres" capitalised.
+- **Result:** 178 ligament and 18 cartilage files written (left and midline), with the session X seeds making 155 + 43 hand-written; 163 mirrored. **All 900 soft-tissue structures now have a file**; `validate-content` reports 0 missing.
+- **`joints.json`: 9 new functional joints per side (47 in all)** for the source's grouped ligaments (carpometacarpal 2–5, intermetacarpal, hand interphalangeal, cuneonavicular, intercuneiform, tarsometatarsal, intermetatarsal, metatarsophalangeal 1–5, foot interphalangeal), each made of existing pairs. The batches had pointed these sets at one "representative" pair. No muscle uses them, so derived data is unchanged (QUESTIONS 120). The cuboid–navicular ligaments, which have no pair joint, take the subtalar/transverse tarsal set rather than going on the null list (121).
+- **`joint: null` list final, unchanged:** the 15 ligaments and 3 costal cartilages on `LIGAMENT_NO_JOINT` / `CARTILAGE_NO_JOINT` are exactly the 18 files that use it.
+- **Questions 120 to 131** (*Ligaments*, *Cartilage*); the batches' question files were merged and deleted.
+- **Tests:** the e2e test that relied on an unwritten structure now checks a second written ligament (PCL); the "Not written yet" fallback is asserted in the panel model's unit test instead (`tests/sceneView.test.ts`).
+- **Size:** content chunks, gzipped and lazy: muscles 84.8 kB, ligaments 30.7 kB, cartilage 5.6 kB.
 
 ## Session AB notes (step 7, done)
 

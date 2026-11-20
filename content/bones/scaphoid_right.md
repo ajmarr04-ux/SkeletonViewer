@@ -33,8 +33,6 @@ landmarks:
   - id: radial_articular_surface
     name: Radial articular surface
     position: null
-muscleAttachments:
-  - Abductor pollicis brevis
 clinicalNote: The scaphoid is the carpal bone most often fractured, usually across its waist. Its blood supply enters at the distal end, so the proximal fragment can die (avascular necrosis). Tenderness in the anatomical snuffbox suggests the fracture.
 reviewed: false
 ---

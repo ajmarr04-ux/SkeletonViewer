@@ -73,6 +73,11 @@ export function validateContent(input: ContentInput, opts: ContentOptions = {}):
       errors.push(`${where}: ${(e as Error).message}`);
       continue;
     }
+    if (parsed.data && typeof parsed.data === "object" && "muscleAttachments" in parsed.data) {
+      // Musculoskeletal spec §10: the bones' muscle lists are derived from the muscles' origins and insertions.
+      errors.push(`${where}: muscleAttachments was removed in Milestone 8 (the list is derived from the muscle files)`);
+      continue;
+    }
     const res = frontMatterSchema.safeParse(parsed.data);
     if (!res.success) {
       errors.push(...zodLines(where, res.error));

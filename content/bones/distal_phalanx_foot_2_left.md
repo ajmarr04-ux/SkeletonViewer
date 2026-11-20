@@ -16,7 +16,6 @@ landmarks:
   - { id: base, name: Base, position: null }
   - { id: shaft, name: Shaft, position: null }
   - { id: tuberosity, name: Tuberosity, position: null }
-muscleAttachments: [Flexor digitorum longus, Extensor digitorum longus, Extensor digitorum brevis]
 clinicalNote: "In a mallet toe the distal interphalangeal joint is fixed bent, often because a long second toe is cramped in a tight shoe."
 reviewed: false
 ---

@@ -15,7 +15,6 @@ functions:
 landmarks:
   - { id: metacarpal_facet, name: Metacarpal facet, position: null }
   - { id: scaphoid_facet, name: Scaphoid facet, position: null }
-muscleAttachments: [Adductor pollicis (oblique head)]
 clinicalNote: null
 reviewed: false
 ---

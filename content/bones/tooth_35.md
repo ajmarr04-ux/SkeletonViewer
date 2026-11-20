@@ -21,7 +21,6 @@ landmarks:
   - { id: cervix, name: Cervix, position: null }
   - { id: root, name: Root, position: null }
   - { id: pulp_cavity, name: Pulp cavity, position: null }
-muscleAttachments: []
 clinicalNote: "The lower second premolar is one of the permanent teeth most often missing from birth, after the third molars."
 reviewed: false
 ---

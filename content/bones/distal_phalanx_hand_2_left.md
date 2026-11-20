@@ -16,7 +16,6 @@ landmarks:
   - { id: base, name: Base, position: null }
   - { id: shaft, name: Shaft, position: null }
   - { id: tuberosity, name: Tuberosity, position: null }
-muscleAttachments: [Flexor digitorum profundus, Extensor digitorum, Extensor indicis]
 clinicalNote: "A crush injury to the fingertip often breaks the tuberosity of the distal phalanx (a tuft fracture), with blood collecting under the nail."
 reviewed: false
 ---

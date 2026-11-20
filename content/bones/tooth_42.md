@@ -37,7 +37,6 @@ landmarks:
   - id: pulp_cavity
     name: Pulp cavity
     position: null
-muscleAttachments: []
 clinicalNote: Crowding of the lower incisors is common in adults and tends to increase with age.
 reviewed: false
 ---

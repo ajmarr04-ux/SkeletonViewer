@@ -4,6 +4,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { boneMuscleLists } from "../../src/content/compile";
 import { splitFrontMatter } from "../../src/content/frontmatter";
 import { oppositeOf } from "../../src/content/placeholder";
 import { compileSoftLayer, type SoftLayerContent } from "../../src/content/softCompile";
@@ -106,4 +107,11 @@ export function compileSoftFromDisk(layer: SoftLayer, files = readSoftFiles()[la
     functionalJoints: Object.fromEntries((readJson("content/joints.json") as { id: string; articulations: string[] }[]).map((j) => [j.id, j.articulations])),
     antagonistPairs: movements.antagonistPairs,
   });
+}
+
+/** Each bone's derived muscle list for the panel (M8 plan decision 13), from the muscles layer's content. */
+export function readBoneMuscles(): Record<string, string[]> {
+  const muscles = compileSoftFromDisk("muscles");
+  const soft = new Map(readSoftIds().map((e) => [e.id, e.name]));
+  return boneMuscleLists(muscles.derived?.attached ?? {}, (id) => muscles.entries[id]?.fm.name ?? soft.get(id) ?? id);
 }

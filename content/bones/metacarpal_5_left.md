@@ -18,7 +18,6 @@ landmarks:
   - { id: tubercle, name: Tubercle, position: null }
   - { id: shaft, name: Shaft, position: null }
   - { id: head, name: Head, position: null }
-muscleAttachments: [Extensor carpi ulnaris, Opponens digiti minimi, Fourth dorsal interosseous, Third palmar interosseous]
 clinicalNote: "A punch with a closed fist often breaks the neck of the fifth metacarpal (a boxer's fracture), leaving the knuckle depressed."
 reviewed: false
 ---

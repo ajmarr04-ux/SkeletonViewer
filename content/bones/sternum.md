@@ -23,7 +23,6 @@ landmarks:
   - { id: costal_notches, name: Costal notches, position: null }
   - { id: xiphisternal_joint, name: Xiphisternal joint, position: null }
   - { id: xiphoid_process, name: Xiphoid process, position: null }
-muscleAttachments: [Pectoralis major, Sternocleidomastoid (sternal head), Sternohyoid, Sternothyroid, Transversus thoracis, Diaphragm, Rectus abdominis]
 clinicalNote: "The sternum is split along its length (median sternotomy) for most open-heart operations, and its marrow can be sampled with a needle."
 reviewed: false
 ---

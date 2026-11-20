@@ -19,7 +19,6 @@ landmarks:
   - { id: cervix, name: Cervix, position: null }
   - { id: roots, name: Roots, position: null }
   - { id: pulp_cavity, name: Pulp cavity, position: null }
-muscleAttachments: []
 clinicalNote: "Upper third molars are often missing, small or out of line with the arch, and they are among the teeth most commonly extracted."
 reviewed: false
 ---

@@ -55,16 +55,6 @@ landmarks:
   - id: mastoid_notch
     name: Mastoid notch
     position: null
-muscleAttachments:
-  - Temporalis
-  - Masseter
-  - Sternocleidomastoid
-  - Splenius capitis
-  - Longissimus capitis
-  - Digastric (posterior belly)
-  - Stylohyoid
-  - Styloglossus
-  - Stylopharyngeus
 clinicalNote: Fractures of the petrous part can cause hearing loss, facial nerve palsy, or cerebrospinal fluid leaking from the ear.
 reviewed: false
 ---

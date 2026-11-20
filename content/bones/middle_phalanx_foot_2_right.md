@@ -26,10 +26,6 @@ landmarks:
   - id: head
     name: Head
     position: null
-muscleAttachments:
-  - Flexor digitorum brevis
-  - Extensor digitorum longus
-  - Extensor digitorum brevis
 clinicalNote: null
 reviewed: false
 ---

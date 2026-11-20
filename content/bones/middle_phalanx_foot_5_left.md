@@ -16,7 +16,6 @@ landmarks:
   - { id: base, name: Base, position: null }
   - { id: shaft, name: Shaft, position: null }
   - { id: head, name: Head, position: null }
-muscleAttachments: [Flexor digitorum brevis, Extensor digitorum longus]
 clinicalNote: null
 reviewed: false
 ---

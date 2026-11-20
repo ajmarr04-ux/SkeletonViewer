@@ -15,7 +15,6 @@ functions:
   - Gives attachment to the flexor retinaculum and abductor digiti minimi
 landmarks:
   - { id: triquetral_facet, name: Triquetral facet, position: null }
-muscleAttachments: [Flexor carpi ulnaris, Abductor digiti minimi]
 clinicalNote: "The pisiform and the hook of the hamate bound Guyon's canal, where the ulnar nerve and artery can be compressed at the wrist."
 reviewed: false
 ---

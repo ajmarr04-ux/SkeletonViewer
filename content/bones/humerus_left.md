@@ -37,7 +37,6 @@ landmarks:
   - { id: medial_border, name: Medial border, position: null }
   - { id: lateral_supracondylar_ridge, name: Lateral supracondylar ridge, position: null }
   - { id: medial_supracondylar_ridge, name: Medial supracondylar ridge, position: null }
-muscleAttachments: [Supraspinatus, Infraspinatus, Teres minor, Subscapularis, Pectoralis major, Latissimus dorsi, Teres major, Deltoid, Coracobrachialis, Brachialis, Triceps brachii (lateral and medial heads), Brachioradialis, Extensor carpi radialis longus, Common flexor origin, Common extensor origin, Pronator teres, Anconeus]
 clinicalNote: "A fracture of the shaft can injure the radial nerve in the radial groove (wrist drop), and a fracture of the surgical neck can injure the axillary nerve."
 reviewed: false
 ---

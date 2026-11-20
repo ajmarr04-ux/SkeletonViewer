@@ -18,7 +18,6 @@ landmarks:
   - { id: capitate_facet, name: Capitate facet, position: null }
   - { id: scaphoid_facet, name: Scaphoid facet, position: null }
   - { id: triquetral_facet, name: Triquetral facet, position: null }
-muscleAttachments: []
 clinicalNote: "The lunate is the carpal bone most often dislocated, usually forwards into the carpal tunnel, where it can press on the median nerve. Loss of its blood supply causes Kienböck disease."
 reviewed: false
 ---

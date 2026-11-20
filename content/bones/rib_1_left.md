@@ -20,7 +20,6 @@ landmarks:
   - { id: scalene_tubercle, name: Scalene tubercle, position: null }
   - { id: groove_for_subclavian_artery, name: Groove for subclavian artery, position: null }
   - { id: groove_for_subclavian_vein, name: Groove for subclavian vein, position: null }
-muscleAttachments: [Scalenus anterior, Scalenus medius, Subclavius, Serratus anterior, Intercostal muscles]
 clinicalNote: A cervical rib or tight scalene muscles can compress the subclavian artery and the lower brachial plexus where they cross the first rib (thoracic outlet syndrome).
 reviewed: false
 ---

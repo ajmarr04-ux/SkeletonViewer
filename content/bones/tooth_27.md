@@ -24,7 +24,6 @@ landmarks:
   - { id: distobuccal_root, name: Distobuccal root, position: null }
   - { id: palatal_root, name: Palatal root, position: null }
   - { id: pulp_cavity, name: Pulp cavity, position: null }
-muscleAttachments: []
 clinicalNote: "The parotid duct opens into the cheek opposite the upper second molar, at the parotid papilla."
 reviewed: false
 ---

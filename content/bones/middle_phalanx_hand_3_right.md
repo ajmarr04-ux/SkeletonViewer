@@ -27,9 +27,6 @@ landmarks:
   - id: head
     name: Head
     position: null
-muscleAttachments:
-  - Flexor digitorum superficialis
-  - Extensor digitorum
 clinicalNote: A forced backward bend of the middle joint can pull a fragment of bone off the palm side of the base of a middle phalanx with the volar plate (a volar plate injury).
 reviewed: false
 ---

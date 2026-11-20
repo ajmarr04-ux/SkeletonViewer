@@ -24,7 +24,6 @@ landmarks:
   - { id: accessory_process, name: Accessory process, position: null }
   - { id: transverse_process, name: Transverse process, position: null }
   - { id: spinous_process, name: Spinous process, position: null }
-muscleAttachments: [Psoas major, Quadratus lumborum, Diaphragm (crus), Latissimus dorsi (through the thoracolumbar fascia), Erector spinae, Multifidus]
 clinicalNote: "Lumbar punctures and spinal anaesthetics are usually given through the L3–L4 or L4–L5 interspace, below the end of the spinal cord."
 reviewed: false
 ---

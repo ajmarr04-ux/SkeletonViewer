@@ -1,0 +1,16 @@
+---
+id: long_plantar_ligament_left
+kind: ligament
+name: Long plantar ligament
+latin: Ligamentum plantare longum
+commonName: null
+side: left
+joint: calcaneocuboid_joint_left
+connects: [calcaneus_left, cuboid_left, metatarsal_2_left, metatarsal_3_left, metatarsal_4_left]
+functions:
+  - Supports the lateral longitudinal arch of the foot
+  - Limits flattening of the arch under load
+clinicalNote: null
+reviewed: false
+---
+The long plantar ligament is the longest ligament of the tarsus. It runs along the sole from the plantar surface of the calcaneus, in front of its tubercles, to the tuberosity of the cuboid, with deeper fibres reaching the bases of the second to fourth metatarsals. It bridges the groove for the fibularis longus tendon and supports the lateral longitudinal arch.

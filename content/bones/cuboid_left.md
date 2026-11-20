@@ -17,7 +17,6 @@ landmarks:
   - { id: tuberosity, name: Tuberosity, position: null }
   - { id: groove_for_the_fibularis_longus_tendon, name: Groove for the fibularis longus tendon, position: null }
   - { id: calcaneal_articular_surface, name: Calcaneal articular surface, position: null }
-muscleAttachments: [Flexor hallucis brevis, Tibialis posterior]
 clinicalNote: null
 reviewed: false
 ---

@@ -11,7 +11,8 @@ const EXPECTED: Record<Tissue, number> = { cartilage: 0, ligaments: 0, muscles: 
 for (const e of softIds as { layer: Tissue; meshAvailable: boolean }[]) if (e.meshAvailable) EXPECTED[e.layer]++;
 
 const LAYER_FILE = /\/models\/(muscles|ligaments|cartilage)-(low|high)\.glb/;
-const LAYER_CHUNK = /\/assets\/LayerScenes-/;
+// The layer chunk, and (M8) each layer's lazy content chunk.
+const LAYER_CHUNK = /\/assets\/(LayerScenes-|_virtual_skeleton-soft-content-)/;
 
 function watchLayers(page: Page): string[] {
   const seen: string[] = [];
@@ -34,7 +35,7 @@ async function openPanel(page: Page) {
   await expect(page.getByTestId("layers-panel")).toBeVisible();
 }
 
-test("the default view requests no layer file or layer chunk", async ({ page }) => {
+test("the default view requests no layer file, layer chunk or soft-tissue content chunk", async ({ page }) => {
   const seen = watchLayers(page);
   await page.goto("./?lod=low&debug");
   await bonesShown(page);

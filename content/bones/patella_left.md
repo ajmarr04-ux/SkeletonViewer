@@ -19,7 +19,6 @@ landmarks:
   - { id: articular_surface, name: Articular surface, position: null }
   - { id: lateral_facet, name: Lateral facet, position: null }
   - { id: medial_facet, name: Medial facet, position: null }
-muscleAttachments: [Rectus femoris, Vastus lateralis, Vastus medialis, Vastus intermedius]
 clinicalNote: "The patella can dislocate sideways, usually in young people with shallow femoral grooves; vastus medialis helps to hold it in place."
 reviewed: false
 ---

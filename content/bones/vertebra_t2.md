@@ -24,7 +24,6 @@ landmarks:
   - { id: transverse_process, name: Transverse process, position: null }
   - { id: transverse_costal_facet, name: Transverse costal facet, position: null }
   - { id: spinous_process, name: Spinous process, position: null }
-muscleAttachments: [Trapezius, Rhomboid major, Serratus posterior superior, Splenius capitis, Levatores costarum, Multifidus]
 clinicalNote: "The jugular (suprasternal) notch of the sternum lies at about the level of the T2–T3 disc, a guide when reading chest X-rays."
 reviewed: false
 ---

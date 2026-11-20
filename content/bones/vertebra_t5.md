@@ -24,7 +24,6 @@ landmarks:
   - { id: transverse_process, name: Transverse process, position: null }
   - { id: transverse_costal_facet, name: Transverse costal facet, position: null }
   - { id: spinous_process, name: Spinous process, position: null }
-muscleAttachments: [Trapezius, Rhomboid major, Splenius cervicis, Levatores costarum, Multifidus]
 clinicalNote: "The thoracic vertebrae are a common site for cancer to spread to bone, especially from breast, lung and prostate."
 reviewed: false
 ---

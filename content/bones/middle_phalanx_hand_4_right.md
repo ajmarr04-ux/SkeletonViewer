@@ -27,9 +27,6 @@ landmarks:
   - id: head
     name: Head
     position: null
-muscleAttachments:
-  - Flexor digitorum superficialis
-  - Extensor digitorum
 clinicalNote: Rupture of the central slip of the extensor tendon over the base of a middle phalanx lets the middle joint bend while the end joint straightens (a boutonnière deformity).
 reviewed: false
 ---

@@ -18,7 +18,6 @@ landmarks:
   - { id: styloid_process, name: Styloid process, position: null }
   - { id: shaft, name: Shaft, position: null }
   - { id: head, name: Head, position: null }
-muscleAttachments: [Extensor carpi radialis brevis, Adductor pollicis (transverse head), Second dorsal interosseous, Third dorsal interosseous]
 clinicalNote: null
 reviewed: false
 ---

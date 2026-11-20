@@ -27,10 +27,6 @@ landmarks:
   - id: head
     name: Head
     position: null
-muscleAttachments:
-  - Opponens pollicis
-  - Abductor pollicis longus
-  - First dorsal interosseous
 clinicalNote: A Bennett fracture is an oblique fracture through the base of the first metacarpal into the saddle joint, with the shaft pulled out of place by abductor pollicis longus.
 reviewed: false
 ---

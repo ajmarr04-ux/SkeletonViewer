@@ -27,13 +27,6 @@ landmarks:
   - id: head
     name: Head
     position: null
-muscleAttachments:
-  - Extensor carpi radialis longus
-  - Flexor carpi radialis
-  - First dorsal interosseous
-  - Second dorsal interosseous
-  - First palmar interosseous
-  - Adductor pollicis (oblique head)
 clinicalNote: A bony lump at the back of the bases of the second and third metacarpals (a carpal boss) is a common cause of a firm swelling on the back of the wrist.
 reviewed: false
 ---

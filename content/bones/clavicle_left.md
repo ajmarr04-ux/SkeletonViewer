@@ -22,7 +22,6 @@ landmarks:
   - { id: trapezoid_line, name: Trapezoid line, position: null }
   - { id: impression_for_the_costoclavicular_ligament, name: Impression for the costoclavicular ligament, position: null }
   - { id: subclavian_groove, name: Subclavian groove, position: null }
-muscleAttachments: [Sternocleidomastoid, Trapezius, Deltoid, Pectoralis major, Subclavius, Sternohyoid]
 clinicalNote: "The clavicle is one of the most often fractured bones, usually in its middle third after a fall on the shoulder or an outstretched hand."
 reviewed: false
 ---

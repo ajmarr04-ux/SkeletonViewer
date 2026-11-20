@@ -24,10 +24,6 @@ landmarks:
   - id: metatarsal_facets
     name: Metatarsal facets
     position: null
-muscleAttachments:
-  - Tibialis anterior
-  - Fibularis longus
-  - Tibialis posterior
 clinicalNote: A strong ligament (the Lisfranc ligament) joins the medial cuneiform to the base of the second metatarsal; tearing it destabilises the midfoot.
 reviewed: false
 ---

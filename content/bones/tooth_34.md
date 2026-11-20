@@ -20,7 +20,6 @@ landmarks:
   - { id: cervix, name: Cervix, position: null }
   - { id: root, name: Root, position: null }
   - { id: pulp_cavity, name: Pulp cavity, position: null }
-muscleAttachments: []
 clinicalNote: "The mental foramen usually lies below the lower premolars, near their root tips, so surgery here takes care to protect the mental nerve."
 reviewed: false
 ---

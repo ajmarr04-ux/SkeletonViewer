@@ -39,7 +39,6 @@ landmarks:
   - { id: medial_supracondylar_line, name: Medial supracondylar line, position: null }
   - { id: lateral_supracondylar_line, name: Lateral supracondylar line, position: null }
   - { id: popliteal_surface, name: Popliteal surface, position: null }
-muscleAttachments: [Gluteus maximus, Gluteus medius, Gluteus minimus, Piriformis, Obturator internus, Obturator externus, Superior gemellus, Inferior gemellus, Quadratus femoris, Iliopsoas, Vastus lateralis, Vastus medialis, Vastus intermedius, Adductor magnus, Adductor longus, Adductor brevis, Pectineus, Biceps femoris (short head), Gastrocnemius, Plantaris, Popliteus, Articularis genus]
 clinicalNote: "Fractures of the femoral neck are common in older people with osteoporosis; the leg is shortened and turned outwards, and the blood supply of the head can be cut off."
 reviewed: false
 ---

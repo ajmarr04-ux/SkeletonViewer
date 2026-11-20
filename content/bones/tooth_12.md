@@ -37,7 +37,6 @@ landmarks:
   - id: pulp_cavity
     name: Pulp cavity
     position: null
-muscleAttachments: []
 clinicalNote: The upper lateral incisor is one of the teeth most often missing from birth or small and peg-shaped.
 reviewed: false
 ---

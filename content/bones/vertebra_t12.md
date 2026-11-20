@@ -24,7 +24,6 @@ landmarks:
   - { id: costal_facet_for_rib_12, name: Costal facet for rib 12, position: null }
   - { id: mammillary_process, name: Mammillary process, position: null }
   - { id: accessory_process, name: Accessory process, position: null }
-muscleAttachments: [Trapezius, Latissimus dorsi, Serratus posterior inferior, Psoas major, Multifidus]
 clinicalNote: "The thoracolumbar junction (T12–L1) is the most common site of spinal fractures, where the stiff thoracic spine meets the mobile lumbar spine."
 reviewed: false
 ---

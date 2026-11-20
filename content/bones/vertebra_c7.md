@@ -23,7 +23,6 @@ landmarks:
   - { id: transverse_process, name: Transverse process, position: null }
   - { id: foramen_transversarium, name: Foramen transversarium, position: null }
   - { id: spinous_process, name: Spinous process, position: null }
-muscleAttachments: [Trapezius, Rhomboid minor, Serratus posterior superior, Splenius capitis, Scalenus medius, Longus colli, Multifidus, Levatores costarum]
 clinicalNote: An extra (cervical) rib sometimes grows from C7 and can press on the lower brachial plexus or the subclavian artery (thoracic outlet syndrome).
 reviewed: false
 ---

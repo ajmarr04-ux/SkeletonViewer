@@ -23,7 +23,6 @@ landmarks:
   - { id: superior_nasal_concha, name: Superior nasal concha, position: null }
   - { id: middle_nasal_concha, name: Middle nasal concha, position: null }
   - { id: orbital_plate, name: Orbital plate, position: null }
-muscleAttachments: []
 clinicalNote: "A fracture of the cribriform plate can tear the meninges, letting cerebrospinal fluid leak from the nose, and can cause loss of smell."
 reviewed: false
 ---

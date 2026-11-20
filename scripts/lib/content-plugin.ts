@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { marked } from "marked";
 import type { Plugin } from "vite";
 import { compileContent } from "../../src/content/compile";
-import { SOFT_LAYERS, bonesDir, compileSoftFromDisk, readContentFiles, root, softDir } from "./content-files";
+import { SOFT_LAYERS, bonesDir, compileSoftFromDisk, readBoneMuscles, readContentFiles, root, softDir } from "./content-files";
 import { readSearchData } from "./search-data";
 
 const CONTENT = "virtual:skeleton-content";
@@ -63,7 +63,12 @@ export function contentPlugin(): Plugin {
       this.addWatchFile(bonesDir);
       const files = readContentFiles();
       for (const name of files.keys()) this.addWatchFile(`${bonesDir}/${name}.md`);
-      if (id === RESOLVED_CONTENT) return `export default ${JSON.stringify(compileContent(files))};`;
+      if (id === RESOLVED_CONTENT) {
+        // The bones' muscle lists are derived from the muscles layer's files (M8 session AD).
+        this.addWatchFile(softDir("muscles"));
+        softDeps.forEach((f) => this.addWatchFile(f));
+      }
+      if (id === RESOLVED_CONTENT) return `export default ${JSON.stringify(compileContent(files, readBoneMuscles()))};`;
       this.addWatchFile(synonymsFile);
       return `export default ${JSON.stringify(readSearchData())};`;
     },

@@ -17,7 +17,6 @@ landmarks:
   - { id: short_limb, name: Short limb, position: null }
   - { id: long_limb, name: Long limb, position: null }
   - { id: lenticular_process, name: Lenticular process, position: null }
-muscleAttachments: []
 clinicalNote: The tip of the long limb has a poor blood supply and is the part of the chain most often eroded by chronic middle ear disease.
 reviewed: false
 ---

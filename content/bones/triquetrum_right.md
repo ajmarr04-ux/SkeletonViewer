@@ -27,7 +27,6 @@ landmarks:
   - id: lunate_facet
     name: Lunate facet
     position: null
-muscleAttachments: []
 clinicalNote: A small chip fracture of the back of the triquetrum, after a fall on the hand, is the second most common carpal fracture.
 reviewed: false
 ---

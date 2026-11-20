@@ -17,7 +17,6 @@ landmarks:
   - { id: coccygeal_cornu, name: Coccygeal cornu, position: null }
   - { id: transverse_process, name: Transverse process, position: null }
   - { id: apex, name: Apex, position: null }
-muscleAttachments: [Gluteus maximus, Coccygeus, Levator ani (iliococcygeus), External anal sphincter (through the anococcygeal ligament)]
 clinicalNote: Pain at the coccyx (coccydynia) often follows a fall onto the buttocks or childbirth and usually settles with time.
 reviewed: false
 ---

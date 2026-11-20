@@ -46,7 +46,6 @@ landmarks:
   - id: pulp_cavity
     name: Pulp cavity
     position: null
-muscleAttachments: []
 clinicalNote: An impacted third molar leaning against it can cause decay or root damage on the back of the lower second molar.
 reviewed: false
 ---

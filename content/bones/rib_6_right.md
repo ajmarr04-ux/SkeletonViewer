@@ -39,13 +39,6 @@ landmarks:
   - id: costal_groove
     name: Costal groove
     position: null
-muscleAttachments:
-  - Intercostal muscles
-  - Serratus anterior
-  - External oblique
-  - Rectus abdominis (through its costal cartilage)
-  - Levatores costarum
-  - Iliocostalis
 clinicalNote: Intercostal nerve blocks are given just below the lower border of a rib, where the nerve runs in the costal groove with the intercostal vein and artery.
 reviewed: false
 ---

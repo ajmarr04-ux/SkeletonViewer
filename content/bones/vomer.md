@@ -15,7 +15,6 @@ functions:
 landmarks:
   - { id: ala, name: Ala, position: null }
   - { id: posterior_border, name: Posterior border, position: null }
-muscleAttachments: []
 clinicalNote: "A deviated nasal septum, which can involve the vomer, narrows one side of the nasal airway and may be corrected by septoplasty."
 reviewed: false
 ---

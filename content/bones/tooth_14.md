@@ -43,7 +43,6 @@ landmarks:
   - id: pulp_cavity
     name: Pulp cavity
     position: null
-muscleAttachments: []
 clinicalNote: Upper first premolars are often extracted to make space during orthodontic treatment of crowded teeth.
 reviewed: false
 ---

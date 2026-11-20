@@ -24,7 +24,6 @@ landmarks:
   - { id: transverse_process, name: Transverse process, position: null }
   - { id: transverse_costal_facet, name: Transverse costal facet, position: null }
   - { id: spinous_process, name: Spinous process, position: null }
-muscleAttachments: [Trapezius, Latissimus dorsi, Levatores costarum, Multifidus]
 clinicalNote: The inferior vena cava passes through the diaphragm at about the level of T8.
 reviewed: false
 ---

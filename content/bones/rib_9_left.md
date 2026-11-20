@@ -21,7 +21,6 @@ landmarks:
   - { id: angle, name: Angle, position: null }
   - { id: shaft, name: Shaft, position: null }
   - { id: costal_groove, name: Costal groove, position: null }
-muscleAttachments: [Intercostal muscles, External oblique, Serratus posterior inferior, Latissimus dorsi, Diaphragm (through its costal cartilage), Transversus abdominis (through its costal cartilage)]
 clinicalNote: "Fractures of the lower ribs can injure the liver or the spleen beneath them, so these organs are checked after such injuries."
 reviewed: false
 ---

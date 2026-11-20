@@ -36,8 +36,6 @@ landmarks:
   - id: grooves_for_the_middle_meningeal_vessels
     name: Grooves for the middle meningeal vessels
     position: null
-muscleAttachments:
-  - Temporalis
 clinicalNote: The middle meningeal artery runs in grooves on its inner surface near the pterion; a fracture there can tear the artery and cause an extradural haematoma.
 reviewed: false
 ---

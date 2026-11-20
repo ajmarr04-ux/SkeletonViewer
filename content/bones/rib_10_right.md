@@ -36,14 +36,6 @@ landmarks:
   - id: costal_groove
     name: Costal groove
     position: null
-muscleAttachments:
-  - Intercostal muscles
-  - External oblique
-  - Internal oblique
-  - Serratus posterior inferior
-  - Latissimus dorsi
-  - Diaphragm (through its costal cartilage)
-  - Transversus abdominis (through its costal cartilage)
 clinicalNote: In slipping rib syndrome, a loose costal cartilage of rib 8, 9 or 10 rides over the one above, causing pain at the costal margin.
 reviewed: false
 ---

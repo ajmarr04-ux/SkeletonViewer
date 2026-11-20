@@ -57,16 +57,6 @@ landmarks:
   - id: lateral_surface
     name: Lateral surface
     position: null
-muscleAttachments:
-  - Biceps brachii
-  - Supinator
-  - Pronator teres
-  - Pronator quadratus
-  - Brachioradialis
-  - Flexor digitorum superficialis (radial head)
-  - Flexor pollicis longus
-  - Abductor pollicis longus
-  - Extensor pollicis brevis
 clinicalNote: A fall on an outstretched hand often breaks the distal end of the radius (a Colles fracture), tilting the fragment backwards into a "dinner fork" deformity.
 reviewed: false
 ---

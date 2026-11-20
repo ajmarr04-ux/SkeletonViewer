@@ -21,7 +21,6 @@ landmarks:
   - { id: angle, name: Angle, position: null }
   - { id: shaft, name: Shaft, position: null }
   - { id: costal_groove, name: Costal groove, position: null }
-muscleAttachments: [Intercostal muscles, Serratus anterior, Pectoralis minor, Serratus posterior superior, Levatores costarum, Iliocostalis]
 clinicalNote: "The fourth intercostal space, just below this rib beside the sternum, is where electrocardiogram leads V1 and V2 are placed."
 reviewed: false
 ---

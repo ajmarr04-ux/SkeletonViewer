@@ -49,7 +49,6 @@ landmarks:
   - id: pulp_cavity
     name: Pulp cavity
     position: null
-muscleAttachments: []
 clinicalNote: The parotid duct opens into the cheek opposite the upper second molar, at the parotid papilla.
 reviewed: false
 ---

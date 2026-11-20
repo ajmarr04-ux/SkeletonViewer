@@ -25,7 +25,6 @@ landmarks:
   - { id: sacral_hiatus, name: Sacral hiatus, position: null }
   - { id: sacral_cornu, name: Sacral cornu, position: null }
   - { id: apex, name: Apex, position: null }
-muscleAttachments: [Gluteus maximus, Piriformis, Erector spinae, Multifidus, Coccygeus, Iliacus]
 clinicalNote: "Caudal epidural anaesthesia is given through the sacral hiatus, found between the sacral cornua at the bottom of the median crest."
 reviewed: false
 ---

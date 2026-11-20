@@ -24,7 +24,6 @@ landmarks:
   - { id: transverse_process, name: Transverse process, position: null }
   - { id: transverse_costal_facet, name: Transverse costal facet, position: null }
   - { id: spinous_process, name: Spinous process, position: null }
-muscleAttachments: [Trapezius, Latissimus dorsi, Levatores costarum, Multifidus]
 clinicalNote: "With the arm by the side, the inferior angle of the scapula lies at about the level of the T7 spinous process, a landmark for counting vertebrae from behind."
 reviewed: false
 ---

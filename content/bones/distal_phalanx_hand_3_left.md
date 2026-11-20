@@ -16,7 +16,6 @@ landmarks:
   - { id: base, name: Base, position: null }
   - { id: shaft, name: Shaft, position: null }
   - { id: tuberosity, name: Tuberosity, position: null }
-muscleAttachments: [Flexor digitorum profundus, Extensor digitorum]
 clinicalNote: "A blow on the tip of a straightened finger can tear the extensor tendon from the back of the distal phalanx, or pull off a fragment, leaving the tip drooping (a mallet finger)."
 reviewed: false
 ---

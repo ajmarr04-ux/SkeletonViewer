@@ -1,0 +1,19 @@
+---
+# Generated from calcaneonavicular_ligament_left.md by `npm run content:mirror`. Edit that file, not this one.
+id: calcaneonavicular_ligament_right
+kind: ligament
+name: Calcaneonavicular ligament
+latin: Ligamentum calcaneonaviculare
+commonName: null
+side: right
+joint: subtalar_transverse_tarsal_joints_right
+connects:
+  - calcaneus_right
+  - navicular_right
+functions:
+  - Binds the calcaneus to the navicular
+  - Supports the transverse tarsal joint
+clinicalNote: null
+reviewed: false
+---
+The calcaneonavicular ligament joins the calcaneus to the navicular bone. It passes from the anterior part of the upper calcaneus, near the sinus tarsi, forwards to the navicular, and lies close to the talonavicular joint. It helps to hold the heel and midfoot together and to stabilise the medial side of the transverse tarsal joint.

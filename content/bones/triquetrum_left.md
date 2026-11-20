@@ -17,7 +17,6 @@ landmarks:
   - { id: pisiform_facet, name: Pisiform facet, position: null }
   - { id: hamate_facet, name: Hamate facet, position: null }
   - { id: lunate_facet, name: Lunate facet, position: null }
-muscleAttachments: []
 clinicalNote: "A small chip fracture of the back of the triquetrum, after a fall on the hand, is the second most common carpal fracture."
 reviewed: false
 ---

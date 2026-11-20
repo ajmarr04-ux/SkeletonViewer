@@ -23,7 +23,6 @@ landmarks:
   - { id: mesial_root, name: Mesial root, position: null }
   - { id: distal_root, name: Distal root, position: null }
   - { id: pulp_cavity, name: Pulp cavity, position: null }
-muscleAttachments: []
 clinicalNote: An impacted third molar leaning against it can cause decay or root damage on the back of the lower second molar.
 reviewed: false
 ---

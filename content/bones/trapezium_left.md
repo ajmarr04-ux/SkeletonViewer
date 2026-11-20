@@ -17,7 +17,6 @@ landmarks:
   - { id: tubercle, name: Tubercle, position: null }
   - { id: saddle_shaped_facet_for_metacarpal_1, name: Saddle-shaped facet for metacarpal 1, position: null }
   - { id: groove_for_flexor_carpi_radialis, name: Groove for flexor carpi radialis, position: null }
-muscleAttachments: [Abductor pollicis brevis, Opponens pollicis, Flexor pollicis brevis]
 clinicalNote: "The saddle joint between the trapezium and the first metacarpal is a common site of osteoarthritis, causing pain at the base of the thumb."
 reviewed: false
 ---

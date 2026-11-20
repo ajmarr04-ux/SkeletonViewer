@@ -17,7 +17,6 @@ landmarks:
   - { id: head, name: Head, position: null }
   - { id: neck, name: Neck, position: null }
   - { id: shaft, name: Shaft, position: null }
-muscleAttachments: [Intercostal muscles, External oblique, Internal oblique, Latissimus dorsi, Serratus posterior inferior, Diaphragm, Transversus abdominis]
 clinicalNote: "Because their tips are free in the muscles of the flank, the floating ribs give way under a blow and break less often than the ribs above."
 reviewed: false
 ---

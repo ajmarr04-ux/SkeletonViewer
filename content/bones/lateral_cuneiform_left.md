@@ -17,7 +17,6 @@ landmarks:
   - { id: navicular_facet, name: Navicular facet, position: null }
   - { id: cuboid_facet, name: Cuboid facet, position: null }
   - { id: metatarsal_facets, name: Metatarsal facets, position: null }
-muscleAttachments: [Tibialis posterior, Flexor hallucis brevis]
 clinicalNote: null
 reviewed: false
 ---

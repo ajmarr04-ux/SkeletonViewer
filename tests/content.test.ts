@@ -28,7 +28,6 @@ function file(id: string, over: Record<string, unknown> = {}, body = words(50)):
     ta2: null,
     functions: ["Bears weight on the left side"],
     landmarks: [{ id: "head", name: "Head", position: null }],
-    muscleAttachments: [],
     clinicalNote: null,
     reviewed: false,
     ...over,
@@ -90,6 +89,7 @@ describe("validation rules (fixtures)", () => {
         tibia_left: file("tibia_left", { side: "right" }),
         fibula_left: file("fibula_left", {}, words(30)),
         talus_left: file("talus_left", { id: "talus_right" }),
+        calcaneus_left: file("calcaneus_left", { muscleAttachments: ["Soleus"] }),
         not_a_bone: file("femur_left"),
       }),
       ok,
@@ -102,6 +102,7 @@ describe("validation rules (fixtures)", () => {
     has("tibia_left.md: side is right");
     has("fibula_left.md: summary is 30 words");
     has("talus_left.md: id is talus_right");
+    has("calcaneus_left.md: muscleAttachments was removed in Milestone 8");
     has("not_a_bone.md: no such ID");
   });
 

@@ -17,6 +17,7 @@ export type CompiledEntry = {
   /** Landmark names, and whether any has a position yet (decision 9: none do). */
   landmarks: string[];
   landmarkPositions: number;
+  /** Muscles and parts attached to the bone, derived from their origins and insertions (M8 plan decision 13). */
   muscles: string[];
   clinical: string | null;
   /** The 40 to 80 word summary as HTML. */
@@ -25,11 +26,41 @@ export type CompiledEntry = {
 };
 export type CompiledContent = Record<string, CompiledEntry>;
 
+/** Attachments per bone, as the muscles layer derives them (`SoftDerived.attached`). */
+export type BoneAttachments = Record<string, { origins: readonly string[]; insertions: readonly string[] }>;
+
 /**
- * Compile every file. Throws on the first file that doesn't parse (the build
+ * The panel's "Major muscle attachments" text for each bone (M8 plan decision
+ * 13; links are M9's): each muscle or part by name, with whether the bone holds
+ * its origin, its insertion or both. The left and right muscles on a midline
+ * bone share a name, so they show once.
+ */
+export function boneMuscleLists(attached: BoneAttachments, nameOf: (id: string) => string): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const [bone, { origins, insertions }] of Object.entries(attached)) {
+    const roles = new Map<string, { o: boolean; i: boolean }>();
+    const mark = (ids: readonly string[], key: "o" | "i") => {
+      for (const id of ids) {
+        const name = nameOf(id);
+        const r = roles.get(name) ?? { o: false, i: false };
+        r[key] = true;
+        roles.set(name, r);
+      }
+    };
+    mark(origins, "o");
+    mark(insertions, "i");
+    out[bone] = [...roles]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([name, r]) => `${name} (${r.o && r.i ? "origin and insertion" : r.o ? "origin" : "insertion"})`);
+  }
+  return out;
+}
+
+/**
+ * Compile every file. `muscles` is `boneMuscleLists` of the muscles layer. Throws on the first file that doesn't parse (the build
  * runs validate-content first, which lists every problem).
  */
-export function compileContent(files: Map<string, string>): CompiledContent {
+export function compileContent(files: Map<string, string>, muscles: Record<string, string[]> = {}): CompiledContent {
   const out: CompiledContent = {};
   for (const [name, text] of [...files].sort(([a], [b]) => a.localeCompare(b))) {
     const { data, body } = splitFrontMatter(text);
@@ -46,7 +77,7 @@ export function compileContent(files: Map<string, string>): CompiledContent {
       functions: d.functions,
       landmarks: d.landmarks.map((l) => l.name),
       landmarkPositions: d.landmarks.filter((l) => l.position !== null).length,
-      muscles: d.muscleAttachments,
+      muscles: muscles[name] ?? [],
       clinical: d.clinicalNote,
       summary: (marked.parse(body, { async: false, gfm: true }) as string).trim(),
       reviewed: d.reviewed,
