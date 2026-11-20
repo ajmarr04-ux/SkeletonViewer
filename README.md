@@ -2,7 +2,8 @@
 
 A browser-based 3D atlas of the adult human skeleton: 206 bones and 32 teeth,
 each a separate object in its true anatomical position. Static site, no
-backend. The build spec is [`SPEC (2).md`](<SPEC (2).md>).
+backend. The build spec is [`SPEC (2).md`](<SPEC (2).md>); milestones 6 to 10 add
+muscles, ligaments and cartilage, per [`SPEC-musculoskeletal.md`](SPEC-musculoskeletal.md).
 
 ## Milestones
 
@@ -13,6 +14,7 @@ backend. The build spec is [`SPEC (2).md`](<SPEC (2).md>).
 | 3: Select and isolate (picking, tier-0 isolation, info panel, fixed orbit pivot) | https://ajmarr04-ux.github.io/SkeletonViewer/m3/ | Live (frozen at `d377478`) |
 | 4: Related isolation and content (tiers 1 and 2, joints, Explode, 238 content files) | https://ajmarr04-ux.github.io/SkeletonViewer/m4/ | Live (frozen at `db07f62`) |
 | 5: Polish (search and tree, labels, colour-by-region, screenshots, share links, accessibility) | https://ajmarr04-ux.github.io/SkeletonViewer/m5/ | Live (frozen at `71f04d0`) |
+| 6: Soft-tissue audit, mapping and assets (muscles, ligaments, cartilage; debug view only) | https://ajmarr04-ux.github.io/SkeletonViewer/m6/ | In progress ([plan](docs/PLAN-milestone-6.md)) |
 
 Known issues and requested changes for later milestones: [`docs/BACKLOG.md`](docs/BACKLOG.md).
 
@@ -29,6 +31,9 @@ npm run e2e          # Playwright smoke test against a production build
 
 Viewer URL options: `?lod=low` or `?lod=high` loads only that model
 (`?lod=both` forces low then high); `?debug` shows the debug overlay;
+`?debug&layers=all` (or a subset, `layers=m,l,c,a`: muscles, ligaments, cartilage,
+attachment patches) also draws the M6 soft-tissue layer files over the bones in
+flat colours and checks every node's bounds against its manifest (debug only);
 `?bench` orbits the skeleton once over 10 s and reports FPS, frame times and
 draw calls; `?cam=px,py,pz,tx,ty,tz[,ox,oy]` sets the camera (orbit position,
 pivot, and an optional view shift); `?sel=<id>` selects an object; `?nowebgl` shows the

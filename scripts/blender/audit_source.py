@@ -118,4 +118,5 @@ def main():
     print(f"wrote {len(objects)} mesh objects to {out}")
 
 
-main()
+if __name__ == "__main__":
+    main()
