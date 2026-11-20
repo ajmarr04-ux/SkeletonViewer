@@ -184,6 +184,8 @@ test.describe("keyboard only", () => {
   });
 
   test("M7: the Layers panel, Hide and Show all by keyboard", async ({ page }) => {
+    // Loads the muscles layer under SwiftShader: about 60 s alone, more beside other workers (as in layers.spec.ts).
+    test.setTimeout(180_000);
     const errors = await open(page);
     await page.locator("body").focus();
     // Layers: Enter opens it; Tab reaches the muscles' radio group; the arrows choose Ghost, then On.
