@@ -6,32 +6,70 @@
       {
         "key": "scalp",
         "label": "Scalp (epicranius)",
-        "children": []
+        "children": [
+          "occipitofrontalis_left",
+          "temporoparietalis_left"
+        ]
       },
       {
         "key": "facial_expression",
         "label": "Muscles of facial expression",
-        "children": []
+        "children": [
+          "bucinator_left",
+          "corrugator_supercilii_left",
+          "depressor_anguli_oris_left",
+          "depressor_labii_inferioris_left",
+          "depressor_septi_nasi_left",
+          "levator_anguli_oris_left",
+          "levator_labii_superioris_left",
+          "levator_nasolabialis_left",
+          "mentalis_left",
+          "nasalis_left",
+          "orbicularis_oculi_left",
+          "orbicularis_oris_left",
+          "procerus_left",
+          "risorius_left",
+          "zygomaticus_major_left",
+          "zygomaticus_minor_left"
+        ]
       },
       {
         "key": "extraocular",
         "label": "Extra-ocular muscles",
-        "children": []
+        "children": [
+          "inferior_oblique_left",
+          "inferior_rectus_left",
+          "lateral_rectus_left",
+          "levator_palpebrae_superioris_left",
+          "medial_rectus_left",
+          "superior_oblique_left",
+          "superior_rectus_left"
+        ]
       },
       {
         "key": "mastication",
         "label": "Muscles of mastication",
-        "children": []
+        "children": [
+          "lateral_pterygoid_left",
+          "masseter_left",
+          "medial_pterygoid_left",
+          "temporalis_left"
+        ]
       },
       {
         "key": "tongue",
         "label": "Muscles of the tongue",
-        "children": []
+        "children": [
+          "genioglossus_left",
+          "hyoglossus_left"
+        ]
       },
       {
         "key": "soft_palate",
         "label": "Muscles of the soft palate",
-        "children": []
+        "children": [
+          "palatopharyngeus_left"
+        ]
       }
     ]
   },
@@ -42,37 +80,71 @@
       {
         "key": "superficial_neck",
         "label": "Superficial and lateral neck",
-        "children": []
+        "children": [
+          "platysma_left",
+          "sternocleidomastoid_left"
+        ]
       },
       {
         "key": "suprahyoid",
         "label": "Suprahyoid muscles",
-        "children": []
+        "children": [
+          "digastric_left",
+          "geniohyoid_left",
+          "mylohyoid_left",
+          "stylohyoid_left"
+        ]
       },
       {
         "key": "infrahyoid",
         "label": "Infrahyoid muscles",
-        "children": []
+        "children": [
+          "omohyoid_left",
+          "sternohyoid_left",
+          "sternothyroid_left",
+          "thyrohyoid_left"
+        ]
       },
       {
         "key": "prevertebral",
         "label": "Prevertebral muscles",
-        "children": []
+        "children": [
+          "longus_capitis_left",
+          "longus_colli_left",
+          "rectus_anterior_capitis_left",
+          "rectus_lateralis_capitis_left"
+        ]
       },
       {
         "key": "scalene",
         "label": "Scalene muscles",
-        "children": []
+        "children": [
+          "scalenus_anterior_left",
+          "scalenus_medius_left",
+          "scalenus_posterior_left"
+        ]
       },
       {
         "key": "pharynx",
         "label": "Muscles of the pharynx",
-        "children": []
+        "children": [
+          "inferior_pharyngeal_constrictor_left",
+          "middle_pharyngeal_constrictor_left",
+          "stylopharyngeus_left",
+          "superior_pharyngeal_constrictor_left"
+        ]
       },
       {
         "key": "larynx",
         "label": "Muscles of the larynx",
-        "children": []
+        "children": [
+          "cricothyroid_left",
+          "lateral_crico_arytenoid_left",
+          "oblique_arytenoid_left",
+          "posterior_crico_arytenoid_left",
+          "thyro_arytenoid_left",
+          "transverse_arytenoid"
+        ]
       }
     ]
   },
@@ -113,7 +185,12 @@
       {
         "key": "suboccipital",
         "label": "Suboccipital muscles",
-        "children": []
+        "children": [
+          "obliquus_inferior_capitis_left",
+          "obliquus_superior_capitis_left",
+          "rectus_posterior_major_capitis_left",
+          "rectus_posterior_minor_capitis_left"
+        ]
       }
     ]
   },

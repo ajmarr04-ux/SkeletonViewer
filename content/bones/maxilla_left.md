@@ -24,6 +24,9 @@ landmarks:
   - { id: maxillary_sinus, name: Maxillary sinus, position: null }
   - { id: maxillary_tuberosity, name: Maxillary tuberosity, position: null }
   - { id: anterior_nasal_spine, name: Anterior nasal spine, position: null }
+  - { id: infra_orbital_margin, name: Infra-orbital margin, position: null }
+  - { id: canine_fossa, name: Canine fossa, position: null }
+  - { id: incisive_fossa, name: Incisive fossa, position: null }
 muscleAttachments: [Levator labii superioris, Levator anguli oris, Nasalis, Orbicularis oculi, Buccinator, Medial pterygoid (superficial head)]
 clinicalNote: "The roots of the upper molars lie close to the floor of the maxillary sinus, so sinusitis can be felt as toothache, and dental infection can spread into the sinus."
 reviewed: false

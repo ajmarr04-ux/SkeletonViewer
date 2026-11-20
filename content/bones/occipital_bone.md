@@ -23,6 +23,8 @@ landmarks:
   - { id: hypoglossal_canal, name: Hypoglossal canal, position: null }
   - { id: basilar_part, name: Basilar part, position: null }
   - { id: internal_occipital_protuberance, name: Internal occipital protuberance, position: null }
+  - { id: pharyngeal_tubercle, name: Pharyngeal tubercle, position: null }
+  - { id: jugular_process, name: Jugular process, position: null }
 muscleAttachments: [Trapezius, Sternocleidomastoid, Splenius capitis, Semispinalis capitis, Rectus capitis posterior major, Rectus capitis posterior minor, Obliquus capitis superior, Occipitofrontalis (occipital belly)]
 clinicalNote: "In a Chiari I malformation the cerebellar tonsils extend down through the foramen magnum, which can cause headache and compress the brainstem."
 reviewed: false

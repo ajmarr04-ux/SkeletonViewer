@@ -26,7 +26,7 @@ Plus the migration: **200 distinct `muscleAttachments` strings** across the 238 
 | --- | --- | --- |
 | (planning) | 0 (Milestone 7 handover, this plan) | **Done.** See step 0 |
 | X | 1 (schemas and vocabulary files), 2 (compiler, mirror, derived data, panel text), 3 (migration table) | **Done.** See "Session X notes" |
-| Y | 4 (muscles: head and neck, about 84 files) | Not started |
+| Y | 4 (muscles: head and neck, about 84 files) | **Done.** See "Session Y notes" |
 | Z | 5 (muscles: back, thorax, abdomen and pelvis, about 66 files) | Not started |
 | AA | 6 (muscles: upper limb, about 62 files) | Not started |
 | AB | 7 (muscles: lower limb, about 67 files) | Not started |
@@ -110,6 +110,16 @@ What was built, and where it differs from the plan (say if any should change):
 - **Questions added:** 70 to 77, under the new headings *Joints*, *Muscles: attachment migration* and *Muscles: upper limb*.
 - **Tests:** `tests/softContent.test.ts` (33: one passing and one failing case per rule on a small fixture, derived data, compiler, the real triceps attachments, joint mirroring, the matcher); `tests/e2e/soft-content.spec.ts` (written part: Latin, Part of, summary; ligament common name; an unwritten structure keeps the placeholder).
 - **Size:** main chunk `index` 293.3 kB gzipped (+0.3 kB over M7; budget +5). Content chunks: muscles 1.2 kB, ligaments 0.6 kB, cartilage 0.6 kB gzipped with the seed files.
+
+## Session Y notes (step 4, done)
+
+- **82 left and midline files** (63 muscles, 19 parts; 81 mirrored): scalp (2), face (16), extra-ocular (7), mastication (4), tongue (2), soft palate (1), superficial neck (2), suprahyoid (4), infrahyoid (4), prevertebral (4), scalenes (3), pharynx (4), larynx (6), and the 4 suboccipital muscles, which the hierarchy puts under *Back › Suboccipital muscles*. `muscle-hierarchy.json` is filled for these compartments.
+- **Two-way preview against the old bone lists:** every old string on a head, neck or vertebral bone that names one of these muscles is matched by an origin or insertion in the new files (97 of 97), so session AD's check should pass for this region.
+- **Landmarks added** to 6 bone files (+ mirrors): QUESTIONS 87.
+- **Questions 78 to 88.** The one with consequences beyond this session is **78: rotation has no direction**, so left and right rotators count as synergists. Default: leave it; the alternative is a vocabulary change (the user's call).
+- **Tests:** a real-content derived-data test (temporalis: synergists masseter and medial pterygoid, same side only; antagonists digastric and lateral pterygoid; the hyoid's insertions).
+- **Size:** the muscles content chunk is 22.1 kB gzipped with 171 files (lazy; loaded only with the muscles layer).
+- **How the files were written:** from a data table in a scratch generator (`softgen.py` in the session scratchpad, not committed). The `.md` files are the source of truth; later sessions can use any method.
 
 ## Session X: model, tooling and migration table (steps 1 to 3)
 

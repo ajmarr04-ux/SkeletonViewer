@@ -52,6 +52,9 @@ landmarks:
   - id: stylomastoid_foramen
     name: Stylomastoid foramen
     position: null
+  - id: mastoid_notch
+    name: Mastoid notch
+    position: null
 muscleAttachments:
   - Temporalis
   - Masseter

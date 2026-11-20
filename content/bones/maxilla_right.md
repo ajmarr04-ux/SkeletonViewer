@@ -46,6 +46,15 @@ landmarks:
   - id: anterior_nasal_spine
     name: Anterior nasal spine
     position: null
+  - id: infra_orbital_margin
+    name: Infra-orbital margin
+    position: null
+  - id: canine_fossa
+    name: Canine fossa
+    position: null
+  - id: incisive_fossa
+    name: Incisive fossa
+    position: null
 muscleAttachments:
   - Levator labii superioris
   - Levator anguli oris

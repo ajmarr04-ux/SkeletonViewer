@@ -356,6 +356,13 @@ describe("real soft-tissue content", () => {
     expect(opp("humerus_left")).toBe("humerus_right");
     expect(opp("vertebral_column")).toBeNull();
   });
+  it("derives jaw-closing synergists and jaw-opening antagonists (session Y)", () => {
+    const m = compileSoftFromDisk("muscles");
+    expect(m.derived!.synergists.temporalis_left).toEqual(expect.arrayContaining(["masseter_left", "medial_pterygoid_left"]));
+    expect(m.derived!.synergists.temporalis_left).not.toContain("masseter_right");
+    expect(m.derived!.antagonists.temporalis_left).toEqual(expect.arrayContaining(["digastric_left", "lateral_pterygoid_left"]));
+    expect(m.derived!.attached.hyoid_bone!.insertions).toEqual(expect.arrayContaining(["digastric_intermediate_tendon_left", "sternohyoid_right"]));
+  });
   it("derives the triceps' attachments on the scapula, humerus and ulna", () => {
     const m = compileSoftFromDisk("muscles");
     expect(m.derived!.attached.scapula_left!.origins).toContain("triceps_brachii_long_head_left");
