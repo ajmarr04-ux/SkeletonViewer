@@ -6,7 +6,7 @@ Done when: the attachments batch loads lazily at muscle tier 1 and 2; the conten
 
 ## State
 - Last commit: M9-AF (tiers per kind), on `claude/keen-clarke-32a10a`.
-- `npm run check`: pass. Vitest 463 tests. E2E: `tiers.spec.ts` (new, 3/3) plus the touched specs (see the plan's AF notes for the run).
+- `npm run check`: pass. Vitest 463 tests. E2E: `tiers.spec.ts` (new, 3/3) plus 13 touched specs 102/103 (the keyboard search step flaked under load and passed re-run alone). Main chunk +0.8 kB gzipped over AE (Vite's figure: 297.95 kB).
 - Open fan-out work: none.
 
 ## Waiting on the user
