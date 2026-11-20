@@ -149,6 +149,10 @@ describe("soft-tissue registry and placeholder (plan decisions 12, 13)", () => {
     expect(m.partOf).toEqual({ id: "cricothyroid_left", name: "Cricothyroid" });
     expect(m.trail).toEqual(["Muscles", "Oblique part of cricothyroid"]);
     expect(m.pair).toEqual({ left: "cricothyroid_oblique_part_left", right: "cricothyroid_oblique_part_right" });
+    // Without its content (unwritten, or the layer's chunk not loaded yet) the panel falls back to "Not written yet".
+    expect(m.written).toBe(false);
+    expect(m.summary).toBeNull();
+    expect(m.latin).toBeNull();
     expect(softPanelModel("inguinal_ligament_left")!.trail[0]).toBe("Ligaments");
     expect(softPanelModel("femur_left")).toBeNull();
     expect(softAnnouncement("linea_alba")).toBe("Linea alba, selected. Isolated.");

@@ -30,7 +30,7 @@ Plus the migration: **200 distinct `muscleAttachments` strings** across the 238 
 | Z | Back, thorax, abdomen and pelvis muscles (step 5) | none (written before the workflow) | all trunk files validate | **Done.** See "Session Z notes" |
 | AA | Upper-limb muscles (step 6) | none (written before the workflow) | all upper-limb files validate | **Done.** See "Session AA notes" |
 | AB | Lower-limb muscles (step 7) | none (written before the workflow) | all lower-limb files validate | **Done.** See "Session AB notes" |
-| AC | Ligament and cartilage content (step 8) | `content-writer` × 10 batches by joint region, in waves of 4 (`docs/batches/M8-AC/`) | every ligament, cartilage, disc and meniscus file validates; `joint: null` list final; `npm run check` passes | Not started |
+| AC | Ligament and cartilage content (step 8) | `content-writer` × 10 batches by joint region, in waves of 4 (`docs/batches/M8-AC/`) | every ligament, cartilage, disc and meniscus file validates; `joint: null` list final; `npm run check` passes | **Done.** See "Session AC notes" |
 | AD | Migration finished, `muscleAttachments` removed, strict validation, tests, no-regression, hosted copy (steps 9–11) | `verifier` × 1 for the full Playwright run | strict `validate-content`; full e2e; `/m8/` live | Not started |
 
 Triggers: "begin session X" to "begin session AD". **From session AC the sessions follow `docs/WORKFLOW.md`** (adopted 2026-11-20): one serial task per session, Sonnet subagents for parallel batches, `docs/HANDOFF.md` written at the end. Sessions X to AB predate it, so their fan-out column says none. Each session starts by reading this file and ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models`, `npm run validate-content` (with `--allow-missing-soft` until session AD, decision 10) and `npm run e2e` passing, then a commit, a push to the session branch and a PR to `main`. Content sessions (Y to AC) run the e2e smoke and panel specs only, plus the full suite if they touched `src/`.
@@ -110,6 +110,17 @@ What was built, and where it differs from the plan (say if any should change):
 - **Questions added:** 70 to 77, under the new headings *Joints*, *Muscles: attachment migration* and *Muscles: upper limb*.
 - **Tests:** `tests/softContent.test.ts` (33: one passing and one failing case per rule on a small fixture, derived data, compiler, the real triceps attachments, joint mirroring, the matcher); `tests/e2e/soft-content.spec.ts` (written part: Latin, Part of, summary; ligament common name; an unwritten structure keeps the placeholder).
 - **Size:** main chunk `index` 293.3 kB gzipped (+0.3 kB over M7; budget +5). Content chunks: muscles 1.2 kB, ligaments 0.6 kB, cartilage 0.6 kB gzipped with the seed files.
+
+## Session AC notes (step 8, done; the first session under `docs/WORKFLOW.md`)
+
+- **Workflow adopted** (commit `workflow: sessions, handoffs and subagents`): the three agent definitions in `.claude/agents/`, the SessionStart hook in `.claude/settings.json` that prints `docs/HANDOFF.md`, `docs/batches/`, and this table in the workflow's Sessions format. The `content-writer` definition was created in this session, so it wasn't yet registered as an agent type: each batch ran as a Sonnet general-purpose agent told to follow `.claude/agents/content-writer.md`. Later sessions should be able to call `content-writer` directly.
+- **Fan-out:** 196 items in 10 batches by joint region (`docs/batches/M8-AC/items.json`, `BRIEF.md`), in waves of at most 4. All 10 came back complete (0 skipped); only one validation error came back, a deliberate `joint: null` (below). Two files or more per batch were read in full. Fixes made by the main session: the iliofemoral ligament's *descending* part is the **medial** band (the draft said lateral) and its non-clinical "clinical note" became `null`; "Ligamentum teres" capitalised.
+- **Result:** 178 ligament and 18 cartilage files written (left and midline), with the session X seeds making 155 + 43 hand-written; 163 mirrored. **All 900 soft-tissue structures now have a file**; `validate-content` reports 0 missing.
+- **`joints.json`: 9 new functional joints per side (47 in all)** for the source's grouped ligaments (carpometacarpal 2–5, intermetacarpal, hand interphalangeal, cuneonavicular, intercuneiform, tarsometatarsal, intermetatarsal, metatarsophalangeal 1–5, foot interphalangeal), each made of existing pairs. The batches had pointed these sets at one "representative" pair. No muscle uses them, so derived data is unchanged (QUESTIONS 120). The cuboid–navicular ligaments, which have no pair joint, take the subtalar/transverse tarsal set rather than going on the null list (121).
+- **`joint: null` list final, unchanged:** the 15 ligaments and 3 costal cartilages on `LIGAMENT_NO_JOINT` / `CARTILAGE_NO_JOINT` are exactly the 18 files that use it.
+- **Questions 120 to 131** (*Ligaments*, *Cartilage*); the batches' question files were merged and deleted.
+- **Tests:** the e2e test that relied on an unwritten structure now checks a second written ligament (PCL); the "Not written yet" fallback is asserted in the panel model's unit test instead (`tests/sceneView.test.ts`).
+- **Size:** content chunks, gzipped and lazy: muscles 84.8 kB, ligaments 30.7 kB, cartilage 5.6 kB.
 
 ## Session AB notes (step 7, done)
 

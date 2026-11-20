@@ -5,7 +5,7 @@ name: Palmar interphalangeal ligaments
 latin: Ligamenta palmaria articulationum interphalangealium manus
 commonName: null
 side: left
-joint: proximal_interphalangeal_joints_hand_2_5_left
+joint: interphalangeal_joints_hand_left
 connects: [proximal_phalanx_hand_2_left, proximal_phalanx_hand_3_left, proximal_phalanx_hand_4_left, proximal_phalanx_hand_5_left, middle_phalanx_hand_2_left, middle_phalanx_hand_3_left, middle_phalanx_hand_4_left, middle_phalanx_hand_5_left, distal_phalanx_hand_2_left, distal_phalanx_hand_3_left, distal_phalanx_hand_4_left, distal_phalanx_hand_5_left]
 functions:
   - Resist hyperextension of the interphalangeal joints

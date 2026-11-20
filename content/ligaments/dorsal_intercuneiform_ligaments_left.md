@@ -5,7 +5,7 @@ name: Dorsal intercuneiform ligaments
 latin: Ligamenta intercuneiformia dorsalia
 commonName: null
 side: left
-joint: intercuneiform_joint_medial_intermediate_left
+joint: intercuneiform_joints_left
 connects: [medial_cuneiform_left, intermediate_cuneiform_left, lateral_cuneiform_left]
 functions:
   - Bind neighbouring cuneiform bones together on the dorsal side

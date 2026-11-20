@@ -5,7 +5,7 @@ name: Intercuneiform interosseous ligaments
 latin: Ligamenta intercuneiformia interossea
 commonName: null
 side: left
-joint: intercuneiform_joint_medial_intermediate_left
+joint: intercuneiform_joints_left
 connects: [medial_cuneiform_left, intermediate_cuneiform_left, lateral_cuneiform_left]
 functions:
   - Bind the cuneiform bones firmly together

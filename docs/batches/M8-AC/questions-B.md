@@ -1,7 +1,0 @@
-- `interosseous_membrane_forearm_left`: on the no-joint list, so `joint: null`; connects radius and ulna.
-- `oblique_cord_left`: the standard texts call it a weak band near the elbow; I gave it `radio_ulnar_joints_left` (the only radius-ulna pair joint) although it is functionally elbow-adjacent. Check.
-- `annular_ligament_radius_left`, `quadrate_ligament_left`: given `radio_ulnar_joints_left`, the only radius-ulna pair joint (it covers the proximal one too). Radial collateral connects `humerus_left` and the annular ligament (it blends into it); some texts also name the ulna.
-- `conoid_ligament_left`, `trapezoid_ligament_left`: coracoclavicular, not strictly part of the acromioclavicular joint; I used `acromioclavicular_joint_left` as the nearest joint.
-- `interclavicular_ligament_left`: it is midline and spans both clavicles, but items.json gives side left, so it lists `clavicle_left` and `sternum`.
-- `transverse_humeral_ligament_left`: connects only `humerus_left` (both ends are on the humerus).
-- Latin forms for the glenohumeral, scapular and radio-ulnar ligaments are from memory of TA2; the exact spellings are worth a check.

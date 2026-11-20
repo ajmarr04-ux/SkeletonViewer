@@ -1,6 +1,0 @@
-- `iliolumbar_ligament_left`: joint set to `lumbosacral_joint` (limits L5 on sacrum); some texts link it equally to the sacro-iliac joint. Connects lists vertebra_l4, vertebra_l5 and hip_bone_left.
-- `obturator_membrane_left`, `sacrospinous_ligament_left`, `sacrotuberous_ligament_left`: `joint: null` (all on the existing no-joint list).
-- `ligament_head_femur_left`: commonName "ligamentum teres" is the Latin-derived usual name; function about artery is only "in some people" (texts differ on how often the artery is present). The acetabular labrum is not an ID, so only the two bones are listed.
-- `inferior_pubic_ligament`: commonName "arcuate pubic ligament" is the usual synonym in Gray's; remove if unwanted.
-- `iliofemoral_ligament_descending_part_left`, `..._transverse_part_left`: texts differ on which band is which name and function (lateral/vertical vs upper/transverse); described per Gray's/Moore's.
-- `interosseous_sacro_iliac_ligament_left`, `posterior_sacro_iliac_ligament_left`: the sacro-iliac ligaments are listed as connecting `sacrum` and `hip_bone_left`; the "sacro-iliac joint" pair joint is `sacroiliac_joint_left`.

@@ -5,7 +5,7 @@ name: Dorsal carpometacarpal ligaments
 latin: Ligamenta carpometacarpalia dorsalia
 commonName: null
 side: left
-joint: carpometacarpal_joint_capitate_mc3_left
+joint: carpometacarpal_joints_2_5_left
 connects: [capitate_left, hamate_left, trapezium_left, trapezoid_left, metacarpal_2_left, metacarpal_3_left, metacarpal_4_left, metacarpal_5_left]
 functions:
   - Bind the bases of the metacarpals to the distal row of carpal bones

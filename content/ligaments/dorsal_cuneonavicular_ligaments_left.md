@@ -5,7 +5,7 @@ name: Dorsal cuneonavicular ligaments
 latin: Ligamenta cuneonavicularia dorsalia
 commonName: null
 side: left
-joint: cuneonavicular_joint_intermediate_left
+joint: cuneonavicular_joints_left
 connects: [navicular_left, medial_cuneiform_left, intermediate_cuneiform_left, lateral_cuneiform_left]
 functions:
   - Bind the navicular to the three cuneiforms
