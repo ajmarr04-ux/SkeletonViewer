@@ -1,22 +1,21 @@
-# Handoff — written 2026-11-20 at the end of M9-AE
+# Handoff — written 2026-11-20 at the end of M9-AF
 
 ## Next session
-**M9-AF: tiers per kind** (`docs/PLAN-milestone-9.md`, step 2; decisions 3–5). Trigger: "begin session AF".
-Done when: tier sets for muscles, parts, ligaments and cartilage are unit-tested on real content and per layer combination; with only the bones layer on, every bone tier equals M8's (equivalence test written first); "Show related"/"Expand" enabled for the soft kinds with the muscle labels "Show attachments"/"Show functional group"; `NEW_KIND_TIERS_REASON` removed; e2e for a muscle's tier 1 with bones on and off, and a bone's tier 1 with muscles on and off.
+**M9-AG: origins, insertions, antagonists** (`docs/PLAN-milestone-9.md`, step 3; decisions 6–8). Trigger: "begin session AG".
+Done when: the attachments batch loads lazily at muscle tier 1 and 2; the content-wins agreement rule and `npm run content:patch-check` → `assets/build/REPORT-patches.md`; whole-bone fallback tint; antagonist toggle (`ant=1`, muscle tier 2 only); `tints` filled (origin, insertion, antagonist) with the ΔE test; legend chips; draw calls still < 20 with every layer on; e2e: triceps long head tier 1 tints scapula and ulna, antagonist toggle, `ant=1` round trip.
 
 ## State
-- Last commit: M9-AE (nested selection), on `claude/keen-clarke-32a10a`.
-- `npm run check`: pass. Vitest 443 tests. E2E: `nested.spec.ts` (new, 3) plus layers, soft-content, select, related, joints, panel, smoke, sidebar, keyboard and layers-debug specs: 77/77 passed.
-- Main chunk 293.0 kB gzipped (+0.9 over M8; budget +10 for M9).
+- Last commit: M9-AF (tiers per kind), on `claude/keen-clarke-32a10a`.
+- `npm run check`: pass. Vitest 463 tests. E2E: `tiers.spec.ts` (new, 3/3) plus the touched specs (see the plan's AF notes for the run).
 - Open fan-out work: none.
 
 ## Waiting on the user
-- Decision 3's bone half (session AF's reading): with muscles (or ligaments, cartilage) on, a **bone's** related set also gains the muscles attached to it (and ligaments connecting it, cartilage on it). Say if bones should stay bones-only.
+- Decision 3's bone half (built as the plan read it): with muscles (or ligaments, cartilage) on, a **bone's** related set also gains the muscles attached to it, the ligaments connecting it and the cartilage on it. Say if bones should stay bones-only (one line in `relatedAt` to change).
 - Still open from earlier: the real-device muscles-layer load time (M7), the per-browser `?bench` table (M5 step 12), the content review of `content/QUESTIONS.md` (1–131).
 
 ## Things the next session must know
-- Decision 3 as the user gave it: related sets show only structures in layers that are **On or Ghost**; Off layers contribute nothing; the focus always shows. This reverses the spec's §5.2 "isolation overrides layer toggles". `sceneView` currently draws `iso.solid` in every layer "whatever its layer's mode": AF must filter the tier set by layer mode (focus excepted).
-- `isolationView(sel, tier, ghostMode, hasMesh, grp, partsOf, parentOf)`: a part's siblings and a muscle's parts are already added to `solid`; tier sets go on top. `relations.visibleAt` is bones-only today.
-- The reducer stays pure: `parentOf` is passed in (`parentOf` in `src/state/selection.ts`).
-- Known edge from AE: the side toggle on a part replaces the entry, so Back after it lands on the previous entry's side.
-- M9's QUESTIONS start at 132.
+- Tier sets live in the lazy content chunks (`tiers`, `reverse`), built by `buildSoftTiers` from every layer; the main chunk sees them through `src/content/softRelations.ts`. `relatedAt(id, tier, modes)` is the one place the layer filter is applied; `isolationView(…, modes)` defaults to bones only.
+- `sceneView`'s `tints` is still the empty map: AG fills it. The tier-1 set of a muscle/part is exactly the structures its origin + (resolved) insertion name, so AG's origin/insertion split can come from the same front matter (`attachmentsOf` in `softTiers.ts` merges them; split it).
+- There are no `R`/`E` keys (the plan assumed them); none were added.
+- `__viewer.solidNow(id)` (debug) tells whether a structure is drawn solid right now.
+- M9's QUESTIONS start at 132 (none written in AF).

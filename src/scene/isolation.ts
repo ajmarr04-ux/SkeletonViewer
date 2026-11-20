@@ -4,11 +4,13 @@
 // Only visibility and colours change. No geometry moves or reloads (spec §12).
 
 import { Color } from "three";
+import idsJson from "../../content/ids.json";
 import { groupOf } from "../content/groups";
 import { relations } from "../content/relations";
+import { reverseRelated, softRelated } from "../content/softRelations";
 import type { Tier } from "../state/isolation";
 import { DEFAULT_LAYERS, LAYERS, type GhostMode, type Layer, type LayerModes, type MuscleDepth } from "../state/url";
-import { peeledAt, softEntry } from "../content/softRegistry";
+import { peeledAt, softEntry, softLayerOf } from "../content/softRegistry";
 import type { BatchedSkeleton } from "./batchSkeleton";
 import { accentTint as makeAccentTint } from "./material";
 
@@ -39,12 +41,39 @@ export type PartsOf = (id: string) => readonly string[];
 const softParts: PartsOf = (id) => softEntry(id)?.parts ?? [];
 const softParent = (id: string): string | null => softEntry(id)?.parent ?? null;
 
+const BONES = new Set((idsJson as { id: string }[]).map((e) => e.id));
+/** The layer a structure is drawn in: bones (and teeth), its soft-tissue layer once the table is loaded, else null. */
+const layerOfAny = (id: string): Layer | null => (BONES.has(id) ? "bones" : softLayerOf(id));
+
 /**
- * The view for a selection (spec §6). Tier 0 isolates the selected bone alone,
- * tier 1 adds the bones it articulates with (and a tooth's neighbours), tier 2
- * adds its region set (`content/relations.ts`). Objects without a mesh are left
- * out: a wisdom tooth isolates nothing at tier 0, and at tiers 1 and 2 shows its
- * related bones with no focus.
+ * What a selection adds at a tier (not itself), following the layers that are
+ * showing (M9 plan decision 3): only structures in a layer that is On or
+ * Ghost. A bone: the bones it articulates with (tier 1) and its region set
+ * (tier 2) as in M8, plus the soft structures related to it (tier 1) or to any
+ * bone of its tier-2 set (tier 2): muscles attached, ligaments connecting,
+ * cartilage on it. A soft structure: its tier sets (`softTiers.ts`). With only
+ * the bones layer on, a bone's additions are exactly M8's.
+ */
+export function relatedAt(id: string, tier: Tier, modes: LayerModes = DEFAULT_LAYERS): string[] {
+  if (tier === 0) return [];
+  const showing = (x: string) => {
+    const l = layerOfAny(x);
+    return l !== null && modes[l] !== "off";
+  };
+  if (!BONES.has(id)) return softRelated(id, tier).filter(showing);
+  const bones = relations.visibleAt(id, tier).filter((x) => x !== id);
+  const soft = TISSUE.some((l) => modes[l] !== "off") ? (tier === 1 ? [id] : [id, ...bones]).flatMap((b) => reverseRelated(b)) : [];
+  return [...new Set([...bones, ...soft])].filter(showing);
+}
+const TISSUE = LAYERS.filter((l) => l !== "bones");
+
+/**
+ * The view for a selection (spec §6). Tier 0 isolates the selection alone
+ * (a muscle as its parts, a part with its siblings); tiers 1 and 2 add
+ * `relatedAt`, which follows the layer modes (M9 plan decision 3). Objects
+ * without a mesh are left out: a wisdom tooth isolates nothing at tier 0, and
+ * at tiers 1 and 2 shows its related bones with no focus. `modes` defaults to
+ * only the bones layer on (M8's view).
  */
 export function isolationView(
   sel: string | null,
@@ -54,6 +83,7 @@ export function isolationView(
   grp: string | null = null,
   partsOf: PartsOf = softParts,
   parentOf: (id: string) => string | null = softParent,
+  modes: LayerModes = DEFAULT_LAYERS,
 ): IsolationView {
   if (sel === null) return grp === null ? FULL_VIEW : groupView(grp, ghostMode, hasMesh);
   // A muscle with parts is drawn as its parts (spec §5.1 rule 1); a selected part keeps its siblings solid,
@@ -61,7 +91,7 @@ export function isolationView(
   const focusIds = hasMesh(sel) ? [sel] : partsOf(sel).filter(hasMesh);
   const parent = parentOf(sel);
   const siblings = parent === null ? [] : partsOf(parent);
-  const solid = new Set([...relations.visibleAt(sel, tier), ...focusIds, ...siblings].filter(hasMesh));
+  const solid = new Set([sel, ...relatedAt(sel, tier, modes), ...focusIds, ...siblings].filter(hasMesh));
   if (solid.size === 0) return FULL_VIEW;
   const focus = focusIds.length > 0 ? sel : null;
   return { isolated: true, focus, focusIds, solid, ghosts: ghostMode === "ghost", joint: [], jointPartner: null };
@@ -130,10 +160,12 @@ const NO_TINTS: ReadonlyMap<string, string> = new Map();
  * Combine the isolation with the layer modes and the hidden structures (M7
  * plan decision 6):
  * - nothing isolated: a layer that is On is all solid, Ghost all ghost, Off all hidden;
- * - something isolated: what isolation keeps solid is solid **whatever its
- *   layer's mode** (isolation overrides the layer toggles, spec §5.2); the rest
- *   is a ghost if its layer is Ghost, or if the layer is On and isolation ghosts
- *   (ghost mode); otherwise hidden.
+ * - something isolated: what isolation keeps solid is solid whatever its
+ *   layer's mode. Since M9 (plan decision 3) the related sets only take
+ *   structures from layers that are On or Ghost (`relatedAt`), so in an Off
+ *   layer that is only the focus; related structures in a Ghost layer are
+ *   solid, like the focus. The rest is a ghost if its layer is Ghost, or if
+ *   the layer is On and isolation ghosts (ghost mode); otherwise hidden.
  * Hidden structures (`hidden`) are never drawn, except the focus itself and the
  * bones of a highlighted joint (see `shownIn`).
  *
@@ -184,7 +216,7 @@ export function viewOf(
   hasMesh: (id: string) => boolean,
   peel: (stop: MuscleDepth) => ReadonlySet<string> = peeledAt,
 ): SceneView {
-  const iso = withJoint(isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp), st.joint, hasMesh);
+  const iso = withJoint(isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp, softParts, softParent, st.layers), st.joint, hasMesh);
   return sceneView(iso, st.layers, withPeeled(st.hidden, peel(st.muscleDepth ?? 0)));
 }
 

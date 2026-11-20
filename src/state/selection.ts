@@ -14,6 +14,7 @@ import { isGroupKey } from "../content/groups";
 import { displayName } from "../content/names";
 import { hideTargets, isSoftId, softEntry, softLayerOf } from "../content/softRegistry";
 import { loadSoftIds } from "../content/loadSoftIds";
+import { hasSoftTier2, softTiersLoaded } from "../content/softRelations";
 import { useLayerBatches } from "../scene/layerRegistry";
 import { FULL_SKELETON, isolationStep, resolveClick, type HistoryStep, type Isolation, type IsolationAction, type ParentOf } from "./isolation";
 import { COLOUR_MODE_KEY, type ColourMode } from "../scene/regionColours";
@@ -58,8 +59,6 @@ export function drawnIds(id: string): string[] {
 }
 /** Something is drawn for this selection (a mesh of its own or of its parts). */
 export const isDrawn = (id: string): boolean => drawnIds(id).length > 0;
-/** True for a structure of the new kinds (M7: tier 0 only, plan decision 8). */
-export const isNewKind = (id: string | null): boolean => id !== null && !KNOWN.has(id) && isSoftId(id);
 
 type HistoryMark = { skvDepth?: number };
 const depthNow = (): number => ((window.history.state as HistoryMark | null)?.skvDepth ?? 0);
@@ -139,16 +138,34 @@ export function selectAndFrame(id: string): void {
   }
   if (isDrawn(id)) frameSoon();
 }
-/** Tier 1 (spec §6 "Show related"). The new kinds have tier 0 only in M7 (plan decision 8). */
+/** Why "Show related" / "Expand" wait for a soft structure's content chunk (M9 plan decision 4). */
+export const LOADING_CONTENT_REASON = "Loading content…";
+/** Why a ligament or cartilage with no joint has no tier 2 (M9 plan decision 4). */
+export const NO_JOINT_REASON = "Not part of a joint";
+
+/**
+ * Why the selection can't go to a tier, or null if it can (M9 plan decisions
+ * 4 and 5). Bones always can (M8); a soft structure once its layer's content
+ * has loaded, and tier 2 only if it has one.
+ */
+export function tierBlockedReason(id: string | null, tier: 1 | 2): string | null {
+  if (id === null || KNOWN.has(id) || !isSoftId(id)) return null;
+  if (!softTiersLoaded(id)) return LOADING_CONTENT_REASON;
+  if (tier === 2 && !hasSoftTier2(id)) return NO_JOINT_REASON;
+  return null;
+}
+
+/** A muscle or muscle part: its tiers are "Show attachments" and "Show functional group" (M9 plan decision 5). */
+export const isMuscleKind = (id: string): boolean => softLayerOf(id) === "muscles";
+
+/** Tier 1 (spec §6 "Show related"; for a muscle "Show attachments"). */
 export const showRelated = (): void => {
-  if (!isNewKind(useViewer.getState().sel)) dispatchIsolation({ type: "related" });
+  if (tierBlockedReason(useViewer.getState().sel, 1) === null) dispatchIsolation({ type: "related" });
 };
-/** Tier 2 (spec §6 "Expand region"). */
+/** Tier 2 (spec §6 "Expand region"; for a muscle "Show functional group"). */
 export const expandRegion = (): void => {
-  if (!isNewKind(useViewer.getState().sel)) dispatchIsolation({ type: "region" });
+  if (tierBlockedReason(useViewer.getState().sel, 2) === null) dispatchIsolation({ type: "region" });
 };
-/** Why Show related and Expand are off for a new-kind structure (plan decision 8). */
-export const NEW_KIND_TIERS_REASON = "Arrives with muscle content (M9)";
 
 /**
  * Hide the selected structure (spec §5.5, plan decision 13): the panel's Hide

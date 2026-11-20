@@ -8,7 +8,8 @@ import { NOT_WRITTEN } from "../content/placeholder";
 import { useSoftContent } from "../content/softContentLoader";
 import { softPanelModel, type SoftPanelModel } from "../content/softPanel";
 import { softLayerOf } from "../content/softRegistry";
-import { expandRegion, goBack, hasMesh, hideSelected, NEW_KIND_TIERS_REASON, selectObject, showRelated, switchSide } from "../state/selection";
+import { expandRegion, goBack, hasMesh, hideSelected, isMuscleKind, selectObject, showRelated, switchSide, tierBlockedReason } from "../state/selection";
+import { useSoftTiersVersion } from "../content/softRelations";
 import { useViewer, type JointHighlight } from "../state/store";
 import { focusCanvas } from "./canvasFocus";
 import { PHONE_QUERY, useMedia } from "./useMedia";
@@ -445,7 +446,7 @@ function SoftTitle({ model }: { model: SoftPanelModel }) {
 /**
  * The panel for a muscle, ligament or cartilage structure: kind, layer, side,
  * and the written summary (M8), else "Not written yet" (M7 plan decision 12).
- * Related and Expand, and the kind-specific sections, arrive in M9.
+ * Its tiers since M9 (session AF); the kind-specific sections arrive in session AH.
  */
 function SoftBody({ model }: { model: SoftPanelModel }) {
   return (
@@ -465,21 +466,72 @@ function SoftBody({ model }: { model: SoftPanelModel }) {
         {model.summary !== null ? <div className="summary" dangerouslySetInnerHTML={{ __html: model.summary }} /> : <Unwritten />}
       </Section>
       <div className="panel-actions">
-        <button type="button" className="button" data-testid="show-related" disabled title={NEW_KIND_TIERS_REASON} aria-describedby="new-kind-reason">
-          Show related
-        </button>
-        <button type="button" className="button" data-testid="expand-region" disabled title={NEW_KIND_TIERS_REASON} aria-describedby="new-kind-reason">
-          Expand region
-        </button>
+        <SoftTierButtons id={model.id} />
         {model.meshAvailable && <HideButton />}
         <button type="button" className="button primary" data-testid="panel-back" onClick={back}>
           Back
         </button>
       </div>
-      <p className="muted" id="new-kind-reason" data-testid="new-kind-reason">
-        Show related and Expand region: {NEW_KIND_TIERS_REASON}.
-      </p>
+      <TierReason id={model.id} />
     </>
+  );
+}
+
+/**
+ * Tiers for the new kinds (M9 plan decisions 4 and 5): muscles and parts say
+ * "Show attachments" and "Show functional group"; ligaments and cartilage keep
+ * "Show related" and "Expand region". Disabled, with the reason, while the
+ * layer's content loads, and Expand for a structure that has no joint.
+ */
+function SoftTierButtons({ id }: { id: string }) {
+  useSoftTiersVersion();
+  const tier = useViewer((s) => s.tier);
+  const muscle = isMuscleKind(id);
+  const r1 = tierBlockedReason(id, 1);
+  const r2 = tierBlockedReason(id, 2);
+  const relatedLabel = muscle ? "Show attachments" : "Show related";
+  const expandLabel = muscle ? "Show functional group" : "Expand region";
+  const reason = r1 ?? r2;
+  return (
+    <>
+      <button
+        type="button"
+        className="button"
+        data-testid="show-related"
+        disabled={tier !== 0 || r1 !== null}
+        title={r1 ?? (tier === 0 ? (muscle ? "Show the structures it attaches to" : "Show the structures it joins") : "Shown")}
+        aria-describedby={reason ? "tier-reason" : undefined}
+        onClick={showRelated}
+      >
+        {relatedLabel}
+      </button>
+      <button
+        type="button"
+        className="button"
+        data-testid="expand-region"
+        disabled={tier !== 1 || r2 !== null}
+        title={r2 ?? (tier === 1 ? (muscle ? "Show the muscles that work with it" : "Show the joint's other structures") : tier === 2 ? "Shown" : `${relatedLabel} first`)}
+        aria-describedby={reason ? "tier-reason" : undefined}
+        onClick={expandRegion}
+      >
+        {expandLabel}
+      </button>
+    </>
+  );
+}
+
+/** The reason a tier button is off, written out (a title alone isn't read on touch). */
+function TierReason({ id }: { id: string }) {
+  useSoftTiersVersion();
+  const r1 = tierBlockedReason(id, 1);
+  const r2 = tierBlockedReason(id, 2);
+  if (r1 === null && r2 === null) return null;
+  const muscle = isMuscleKind(id);
+  const label = r1 !== null ? (muscle ? "Show attachments and Show functional group" : "Show related and Expand region") : muscle ? "Show functional group" : "Expand region";
+  return (
+    <p className="muted" id="tier-reason" data-testid="tier-reason">
+      {label}: {r1 ?? r2}.
+    </p>
   );
 }
 

@@ -158,9 +158,11 @@ test("clicking a muscle over a bone selects the muscle; the placeholder panel an
   await expect(panel).toHaveAttribute("data-id", "biceps_brachii_left");
   await expect(page).toHaveURL(/sel=biceps_brachii_left(&|$)/);
   await expect(page.getByTestId("breadcrumb")).toContainText("Muscles");
-  await expect(panel.getByTestId("show-related")).toBeDisabled();
+  // M9 session AF: a muscle has tiers ("Show attachments") once its content has loaded.
+  await expect(panel.getByTestId("show-related")).toHaveText("Show attachments");
+  await expect(panel.getByTestId("show-related")).toBeEnabled();
   await expect(panel.getByTestId("expand-region")).toBeDisabled();
-  await expect(page.getByTestId("tool-related")).toHaveCount(0);
+  await expect(page.getByTestId("tool-related")).toHaveCount(1);
   const debug = page.getByTestId("debug");
   const heads = "biceps_brachii_long_head_left,biceps_brachii_short_head_left";
   await expect(debug).toHaveAttribute("data-focus", "biceps_brachii_left");

@@ -4,7 +4,7 @@ import { announcement, jointAnnouncement } from "../content/placeholder";
 import { relations } from "../content/relations";
 import { isolationView } from "../scene/isolation";
 import { softAnnouncement } from "../content/softPanel";
-import { hasMesh } from "../state/selection";
+import { hasMesh, layerOfId } from "../state/selection";
 import { useViewer } from "../state/store";
 
 /**
@@ -28,13 +28,15 @@ export function Announcer() {
       setText(groupAnnouncement(grp, before.sel !== null && (groupOf(grp)?.members.includes(before.sel) ?? false)));
       return;
     }
-    const soft = sel === null ? null : softAnnouncement(sel);
+    const view = sel === null ? null : isolationView(sel, tier, "ghost", hasMesh, null, undefined, undefined, useViewer.getState().layers);
+    const soft = sel === null ? null : softAnnouncement(sel, tier, view?.solid?.size ?? 0);
     if (soft !== null) {
       setText(soft);
       return;
     }
-    const solid = isolationView(sel, tier, "ghost", hasMesh).solid;
-    setText(announcement({ sel, tier }, before, (id) => relations.tier1(id), solid?.size ?? 0));
+    // "N bones": the bones of the set (soft structures from layers that are on are not counted here).
+    const bones = [...(view?.solid ?? [])].filter((id) => layerOfId(id) === "bones").length;
+    setText(announcement({ sel, tier }, before, (id) => relations.tier1(id), bones));
   }, [sel, tier, grp]);
   // Other announcements (the Tab cursor, the share toast): any change of `announce`.
   const announce = useViewer((s) => s.announce);

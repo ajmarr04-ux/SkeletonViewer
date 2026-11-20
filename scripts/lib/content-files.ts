@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { boneMuscleLists } from "../../src/content/compile";
 import { splitFrontMatter } from "../../src/content/frontmatter";
 import { oppositeOf } from "../../src/content/placeholder";
-import { compileSoftLayer, type SoftLayerContent } from "../../src/content/softCompile";
+import { compileSoftLayer, withSoftTiers, type SoftCompileDeps, type SoftLayerContent } from "../../src/content/softCompile";
 import { LAYER_FOLDERS, type SoftLayer } from "../../src/content/softSchema";
 import type { SoftIdEntry } from "../../src/content/softValidate";
 import type { IdEntry } from "../../src/content/validate";
@@ -97,16 +97,27 @@ export function makeOpposite(soft: SoftIdEntry[] = readSoftIds()): (id: string) 
   };
 }
 
-/** One layer's compiled soft-tissue content, read from disk (the Vite plugin and `npm run content`). */
-export function compileSoftFromDisk(layer: SoftLayer, files = readSoftFiles()[layer]): SoftLayerContent {
+function softDeps(): SoftCompileDeps {
   const kinds = new Map(readSoftIds().map((e) => [e.id, e.kind]));
   const movements = readJson("content/movements.json") as { antagonistPairs: [string, string][] };
-  return compileSoftLayer(layer, files, {
+  return {
     kindOf: (id) => kinds.get(id),
     pairJoints: (readJson("content/articulations.json") as { joint: string }[]).map((a) => a.joint),
     functionalJoints: Object.fromEntries((readJson("content/joints.json") as { id: string; articulations: string[] }[]).map((j) => [j.id, j.articulations])),
     antagonistPairs: movements.antagonistPairs,
-  });
+  };
+}
+
+/** One layer's compiled soft-tissue content, read from disk (`npm run content`, the scripts and tests). No tier sets. */
+export function compileSoftFromDisk(layer: SoftLayer, files = readSoftFiles()[layer]): SoftLayerContent {
+  return compileSoftLayer(layer, files, softDeps());
+}
+
+/** Every layer compiled, with the tier sets (M9 plan decision 4): what the lazy chunks ship. */
+export function compileAllSoftFromDisk(files = readSoftFiles()): Record<SoftLayer, SoftLayerContent> {
+  const deps = softDeps();
+  const layers = Object.fromEntries(SOFT_LAYERS.map((l) => [l, compileSoftLayer(l, files[l], deps)])) as Record<SoftLayer, SoftLayerContent>;
+  return withSoftTiers(layers, deps);
 }
 
 /** Each bone's derived muscle list for the panel (M8 plan decision 13), from the muscles layer's content. */
