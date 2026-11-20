@@ -964,7 +964,9 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     }
     // Hover: one pick per frame at most, never while the camera is being moved.
     const at = hoverAt.current;
-    if (at) {
+    // Wait (keeping the position) until every solid batch drawn has its raycasting trees, as M6 did for the bones.
+    const batches = [skeleton, ...layerGeoms.map((g) => g.batch)].filter((b): b is BatchedSkeleton => !!b && b.mesh.visible);
+    if (at && batches.length > 0 && batches.every((b) => b.mesh.boundsTrees?.every(Boolean))) {
       hoverAt.current = null;
       const st = useViewer.getState();
       st.setHovered(userMoving.current || st.explode > 0 ? null : pickRef.current(at.x, at.y, false, true));
