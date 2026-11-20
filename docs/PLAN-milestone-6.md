@@ -13,7 +13,7 @@ Out of scope here (later milestones): the Layers panel, per-layer batches, ghost
 | Session | Steps | Status |
 | --- | --- | --- |
 | (planning) | 0 (Milestone 5 handover, this plan) | **Done.** See step 0 |
-| P | 1 (soft-tissue audit), 2 (decision on `2: Muscular insertions`) | **Done.** See "Session P notes" and `assets/audit/REPORT-soft-tissue.md`. **Waiting for the user** at the checkpoint (articular cartilage absent) |
+| P | 1 (soft-tissue audit), 2 (decision on `2: Muscular insertions`) | **Done.** See "Session P notes" and `assets/audit/REPORT-soft-tissue.md`. Checkpoint answered (go on without articular cartilage) |
 | Q | 3 (soft-tissue ID list and mapping), 4 (mapping checks and questions) | Not started |
 | R | 5 (Blender pipeline for the new layers), 6 (compression and `check-models`), 7 (build report) | Not started |
 | S | 8 (debug layer view), 9 (alignment and no-regression tests), 10 (report back with counts), 11 (hosted copy) | Not started |
@@ -97,6 +97,8 @@ What was done, and where it differs from the plan (say if any should change):
 - **Found in passing:** about 622 landmark helper objects in `1: Skeletal system` (for example `Apex of dens axis.j`) may give real positions for bone landmarks. Not in M6's scope; noted for M8.
 
 **Checkpoint (needs the user before session Q).** Stop conditions 1 to 3 don't hold. The plan's own checkpoint does: **articular cartilage is absent**. Proposed: go on without it, recording it per joint in `missing`, so the cartilage layer is the 20 costal cartilages, 23 intervertebral discs (plus nucleus pulposus), the interpubic disc, the 4 menisci and 8 articular discs, and, if session Q keeps them, the labra and the symphyses. The 18 doubtful names in the report (labra, iliotibial tract, linea alba, palmar and plantar aponeuroses, the laryngeal ligaments and others) are session Q's to decide, each with a `QUESTIONS.md` entry, unless the user wants to settle any now.
+
+**Answered by the user (2026-11-20):** go on without articular cartilage ("it's just gonna cap the bones at the joints"). Session Q records it in `missing` and builds the cartilage layer from what the source has.
 
 ## Session P: audit (steps 1 and 2)
 
