@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
 import ids from "../content/ids.json";
+import softIds from "../content/soft-ids.json";
+import softMapping from "../assets/mapping/soft-to-id.json";
 import {
   BOUNDS_TOLERANCE_M,
+  LAYER_BUDGETS,
   LOD_BUDGETS,
+  SOFT_LAYERS,
+  expectedLayerNodeNames,
+  layerBudget,
+  type SoftIdEntry,
+  type SoftLayer,
   boundsDelta,
   checkSize,
   checkTriangles,
@@ -68,5 +76,43 @@ describe("bounds", () => {
   it("leaves names absent from the manifest to compareNames", () => {
     const { errors } = compareBounds("low", new Map([["extra", box(0)]]), {});
     expect(errors).toEqual([]);
+  });
+});
+
+describe("soft-tissue layers (M6)", () => {
+  const soft = [
+    { id: "deltoid_left", layer: "muscles", meshAvailable: false },
+    { id: "deltoid_clavicular_part_left", layer: "muscles", meshAvailable: true },
+    { id: "patellar_ligament_left", layer: "ligaments", meshAvailable: false },
+    { id: "iliofemoral_ligament_left", layer: "ligaments", meshAvailable: true },
+    { id: "lateral_meniscus_left", layer: "cartilage", meshAvailable: true },
+  ];
+  it("expects only the layer's IDs that have a mesh", () => {
+    expect(expectedLayerNodeNames("muscles", soft, [])).toEqual(["deltoid_clavicular_part_left"]);
+    expect(expectedLayerNodeNames("ligaments", soft, [])).toEqual(["iliofemoral_ligament_left"]);
+    expect(expectedLayerNodeNames("cartilage", soft, [])).toEqual(["lateral_meniscus_left"]);
+  });
+  it("expects the attachment IDs for the attachments file", () => {
+    expect(expectedLayerNodeNames("attachments", soft, ["a__origin", "a__insertion"])).toEqual([
+      "a__origin",
+      "a__insertion",
+    ]);
+  });
+  it("matches the real ID lists", () => {
+    const real = softIds as SoftIdEntry[];
+    const att = Object.keys(softMapping.attachments);
+    const n = (l: SoftLayer) => expectedLayerNodeNames(l, real, att).length;
+    expect([n("muscles"), n("ligaments"), n("cartilage"), n("attachments")]).toEqual([476, 300, 61, 697]);
+  });
+  it("caps the triangle target at the source total", () => {
+    expect(layerBudget("ligaments", "high", 1_000_000).targetTris).toBe(120_000);
+    expect(layerBudget("ligaments", "high", 90_000).targetTris).toBe(90_000);
+    expect(layerBudget("ligaments", "high", 90_000).maxBytes).toBe(LAYER_BUDGETS.ligaments.high.maxBytes);
+  });
+  it("has a budget for every layer and LOD", () => {
+    for (const l of SOFT_LAYERS) {
+      expect(LAYER_BUDGETS[l].high.targetTris).toBeGreaterThan(LAYER_BUDGETS[l].low.targetTris);
+      expect(checkSize(`${l}-high`, LAYER_BUDGETS[l].high.maxBytes, LAYER_BUDGETS[l].high)).toHaveLength(1);
+    }
   });
 });

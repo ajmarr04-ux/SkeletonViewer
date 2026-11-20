@@ -15,6 +15,51 @@ export const LOD_BUDGETS: Record<"high" | "low", LodBudget> = {
   low: { maxBytes: 6 * 1024 * 1024, targetTris: 150_000, triTolerance: 0.15 },
 };
 
+/** Soft-tissue layer files (M6 plan decision 8). */
+export const SOFT_LAYERS = ["muscles", "ligaments", "cartilage", "attachments"] as const;
+export type SoftLayer = (typeof SOFT_LAYERS)[number];
+
+const MiB = 1024 * 1024;
+export const LAYER_BUDGETS: Record<SoftLayer, Record<"high" | "low", LodBudget>> = {
+  muscles: {
+    high: { maxBytes: 10 * MiB, targetTris: 800_000, triTolerance: 0.15 },
+    low: { maxBytes: 4 * MiB, targetTris: 230_000, triTolerance: 0.15 },
+  },
+  ligaments: {
+    high: { maxBytes: 2.5 * MiB, targetTris: 120_000, triTolerance: 0.15 },
+    low: { maxBytes: 1 * MiB, targetTris: 40_000, triTolerance: 0.15 },
+  },
+  cartilage: {
+    high: { maxBytes: 2 * MiB, targetTris: 80_000, triTolerance: 0.15 },
+    low: { maxBytes: 1 * MiB, targetTris: 30_000, triTolerance: 0.15 },
+  },
+  attachments: {
+    high: { maxBytes: 3 * MiB, targetTris: 150_000, triTolerance: 0.15 },
+    low: { maxBytes: 1 * MiB, targetTris: 50_000, triTolerance: 0.15 },
+  },
+};
+
+/**
+ * A layer's budget with the triangle target capped at the source total:
+ * a layer with less geometry than its target keeps all of it (decision 8).
+ */
+export function layerBudget(layer: SoftLayer, lod: "high" | "low", sourceTris: number): LodBudget {
+  const b = LAYER_BUDGETS[layer][lod];
+  return { ...b, targetTris: Math.min(b.targetTris, sourceTris) };
+}
+
+export type SoftIdEntry = IdEntry & { layer: string };
+
+/** Node names expected in a soft-tissue layer file. */
+export function expectedLayerNodeNames(
+  layer: SoftLayer,
+  softIds: SoftIdEntry[],
+  attachmentIds: string[],
+): string[] {
+  if (layer === "attachments") return [...attachmentIds];
+  return softIds.filter((e) => e.layer === layer && e.meshAvailable).map((e) => e.id);
+}
+
 /** Quantisation tolerance for world bounds, in metres. */
 export const BOUNDS_TOLERANCE_M = 1e-3;
 
@@ -40,7 +85,7 @@ export function compareNames(expected: string[], actual: string[]): string[] {
 export function checkSize(lod: string, bytes: number, budget: LodBudget): string[] {
   return bytes < budget.maxBytes
     ? []
-    : [`${lod}: ${(bytes / 1e6).toFixed(2)} MB is over the ${(budget.maxBytes / 1024 / 1024).toFixed(0)} MiB budget`];
+    : [`${lod}: ${(bytes / 1e6).toFixed(2)} MB is over the ${+(budget.maxBytes / 1024 / 1024).toFixed(1)} MiB budget`];
 }
 
 export function checkTriangles(lod: string, tris: number, budget: LodBudget): string[] {
