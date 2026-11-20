@@ -6,7 +6,7 @@ Done when: tier sets for muscles, parts, ligaments and cartilage are unit-tested
 
 ## State
 - Last commit: M9-AE (nested selection), on `claude/keen-clarke-32a10a`.
-- `npm run check`: pass. Vitest 443 tests. E2E: `nested.spec.ts` (new, 3) plus layers, soft-content, select, related, joints, panel, smoke, sidebar, keyboard and layers-debug specs — see the session notes for the result.
+- `npm run check`: pass. Vitest 443 tests. E2E: `nested.spec.ts` (new, 3) plus layers, soft-content, select, related, joints, panel, smoke, sidebar, keyboard and layers-debug specs: 77/77 passed.
 - Main chunk 293.0 kB gzipped (+0.9 over M8; budget +10 for M9).
 - Open fan-out work: none.
 
