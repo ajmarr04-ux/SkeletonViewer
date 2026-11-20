@@ -2,6 +2,8 @@
 
 A static browser app: a 3D atlas of the adult human skeleton (bones and teeth), growing muscle, ligament and cartilage layers in milestones 6 to 10. The bone spec is `SPEC (2).md`; `SPEC-musculoskeletal.md` extends it for the new layers and wins where they conflict. `STATUS.md` describes the build as of M5. The Milestone 1 plan and its progress table are in `docs/PLAN-milestone-1.md`.
 
+**Workflow:** read `docs/WORKFLOW.md` at the start of every session (one serial task per session, Sonnet subagents for parallel batches, `docs/HANDOFF.md` at the end; agents in `.claude/agents/`, briefs and item lists in `docs/batches/`).
+
 ## Ground rules (from the spec, §12)
 - Never translate, rotate or re-pose a bone. Every object keeps its world position exactly. Moving an object's *origin* is fine; moving its geometry in world space is not.
 - Never invent landmark coordinates, TA2 IDs or articulations. Anything uncertain goes in `content/QUESTIONS.md`.

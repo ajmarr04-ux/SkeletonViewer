@@ -22,18 +22,18 @@ Plus the migration: **200 distinct `muscleAttachments` strings** across the 238 
 
 ## Progress
 
-| Session | Steps | Status |
-| --- | --- | --- |
-| (planning) | 0 (Milestone 7 handover, this plan) | **Done.** See step 0 |
-| X | 1 (schemas and vocabulary files), 2 (compiler, mirror, derived data, panel text), 3 (migration table) | **Done.** See "Session X notes" |
-| Y | 4 (muscles: head and neck, about 84 files) | **Done.** See "Session Y notes" |
-| Z | 5 (muscles: back, thorax, abdomen and pelvis, about 66 files) | **Done.** See "Session Z notes" |
-| AA | 6 (muscles: upper limb, about 62 files) | **Done.** See "Session AA notes" |
-| AB | 7 (muscles: lower limb, about 67 files) | **Done.** See "Session AB notes" |
-| AC | 8 (ligaments, 155 files; cartilage, discs and menisci, 43 files) | Not started |
-| AD | 9 (migration finished, `muscleAttachments` removed, strict validation), 10 (tests and no-regression), 11 (hosted copy) | Not started |
+| Session | Serial task (one sentence) | Fan-out step | Done when | Status |
+| --- | --- | --- | --- | --- |
+| (planning) | Milestone 7 handover and this plan (step 0) | none | plan written, `m7` frozen | **Done.** See step 0 |
+| X | Schemas, vocabulary files, compiler, mirror, derived data, panel text and the migration table (steps 1–3) | none | `npm run check` passes with the seed files | **Done.** See "Session X notes" |
+| Y | Head and neck muscles (step 4) | none (written before the workflow) | all head and neck files validate | **Done.** See "Session Y notes" |
+| Z | Back, thorax, abdomen and pelvis muscles (step 5) | none (written before the workflow) | all trunk files validate | **Done.** See "Session Z notes" |
+| AA | Upper-limb muscles (step 6) | none (written before the workflow) | all upper-limb files validate | **Done.** See "Session AA notes" |
+| AB | Lower-limb muscles (step 7) | none (written before the workflow) | all lower-limb files validate | **Done.** See "Session AB notes" |
+| AC | Ligament and cartilage content (step 8) | `content-writer` × 10 batches by joint region, in waves of 4 (`docs/batches/M8-AC/`) | every ligament, cartilage, disc and meniscus file validates; `joint: null` list final; `npm run check` passes | Not started |
+| AD | Migration finished, `muscleAttachments` removed, strict validation, tests, no-regression, hosted copy (steps 9–11) | `verifier` × 1 for the full Playwright run | strict `validate-content`; full e2e; `/m8/` live | Not started |
 
-Triggers: "begin session X" to "begin session AD". Each session starts by reading this file and ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models`, `npm run validate-content` (with `--allow-missing-soft` until session AD, decision 10) and `npm run e2e` passing, then a commit, a push to the session branch and a PR to `main`. Content sessions (Y to AC) run the e2e smoke and panel specs only, plus the full suite if they touched `src/`.
+Triggers: "begin session X" to "begin session AD". **From session AC the sessions follow `docs/WORKFLOW.md`** (adopted 2026-11-20): one serial task per session, Sonnet subagents for parallel batches, `docs/HANDOFF.md` written at the end. Sessions X to AB predate it, so their fan-out column says none. Each session starts by reading this file and ends with `npx tsc --noEmit`, `npx vitest run`, `npm run check-models`, `npm run validate-content` (with `--allow-missing-soft` until session AD, decision 10) and `npm run e2e` passing, then a commit, a push to the session branch and a PR to `main`. Content sessions (Y to AC) run the e2e smoke and panel specs only, plus the full suite if they touched `src/`.
 
 **User checkpoints**
 - **Decisions 2, 3 and 5: decided by the user on 2026-11-20.** Functional joints in `content/joints.json` (decision 2) and `joint: null` for ligaments at no joint (decision 3) as written; ligament and cartilage summaries 40–80 words, like muscles (decision 5).
