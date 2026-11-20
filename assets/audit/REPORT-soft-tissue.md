@@ -11,7 +11,7 @@ The classes are a **first pass for session Q**, not the mapping. Nothing here ad
 | `1: Skeletal system` (not used by the bones) | 42 | 20 | 0 | 0 | 22 | 0 |
 | `2: Muscular insertions` | 705 | 0 | 0 | 0 | 0 | 705 |
 | `3: Joints` | 410 | 326 | 31 | 14 | 39 | 0 |
-| `4: Muscular system` | 670 | 362 | 108 | 17 | 183 | 0 |
+| `4: Muscular system` | 670 | 364 | 108 | 17 | 181 | 0 |
 
 No **fragments** were found: no source object is a numbered or unnamed modelling split. Every mesh carries an anatomical (TA English) name, so `merged` in the mapping will only hold choices such as nucleus pulposus → disc, if session Q makes them.
 
@@ -21,17 +21,17 @@ The muscles collection is **English, not Latin** (`STATUS.md` expected Latin-onl
 
 | Layer | Meshes (both sides) | Source triangles | High target (plan decision 8) | Doubtful meshes' triangles | Non-manifold meshes |
 | --- | --- | --- | --- | --- | --- |
-| muscles | 468 | 1,878,846 | ~800,000 | 103,550 | 15 |
+| muscles | 470 | 1,882,570 | ~800,000 | 103,550 | 15 |
 | ligaments | 300 | 172,220 | ~120,000 | 22,557 | 20 |
 | cartilage | 79 | 170,764 | ~80,000 | 5,116 | 1 |
 | attachment patches | 705 | 931,484 | (not budgeted yet) | | |
 
-Layers whose source geometry is over the high target (decimated in session R): muscles (2.3× the target), ligaments (1.4× the target), cartilage (2.1× the target). Under it, the high file keeps the source geometry (plan decision 8).
+Layers whose source geometry is over the high target (decimated in session R): muscles (2.4× the target), ligaments (1.4× the target), cartilage (2.1× the target). Under it, the high file keeps the source geometry (plan decision 8).
 
 ## Stop conditions (spec §2)
 
 1. **Muscles not separated left/right: no.** Every paired muscle is two meshes with `.l` / `.r` names, and no side-named mesh crosses the midline: none found.
-2. **A major muscle missing: no.** Checked against 57 major muscles (table below). All present.
+2. **A major muscle missing: no.** Checked against 58 major muscles (table below). All present.
 3. **Parts that can't be matched to anatomy for a large share of muscles: no.** 54 left/midline part meshes, all named as an anatomical division (head, part, belly, tendon, aponeurosis) of a named muscle; listed below.
 4. **Articular cartilage (plan risk 1): largely absent, as expected.** The source has no articular cartilage on any joint surface. What it has per joint is listed below. Under the plan, the missing articular cartilage is recorded as `missing` in the mapping, not modelled.
 
@@ -81,6 +81,7 @@ Also present: 23 intervertebral discs (C2–C3 to L5–S1) with 23 separate nucl
 | Gluteus maximus | gluteus maximus muscle |
 | Gluteus medius | gluteus medius muscle |
 | Gluteus minimus | gluteus minimus muscle |
+| Tensor fasciae latae | tensor fasciae latae |
 | Iliacus | iliacus muscle |
 | Psoas major | psoas major |
 | Piriformis | piriformis muscle |
@@ -184,7 +185,7 @@ Also for session Q: the interosseous membranes (forearm, leg), the intercostal m
 | Reason | Meshes |
 | --- | --- |
 | bursa (deferred, spec §1) | 78 |
-| fascia (deferred, spec §1) | 40 |
+| fascia (deferred, spec §1) | 38 |
 | joint capsule (deferred, spec §1) | 34 |
 | tendon sheath (synovial or fibrous; deferred with membranes) | 26 |
 | retinaculum (deferred, spec §1) | 18 |
@@ -214,12 +215,7 @@ Sides were read from the name suffix and checked against the centroid's x (patie
 - `Ulnopisiform ligament`: right (x = -0.2414 m)
 - `Iliocostalis colli muscle`: left (x = +0.0536 m)
 
-**Side-named meshes with no twin of the other side:**
-- `Intra-articular ligament of head of rib.r`
-- `Ulnopisiform ligament.l`
-- `Iliocostalis colli muscle.r`
-
-Together: `Iliocostalis colli muscle` (left) is only missing its `.l`, and the `Lateral temporomandibular ligament` has its left and right names swapped. `Intra-articular ligament of head of rib` and `Ulnopisiform ligament` exist as **one side only**. The missing twins go in `missing`; nothing is mirrored or modelled.
+So `Iliocostalis colli muscle`, `Intra-articular ligament of head of rib` and `Ulnopisiform ligament` are complete left/right pairs whose one mesh only lacks its suffix, and the `Lateral temporomandibular ligament` has its left and right names swapped. Session Q takes these sides from geometry. (Corrected in session Q: the first version of this report called two of them one-sided.)
 
 ## Decision on `2: Muscular insertions` (plan step 2, decision 12)
 
@@ -233,7 +229,7 @@ Together: `Iliocostalis colli muscle` (left) is only missing its `.l`, and the `
 
 ## Budgets
 
-- **Muscles:** 1,878,846 source triangles (plus up to 103,550 if the doubtful aponeuroses are kept). The ~800k / ~230k targets stand.
+- **Muscles:** 1,882,570 source triangles (plus up to 103,550 if the doubtful aponeuroses are kept). The ~800k / ~230k targets stand.
 - **Ligaments:** 172,220 source triangles against ~120,000. Largest: Interosseous membrane of leg 12,642, Interosseous membrane of leg 12,642, Posterior longitudinal ligament 7,536, External intercostal membrane 6,736.
 - **Cartilage:** 170,764 source triangles against ~80,000. Largest: Costal cartilage of seventh rib 13,764, Costal cartilage of seventh rib 13,764, Costal cartilage of sixth rib 8,120, Costal cartilage of sixth rib 8,120.
   Ligaments and cartilage together are 342,984 against the spec's ~200k (§9), so the targets stand and session R decimates both (the per-object floor protects the small ones).
@@ -253,7 +249,7 @@ Searched for by name across all four collections (meshes, empty helpers and labe
 
 | Layer | Base triangles (before modifiers) | Evaluated triangles |
 | --- | --- | --- |
-| muscles | 1,849,570 | 1,878,846 |
+| muscles | 1,853,294 | 1,882,570 |
 | ligaments | 56,543 | 172,220 |
 | cartilage | 88,354 | 170,764 |
 | attachment patches | 63,843 | 931,484 |

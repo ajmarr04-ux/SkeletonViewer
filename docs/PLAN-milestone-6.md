@@ -14,7 +14,7 @@ Out of scope here (later milestones): the Layers panel, per-layer batches, ghost
 | --- | --- | --- |
 | (planning) | 0 (Milestone 5 handover, this plan) | **Done.** See step 0 |
 | P | 1 (soft-tissue audit), 2 (decision on `2: Muscular insertions`) | **Done.** See "Session P notes" and `assets/audit/REPORT-soft-tissue.md`. Checkpoint answered (go on without articular cartilage) |
-| Q | 3 (soft-tissue ID list and mapping), 4 (mapping checks and questions) | Not started |
+| Q | 3 (soft-tissue ID list and mapping), 4 (mapping checks and questions) | **Done.** See "Session Q notes" |
 | R | 5 (Blender pipeline for the new layers), 6 (compression and `check-models`), 7 (build report) | Not started |
 | S | 8 (debug layer view), 9 (alignment and no-regression tests), 10 (report back with counts), 11 (hosted copy) | Not started |
 
@@ -27,7 +27,7 @@ Triggers: "begin session P", "begin session Q", "begin session R" and "begin ses
 ## Exit criteria (from the musculoskeletal spec §11, M6)
 
 - [x] Soft-tissue audit report and JSON for collections 2, 3, 4 and the cartilage in 1. (`assets/audit/REPORT-soft-tissue.md`, `assets/audit/soft-tissue.json`; session P.)
-- [ ] `soft-to-id.json` with every mesh mapped, merged or excluded (with reasons).
+- [x] `soft-to-id.json` with every mesh mapped, merged or excluded (with reasons). (Session Q; `tests/soft-ids.test.ts` checks that every audited mesh is used exactly once.)
 - [x] Decision recorded on `2: Muscular insertions` (patches usable or not). (**Usable**: 689 of 705 patches within 1 mm of a bone or cartilage surface; side from geometry. See the report.)
 - [ ] Six layer files exported, compressed, under budget, passing `check-models`.
 - [ ] A debug view (`?debug&layers=all`) shows every layer in place with no visible misalignment against the bones.
@@ -91,7 +91,7 @@ What was done, and where it differs from the plan (say if any should change):
 - **Counts.** 1,827 meshes with faces: 670 in `4: Muscular system`, 410 in `3: Joints`, 705 patches in `2: Muscular insertions`, and 42 skeletal meshes the bone build doesn't use. First-pass classes: 708 whole, 139 part, 31 doubtful (18 names), 244 excluded, 705 patches. Proposed layers: muscles 468 meshes, ligaments 300, cartilage 79 (both sides).
 - **Better than expected:** the muscle names are **English TA**, not Latin; every paired muscle is split left/right; no modelling fragments exist; the source already splits 24 muscles into anatomical heads, parts or bellies, and has 4 separate tendon or aponeurosis meshes (calcaneal tendon, the digastric intermediate tendon, the tendon of extensor digitorum longus, the epicranial aponeurosis); and its object parent tree gives region → compartment → muscle. All 57 major muscles checked are present.
 - **Worse than expected:** no articular cartilage on any joint surface (labra, menisci and articular discs only); no patellar ligament or quadriceps tendon; no craniovertebral ligaments; some small muscles missing (ear, auricular, most of the soft palate and perineum, subcostales, psoas minor). Listed in the report's "Structures absent from the source".
-- **Naming defects:** `Lateral temporomandibular ligament` has its sides swapped; `Iliocostalis colli muscle` lacks `.l`; `Intra-articular ligament of head of rib` and `Ulnopisiform ligament` exist on one side only. Patches: 50 have the wrong side suffix and 7 left twins are missing, so patch sides come from geometry.
+- **Naming defects:** `Lateral temporomandibular ligament` has its sides swapped; `Iliocostalis colli muscle`, `Intra-articular ligament of head of rib` and `Ulnopisiform ligament` each lack the suffix on one of their two meshes (corrected in session Q: the first version said two of them were one-sided). Patches: 50 have the wrong side suffix and 7 left twins are missing, so patch sides come from geometry.
 - **Step 2 decision: the patches are usable** (decision 12). 98% lie within 1 mm of a bone or cartilage surface. The exceptions are mostly real patches that span two bones and a membrane; `Rectus abdominis muscle.e*` is misplaced and its origin and insertion labels look swapped. Since patch names can be wrong, M8's origins and insertions come from references, and patches are only geometry. Session R exports them as `attachments-{high,low}.glb`, with the budget added to decision 8.
 - **Modifiers.** About 1,070 Subdivision and 1,060 Solidify modifiers, mostly on ligaments and patches (thin sheets thickened by 0.1–2 mm). The audit and the build both use the viewport evaluation; render levels would quadruple those meshes.
 - **Found in passing:** about 622 landmark helper objects in `1: Skeletal system` (for example `Apex of dens axis.j`) may give real positions for bone landmarks. Not in M6's scope; noted for M8.
@@ -99,6 +99,37 @@ What was done, and where it differs from the plan (say if any should change):
 **Checkpoint (needs the user before session Q).** Stop conditions 1 to 3 don't hold. The plan's own checkpoint does: **articular cartilage is absent**. Proposed: go on without it, recording it per joint in `missing`, so the cartilage layer is the 20 costal cartilages, 23 intervertebral discs (plus nucleus pulposus), the interpubic disc, the 4 menisci and 8 articular discs, and, if session Q keeps them, the labra and the symphyses. The 18 doubtful names in the report (labra, iliotibial tract, linea alba, palmar and plantar aponeuroses, the laryngeal ligaments and others) are session Q's to decide, each with a `QUESTIONS.md` entry, unless the user wants to settle any now.
 
 **Answered by the user (2026-11-20):** go on without articular cartilage ("it's just gonna cap the bones at the joints"). Session Q records it in `missing` and builds the cartilage layer from what the source has.
+
+## Session Q notes (steps 3 and 4, done)
+
+What was done, and where it differs from the plan (say if any should change):
+
+- **Generator.** `scripts/mapping/generate_soft_ids.py` (`npm run soft-ids`, plain Python) writes `content/soft-ids.json` and `assets/mapping/soft-to-id.json` from the classified audit. It fails on anything unaccounted for, a duplicate or bone-colliding ID, a broken part/parent link, or left and right sets that don't mirror. Every judgement call is a table at the top of the script and a numbered entry in `content/QUESTIONS.md` (items 37 to 62, "Soft tissue: mapping").
+- **soft-ids.json** follows decision 1, plus `group`: the source's own grouping (region, compartment, joint) as snake_case keys, for the M8 hierarchy. IDs are ordered by layer, group and then anatomically (vertebral levels C → T → L → S, numbers numerically, left before right). `latin` is `null` throughout: the source names are English, so Latin comes with the M8 content.
+- **Doubtful meshes** were resolved with the defaults the user accepted, except the **linea alba**, which is left out: the source has it as one midline mesh, and a part needs one parent of its own side (QUESTIONS 40).
+- **Parent muscles with a mesh.** Where the source has a whole muscle *and* a separate tendon, aponeurosis or part (tensor fasciae latae with the iliotibial tract, palmaris longus with the palmar aponeurosis, superior rectus with the common tendinous ring, extensor digitorum longus with its tendon, adductor magnus with adductor minimus, and frontalis and occipitalis under occipitofrontalis), the muscle's own mesh became a part ("Belly of …", "Main part of adductor magnus"), because a parent has no mesh of its own (spec §2.7, §3).
+- **Ligament parts** (tibial collateral and iliofemoral) are separate ligaments, since the spec has parts for muscles only (QUESTIONS 51).
+- **Patches.** 697 of the 705 are kept under `attachments` (`<structure id>__origin|insertion[_side][_n]`), each with the muscles or parts it serves, its side from geometry, and the bone or costal cartilage it lies on. 8 are dropped (on excluded structures, or misplaced). Patches named for a group (quadriceps, triceps surae, iliopsoas, erector spinae, levator ani, the common extensor and flexor tendons) list their members; "Trochanteric insertion" has none (QUESTIONS 58 and 59). 23 patches with no twin on the other side are listed in `attachmentsMissing`.
+- **Absent structures.** The patellar ligament and articularis genus get IDs without a mesh (`meshAvailable: false`), because patches refer to them. The other absent structures from the audit are listed in `missingNoId`, with no ID.
+- **Fix to session P.** The classifier excluded **tensor fasciae latae** as "fascia" (its name contains "fasciae"); fixed, and it's now in the major-muscle checklist. The report's side section is corrected too.
+- **Tests:** `tests/soft-ids.test.ts` (12 tests): unique snake_case IDs, no collision with bones, side suffixes, exact left/right mirroring, layers per kind, parts and parents both ways, the calcaneal tendon rule, every audited mesh used exactly once, only nucleus pulposus merged, patches pointing at real structures on real bones or cartilage and on their own side.
+
+### Preliminary counts (final after session R)
+
+| Kind | IDs (both sides) | With a mesh |
+| --- | --- | --- |
+| Muscles, single mesh | 348 | 348 |
+| Muscles with parts (parents, no mesh of their own) | 58 | 0 |
+| Muscle parts: heads 58, portions 40, bellies 16, tendons 10, aponeuroses 4 | 128 | 128 |
+| Muscles absent from the source (articularis genus) | 2 | 0 |
+| Ligaments | 300 | 300 |
+| Ligaments absent from the source (patellar ligament) | 2 | 0 |
+| Cartilage (20 costal cartilages, 4 labra) | 24 | 24 |
+| Discs (23 intervertebral, interpubic, sacrococcygeal) | 25 | 25 |
+| Menisci and articular discs (4 menisci, 8 articular discs) | 12 | 12 |
+| **Total** | **899** | **837** |
+
+Meshes per layer file: **muscles 476, ligaments 300, cartilage 61**, plus **697 attachment patches**. Source meshes: 860 joined into those 837 nodes (the 23 nucleus pulposus meshes go into their discs), 262 excluded.
 
 ## Session P: audit (steps 1 and 2)
 

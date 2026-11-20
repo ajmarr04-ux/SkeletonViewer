@@ -39,7 +39,7 @@ ATTACH_TOL_M = 0.001  # decision 12: median distance to a bone under 1 mm
 
 EXCLUDE_PATTERNS = [
     (r"\bbursae?\b", "bursa (deferred, spec §1)"),
-    (r"\bfasciae?\b|fascia lata", "fascia (deferred, spec §1)"),
+    (r"^(?!tensor fasciae latae)(.*\bfasciae?\b|fascia lata)", "fascia (deferred, spec §1)"),
     (r"intermuscular septum", "intermuscular septum (fascia, deferred)"),
     (r"retinaculum", "retinaculum (deferred, spec §1)"),
     (r"sheaths?\b", "tendon sheath (synovial or fibrous; deferred with membranes)"),
@@ -94,7 +94,7 @@ MAJOR_MUSCLES = [
     "Teres major", "Subscapularis", "Biceps brachii", "Brachialis", "Triceps brachii",
     "Brachioradialis", "Pronator teres", "Supinator", "Flexor digitorum superficialis",
     "Flexor digitorum profundus", "Extensor digitorum", "Gluteus maximus", "Gluteus medius",
-    "Gluteus minimus", "Iliacus", "Psoas major", "Piriformis", "Sartorius", "Rectus femoris",
+    "Gluteus minimus", "Tensor fasciae latae", "Iliacus", "Psoas major", "Piriformis", "Sartorius", "Rectus femoris",
     "Vastus lateralis", "Vastus medialis", "Vastus intermedius", "Adductor magnus",
     "Adductor longus", "Gracilis", "Biceps femoris", "Semitendinosus", "Semimembranosus",
     "Gastrocnemius", "Soleus", "Tibialis anterior", "Tibialis posterior", "Fibularis longus",
@@ -476,16 +476,17 @@ def main() -> None:
         for o in no_suffix:
             w(f"- `{o['name']}`: {o['sideFromCentroid']} (x = {o['centroid'][0]:+.4f} m)")
         w("")
-    unp = [o for o in unpaired if o["classification"]["class"] != "excluded"]
+    nosuf = {base(o["name"]) for o in no_suffix}
+    unp = [o for o in unpaired if o["classification"]["class"] != "excluded" and base(o["name"]) not in nosuf]
     if unp:
         w("**Side-named meshes with no twin of the other side:**")
         for o in unp:
             w(f"- `{o['name']}`")
         w("")
-    w("Together: `Iliocostalis colli muscle` (left) is only missing its `.l`, and the "
-      "`Lateral temporomandibular ligament` has its left and right names swapped. "
-      "`Intra-articular ligament of head of rib` and `Ulnopisiform ligament` exist as **one side only**. "
-      "The missing twins go in `missing`; nothing is mirrored or modelled.")
+    w("So `Iliocostalis colli muscle`, `Intra-articular ligament of head of rib` and `Ulnopisiform "
+      "ligament` are complete left/right pairs whose one mesh only lacks its suffix, and the `Lateral "
+      "temporomandibular ligament` has its left and right names swapped. Session Q takes these sides from "
+      "geometry. (Corrected in session Q: the first version of this report called two of them one-sided.)")
     w("")
 
     w("## Decision on `2: Muscular insertions` (plan step 2, decision 12)")
