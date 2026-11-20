@@ -27,8 +27,6 @@ landmarks:
   - id: lacrimal_hamulus
     name: Lacrimal hamulus
     position: null
-muscleAttachments:
-  - Orbicularis oculi (lacrimal part)
 clinicalNote: A blocked nasolacrimal duct causes a watering eye; the operation to bypass it (dacryocystorhinostomy) opens a passage through the lacrimal bone into the nose.
 reviewed: false
 ---

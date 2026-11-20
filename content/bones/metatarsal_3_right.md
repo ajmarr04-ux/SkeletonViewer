@@ -27,11 +27,6 @@ landmarks:
   - id: head
     name: Head
     position: null
-muscleAttachments:
-  - Second dorsal interosseous
-  - Third dorsal interosseous
-  - First plantar interosseous
-  - Adductor hallucis (oblique head)
 clinicalNote: null
 reviewed: false
 ---

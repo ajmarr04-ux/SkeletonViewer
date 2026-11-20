@@ -40,7 +40,6 @@ landmarks:
   - id: pulp_cavity
     name: Pulp cavity
     position: null
-muscleAttachments: []
 clinicalNote: Its root tip can lie close to the floor of the maxillary sinus, so an infection or extraction here can involve the sinus.
 reviewed: false
 ---

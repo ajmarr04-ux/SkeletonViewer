@@ -26,7 +26,6 @@ landmarks:
   - { id: posterior_tubercle, name: Posterior tubercle, position: null }
   - { id: foramen_transversarium, name: Foramen transversarium, position: null }
   - { id: spinous_process, name: Spinous process, position: null }
-muscleAttachments: [Longus colli, Longus capitis, Scalenus anterior, Scalenus medius, Scalenus posterior, Multifidus, Interspinales]
 clinicalNote: "The C5–C6 level is the most common site of degeneration of the cervical spine (cervical spondylosis), which can compress the C6 nerve root."
 reviewed: false
 ---

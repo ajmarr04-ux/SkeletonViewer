@@ -23,8 +23,6 @@ landmarks:
   - id: scaphoid_facet
     name: Scaphoid facet
     position: null
-muscleAttachments:
-  - Adductor pollicis (oblique head)
 clinicalNote: null
 reviewed: false
 ---

@@ -22,7 +22,6 @@ landmarks:
   - { id: buccal_root, name: Buccal root, position: null }
   - { id: palatal_root, name: Palatal root, position: null }
   - { id: pulp_cavity, name: Pulp cavity, position: null }
-muscleAttachments: []
 clinicalNote: Upper first premolars are often extracted to make space during orthodontic treatment of crowded teeth.
 reviewed: false
 ---

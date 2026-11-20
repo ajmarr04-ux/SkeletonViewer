@@ -26,9 +26,6 @@ landmarks:
   - id: tuberosity
     name: Tuberosity
     position: null
-muscleAttachments:
-  - Flexor digitorum longus
-  - Extensor digitorum longus
 clinicalNote: null
 reviewed: false
 ---

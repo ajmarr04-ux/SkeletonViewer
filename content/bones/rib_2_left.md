@@ -21,7 +21,6 @@ landmarks:
   - { id: angle, name: Angle, position: null }
   - { id: shaft, name: Shaft, position: null }
   - { id: tuberosity_for_serratus_anterior, name: Tuberosity for serratus anterior, position: null }
-muscleAttachments: [Scalenus posterior, Serratus anterior, Serratus posterior superior, Intercostal muscles]
 clinicalNote: "The second costal cartilage joins the sternum at the sternal angle, the usual starting point for counting ribs and intercostal spaces."
 reviewed: false
 ---

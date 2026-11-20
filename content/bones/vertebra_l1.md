@@ -24,7 +24,6 @@ landmarks:
   - { id: accessory_process, name: Accessory process, position: null }
   - { id: transverse_process, name: Transverse process, position: null }
   - { id: spinous_process, name: Spinous process, position: null }
-muscleAttachments: [Psoas major, Quadratus lumborum, Diaphragm (crus), Latissimus dorsi (through the thoracolumbar fascia), Erector spinae, Multifidus]
 clinicalNote: "The spinal cord usually ends at the level of the L1–L2 disc, so lumbar punctures are done lower down, between L3 and L5."
 reviewed: false
 ---

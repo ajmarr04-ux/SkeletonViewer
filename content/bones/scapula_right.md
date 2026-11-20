@@ -60,23 +60,6 @@ landmarks:
   - id: lateral_border
     name: Lateral border
     position: null
-muscleAttachments:
-  - Supraspinatus
-  - Infraspinatus
-  - Teres minor
-  - Subscapularis
-  - Teres major
-  - Deltoid
-  - Trapezius
-  - Rhomboid major
-  - Rhomboid minor
-  - Levator scapulae
-  - Serratus anterior
-  - Pectoralis minor
-  - Coracobrachialis
-  - Biceps brachii
-  - Triceps brachii (long head)
-  - Omohyoid
 clinicalNote: Damage to the long thoracic nerve paralyses serratus anterior, and the medial border of the scapula lifts off the chest wall (a winged scapula) when the person pushes against a wall.
 reviewed: false
 ---

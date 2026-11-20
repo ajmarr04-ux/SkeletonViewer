@@ -44,16 +44,6 @@ landmarks:
   - id: posterior_surface
     name: Posterior surface
     position: null
-muscleAttachments:
-  - Biceps femoris
-  - Fibularis longus
-  - Fibularis brevis
-  - Fibularis tertius
-  - Extensor digitorum longus
-  - Extensor hallucis longus
-  - Tibialis posterior
-  - Flexor hallucis longus
-  - Soleus
 clinicalNote: The common fibular nerve winds around the neck of the fibula, where a fracture or a tight plaster cast can injure it and cause foot drop.
 reviewed: false
 ---

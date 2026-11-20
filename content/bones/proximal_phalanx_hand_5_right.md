@@ -27,10 +27,6 @@ landmarks:
   - id: head
     name: Head
     position: null
-muscleAttachments:
-  - Abductor digiti minimi
-  - Flexor digiti minimi brevis
-  - Third palmar interosseous
 clinicalNote: Fractures at the base of the little finger's proximal phalanx are common in sports and fights, and are checked for rotation by closing the fist.
 reviewed: false
 ---

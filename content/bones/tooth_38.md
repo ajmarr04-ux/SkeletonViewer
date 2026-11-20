@@ -19,7 +19,6 @@ landmarks:
   - { id: cervix, name: Cervix, position: null }
   - { id: roots, name: Roots, position: null }
   - { id: pulp_cavity, name: Pulp cavity, position: null }
-muscleAttachments: []
 clinicalNote: "Lower third molars are often impacted; infection of the gum over a partly erupted one (pericoronitis) is common, and removal can injure the inferior alveolar or lingual nerve."
 reviewed: false
 ---

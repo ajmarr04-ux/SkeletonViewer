@@ -24,7 +24,6 @@ landmarks:
   - { id: mesial_root, name: Mesial root, position: null }
   - { id: distal_root, name: Distal root, position: null }
   - { id: pulp_cavity, name: Pulp cavity, position: null }
-muscleAttachments: []
 clinicalNote: "Its deep fissures trap plaque soon after it erupts, so it is often the first permanent tooth to decay; fissure sealants help to prevent this."
 reviewed: false
 ---

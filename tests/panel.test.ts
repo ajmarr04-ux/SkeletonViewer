@@ -2,13 +2,14 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import ids from "../content/ids.json";
-import { compileContent } from "../src/content/compile";
+import { readBoneMuscles } from "../scripts/lib/content-files";
+import { boneMuscleLists, compileContent } from "../src/content/compile";
 import { linkLabel, panelModel, typeLabel } from "../src/content/panel";
 import { relations } from "../src/content/relations";
 
 const dir = join(__dirname, "../content/bones");
 const files = new Map(readdirSync(dir).filter((f) => f.endsWith(".md")).map((f) => [f.slice(0, -3), readFileSync(join(dir, f), "utf8")]));
-const content = compileContent(files);
+const content = compileContent(files, readBoneMuscles());
 
 const fixture = (over: Record<string, string> = {}) => `---
 id: ${over.id ?? "sternum"}
@@ -24,7 +25,6 @@ ta2: null
 functions: [Protects the heart]
 landmarks:
   - { id: manubrium, name: Manubrium, position: null }
-muscleAttachments: [Pectoralis major]
 clinicalNote: null
 reviewed: false
 ---
@@ -33,8 +33,8 @@ The **sternum** is a flat bone.
 
 describe("content compiler", () => {
   it("compiles a file: fields, landmark names, the summary as HTML", () => {
-    const c = compileContent(new Map([["sternum", fixture()]])).sternum!;
-    expect(c).toMatchObject({ latin: "Sternum", common: "Breastbone", type: "flat", functions: ["Protects the heart"], landmarks: ["Manubrium"], landmarkPositions: 0, muscles: ["Pectoralis major"], clinical: null, reviewed: false });
+    const c = compileContent(new Map([["sternum", fixture()]]), { sternum: ["Pectoralis major (origin)"] }).sternum!;
+    expect(c).toMatchObject({ latin: "Sternum", common: "Breastbone", type: "flat", functions: ["Protects the heart"], landmarks: ["Manubrium"], landmarkPositions: 0, muscles: ["Pectoralis major (origin)"], clinical: null, reviewed: false });
     expect(c.summary).toBe("<p>The <strong>sternum</strong> is a flat bone.</p>");
   });
 
@@ -60,6 +60,25 @@ describe("content compiler", () => {
   });
 });
 
+describe("the bones' derived muscle lists (M8 session AD)", () => {
+  it("names each muscle once, with origin, insertion or both; the two sides on a midline bone merge", () => {
+    const names: Record<string, string> = { a_left: "Alpha", a_right: "Alpha", b: "Beta", c_part: "Head of gamma" };
+    const lists = boneMuscleLists(
+      { bone: { origins: ["b", "a_left", "a_right"], insertions: ["c_part", "b"] }, other: { origins: [], insertions: [] } },
+      (id) => names[id]!,
+    );
+    expect(lists).toEqual({ bone: ["Alpha (origin)", "Beta (origin and insertion)", "Head of gamma (insertion)"], other: [] });
+  });
+
+  it("derives the real lists from the muscle files", () => {
+    const femur = content.femur_left!.muscles;
+    expect(femur).toEqual(expect.arrayContaining(["Gluteus maximus (insertion)", "Vastus lateralis (origin)", "Short head of biceps femoris (origin)"]));
+    expect(content.femur_right!.muscles).toEqual(femur);
+    expect(content.tooth_11!.muscles).toEqual([]);
+    expect(Object.values(content).filter((c) => c.muscles.length > 0).length).toBeGreaterThan(150);
+  });
+});
+
 describe("panel model", () => {
   it("uses the compiled content: Latin, common name, badges, sections", () => {
     const m = panelModel("sternum", content)!;
@@ -70,7 +89,7 @@ describe("panel model", () => {
     expect(m.summary).toMatch(/^<p>The sternum/);
     expect(m.functions!.length).toBeGreaterThan(0);
     expect(m.landmarks).toContain("Sternal angle");
-    expect(m.muscles).toContain("Pectoralis major");
+    expect(m.muscles).toContain("Sternocostal head of pectoralis major (origin)");
     expect(m.clinical).toMatch(/sternotomy/);
   });
 

@@ -23,7 +23,6 @@ landmarks:
   - { id: zygomatic_process, name: Zygomatic process, position: null }
   - { id: orbital_part, name: Orbital part, position: null }
   - { id: frontal_sinus, name: Frontal sinus, position: null }
-muscleAttachments: [Corrugator supercilii, Orbicularis oculi (orbital part), Temporalis]
 clinicalNote: The metopic suture between the two halves usually fuses in early childhood; when it persists in an adult it can be mistaken for a fracture on X-ray.
 reviewed: false
 ---

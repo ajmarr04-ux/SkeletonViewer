@@ -26,9 +26,6 @@ landmarks:
   - id: tuberosity
     name: Tuberosity
     position: null
-muscleAttachments:
-  - Flexor digitorum profundus
-  - Extensor digitorum
 clinicalNote: "The ring finger is the most common site of a jersey finger: the deep flexor tendon is torn from the base of the distal phalanx when a gripping finger is pulled straight."
 reviewed: false
 ---

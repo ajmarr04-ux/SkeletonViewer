@@ -26,9 +26,6 @@ landmarks:
   - id: tuberosity
     name: Tuberosity
     position: null
-muscleAttachments:
-  - Flexor pollicis longus
-  - Extensor pollicis longus
 clinicalNote: null
 reviewed: false
 ---

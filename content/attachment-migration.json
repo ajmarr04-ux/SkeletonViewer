@@ -381,6 +381,7 @@
   },
   "Erector spinae": {
     "rule": "variant",
+    "series": true,
     "note": "The common origin of erector spinae; the source has its columns as separate muscles",
     "bones": {
       "vertebra_l1": [
@@ -1037,6 +1038,7 @@
   },
   "Iliocostalis": {
     "rule": "variant",
+    "series": true,
     "note": "The source has iliocostalis in three parts",
     "bones": {
       "rib_3_left": [
@@ -1100,6 +1102,7 @@
   },
   "Intercostal muscles": {
     "rule": "variant",
+    "series": true,
     "bones": {
       "rib_1_left": [
         "external_intercostal",
@@ -1182,6 +1185,7 @@
   },
   "Interspinales": {
     "rule": "variant",
+    "series": true,
     "bones": {
       "vertebra_c2": [
         "interspinales_colli",
@@ -1345,6 +1349,7 @@
   },
   "Levatores costarum": {
     "rule": "variant",
+    "series": true,
     "bones": {
       "vertebra_c7": [
         "levatores_breves_costarum",
@@ -1529,6 +1534,7 @@
   },
   "Multifidus": {
     "rule": "variant",
+    "series": true,
     "bones": {
       "vertebra_c2": [
         "multifidus_colli",

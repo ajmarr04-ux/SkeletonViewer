@@ -24,7 +24,6 @@ landmarks:
   - { id: transverse_process, name: Transverse process, position: null }
   - { id: transverse_costal_facet, name: Transverse costal facet, position: null }
   - { id: spinous_process, name: Spinous process, position: null }
-muscleAttachments: [Trapezius, Latissimus dorsi, Levatores costarum, Multifidus]
 clinicalNote: "Tuberculosis of the spine (Pott disease) most often affects the lower thoracic vertebrae, collapsing the front of neighbouring bodies into a sharp angular hump."
 reviewed: false
 ---

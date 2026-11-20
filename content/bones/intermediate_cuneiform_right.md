@@ -23,8 +23,6 @@ landmarks:
   - id: metatarsal_facet
     name: Metatarsal facet
     position: null
-muscleAttachments:
-  - Tibialis posterior
 clinicalNote: null
 reviewed: false
 ---

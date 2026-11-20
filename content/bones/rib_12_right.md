@@ -27,15 +27,6 @@ landmarks:
   - id: shaft
     name: Shaft
     position: null
-muscleAttachments:
-  - Quadratus lumborum
-  - Intercostal muscles
-  - External oblique
-  - Internal oblique
-  - Latissimus dorsi
-  - Serratus posterior inferior
-  - Diaphragm
-  - Transversus abdominis
 clinicalNote: The pleura extends below the inner end of the twelfth rib, so it can be opened during kidney surgery from behind.
 reviewed: false
 ---

@@ -37,7 +37,6 @@ landmarks:
   - id: pulp_cavity
     name: Pulp cavity
     position: null
-muscleAttachments: []
 clinicalNote: With the longest root in the lower jaw, the lower canine is a strong anchor for bridges and partial dentures.
 reviewed: false
 ---

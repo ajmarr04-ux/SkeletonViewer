@@ -20,7 +20,6 @@ landmarks:
   - { id: cervix, name: Cervix, position: null }
   - { id: root, name: Root, position: null }
   - { id: pulp_cavity, name: Pulp cavity, position: null }
-muscleAttachments: []
 clinicalNote: "Tartar (calculus) builds up most on the inner surfaces of the lower incisors, where the ducts of the submandibular and sublingual glands open."
 reviewed: false
 ---

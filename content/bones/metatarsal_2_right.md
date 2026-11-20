@@ -27,10 +27,6 @@ landmarks:
   - id: head
     name: Head
     position: null
-muscleAttachments:
-  - First dorsal interosseous
-  - Second dorsal interosseous
-  - Adductor hallucis (oblique head)
 clinicalNote: The thin shaft of the second metatarsal is the most common site of a stress (march) fracture, first described in soldiers after long marches.
 reviewed: false
 ---

@@ -18,7 +18,6 @@ landmarks:
   - { id: neck, name: Neck, position: null }
   - { id: body, name: Body, position: null }
   - { id: metacarpal_facets, name: Metacarpal facets, position: null }
-muscleAttachments: [Adductor pollicis (oblique head)]
 clinicalNote: "The capitate and hamate are the first carpal bones to ossify, in the first year of life, and a hand X-ray is used to estimate a child's bone age."
 reviewed: false
 ---

@@ -39,7 +39,6 @@ landmarks:
   - id: sulcus_tali
     name: Sulcus tali
     position: null
-muscleAttachments: []
 clinicalNote: Fractures of the neck of the talus can cut off the blood supply to its body, which then dies (avascular necrosis).
 reviewed: false
 ---

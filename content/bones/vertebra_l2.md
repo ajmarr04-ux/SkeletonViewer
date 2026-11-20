@@ -24,7 +24,6 @@ landmarks:
   - { id: accessory_process, name: Accessory process, position: null }
   - { id: transverse_process, name: Transverse process, position: null }
   - { id: spinous_process, name: Spinous process, position: null }
-muscleAttachments: [Psoas major, Quadratus lumborum, Diaphragm (crus), Latissimus dorsi (through the thoracolumbar fascia), Erector spinae, Multifidus]
 clinicalNote: "An L1–L2 or L2–L3 disc herniation is uncommon but can compress the upper lumbar nerve roots, causing pain at the front of the thigh."
 reviewed: false
 ---

@@ -18,7 +18,6 @@ landmarks:
   - { id: handle, name: Handle, position: null }
   - { id: lateral_process, name: Lateral process, position: null }
   - { id: anterior_process, name: Anterior process, position: null }
-muscleAttachments: [Tensor tympani]
 clinicalNote: "Disruption of the ossicular chain, for example after a head injury, causes conductive hearing loss that can often be repaired surgically."
 reviewed: false
 ---

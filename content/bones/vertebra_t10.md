@@ -23,7 +23,6 @@ landmarks:
   - { id: transverse_costal_facet, name: Transverse costal facet, position: null }
   - { id: spinous_process, name: Spinous process, position: null }
   - { id: costal_facet_for_rib_10, name: Costal facet for rib 10, position: null }
-muscleAttachments: [Trapezius, Latissimus dorsi, Levatores costarum, Multifidus]
 clinicalNote: "The oesophagus passes through the diaphragm at about the level of T10, and the T10 dermatome includes the skin around the umbilicus."
 reviewed: false
 ---

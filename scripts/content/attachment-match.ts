@@ -15,6 +15,11 @@ export type Match = {
    * is on that structure, not on the bone. Session AD's two-way check allows it.
    */
   indirect?: boolean;
+  /**
+   * The old string names a series split by region (multifidus, interspinales,
+   * the intercostals, …): the bone needs any one of `ids` to attach, not all.
+   */
+  series?: boolean;
   note?: string;
   /** QUESTIONS.md entry for an unmatched string. */
   question?: number;
@@ -108,14 +113,15 @@ export const VARIANTS: Record<string, Variant> = {
   "Extra-ocular muscles (from the common tendinous ring)": { ids: ["common_tendinous_ring"], note: "The ring is a part of superior rectus serving the four recti (QUESTIONS 39)" },
   "Erector spinae": {
     ids: ["iliocostalis_lumborum", "longissimus_thoracis", "spinalis_thoracis"],
+    series: true,
     note: "The common origin of erector spinae; the source has its columns as separate muscles",
   },
-  Iliocostalis: { ids: ["iliocostalis_lumborum", "iliocostalis_thoracis", "iliocostalis_colli"], note: "The source has iliocostalis in three parts" },
+  Iliocostalis: { ids: ["iliocostalis_lumborum", "iliocostalis_thoracis", "iliocostalis_colli"], series: true, note: "The source has iliocostalis in three parts" },
   Iliopsoas: { ids: ["psoas_major", "iliacus"], note: "The source has psoas major and iliacus as separate muscles" },
-  "Intercostal muscles": { ids: ["external_intercostal", "internal_intercostal", "innermost_intercostal"] },
-  Interspinales: { ids: ["interspinales_colli", "interspinales_thoracis", "interspinales_lumborum"] },
-  Multifidus: { ids: ["multifidus_colli", "multifidus_thoracis", "multifidus_lumborum"] },
-  "Levatores costarum": { ids: ["levatores_breves_costarum", "levatores_longi_costarum"] },
+  "Intercostal muscles": { ids: ["external_intercostal", "internal_intercostal", "innermost_intercostal"], series: true },
+  Interspinales: { ids: ["interspinales_colli", "interspinales_thoracis", "interspinales_lumborum"], series: true },
+  Multifidus: { ids: ["multifidus_colli", "multifidus_thoracis", "multifidus_lumborum"], series: true },
+  "Levatores costarum": { ids: ["levatores_breves_costarum", "levatores_longi_costarum"], series: true },
   "Levator ani": { ids: ["iliococcygeus", "pubococcygeus", "pubo_analis"], note: "The source has the parts of levator ani as separate muscles" },
   "Levator ani (iliococcygeus)": { ids: ["iliococcygeus"] },
   "Musculus uvulae": unmatched(70, "Not in the source"),

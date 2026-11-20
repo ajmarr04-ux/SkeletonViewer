@@ -27,9 +27,6 @@ landmarks:
   - id: head
     name: Head
     position: null
-muscleAttachments:
-  - Fourth dorsal interosseous
-  - Second plantar interosseous
 clinicalNote: null
 reviewed: false
 ---

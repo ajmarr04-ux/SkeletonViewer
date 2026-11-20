@@ -27,7 +27,6 @@ landmarks:
   - { id: medial_surface, name: Medial surface, position: null }
   - { id: lateral_surface, name: Lateral surface, position: null }
   - { id: posterior_surface, name: Posterior surface, position: null }
-muscleAttachments: [Quadriceps femoris (through the patellar ligament), Sartorius, Gracilis, Semitendinosus, Semimembranosus, Tibialis anterior, Tibialis posterior, Flexor digitorum longus, Soleus, Popliteus, Extensor digitorum longus, Iliotibial tract]
 clinicalNote: "The front of the tibia lies just under the skin, so fractures of its shaft are often open (through the skin) and can be slow to heal."
 reviewed: false
 ---

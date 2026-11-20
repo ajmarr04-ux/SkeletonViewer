@@ -24,7 +24,6 @@ landmarks:
   - { id: spinous_process, name: Spinous process, position: null }
   - { id: costal_facet_for_rib_1, name: Costal facet for rib 1, position: null }
   - { id: inferior_costal_facet_for_rib_2, name: Inferior costal facet for rib 2, position: null }
-muscleAttachments: [Trapezius, Rhomboid minor, Serratus posterior superior, Splenius capitis, Longus colli, Levatores costarum, Multifidus]
 clinicalNote: "A Pancoast tumour at the apex of the lung can invade the T1 nerve root and the sympathetic chain beside this vertebra, causing arm pain and Horner syndrome."
 reviewed: false
 ---

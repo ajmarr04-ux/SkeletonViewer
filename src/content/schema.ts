@@ -32,7 +32,6 @@ export const frontMatterSchema = z
     ta2: z.string().regex(/^\d+$/, "TA2 IDs are numbers").nullable(),
     functions: z.array(text).min(1),
     landmarks: z.array(landmarkSchema),
-    muscleAttachments: z.array(text),
     clinicalNote: text.nullable(),
     reviewed: z.boolean(),
   })

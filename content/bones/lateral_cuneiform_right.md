@@ -27,9 +27,6 @@ landmarks:
   - id: metatarsal_facets
     name: Metatarsal facets
     position: null
-muscleAttachments:
-  - Tibialis posterior
-  - Flexor hallucis brevis
 clinicalNote: null
 reviewed: false
 ---

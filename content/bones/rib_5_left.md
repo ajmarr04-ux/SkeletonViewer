@@ -21,7 +21,6 @@ landmarks:
   - { id: angle, name: Angle, position: null }
   - { id: shaft, name: Shaft, position: null }
   - { id: costal_groove, name: Costal groove, position: null }
-muscleAttachments: [Intercostal muscles, Serratus anterior, Pectoralis minor, External oblique, Levatores costarum, Iliocostalis]
 clinicalNote: "A chest drain is usually inserted in the fifth intercostal space in the mid-axillary line, just above the upper border of a rib to avoid the vessels in the groove."
 reviewed: false
 ---

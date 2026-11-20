@@ -39,13 +39,6 @@ landmarks:
   - id: subclavian_groove
     name: Subclavian groove
     position: null
-muscleAttachments:
-  - Sternocleidomastoid
-  - Trapezius
-  - Deltoid
-  - Pectoralis major
-  - Subclavius
-  - Sternohyoid
 clinicalNote: The clavicle is one of the most often fractured bones, usually in its middle third after a fall on the shoulder or an outstretched hand.
 reviewed: false
 ---

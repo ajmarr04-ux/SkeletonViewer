@@ -30,12 +30,6 @@ landmarks:
   - id: head
     name: Head
     position: null
-muscleAttachments:
-  - Fibularis brevis
-  - Fibularis tertius
-  - Flexor digiti minimi brevis
-  - Fourth dorsal interosseous
-  - Third plantar interosseous
 clinicalNote: An ankle sprain with the foot turned in can pull off the tuberosity of the fifth metatarsal; a fracture just beyond it (a Jones fracture) heals slowly.
 reviewed: false
 ---

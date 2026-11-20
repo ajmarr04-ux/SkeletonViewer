@@ -23,7 +23,6 @@ landmarks:
   - { id: spinous_process, name: Spinous process, position: null }
   - { id: foramen_transversarium, name: Foramen transversarium, position: null }
   - { id: transverse_process, name: Transverse process, position: null }
-muscleAttachments: [Obliquus capitis inferior, Rectus capitis posterior major, Longus colli, Semispinalis cervicis, Multifidus, Interspinales]
 clinicalNote: Fractures of the dens are common in older people after falls; some heal poorly because of its limited blood supply.
 reviewed: false
 ---

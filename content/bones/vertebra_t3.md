@@ -24,7 +24,6 @@ landmarks:
   - { id: transverse_process, name: Transverse process, position: null }
   - { id: transverse_costal_facet, name: Transverse costal facet, position: null }
   - { id: spinous_process, name: Spinous process, position: null }
-muscleAttachments: [Trapezius, Rhomboid major, Serratus posterior superior, Splenius capitis, Splenius cervicis, Levatores costarum, Multifidus]
 clinicalNote: "The medial end of the spine of the scapula lies at about the level of the T3 spinous process, a landmark for counting vertebrae from behind."
 reviewed: false
 ---

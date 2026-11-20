@@ -34,10 +34,6 @@ landmarks:
   - id: zygomatico_orbital_foramen
     name: Zygomatico-orbital foramen
     position: null
-muscleAttachments:
-  - Masseter
-  - Zygomaticus major
-  - Zygomaticus minor
 clinicalNote: A zygomaticomaxillary complex fracture flattens the cheek and can numb the cheek and upper lip through injury to the infra-orbital nerve.
 reviewed: false
 ---

@@ -129,7 +129,8 @@ type FrontMatter = {
   ta2: string | null;         // digits only; null everywhere today
   functions: string[];        // ≥ 1
   landmarks: { id: string; name: string; position: [number, number, number] | null }[];
-  muscleAttachments: string[];
+  // muscleAttachments: string[] was removed in Milestone 8 (session AD): each bone's muscle list is
+  // now derived from the muscle files' origins and insertions (src/content/compile.ts, boneMuscleLists).
   clinicalNote: string | null;
   reviewed: boolean;
 };
@@ -174,7 +175,6 @@ landmarks:
   - { id: articular_surface, name: Articular surface, position: null }
   - { id: lateral_facet, name: Lateral facet, position: null }
   - { id: medial_facet, name: Medial facet, position: null }
-muscleAttachments: [Rectus femoris, Vastus lateralis, Vastus medialis, Vastus intermedius]
 clinicalNote: "The patella can dislocate sideways, usually in young people with shallow femoral grooves; vastus medialis helps to hold it in place."
 reviewed: false
 ---

@@ -21,7 +21,6 @@ landmarks:
   - { id: angle, name: Angle, position: null }
   - { id: shaft, name: Shaft, position: null }
   - { id: costal_groove, name: Costal groove, position: null }
-muscleAttachments: [Intercostal muscles, Serratus anterior, External oblique, Diaphragm (through its costal cartilage), Transversus abdominis (through its costal cartilage), Levatores costarum]
 clinicalNote: "The costal margin, formed by the cartilages of ribs 7 to 10, is the edge below which the liver and spleen are felt when they are enlarged."
 reviewed: false
 ---

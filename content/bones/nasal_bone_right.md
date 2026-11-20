@@ -23,8 +23,6 @@ landmarks:
   - id: ethmoidal_groove
     name: Ethmoidal groove
     position: null
-muscleAttachments:
-  - Procerus
 clinicalNote: A blood clot under the lining of the septum after a broken nose (septal haematoma) needs prompt drainage to prevent damage to the septal cartilage.
 reviewed: false
 ---

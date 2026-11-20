@@ -26,7 +26,6 @@ landmarks:
   - { id: posterior_tubercle, name: Posterior tubercle, position: null }
   - { id: foramen_transversarium, name: Foramen transversarium, position: null }
   - { id: spinous_process, name: Spinous process, position: null }
-muscleAttachments: [Longus colli, Longus capitis, Scalenus anterior, Scalenus medius, Levator scapulae, Multifidus, Interspinales]
 clinicalNote: "In older people, bony spurs at the uncovertebral and facet joints of the cervical vertebrae can narrow the intervertebral foramina and press on nerve roots."
 reviewed: false
 ---

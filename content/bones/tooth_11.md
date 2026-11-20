@@ -37,7 +37,6 @@ landmarks:
   - id: pulp_cavity
     name: Pulp cavity
     position: null
-muscleAttachments: []
 clinicalNote: Upper central incisors are the teeth most often injured in falls and sport; a knocked-out permanent tooth should be replanted as soon as possible.
 reviewed: false
 ---

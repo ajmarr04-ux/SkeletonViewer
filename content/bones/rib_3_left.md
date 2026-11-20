@@ -21,7 +21,6 @@ landmarks:
   - { id: angle, name: Angle, position: null }
   - { id: shaft, name: Shaft, position: null }
   - { id: costal_groove, name: Costal groove, position: null }
-muscleAttachments: [Intercostal muscles, Serratus anterior, Pectoralis minor, Serratus posterior superior, Levatores costarum, Iliocostalis]
 clinicalNote: "The middle ribs are the ones most often broken, usually near the angle, the weakest part of the rib."
 reviewed: false
 ---

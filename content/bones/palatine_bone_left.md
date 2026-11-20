@@ -22,7 +22,6 @@ landmarks:
   - { id: greater_palatine_foramen, name: Greater palatine foramen, position: null }
   - { id: lesser_palatine_foramina, name: Lesser palatine foramina, position: null }
   - { id: posterior_nasal_spine, name: Posterior nasal spine, position: null }
-muscleAttachments: [Medial pterygoid, Musculus uvulae]
 clinicalNote: "Local anaesthetic for the back of the hard palate is injected at the greater palatine foramen, near the upper molars (greater palatine nerve block)."
 reviewed: false
 ---

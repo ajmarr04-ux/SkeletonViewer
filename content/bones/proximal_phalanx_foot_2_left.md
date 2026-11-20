@@ -17,7 +17,6 @@ landmarks:
   - { id: base, name: Base, position: null }
   - { id: shaft, name: Shaft, position: null }
   - { id: head, name: Head, position: null }
-muscleAttachments: [First dorsal interosseous, Second dorsal interosseous]
 clinicalNote: "In a hammer toe the proximal interphalangeal joint is fixed bent; it most often affects the second toe and can rub on the shoe."
 reviewed: false
 ---

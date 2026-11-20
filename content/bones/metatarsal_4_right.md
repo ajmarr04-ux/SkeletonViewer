@@ -27,11 +27,6 @@ landmarks:
   - id: head
     name: Head
     position: null
-muscleAttachments:
-  - Third dorsal interosseous
-  - Fourth dorsal interosseous
-  - Second plantar interosseous
-  - Adductor hallucis (oblique head)
 clinicalNote: Pain between the heads of the third and fourth metatarsals when walking is typical of a Morton neuroma, a thickened digital nerve.
 reviewed: false
 ---

@@ -26,9 +26,6 @@ landmarks:
   - id: tuberosity
     name: Tuberosity
     position: null
-muscleAttachments:
-  - Flexor hallucis longus
-  - Extensor hallucis longus
 clinicalNote: null
 reviewed: false
 ---

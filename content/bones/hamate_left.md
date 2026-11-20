@@ -17,7 +17,6 @@ landmarks:
   - { id: hook_of_hamate, name: Hook of hamate, position: null }
   - { id: body, name: Body, position: null }
   - { id: metacarpal_facets, name: Metacarpal facets, position: null }
-muscleAttachments: [Flexor digiti minimi brevis, Opponens digiti minimi]
 clinicalNote: "The hook of the hamate can break in golfers and racquet players when the grip of a club or racquet presses on it; the nearby ulnar nerve may be irritated."
 reviewed: false
 ---

@@ -449,3 +449,44 @@ describe("matchAttachment", () => {
     expect(matchAttachment("Musculus imaginarius", "femur_left", names).rule).toBe("unmatched");
   });
 });
+
+// --- The migration's two-way check (session AD) ---
+import { checkMigration, type MigrationRow, type SoftEntry } from "../scripts/content/attachment-check";
+
+describe("checkMigration", () => {
+  const soft: SoftEntry[] = [
+    { id: "flexor_left", kind: "muscle", side: "left" },
+    { id: "big_left", kind: "muscle", side: "left" },
+    { id: "big_head_left", kind: "muscle_part", side: "left", parent: "big_left" },
+    { id: "calf_left", kind: "muscle", side: "left" },
+    { id: "tendon_left", kind: "muscle_part", side: "left", parent: "other_left", alsoServes: ["calf_left"] },
+    { id: "series_a_left", kind: "muscle", side: "left" },
+    { id: "series_b_left", kind: "muscle", side: "left" },
+    { id: "mid", kind: "muscle", side: "midline" },
+  ];
+  const attached: Record<string, { origins: string[]; insertions: string[] }> = {
+    bone_left: { origins: ["flexor_left", "big_head_left"], insertions: ["tendon_left", "series_a_left"] },
+    spine: { origins: ["mid"], insertions: [] },
+  };
+  const at = (s: string) => attached[s] ?? { origins: [], insertions: [] };
+  const row = (ids: string[], bone = "bone_left", over: Partial<MigrationRow> = {}): MigrationRow => ({ rule: "name", bones: { [bone]: ids }, ...over });
+  const run = (table: Record<string, MigrationRow>, answered = (_: number) => false) => checkMigration(table, soft, at, answered);
+
+  it("confirms a muscle attached directly, through one of its parts, or through a part that serves it", () => {
+    const r = run({ Flexor: row(["flexor"]), Big: row(["big"]), Calf: row(["calf"]), Mid: row(["mid"], "spine") });
+    expect(r).toEqual({ errors: [], accepted: { indirect: 0, unmatched: 0 }, confirmed: 4 });
+  });
+  it("fails a muscle with no attachment on the bone, unless it's indirect", () => {
+    expect(run({ Calf: row(["calf"], "spine") }).errors).toEqual(['"Calf" on spine: calf has no origin or insertion on spine']);
+    expect(run({ Calf: row(["calf"], "spine", { indirect: true }) }).accepted.indirect).toBe(1);
+  });
+  it("needs all of a composite, but any one of a series", () => {
+    expect(run({ Both: row(["series_a", "series_b"]) }).errors).toHaveLength(1);
+    expect(run({ Both: row(["series_a", "series_b"], "bone_left", { series: true }) }).confirmed).toBe(1);
+  });
+  it("accepts an unmatched string only once its question is answered", () => {
+    const t = { Gone: row([], "bone_left", { rule: "unmatched", question: 70 }) };
+    expect(run(t).errors).toHaveLength(1);
+    expect(run(t, (n) => n === 70).accepted.unmatched).toBe(1);
+  });
+});

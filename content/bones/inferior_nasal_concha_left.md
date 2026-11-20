@@ -17,7 +17,6 @@ landmarks:
   - { id: lacrimal_process, name: Lacrimal process, position: null }
   - { id: maxillary_process, name: Maxillary process, position: null }
   - { id: ethmoidal_process, name: Ethmoidal process, position: null }
-muscleAttachments: []
 clinicalNote: Swelling of the lining over the inferior concha is a common cause of a blocked nose; persistent enlargement can be reduced surgically.
 reviewed: false
 ---

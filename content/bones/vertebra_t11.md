@@ -22,7 +22,6 @@ landmarks:
   - { id: transverse_process, name: Transverse process, position: null }
   - { id: spinous_process, name: Spinous process, position: null }
   - { id: costal_facet_for_rib_11, name: Costal facet for rib 11, position: null }
-muscleAttachments: [Trapezius, Latissimus dorsi, Serratus posterior inferior, Levatores costarum, Multifidus]
 clinicalNote: "Idiopathic scoliosis most often curves the thoracic spine, and the rotation of the vertebrae makes the ribs stand out on one side of the back."
 reviewed: false
 ---

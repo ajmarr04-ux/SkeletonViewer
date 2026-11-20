@@ -27,11 +27,6 @@ landmarks:
   - id: head
     name: Head
     position: null
-muscleAttachments:
-  - Abductor pollicis brevis
-  - Flexor pollicis brevis
-  - Adductor pollicis
-  - Extensor pollicis brevis
 clinicalNote: A forced sideways bend of the thumb tears the ulnar collateral ligament of the metacarpophalangeal joint (gamekeeper's or skier's thumb), sometimes pulling a fragment off the base of this phalanx.
 reviewed: false
 ---

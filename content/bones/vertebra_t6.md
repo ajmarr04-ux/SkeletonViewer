@@ -24,7 +24,6 @@ landmarks:
   - { id: transverse_process, name: Transverse process, position: null }
   - { id: transverse_costal_facet, name: Transverse costal facet, position: null }
   - { id: spinous_process, name: Spinous process, position: null }
-muscleAttachments: [Trapezius, Splenius cervicis, Levatores costarum, Multifidus, Rotatores]
 clinicalNote: "Osteoporotic compression fractures are most common in the mid-thoracic and thoracolumbar spine, giving a wedge-shaped body and an increased forward curve."
 reviewed: false
 ---

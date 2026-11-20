@@ -20,7 +20,6 @@ landmarks:
   - { id: parietal_foramen, name: Parietal foramen, position: null }
   - { id: groove_for_the_superior_sagittal_sinus, name: Groove for the superior sagittal sinus, position: null }
   - { id: grooves_for_the_middle_meningeal_vessels, name: Grooves for the middle meningeal vessels, position: null }
-muscleAttachments: [Temporalis]
 clinicalNote: The middle meningeal artery runs in grooves on its inner surface near the pterion; a fracture there can tear the artery and cause an extradural haematoma.
 reviewed: false
 ---

@@ -27,7 +27,6 @@ landmarks:
   - id: ethmoidal_process
     name: Ethmoidal process
     position: null
-muscleAttachments: []
 clinicalNote: Swelling of the lining over the inferior concha is a common cause of a blocked nose; persistent enlargement can be reduced surgically.
 reviewed: false
 ---

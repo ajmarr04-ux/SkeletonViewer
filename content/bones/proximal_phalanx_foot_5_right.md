@@ -27,10 +27,6 @@ landmarks:
   - id: head
     name: Head
     position: null
-muscleAttachments:
-  - Abductor digiti minimi
-  - Flexor digiti minimi brevis
-  - Third plantar interosseous
 clinicalNote: The little toe is often stubbed against furniture, and fractures of its proximal phalanx are among the most common toe fractures.
 reviewed: false
 ---

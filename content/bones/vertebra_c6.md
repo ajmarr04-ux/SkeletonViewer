@@ -27,7 +27,6 @@ landmarks:
   - { id: foramen_transversarium, name: Foramen transversarium, position: null }
   - { id: spinous_process, name: Spinous process, position: null }
   - { id: carotid_tubercle, name: Carotid tubercle, position: null }
-muscleAttachments: [Longus colli, Longus capitis, Scalenus anterior, Scalenus medius, Scalenus posterior, Multifidus, Interspinales]
 clinicalNote: "The carotid tubercle of C6 is a landmark: the common carotid artery can be pressed against it, and the stellate ganglion block is placed near it."
 reviewed: false
 ---

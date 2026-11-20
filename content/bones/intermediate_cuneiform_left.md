@@ -15,7 +15,6 @@ functions:
 landmarks:
   - { id: navicular_facet, name: Navicular facet, position: null }
   - { id: metatarsal_facet, name: Metatarsal facet, position: null }
-muscleAttachments: [Tibialis posterior]
 clinicalNote: null
 reviewed: false
 ---

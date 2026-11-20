@@ -27,10 +27,6 @@ landmarks:
   - id: head
     name: Head
     position: null
-muscleAttachments:
-  - Flexor digitorum superficialis
-  - Extensor digitorum
-  - Extensor indicis
 clinicalNote: null
 reviewed: false
 ---

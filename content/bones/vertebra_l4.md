@@ -24,7 +24,6 @@ landmarks:
   - { id: accessory_process, name: Accessory process, position: null }
   - { id: transverse_process, name: Transverse process, position: null }
   - { id: spinous_process, name: Spinous process, position: null }
-muscleAttachments: [Psoas major, Quadratus lumborum, Latissimus dorsi (through the thoracolumbar fascia), Erector spinae, Multifidus]
 clinicalNote: "The L4–L5 and L5–S1 discs are the most common sites of lumbar disc herniation, which presses on a nerve root and causes sciatica."
 reviewed: false
 ---

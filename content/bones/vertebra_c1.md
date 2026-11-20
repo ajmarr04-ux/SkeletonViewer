@@ -25,7 +25,6 @@ landmarks:
   - { id: foramen_transversarium, name: Foramen transversarium, position: null }
   - { id: facet_for_the_dens, name: Facet for the dens, position: null }
   - { id: groove_for_the_vertebral_artery, name: Groove for the vertebral artery, position: null }
-muscleAttachments: [Rectus capitis posterior minor, Obliquus capitis superior, Obliquus capitis inferior, Rectus capitis lateralis, Rectus capitis anterior, Longus colli, Levator scapulae, Splenius cervicis]
 clinicalNote: "A Jefferson fracture is a burst fracture of the ring of the atlas, usually caused by a heavy load on the top of the head."
 reviewed: false
 ---

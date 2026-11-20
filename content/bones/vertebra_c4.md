@@ -26,7 +26,6 @@ landmarks:
   - { id: posterior_tubercle, name: Posterior tubercle, position: null }
   - { id: foramen_transversarium, name: Foramen transversarium, position: null }
   - { id: spinous_process, name: Spinous process, position: null }
-muscleAttachments: [Longus colli, Longus capitis, Scalenus anterior, Scalenus medius, Scalenus posterior, Levator scapulae, Multifidus, Interspinales]
 clinicalNote: "The phrenic nerve arises from the C3 to C5 nerve roots, so a spinal cord injury at or above this level can paralyse the diaphragm."
 reviewed: false
 ---

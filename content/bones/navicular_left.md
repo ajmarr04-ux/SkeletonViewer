@@ -17,7 +17,6 @@ landmarks:
   - { id: tuberosity, name: Tuberosity, position: null }
   - { id: talar_articular_surface, name: Talar articular surface, position: null }
   - { id: cuneiform_facets, name: Cuneiform facets, position: null }
-muscleAttachments: [Tibialis posterior]
 clinicalNote: "Stress fractures of the navicular occur in runners and jumpers and are easy to miss on plain X-rays."
 reviewed: false
 ---

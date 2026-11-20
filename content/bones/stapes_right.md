@@ -29,8 +29,6 @@ landmarks:
   - id: base
     name: Base
     position: null
-muscleAttachments:
-  - Stapedius
 clinicalNote: In otosclerosis, new bone fixes the base of the stapes in the oval window, causing conductive deafness that can be treated by stapes surgery (stapedotomy).
 reviewed: false
 ---

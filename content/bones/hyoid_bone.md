@@ -17,7 +17,6 @@ landmarks:
   - { id: body, name: Body, position: null }
   - { id: greater_horn, name: Greater horn, position: null }
   - { id: lesser_horn, name: Lesser horn, position: null }
-muscleAttachments: [Mylohyoid, Geniohyoid, Hyoglossus, Stylohyoid, Digastric (through a fibrous loop), Middle pharyngeal constrictor, Sternohyoid, Omohyoid, Thyrohyoid]
 clinicalNote: "A fractured hyoid, especially a greater horn, is a sign of strangulation at post-mortem examination."
 reviewed: false
 ---

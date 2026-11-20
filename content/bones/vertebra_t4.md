@@ -24,7 +24,6 @@ landmarks:
   - { id: transverse_process, name: Transverse process, position: null }
   - { id: transverse_costal_facet, name: Transverse costal facet, position: null }
   - { id: spinous_process, name: Spinous process, position: null }
-muscleAttachments: [Trapezius, Rhomboid major, Splenius cervicis, Levatores costarum, Multifidus]
 clinicalNote: The sternal angle lies level with the T4–T5 disc; this plane marks where the trachea divides and where the arch of the aorta begins and ends.
 reviewed: false
 ---

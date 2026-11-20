@@ -39,14 +39,6 @@ landmarks:
   - id: costal_groove
     name: Costal groove
     position: null
-muscleAttachments:
-  - Intercostal muscles
-  - Serratus anterior
-  - External oblique
-  - Diaphragm (through its costal cartilage)
-  - Transversus abdominis (through its costal cartilage)
-  - Rectus abdominis (through its costal cartilage)
-  - Levatores costarum
 clinicalNote: Several neighbouring ribs each broken in two places form a flail segment, which moves inwards when the patient breathes in.
 reviewed: false
 ---

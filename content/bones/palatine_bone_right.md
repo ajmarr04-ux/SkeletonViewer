@@ -42,9 +42,6 @@ landmarks:
   - id: posterior_nasal_spine
     name: Posterior nasal spine
     position: null
-muscleAttachments:
-  - Medial pterygoid
-  - Musculus uvulae
 clinicalNote: Local anaesthetic for the back of the hard palate is injected at the greater palatine foramen, near the upper molars (greater palatine nerve block).
 reviewed: false
 ---

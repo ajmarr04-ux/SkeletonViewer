@@ -27,9 +27,6 @@ landmarks:
   - id: head
     name: Head
     position: null
-muscleAttachments:
-  - Second dorsal interosseous
-  - Third dorsal interosseous
 clinicalNote: null
 reviewed: false
 ---

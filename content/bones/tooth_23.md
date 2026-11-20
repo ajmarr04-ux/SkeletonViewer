@@ -20,7 +20,6 @@ landmarks:
   - { id: cervix, name: Cervix, position: null }
   - { id: root, name: Root, position: null }
   - { id: pulp_cavity, name: Pulp cavity, position: null }
-muscleAttachments: []
 clinicalNote: "After the third molars, the upper canine is the tooth most often impacted, usually lying on the palatal side, and it may need surgical exposure and orthodontic traction."
 reviewed: false
 ---
