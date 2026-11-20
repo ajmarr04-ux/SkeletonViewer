@@ -22,3 +22,18 @@ declare module "virtual:skeleton-soft-ids" {
   const table: import("../layers/softIds").SoftId[];
   export default table;
 }
+declare module "virtual:skeleton-soft-content-muscles" {
+  /** content/muscles/*.md compiled (src/content/softCompile.ts; M8 plan decision 11). */
+  const content: import("./softCompile").SoftLayerContent;
+  export default content;
+}
+declare module "virtual:skeleton-soft-content-ligaments" {
+  /** content/ligaments/*.md compiled (src/content/softCompile.ts; M8 plan decision 11). */
+  const content: import("./softCompile").SoftLayerContent;
+  export default content;
+}
+declare module "virtual:skeleton-soft-content-cartilage" {
+  /** content/cartilage/*.md compiled (src/content/softCompile.ts; M8 plan decision 11). */
+  const content: import("./softCompile").SoftLayerContent;
+  export default content;
+}

@@ -1,0 +1,597 @@
+[
+  {
+    "key": "head",
+    "label": "Head",
+    "children": [
+      {
+        "key": "scalp",
+        "label": "Scalp (epicranius)",
+        "children": [
+          "occipitofrontalis_left",
+          "temporoparietalis_left"
+        ]
+      },
+      {
+        "key": "facial_expression",
+        "label": "Muscles of facial expression",
+        "children": [
+          "bucinator_left",
+          "corrugator_supercilii_left",
+          "depressor_anguli_oris_left",
+          "depressor_labii_inferioris_left",
+          "depressor_septi_nasi_left",
+          "levator_anguli_oris_left",
+          "levator_labii_superioris_left",
+          "levator_nasolabialis_left",
+          "mentalis_left",
+          "nasalis_left",
+          "orbicularis_oculi_left",
+          "orbicularis_oris_left",
+          "procerus_left",
+          "risorius_left",
+          "zygomaticus_major_left",
+          "zygomaticus_minor_left"
+        ]
+      },
+      {
+        "key": "extraocular",
+        "label": "Extra-ocular muscles",
+        "children": [
+          "inferior_oblique_left",
+          "inferior_rectus_left",
+          "lateral_rectus_left",
+          "levator_palpebrae_superioris_left",
+          "medial_rectus_left",
+          "superior_oblique_left",
+          "superior_rectus_left"
+        ]
+      },
+      {
+        "key": "mastication",
+        "label": "Muscles of mastication",
+        "children": [
+          "lateral_pterygoid_left",
+          "masseter_left",
+          "medial_pterygoid_left",
+          "temporalis_left"
+        ]
+      },
+      {
+        "key": "tongue",
+        "label": "Muscles of the tongue",
+        "children": [
+          "genioglossus_left",
+          "hyoglossus_left"
+        ]
+      },
+      {
+        "key": "soft_palate",
+        "label": "Muscles of the soft palate",
+        "children": [
+          "palatopharyngeus_left"
+        ]
+      }
+    ]
+  },
+  {
+    "key": "neck",
+    "label": "Neck",
+    "children": [
+      {
+        "key": "superficial_neck",
+        "label": "Superficial and lateral neck",
+        "children": [
+          "platysma_left",
+          "sternocleidomastoid_left"
+        ]
+      },
+      {
+        "key": "suprahyoid",
+        "label": "Suprahyoid muscles",
+        "children": [
+          "digastric_left",
+          "geniohyoid_left",
+          "mylohyoid_left",
+          "stylohyoid_left"
+        ]
+      },
+      {
+        "key": "infrahyoid",
+        "label": "Infrahyoid muscles",
+        "children": [
+          "omohyoid_left",
+          "sternohyoid_left",
+          "sternothyroid_left",
+          "thyrohyoid_left"
+        ]
+      },
+      {
+        "key": "prevertebral",
+        "label": "Prevertebral muscles",
+        "children": [
+          "longus_capitis_left",
+          "longus_colli_left",
+          "rectus_anterior_capitis_left",
+          "rectus_lateralis_capitis_left"
+        ]
+      },
+      {
+        "key": "scalene",
+        "label": "Scalene muscles",
+        "children": [
+          "scalenus_anterior_left",
+          "scalenus_medius_left",
+          "scalenus_posterior_left"
+        ]
+      },
+      {
+        "key": "pharynx",
+        "label": "Muscles of the pharynx",
+        "children": [
+          "inferior_pharyngeal_constrictor_left",
+          "middle_pharyngeal_constrictor_left",
+          "stylopharyngeus_left",
+          "superior_pharyngeal_constrictor_left"
+        ]
+      },
+      {
+        "key": "larynx",
+        "label": "Muscles of the larynx",
+        "children": [
+          "cricothyroid_left",
+          "lateral_crico_arytenoid_left",
+          "oblique_arytenoid_left",
+          "posterior_crico_arytenoid_left",
+          "thyro_arytenoid_left",
+          "transverse_arytenoid"
+        ]
+      }
+    ]
+  },
+  {
+    "key": "back",
+    "label": "Back",
+    "children": [
+      {
+        "key": "superficial_back",
+        "label": "Superficial back (extrinsic)",
+        "children": [
+          "latissimus_dorsi_left",
+          "levator_scapulae_left",
+          "rhomboid_major_left",
+          "rhomboid_minor_left",
+          "trapezius_left"
+        ]
+      },
+      {
+        "key": "intermediate_back",
+        "label": "Intermediate back (serratus posterior)",
+        "children": [
+          "serratus_posterior_inferior_left",
+          "serratus_posterior_superior_left"
+        ]
+      },
+      {
+        "key": "spinotransversales",
+        "label": "Splenius muscles",
+        "children": [
+          "splenius_capitis_left",
+          "splenius_colli_left"
+        ]
+      },
+      {
+        "key": "erector_spinae",
+        "label": "Erector spinae",
+        "children": [
+          "iliocostalis_colli_left",
+          "iliocostalis_lumborum_left",
+          "iliocostalis_thoracis_left",
+          "longissimus_capitis_left",
+          "longissimus_colli_left",
+          "longissimus_thoracis_left",
+          "spinalis_capitis_left",
+          "spinalis_colli_left",
+          "spinalis_thoracis_left"
+        ]
+      },
+      {
+        "key": "transversospinales",
+        "label": "Transversospinales",
+        "children": [
+          "multifidus_colli_left",
+          "multifidus_lumborum_left",
+          "multifidus_thoracis_left",
+          "rotatores_left",
+          "semispinalis_colli_left",
+          "semispinalis_thoracis_left"
+        ]
+      },
+      {
+        "key": "segmental_back",
+        "label": "Segmental back muscles",
+        "children": [
+          "interspinales_colli_left",
+          "interspinales_lumborum_left",
+          "interspinales_thoracis_left",
+          "lateral_intertransversarii_lumborum_left",
+          "levatores_breves_costarum_left",
+          "levatores_longi_costarum_left"
+        ]
+      },
+      {
+        "key": "suboccipital",
+        "label": "Suboccipital muscles",
+        "children": [
+          "obliquus_inferior_capitis_left",
+          "obliquus_superior_capitis_left",
+          "rectus_posterior_major_capitis_left",
+          "rectus_posterior_minor_capitis_left"
+        ]
+      }
+    ]
+  },
+  {
+    "key": "thorax",
+    "label": "Thorax",
+    "children": [
+      {
+        "key": "pectoral",
+        "label": "Pectoral region",
+        "children": [
+          "pectoralis_major_left",
+          "pectoralis_minor_left",
+          "serratus_anterior_left",
+          "subclavius_left"
+        ]
+      },
+      {
+        "key": "thoracic_wall",
+        "label": "Thoracic wall",
+        "children": [
+          "external_intercostal_left",
+          "innermost_intercostal_left",
+          "internal_intercostal_left",
+          "transversus_thoracis_left"
+        ]
+      },
+      "diaphragm"
+    ]
+  },
+  {
+    "key": "abdomen",
+    "label": "Abdomen",
+    "children": [
+      {
+        "key": "anterolateral_abdominal_wall",
+        "label": "Anterolateral abdominal wall",
+        "children": [
+          "external_abdominal_oblique_left",
+          "internal_abdominal_oblique_left",
+          "pyramidalis_left",
+          "rectus_abdominis_left",
+          "transversus_abdominis_left"
+        ]
+      },
+      {
+        "key": "posterior_abdominal_wall",
+        "label": "Posterior abdominal wall",
+        "children": [
+          "quadratus_lumborum_left"
+        ]
+      }
+    ]
+  },
+  {
+    "key": "pelvis_perineum",
+    "label": "Pelvis and perineum",
+    "children": [
+      {
+        "key": "pelvic_floor",
+        "label": "Pelvic floor",
+        "children": [
+          "coccygeus_left",
+          "iliococcygeus_left",
+          "pubo_analis_left",
+          "pubococcygeus_left"
+        ]
+      },
+      {
+        "key": "perineum",
+        "label": "Perineum",
+        "children": [
+          "external_anal_sphincter_left"
+        ]
+      }
+    ]
+  },
+  {
+    "key": "upper_limb",
+    "label": "Upper limb",
+    "children": [
+      {
+        "key": "shoulder",
+        "label": "Shoulder",
+        "children": [
+          {
+            "key": "scapulohumeral",
+            "label": "Scapulohumeral muscles",
+            "children": [
+              "deltoid_left",
+              "teres_major_left"
+            ]
+          },
+          {
+            "key": "rotator_cuff",
+            "label": "Rotator cuff",
+            "children": [
+              "supraspinatus_left",
+              "infraspinatus_left",
+              "teres_minor_left",
+              "subscapularis_left"
+            ]
+          }
+        ]
+      },
+      {
+        "key": "arm",
+        "label": "Arm",
+        "children": [
+          {
+            "key": "arm_anterior",
+            "label": "Anterior compartment of the arm",
+            "children": [
+              "biceps_brachii_left",
+              "brachialis_left",
+              "coracobrachialis_left"
+            ]
+          },
+          {
+            "key": "arm_posterior",
+            "label": "Posterior compartment of the arm",
+            "children": [
+              "triceps_brachii_left"
+            ]
+          }
+        ]
+      },
+      {
+        "key": "forearm",
+        "label": "Forearm",
+        "children": [
+          {
+            "key": "forearm_anterior_superficial",
+            "label": "Anterior forearm, superficial",
+            "children": [
+              "pronator_teres_left",
+              "flexor_carpi_radialis_left",
+              "palmaris_longus_left",
+              "flexor_carpi_ulnaris_left",
+              "flexor_digitorum_superficialis_left"
+            ]
+          },
+          {
+            "key": "forearm_anterior_deep",
+            "label": "Anterior forearm, deep",
+            "children": [
+              "flexor_digitorum_profundus_left",
+              "flexor_pollicis_longus_left",
+              "pronator_quadratus_left"
+            ]
+          },
+          {
+            "key": "forearm_posterior_superficial",
+            "label": "Posterior forearm, superficial",
+            "children": [
+              "brachioradialis_left",
+              "extensor_carpi_radialis_longus_left",
+              "extensor_carpi_radialis_brevis_left",
+              "extensor_digitorum_left",
+              "extensor_digiti_minimi_left",
+              "extensor_carpi_ulnaris_left",
+              "anconeus_left"
+            ]
+          },
+          {
+            "key": "forearm_posterior_deep",
+            "label": "Posterior forearm, deep",
+            "children": [
+              "supinator_left",
+              "abductor_pollicis_longus_left",
+              "extensor_pollicis_brevis_left",
+              "extensor_pollicis_longus_left",
+              "extensor_indicis_left"
+            ]
+          }
+        ]
+      },
+      {
+        "key": "hand",
+        "label": "Hand",
+        "children": [
+          {
+            "key": "thenar",
+            "label": "Thenar muscles",
+            "children": [
+              "abductor_pollicis_brevis_left",
+              "flexor_pollicis_brevis_left",
+              "opponens_pollicis_left"
+            ]
+          },
+          {
+            "key": "hypothenar",
+            "label": "Hypothenar muscles",
+            "children": [
+              "abductor_digiti_minimi_hand_left",
+              "flexor_digiti_minimi_hand_left",
+              "opponens_digiti_minimi_hand_left"
+            ]
+          },
+          {
+            "key": "central_hand",
+            "label": "Central hand muscles",
+            "children": [
+              "adductor_pollicis_left",
+              "lumbrical_hand_left",
+              "dorsal_interossei_hand_left",
+              "palmar_interossei_left"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "lower_limb",
+    "label": "Lower limb",
+    "children": [
+      {
+        "key": "hip",
+        "label": "Hip and gluteal region",
+        "children": [
+          {
+            "key": "iliopsoas",
+            "label": "Iliopsoas",
+            "children": [
+              "psoas_major_left",
+              "iliacus_left"
+            ]
+          },
+          {
+            "key": "gluteal_superficial",
+            "label": "Gluteal, superficial",
+            "children": [
+              "gluteus_maximus_left",
+              "gluteus_medius_left",
+              "gluteus_minimus_left",
+              "tensor_fasciae_latae_left"
+            ]
+          },
+          {
+            "key": "gluteal_deep",
+            "label": "Gluteal, deep (short lateral rotators)",
+            "children": [
+              "piriformis_left",
+              "superior_gemellus_left",
+              "obturator_internus_left",
+              "inferior_gemellus_left",
+              "quadratus_femoris_left"
+            ]
+          }
+        ]
+      },
+      {
+        "key": "thigh",
+        "label": "Thigh",
+        "children": [
+          {
+            "key": "thigh_anterior",
+            "label": "Anterior compartment of the thigh",
+            "children": [
+              "sartorius_left",
+              "rectus_femoris_left",
+              "vastus_lateralis_left",
+              "vastus_intermedius_left",
+              "vastus_medialis_left",
+              "articularis_genus_left"
+            ]
+          },
+          {
+            "key": "thigh_medial",
+            "label": "Medial compartment of the thigh",
+            "children": [
+              "pectineus_left",
+              "adductor_longus_left",
+              "adductor_brevis_left",
+              "adductor_magnus_left",
+              "gracilis_left",
+              "obturator_externus_left"
+            ]
+          },
+          {
+            "key": "thigh_posterior",
+            "label": "Posterior compartment of the thigh",
+            "children": [
+              "biceps_femoris_left",
+              "semitendinosus_left",
+              "semimembranosus_left"
+            ]
+          }
+        ]
+      },
+      {
+        "key": "leg",
+        "label": "Leg",
+        "children": [
+          {
+            "key": "leg_anterior",
+            "label": "Anterior compartment of the leg",
+            "children": [
+              "tibialis_anterior_left",
+              "extensor_hallucis_longus_left",
+              "extensor_digitorum_longus_left",
+              "fibularis_tertius_left"
+            ]
+          },
+          {
+            "key": "leg_lateral",
+            "label": "Lateral compartment of the leg",
+            "children": [
+              "fibularis_longus_left",
+              "fibularis_brevis_left"
+            ]
+          },
+          {
+            "key": "leg_posterior_superficial",
+            "label": "Posterior leg, superficial",
+            "children": [
+              "gastrocnemius_left",
+              "soleus_left",
+              "plantaris_left"
+            ]
+          },
+          {
+            "key": "leg_posterior_deep",
+            "label": "Posterior leg, deep",
+            "children": [
+              "popliteus_left",
+              "tibialis_posterior_left",
+              "flexor_digitorum_longus_left",
+              "flexor_hallucis_longus_left"
+            ]
+          }
+        ]
+      },
+      {
+        "key": "foot",
+        "label": "Foot",
+        "children": [
+          {
+            "key": "foot_dorsum",
+            "label": "Dorsum of the foot",
+            "children": [
+              "extensor_digitorum_brevis_left",
+              "extensor_hallucis_brevis_left"
+            ]
+          },
+          {
+            "key": "foot_sole",
+            "label": "Sole of the foot",
+            "children": [
+              "abductor_hallucis_left",
+              "flexor_digitorum_brevis_left",
+              "abductor_digiti_minimi_foot_left",
+              "quadratus_plantae_left",
+              "lumbrical_foot_left",
+              "flexor_hallucis_brevis_left",
+              "adductor_hallucis_left",
+              "flexor_digiti_minimi_foot_left",
+              "opponens_digiti_minimi_foot_left",
+              "dorsal_interossei_foot_left",
+              "plantar_interossei_left"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

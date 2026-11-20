@@ -1,0 +1,14 @@
+{
+  "movements": [
+    "flexion", "extension", "abduction", "adduction", "medial_rotation", "lateral_rotation",
+    "pronation", "supination", "dorsiflexion", "plantarflexion", "inversion", "eversion",
+    "elevation", "depression", "protraction", "retraction", "upward_rotation", "downward_rotation",
+    "lateral_flexion", "rotation", "opposition", "reposition", "circumduction", "stabilisation"
+  ],
+  "antagonistPairs": [
+    ["flexion", "extension"], ["abduction", "adduction"], ["medial_rotation", "lateral_rotation"],
+    ["pronation", "supination"], ["dorsiflexion", "plantarflexion"], ["inversion", "eversion"],
+    ["elevation", "depression"], ["protraction", "retraction"], ["upward_rotation", "downward_rotation"],
+    ["opposition", "reposition"]
+  ]
+}

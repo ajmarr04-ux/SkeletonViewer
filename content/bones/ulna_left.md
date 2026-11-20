@@ -23,6 +23,11 @@ landmarks:
   - { id: interosseous_border, name: Interosseous border, position: null }
   - { id: head, name: Head, position: null }
   - { id: styloid_process, name: Styloid process, position: null }
+  - { id: supinator_crest, name: Supinator crest, position: null }
+  - { id: anterior_surface, name: Anterior surface, position: null }
+  - { id: medial_surface, name: Medial surface, position: null }
+  - { id: posterior_surface, name: Posterior surface, position: null }
+  - { id: posterior_border, name: Posterior border, position: null }
 muscleAttachments: [Triceps brachii, Anconeus, Brachialis, Flexor digitorum profundus, Flexor carpi ulnaris, Flexor digitorum superficialis (humero-ulnar head), Pronator teres (ulnar head), Pronator quadratus, Supinator, Abductor pollicis longus, Extensor pollicis longus, Extensor indicis, Extensor carpi ulnaris]
 clinicalNote: "A fracture of the upper ulna with dislocation of the radial head is a Monteggia fracture-dislocation; the dislocation is easy to miss on X-ray."
 reviewed: false

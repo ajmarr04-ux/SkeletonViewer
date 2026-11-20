@@ -1,0 +1,18 @@
+---
+# Generated from extensor_carpi_ulnaris_ulnar_head_left.md by `npm run content:mirror`. Edit that file, not this one.
+id: extensor_carpi_ulnaris_ulnar_head_right
+kind: muscle_part
+partType: head
+parent: extensor_carpi_ulnaris_right
+alsoServes: []
+name: Ulnar head of extensor carpi ulnaris
+latin: Caput ulnare musculi extensoris carpi ulnaris
+side: right
+origin:
+  - structure: ulna_right
+    landmark: posterior_border
+insertion: inherit
+actions: []
+reviewed: false
+---
+The ulnar head arises from the posterior border of the ulna by an aponeurosis shared with flexor carpi ulnaris and flexor digitorum profundus.

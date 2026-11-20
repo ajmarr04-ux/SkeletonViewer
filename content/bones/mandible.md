@@ -25,6 +25,12 @@ landmarks:
   - { id: mandibular_foramen, name: Mandibular foramen, position: null }
   - { id: alveolar_part, name: Alveolar part, position: null }
   - { id: mylohyoid_line, name: Mylohyoid line, position: null }
+  - { id: oblique_line, name: Oblique line, position: null }
+  - { id: digastric_fossa, name: Digastric fossa, position: null }
+  - { id: superior_mental_spine, name: Superior mental spine, position: null }
+  - { id: inferior_mental_spine, name: Inferior mental spine, position: null }
+  - { id: incisive_fossa, name: Incisive fossa, position: null }
+  - { id: pterygoid_fovea, name: Pterygoid fovea, position: null }
 muscleAttachments: [Masseter, Temporalis, Medial pterygoid, Lateral pterygoid, Digastric (anterior belly), Mylohyoid, Geniohyoid, Genioglossus, Buccinator, Mentalis, Depressor anguli oris, Platysma]
 clinicalNote: "The mandible often breaks in two places, because it forms a ring with the skull; the neck of the condyle is a common second site after a blow to the chin."
 reviewed: false

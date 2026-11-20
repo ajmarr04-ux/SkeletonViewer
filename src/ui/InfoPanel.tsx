@@ -5,7 +5,9 @@ import { useContent } from "../content/loader";
 import { displayName } from "../content/names";
 import { panelModel, type PanelLink, type PanelModel } from "../content/panel";
 import { NOT_WRITTEN } from "../content/placeholder";
+import { useSoftContent } from "../content/softContentLoader";
 import { softPanelModel, type SoftPanelModel } from "../content/softPanel";
+import { softLayerOf } from "../content/softRegistry";
 import { expandRegion, goBack, hasMesh, hideSelected, NEW_KIND_TIERS_REASON, selectObject, showRelated, switchSide } from "../state/selection";
 import { useViewer, type JointHighlight } from "../state/store";
 import { focusCanvas } from "./canvasFocus";
@@ -50,7 +52,8 @@ export function InfoPanel() {
   const content = useContent();
   const model = sel === null ? null : panelModel(sel, content);
   // M7: a muscle, ligament or cartilage structure gets the placeholder panel (plan decision 12).
-  const soft = sel === null || model ? null : softPanelModel(sel);
+  const softContent = useSoftContent(sel === null || model ? null : softLayerOf(sel));
+  const soft = sel === null || model ? null : softPanelModel(sel, softContent);
   // A group (plan step 3): its name, member count and members as links.
   const group = sel === null && grp !== null ? (groupOf(grp) ?? null) : null;
   const setInset = useViewer((s) => s.setPanelInset);
@@ -423,15 +426,26 @@ function SoftTitle({ model }: { model: SoftPanelModel }) {
       <h2 id="panel-title" tabIndex={-1}>
         {model.name}
       </h2>
-      <p className="latin">{model.side === "midline" ? model.badges.kind : `${model.badges.kind}, ${model.side}`}</p>
+      {model.latin ? (
+        <p className="latin" lang="la">
+          {model.latin}
+        </p>
+      ) : (
+        <p className="latin">{model.side === "midline" ? model.badges.kind : `${model.badges.kind}, ${model.side}`}</p>
+      )}
+      {model.partOf && (
+        <p className="part-of-title" data-testid="part-of">
+          <span className="muted">Part of</span> <i>{model.partOf.name}</i>
+        </p>
+      )}
     </div>
   );
 }
 
 /**
- * The placeholder panel for a muscle, ligament or cartilage structure in M7
- * (plan decision 12): kind, layer, side, the muscle a part belongs to, and
- * "Not written yet". Related and Expand arrive with the muscle content (M9).
+ * The panel for a muscle, ligament or cartilage structure: kind, layer, side,
+ * and the written summary (M8), else "Not written yet" (M7 plan decision 12).
+ * Related and Expand, and the kind-specific sections, arrive in M9.
  */
 function SoftBody({ model }: { model: SoftPanelModel }) {
   return (
@@ -442,13 +456,13 @@ function SoftBody({ model }: { model: SoftPanelModel }) {
         <li className="badge">{model.badges.kind}</li>
         <li className="badge draft">Draft — not yet reviewed</li>
       </ul>
-      {model.partOf && (
-        <p data-testid="part-of">
-          <span className="muted">Part of</span> {model.partOf.name}
+      {model.common && (
+        <p className="common" data-testid="common-name">
+          <span className="muted">Common name:</span> {model.common}
         </p>
       )}
       <Section title="Summary" testId="summary">
-        <Unwritten />
+        {model.summary !== null ? <div className="summary" dangerouslySetInnerHTML={{ __html: model.summary }} /> : <Unwritten />}
       </Section>
       <div className="panel-actions">
         <button type="button" className="button" data-testid="show-related" disabled title={NEW_KIND_TIERS_REASON} aria-describedby="new-kind-reason">

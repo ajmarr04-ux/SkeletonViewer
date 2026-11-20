@@ -42,6 +42,9 @@ landmarks:
   - id: radial_groove
     name: Radial groove
     position: null
+  - id: posterior_surface
+    name: Posterior surface
+    position: null
   - id: medial_epicondyle
     name: Medial epicondyle
     position: null
@@ -62,6 +65,24 @@ landmarks:
     position: null
   - id: radial_fossa
     name: Radial fossa
+    position: null
+  - id: crest_of_greater_tubercle
+    name: Crest of greater tubercle
+    position: null
+  - id: crest_of_lesser_tubercle
+    name: Crest of lesser tubercle
+    position: null
+  - id: anterior_surface
+    name: Anterior surface
+    position: null
+  - id: medial_border
+    name: Medial border
+    position: null
+  - id: lateral_supracondylar_ridge
+    name: Lateral supracondylar ridge
+    position: null
+  - id: medial_supracondylar_ridge
+    name: Medial supracondylar ridge
     position: null
 muscleAttachments:
   - Supraspinatus

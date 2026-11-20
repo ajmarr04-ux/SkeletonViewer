@@ -1,0 +1,2866 @@
+{
+  "Abductor digiti minimi": {
+    "rule": "variant",
+    "bones": {
+      "pisiform_left": [
+        "abductor_digiti_minimi_hand"
+      ],
+      "proximal_phalanx_hand_5_left": [
+        "abductor_digiti_minimi_hand"
+      ],
+      "calcaneus_left": [
+        "abductor_digiti_minimi_foot"
+      ],
+      "proximal_phalanx_foot_5_left": [
+        "abductor_digiti_minimi_foot"
+      ]
+    }
+  },
+  "Abductor hallucis": {
+    "rule": "name",
+    "bones": {
+      "calcaneus_left": [
+        "abductor_hallucis"
+      ],
+      "proximal_phalanx_foot_1_left": [
+        "abductor_hallucis"
+      ]
+    }
+  },
+  "Abductor pollicis brevis": {
+    "rule": "name",
+    "bones": {
+      "scaphoid_left": [
+        "abductor_pollicis_brevis"
+      ],
+      "trapezium_left": [
+        "abductor_pollicis_brevis"
+      ],
+      "proximal_phalanx_hand_1_left": [
+        "abductor_pollicis_brevis"
+      ]
+    }
+  },
+  "Abductor pollicis longus": {
+    "rule": "name",
+    "bones": {
+      "radius_left": [
+        "abductor_pollicis_longus"
+      ],
+      "ulna_left": [
+        "abductor_pollicis_longus"
+      ],
+      "metacarpal_1_left": [
+        "abductor_pollicis_longus"
+      ]
+    }
+  },
+  "Adductor brevis": {
+    "rule": "name",
+    "bones": {
+      "hip_bone_left": [
+        "adductor_brevis"
+      ],
+      "femur_left": [
+        "adductor_brevis"
+      ]
+    }
+  },
+  "Adductor hallucis": {
+    "rule": "name",
+    "bones": {
+      "proximal_phalanx_foot_1_left": [
+        "adductor_hallucis"
+      ]
+    }
+  },
+  "Adductor hallucis (oblique head)": {
+    "rule": "variant",
+    "bones": {
+      "metatarsal_2_left": [
+        "adductor_hallucis_oblique_head"
+      ],
+      "metatarsal_3_left": [
+        "adductor_hallucis_oblique_head"
+      ],
+      "metatarsal_4_left": [
+        "adductor_hallucis_oblique_head"
+      ]
+    }
+  },
+  "Adductor longus": {
+    "rule": "name",
+    "bones": {
+      "hip_bone_left": [
+        "adductor_longus"
+      ],
+      "femur_left": [
+        "adductor_longus"
+      ]
+    }
+  },
+  "Adductor magnus": {
+    "rule": "name",
+    "bones": {
+      "hip_bone_left": [
+        "adductor_magnus"
+      ],
+      "femur_left": [
+        "adductor_magnus"
+      ]
+    }
+  },
+  "Adductor pollicis": {
+    "rule": "name",
+    "bones": {
+      "proximal_phalanx_hand_1_left": [
+        "adductor_pollicis"
+      ]
+    }
+  },
+  "Adductor pollicis (oblique head)": {
+    "rule": "variant",
+    "bones": {
+      "trapezoid_left": [
+        "adductor_pollicis_oblique_head"
+      ],
+      "capitate_left": [
+        "adductor_pollicis_oblique_head"
+      ],
+      "metacarpal_2_left": [
+        "adductor_pollicis_oblique_head"
+      ]
+    }
+  },
+  "Adductor pollicis (transverse head)": {
+    "rule": "variant",
+    "bones": {
+      "metacarpal_3_left": [
+        "adductor_pollicis_transverse_head"
+      ]
+    }
+  },
+  "Anconeus": {
+    "rule": "name",
+    "bones": {
+      "humerus_left": [
+        "anconeus"
+      ],
+      "ulna_left": [
+        "anconeus"
+      ]
+    }
+  },
+  "Articularis genus": {
+    "rule": "name",
+    "bones": {
+      "femur_left": [
+        "articularis_genus"
+      ]
+    }
+  },
+  "Biceps brachii": {
+    "rule": "name",
+    "bones": {
+      "scapula_left": [
+        "biceps_brachii"
+      ],
+      "radius_left": [
+        "biceps_brachii"
+      ]
+    }
+  },
+  "Biceps femoris": {
+    "rule": "name",
+    "bones": {
+      "fibula_left": [
+        "biceps_femoris"
+      ]
+    }
+  },
+  "Biceps femoris (long head)": {
+    "rule": "variant",
+    "bones": {
+      "hip_bone_left": [
+        "biceps_femoris_long_head"
+      ]
+    }
+  },
+  "Biceps femoris (short head)": {
+    "rule": "variant",
+    "bones": {
+      "femur_left": [
+        "biceps_femoris_short_head"
+      ]
+    }
+  },
+  "Brachialis": {
+    "rule": "name",
+    "bones": {
+      "humerus_left": [
+        "brachialis"
+      ],
+      "ulna_left": [
+        "brachialis"
+      ]
+    }
+  },
+  "Brachioradialis": {
+    "rule": "name",
+    "bones": {
+      "humerus_left": [
+        "brachioradialis"
+      ],
+      "radius_left": [
+        "brachioradialis"
+      ]
+    }
+  },
+  "Buccinator": {
+    "rule": "variant",
+    "note": "The source spells it bucinator (TA2)",
+    "bones": {
+      "maxilla_left": [
+        "bucinator"
+      ],
+      "mandible": [
+        "bucinator"
+      ]
+    }
+  },
+  "Coccygeus": {
+    "rule": "name",
+    "bones": {
+      "sacrum": [
+        "coccygeus"
+      ],
+      "coccyx": [
+        "coccygeus"
+      ]
+    }
+  },
+  "Common extensor origin": {
+    "rule": "variant",
+    "note": "The common extensor tendon on the lateral epicondyle",
+    "bones": {
+      "humerus_left": [
+        "extensor_carpi_radialis_brevis",
+        "extensor_digitorum",
+        "extensor_digiti_minimi",
+        "extensor_carpi_ulnaris_humeral_head"
+      ]
+    }
+  },
+  "Common flexor origin": {
+    "rule": "variant",
+    "note": "The common flexor tendon on the medial epicondyle",
+    "bones": {
+      "humerus_left": [
+        "pronator_teres_superficial_head",
+        "flexor_carpi_radialis",
+        "palmaris_longus",
+        "flexor_digitorum_superficialis_humero_ulnar_head",
+        "flexor_carpi_ulnaris_humeral_head"
+      ]
+    }
+  },
+  "Coracobrachialis": {
+    "rule": "name",
+    "bones": {
+      "scapula_left": [
+        "coracobrachialis"
+      ],
+      "humerus_left": [
+        "coracobrachialis"
+      ]
+    }
+  },
+  "Corrugator supercilii": {
+    "rule": "name",
+    "bones": {
+      "frontal_bone": [
+        "corrugator_supercilii"
+      ]
+    }
+  },
+  "Deltoid": {
+    "rule": "name",
+    "bones": {
+      "clavicle_left": [
+        "deltoid"
+      ],
+      "scapula_left": [
+        "deltoid"
+      ],
+      "humerus_left": [
+        "deltoid"
+      ]
+    }
+  },
+  "Depressor anguli oris": {
+    "rule": "name",
+    "bones": {
+      "mandible": [
+        "depressor_anguli_oris"
+      ]
+    }
+  },
+  "Diaphragm": {
+    "rule": "name",
+    "bones": {
+      "sternum": [
+        "diaphragm"
+      ],
+      "rib_11_left": [
+        "diaphragm"
+      ],
+      "rib_12_left": [
+        "diaphragm"
+      ]
+    }
+  },
+  "Diaphragm (crus)": {
+    "rule": "variant",
+    "note": "The source has the diaphragm as one object",
+    "bones": {
+      "vertebra_l1": [
+        "diaphragm"
+      ],
+      "vertebra_l2": [
+        "diaphragm"
+      ],
+      "vertebra_l3": [
+        "diaphragm"
+      ]
+    }
+  },
+  "Diaphragm (through its costal cartilage)": {
+    "rule": "variant",
+    "indirect": true,
+    "note": "Attached to the costal cartilages, not the ribs",
+    "bones": {
+      "rib_7_left": [
+        "diaphragm"
+      ],
+      "rib_8_left": [
+        "diaphragm"
+      ],
+      "rib_9_left": [
+        "diaphragm"
+      ],
+      "rib_10_left": [
+        "diaphragm"
+      ]
+    }
+  },
+  "Digastric (anterior belly)": {
+    "rule": "variant",
+    "bones": {
+      "mandible": [
+        "digastric_anterior_belly"
+      ]
+    }
+  },
+  "Digastric (posterior belly)": {
+    "rule": "variant",
+    "bones": {
+      "temporal_bone_left": [
+        "digastric_posterior_belly"
+      ]
+    }
+  },
+  "Digastric (through a fibrous loop)": {
+    "rule": "variant",
+    "indirect": true,
+    "note": "The intermediate tendon is held to the hyoid by a fibrous sling",
+    "bones": {
+      "hyoid_bone": [
+        "digastric_intermediate_tendon"
+      ]
+    }
+  },
+  "Erector spinae": {
+    "rule": "variant",
+    "note": "The common origin of erector spinae; the source has its columns as separate muscles",
+    "bones": {
+      "vertebra_l1": [
+        "iliocostalis_lumborum",
+        "longissimus_thoracis",
+        "spinalis_thoracis"
+      ],
+      "vertebra_l2": [
+        "iliocostalis_lumborum",
+        "longissimus_thoracis",
+        "spinalis_thoracis"
+      ],
+      "vertebra_l3": [
+        "iliocostalis_lumborum",
+        "longissimus_thoracis",
+        "spinalis_thoracis"
+      ],
+      "vertebra_l4": [
+        "iliocostalis_lumborum",
+        "longissimus_thoracis",
+        "spinalis_thoracis"
+      ],
+      "vertebra_l5": [
+        "iliocostalis_lumborum",
+        "longissimus_thoracis",
+        "spinalis_thoracis"
+      ],
+      "sacrum": [
+        "iliocostalis_lumborum",
+        "longissimus_thoracis",
+        "spinalis_thoracis"
+      ]
+    }
+  },
+  "Extensor carpi radialis brevis": {
+    "rule": "name",
+    "bones": {
+      "metacarpal_3_left": [
+        "extensor_carpi_radialis_brevis"
+      ]
+    }
+  },
+  "Extensor carpi radialis longus": {
+    "rule": "name",
+    "bones": {
+      "humerus_left": [
+        "extensor_carpi_radialis_longus"
+      ],
+      "metacarpal_2_left": [
+        "extensor_carpi_radialis_longus"
+      ]
+    }
+  },
+  "Extensor carpi ulnaris": {
+    "rule": "name",
+    "bones": {
+      "ulna_left": [
+        "extensor_carpi_ulnaris"
+      ],
+      "metacarpal_5_left": [
+        "extensor_carpi_ulnaris"
+      ]
+    }
+  },
+  "Extensor digiti minimi": {
+    "rule": "name",
+    "bones": {
+      "middle_phalanx_hand_5_left": [
+        "extensor_digiti_minimi"
+      ],
+      "distal_phalanx_hand_5_left": [
+        "extensor_digiti_minimi"
+      ]
+    }
+  },
+  "Extensor digitorum": {
+    "rule": "name",
+    "bones": {
+      "middle_phalanx_hand_2_left": [
+        "extensor_digitorum"
+      ],
+      "middle_phalanx_hand_3_left": [
+        "extensor_digitorum"
+      ],
+      "middle_phalanx_hand_4_left": [
+        "extensor_digitorum"
+      ],
+      "middle_phalanx_hand_5_left": [
+        "extensor_digitorum"
+      ],
+      "distal_phalanx_hand_2_left": [
+        "extensor_digitorum"
+      ],
+      "distal_phalanx_hand_3_left": [
+        "extensor_digitorum"
+      ],
+      "distal_phalanx_hand_4_left": [
+        "extensor_digitorum"
+      ],
+      "distal_phalanx_hand_5_left": [
+        "extensor_digitorum"
+      ]
+    }
+  },
+  "Extensor digitorum brevis": {
+    "rule": "name",
+    "bones": {
+      "calcaneus_left": [
+        "extensor_digitorum_brevis"
+      ],
+      "middle_phalanx_foot_2_left": [
+        "extensor_digitorum_brevis"
+      ],
+      "middle_phalanx_foot_3_left": [
+        "extensor_digitorum_brevis"
+      ],
+      "middle_phalanx_foot_4_left": [
+        "extensor_digitorum_brevis"
+      ],
+      "distal_phalanx_foot_2_left": [
+        "extensor_digitorum_brevis"
+      ],
+      "distal_phalanx_foot_3_left": [
+        "extensor_digitorum_brevis"
+      ],
+      "distal_phalanx_foot_4_left": [
+        "extensor_digitorum_brevis"
+      ]
+    }
+  },
+  "Extensor digitorum longus": {
+    "rule": "name",
+    "bones": {
+      "tibia_left": [
+        "extensor_digitorum_longus"
+      ],
+      "fibula_left": [
+        "extensor_digitorum_longus"
+      ],
+      "middle_phalanx_foot_2_left": [
+        "extensor_digitorum_longus"
+      ],
+      "middle_phalanx_foot_3_left": [
+        "extensor_digitorum_longus"
+      ],
+      "middle_phalanx_foot_4_left": [
+        "extensor_digitorum_longus"
+      ],
+      "middle_phalanx_foot_5_left": [
+        "extensor_digitorum_longus"
+      ],
+      "distal_phalanx_foot_2_left": [
+        "extensor_digitorum_longus"
+      ],
+      "distal_phalanx_foot_3_left": [
+        "extensor_digitorum_longus"
+      ],
+      "distal_phalanx_foot_4_left": [
+        "extensor_digitorum_longus"
+      ],
+      "distal_phalanx_foot_5_left": [
+        "extensor_digitorum_longus"
+      ]
+    }
+  },
+  "Extensor hallucis brevis": {
+    "rule": "name",
+    "bones": {
+      "proximal_phalanx_foot_1_left": [
+        "extensor_hallucis_brevis"
+      ]
+    }
+  },
+  "Extensor hallucis longus": {
+    "rule": "name",
+    "bones": {
+      "fibula_left": [
+        "extensor_hallucis_longus"
+      ],
+      "distal_phalanx_foot_1_left": [
+        "extensor_hallucis_longus"
+      ]
+    }
+  },
+  "Extensor indicis": {
+    "rule": "name",
+    "bones": {
+      "ulna_left": [
+        "extensor_indicis"
+      ],
+      "middle_phalanx_hand_2_left": [
+        "extensor_indicis"
+      ],
+      "distal_phalanx_hand_2_left": [
+        "extensor_indicis"
+      ]
+    }
+  },
+  "Extensor pollicis brevis": {
+    "rule": "name",
+    "bones": {
+      "radius_left": [
+        "extensor_pollicis_brevis"
+      ],
+      "proximal_phalanx_hand_1_left": [
+        "extensor_pollicis_brevis"
+      ]
+    }
+  },
+  "Extensor pollicis longus": {
+    "rule": "name",
+    "bones": {
+      "ulna_left": [
+        "extensor_pollicis_longus"
+      ],
+      "distal_phalanx_hand_1_left": [
+        "extensor_pollicis_longus"
+      ]
+    }
+  },
+  "External anal sphincter (through the anococcygeal ligament)": {
+    "rule": "variant",
+    "indirect": true,
+    "note": "Through the anococcygeal ligament",
+    "bones": {
+      "coccyx": [
+        "external_anal_sphincter"
+      ]
+    }
+  },
+  "External oblique": {
+    "rule": "variant",
+    "bones": {
+      "rib_5_left": [
+        "external_abdominal_oblique"
+      ],
+      "rib_6_left": [
+        "external_abdominal_oblique"
+      ],
+      "rib_7_left": [
+        "external_abdominal_oblique"
+      ],
+      "rib_8_left": [
+        "external_abdominal_oblique"
+      ],
+      "rib_9_left": [
+        "external_abdominal_oblique"
+      ],
+      "rib_10_left": [
+        "external_abdominal_oblique"
+      ],
+      "rib_11_left": [
+        "external_abdominal_oblique"
+      ],
+      "rib_12_left": [
+        "external_abdominal_oblique"
+      ],
+      "hip_bone_left": [
+        "external_abdominal_oblique"
+      ]
+    }
+  },
+  "Extra-ocular muscles (from the common tendinous ring)": {
+    "rule": "variant",
+    "note": "The ring is a part of superior rectus serving the four recti (QUESTIONS 39)",
+    "bones": {
+      "sphenoid_bone": [
+        "common_tendinous_ring"
+      ]
+    }
+  },
+  "Fibularis brevis": {
+    "rule": "name",
+    "bones": {
+      "fibula_left": [
+        "fibularis_brevis"
+      ],
+      "metatarsal_5_left": [
+        "fibularis_brevis"
+      ]
+    }
+  },
+  "Fibularis longus": {
+    "rule": "name",
+    "bones": {
+      "fibula_left": [
+        "fibularis_longus"
+      ],
+      "medial_cuneiform_left": [
+        "fibularis_longus"
+      ],
+      "metatarsal_1_left": [
+        "fibularis_longus"
+      ]
+    }
+  },
+  "Fibularis tertius": {
+    "rule": "name",
+    "bones": {
+      "fibula_left": [
+        "fibularis_tertius"
+      ],
+      "metatarsal_5_left": [
+        "fibularis_tertius"
+      ]
+    }
+  },
+  "First dorsal interosseous": {
+    "rule": "variant",
+    "note": "The source has the dorsal interossei of each hand and foot as one object",
+    "bones": {
+      "metacarpal_1_left": [
+        "dorsal_interossei_hand"
+      ],
+      "metacarpal_2_left": [
+        "dorsal_interossei_hand"
+      ],
+      "proximal_phalanx_hand_2_left": [
+        "dorsal_interossei_hand"
+      ],
+      "metatarsal_1_left": [
+        "dorsal_interossei_foot"
+      ],
+      "metatarsal_2_left": [
+        "dorsal_interossei_foot"
+      ],
+      "proximal_phalanx_foot_2_left": [
+        "dorsal_interossei_foot"
+      ]
+    }
+  },
+  "First palmar interosseous": {
+    "rule": "variant",
+    "note": "The source has the palmar interossei as one object",
+    "bones": {
+      "metacarpal_2_left": [
+        "palmar_interossei"
+      ],
+      "proximal_phalanx_hand_2_left": [
+        "palmar_interossei"
+      ]
+    }
+  },
+  "First plantar interosseous": {
+    "rule": "variant",
+    "note": "The source has the plantar interossei as one object",
+    "bones": {
+      "metatarsal_3_left": [
+        "plantar_interossei"
+      ],
+      "proximal_phalanx_foot_3_left": [
+        "plantar_interossei"
+      ]
+    }
+  },
+  "Flexor carpi radialis": {
+    "rule": "name",
+    "bones": {
+      "metacarpal_2_left": [
+        "flexor_carpi_radialis"
+      ]
+    }
+  },
+  "Flexor carpi ulnaris": {
+    "rule": "name",
+    "bones": {
+      "ulna_left": [
+        "flexor_carpi_ulnaris"
+      ],
+      "pisiform_left": [
+        "flexor_carpi_ulnaris"
+      ]
+    }
+  },
+  "Flexor digiti minimi brevis": {
+    "rule": "variant",
+    "bones": {
+      "hamate_left": [
+        "flexor_digiti_minimi_hand"
+      ],
+      "proximal_phalanx_hand_5_left": [
+        "flexor_digiti_minimi_hand"
+      ],
+      "metatarsal_5_left": [
+        "flexor_digiti_minimi_foot"
+      ],
+      "proximal_phalanx_foot_5_left": [
+        "flexor_digiti_minimi_foot"
+      ]
+    }
+  },
+  "Flexor digitorum brevis": {
+    "rule": "name",
+    "bones": {
+      "calcaneus_left": [
+        "flexor_digitorum_brevis"
+      ],
+      "middle_phalanx_foot_2_left": [
+        "flexor_digitorum_brevis"
+      ],
+      "middle_phalanx_foot_3_left": [
+        "flexor_digitorum_brevis"
+      ],
+      "middle_phalanx_foot_4_left": [
+        "flexor_digitorum_brevis"
+      ],
+      "middle_phalanx_foot_5_left": [
+        "flexor_digitorum_brevis"
+      ]
+    }
+  },
+  "Flexor digitorum longus": {
+    "rule": "name",
+    "bones": {
+      "tibia_left": [
+        "flexor_digitorum_longus"
+      ],
+      "distal_phalanx_foot_2_left": [
+        "flexor_digitorum_longus"
+      ],
+      "distal_phalanx_foot_3_left": [
+        "flexor_digitorum_longus"
+      ],
+      "distal_phalanx_foot_4_left": [
+        "flexor_digitorum_longus"
+      ],
+      "distal_phalanx_foot_5_left": [
+        "flexor_digitorum_longus"
+      ]
+    }
+  },
+  "Flexor digitorum profundus": {
+    "rule": "name",
+    "bones": {
+      "ulna_left": [
+        "flexor_digitorum_profundus"
+      ],
+      "distal_phalanx_hand_2_left": [
+        "flexor_digitorum_profundus"
+      ],
+      "distal_phalanx_hand_3_left": [
+        "flexor_digitorum_profundus"
+      ],
+      "distal_phalanx_hand_4_left": [
+        "flexor_digitorum_profundus"
+      ],
+      "distal_phalanx_hand_5_left": [
+        "flexor_digitorum_profundus"
+      ]
+    }
+  },
+  "Flexor digitorum superficialis": {
+    "rule": "name",
+    "bones": {
+      "middle_phalanx_hand_2_left": [
+        "flexor_digitorum_superficialis"
+      ],
+      "middle_phalanx_hand_3_left": [
+        "flexor_digitorum_superficialis"
+      ],
+      "middle_phalanx_hand_4_left": [
+        "flexor_digitorum_superficialis"
+      ],
+      "middle_phalanx_hand_5_left": [
+        "flexor_digitorum_superficialis"
+      ]
+    }
+  },
+  "Flexor digitorum superficialis (humero-ulnar head)": {
+    "rule": "variant",
+    "bones": {
+      "ulna_left": [
+        "flexor_digitorum_superficialis_humero_ulnar_head"
+      ]
+    }
+  },
+  "Flexor digitorum superficialis (radial head)": {
+    "rule": "variant",
+    "bones": {
+      "radius_left": [
+        "flexor_digitorum_superficialis_radial_head"
+      ]
+    }
+  },
+  "Flexor hallucis brevis": {
+    "rule": "name",
+    "bones": {
+      "cuboid_left": [
+        "flexor_hallucis_brevis"
+      ],
+      "lateral_cuneiform_left": [
+        "flexor_hallucis_brevis"
+      ],
+      "proximal_phalanx_foot_1_left": [
+        "flexor_hallucis_brevis"
+      ]
+    }
+  },
+  "Flexor hallucis longus": {
+    "rule": "name",
+    "bones": {
+      "fibula_left": [
+        "flexor_hallucis_longus"
+      ],
+      "distal_phalanx_foot_1_left": [
+        "flexor_hallucis_longus"
+      ]
+    }
+  },
+  "Flexor pollicis brevis": {
+    "rule": "name",
+    "bones": {
+      "trapezium_left": [
+        "flexor_pollicis_brevis"
+      ],
+      "proximal_phalanx_hand_1_left": [
+        "flexor_pollicis_brevis"
+      ]
+    }
+  },
+  "Flexor pollicis longus": {
+    "rule": "name",
+    "bones": {
+      "radius_left": [
+        "flexor_pollicis_longus"
+      ],
+      "distal_phalanx_hand_1_left": [
+        "flexor_pollicis_longus"
+      ]
+    }
+  },
+  "Fourth dorsal interosseous": {
+    "rule": "variant",
+    "note": "The source has the dorsal interossei of each hand and foot as one object",
+    "bones": {
+      "metacarpal_4_left": [
+        "dorsal_interossei_hand"
+      ],
+      "metacarpal_5_left": [
+        "dorsal_interossei_hand"
+      ],
+      "proximal_phalanx_hand_4_left": [
+        "dorsal_interossei_hand"
+      ],
+      "metatarsal_4_left": [
+        "dorsal_interossei_foot"
+      ],
+      "metatarsal_5_left": [
+        "dorsal_interossei_foot"
+      ],
+      "proximal_phalanx_foot_4_left": [
+        "dorsal_interossei_foot"
+      ]
+    }
+  },
+  "Gastrocnemius": {
+    "rule": "name",
+    "bones": {
+      "femur_left": [
+        "gastrocnemius"
+      ],
+      "calcaneus_left": [
+        "gastrocnemius"
+      ]
+    }
+  },
+  "Genioglossus": {
+    "rule": "name",
+    "bones": {
+      "mandible": [
+        "genioglossus"
+      ]
+    }
+  },
+  "Geniohyoid": {
+    "rule": "name",
+    "bones": {
+      "mandible": [
+        "geniohyoid"
+      ],
+      "hyoid_bone": [
+        "geniohyoid"
+      ]
+    }
+  },
+  "Gluteus maximus": {
+    "rule": "name",
+    "bones": {
+      "sacrum": [
+        "gluteus_maximus"
+      ],
+      "coccyx": [
+        "gluteus_maximus"
+      ],
+      "hip_bone_left": [
+        "gluteus_maximus"
+      ],
+      "femur_left": [
+        "gluteus_maximus"
+      ]
+    }
+  },
+  "Gluteus medius": {
+    "rule": "name",
+    "bones": {
+      "hip_bone_left": [
+        "gluteus_medius"
+      ],
+      "femur_left": [
+        "gluteus_medius"
+      ]
+    }
+  },
+  "Gluteus minimus": {
+    "rule": "name",
+    "bones": {
+      "hip_bone_left": [
+        "gluteus_minimus"
+      ],
+      "femur_left": [
+        "gluteus_minimus"
+      ]
+    }
+  },
+  "Gracilis": {
+    "rule": "name",
+    "bones": {
+      "hip_bone_left": [
+        "gracilis"
+      ],
+      "tibia_left": [
+        "gracilis"
+      ]
+    }
+  },
+  "Hyoglossus": {
+    "rule": "name",
+    "bones": {
+      "hyoid_bone": [
+        "hyoglossus"
+      ]
+    }
+  },
+  "Iliacus": {
+    "rule": "name",
+    "bones": {
+      "sacrum": [
+        "iliacus"
+      ],
+      "hip_bone_left": [
+        "iliacus"
+      ]
+    }
+  },
+  "Iliocostalis": {
+    "rule": "variant",
+    "note": "The source has iliocostalis in three parts",
+    "bones": {
+      "rib_3_left": [
+        "iliocostalis_lumborum",
+        "iliocostalis_thoracis",
+        "iliocostalis_colli"
+      ],
+      "rib_4_left": [
+        "iliocostalis_lumborum",
+        "iliocostalis_thoracis",
+        "iliocostalis_colli"
+      ],
+      "rib_5_left": [
+        "iliocostalis_lumborum",
+        "iliocostalis_thoracis",
+        "iliocostalis_colli"
+      ],
+      "rib_6_left": [
+        "iliocostalis_lumborum",
+        "iliocostalis_thoracis",
+        "iliocostalis_colli"
+      ]
+    }
+  },
+  "Iliopsoas": {
+    "rule": "variant",
+    "note": "The source has psoas major and iliacus as separate muscles",
+    "bones": {
+      "femur_left": [
+        "psoas_major",
+        "iliacus"
+      ]
+    }
+  },
+  "Iliotibial tract": {
+    "rule": "name",
+    "bones": {
+      "tibia_left": [
+        "iliotibial_tract"
+      ]
+    }
+  },
+  "Inferior gemellus": {
+    "rule": "name",
+    "bones": {
+      "femur_left": [
+        "inferior_gemellus"
+      ]
+    }
+  },
+  "Infraspinatus": {
+    "rule": "name",
+    "bones": {
+      "scapula_left": [
+        "infraspinatus"
+      ],
+      "humerus_left": [
+        "infraspinatus"
+      ]
+    }
+  },
+  "Intercostal muscles": {
+    "rule": "variant",
+    "bones": {
+      "rib_1_left": [
+        "external_intercostal",
+        "internal_intercostal",
+        "innermost_intercostal"
+      ],
+      "rib_2_left": [
+        "external_intercostal",
+        "internal_intercostal",
+        "innermost_intercostal"
+      ],
+      "rib_3_left": [
+        "external_intercostal",
+        "internal_intercostal",
+        "innermost_intercostal"
+      ],
+      "rib_4_left": [
+        "external_intercostal",
+        "internal_intercostal",
+        "innermost_intercostal"
+      ],
+      "rib_5_left": [
+        "external_intercostal",
+        "internal_intercostal",
+        "innermost_intercostal"
+      ],
+      "rib_6_left": [
+        "external_intercostal",
+        "internal_intercostal",
+        "innermost_intercostal"
+      ],
+      "rib_7_left": [
+        "external_intercostal",
+        "internal_intercostal",
+        "innermost_intercostal"
+      ],
+      "rib_8_left": [
+        "external_intercostal",
+        "internal_intercostal",
+        "innermost_intercostal"
+      ],
+      "rib_9_left": [
+        "external_intercostal",
+        "internal_intercostal",
+        "innermost_intercostal"
+      ],
+      "rib_10_left": [
+        "external_intercostal",
+        "internal_intercostal",
+        "innermost_intercostal"
+      ],
+      "rib_11_left": [
+        "external_intercostal",
+        "internal_intercostal",
+        "innermost_intercostal"
+      ],
+      "rib_12_left": [
+        "external_intercostal",
+        "internal_intercostal",
+        "innermost_intercostal"
+      ]
+    }
+  },
+  "Internal oblique": {
+    "rule": "variant",
+    "bones": {
+      "rib_10_left": [
+        "internal_abdominal_oblique"
+      ],
+      "rib_11_left": [
+        "internal_abdominal_oblique"
+      ],
+      "rib_12_left": [
+        "internal_abdominal_oblique"
+      ],
+      "hip_bone_left": [
+        "internal_abdominal_oblique"
+      ]
+    }
+  },
+  "Interspinales": {
+    "rule": "variant",
+    "bones": {
+      "vertebra_c2": [
+        "interspinales_colli",
+        "interspinales_thoracis",
+        "interspinales_lumborum"
+      ],
+      "vertebra_c3": [
+        "interspinales_colli",
+        "interspinales_thoracis",
+        "interspinales_lumborum"
+      ],
+      "vertebra_c4": [
+        "interspinales_colli",
+        "interspinales_thoracis",
+        "interspinales_lumborum"
+      ],
+      "vertebra_c5": [
+        "interspinales_colli",
+        "interspinales_thoracis",
+        "interspinales_lumborum"
+      ],
+      "vertebra_c6": [
+        "interspinales_colli",
+        "interspinales_thoracis",
+        "interspinales_lumborum"
+      ],
+      "vertebra_l5": [
+        "interspinales_colli",
+        "interspinales_thoracis",
+        "interspinales_lumborum"
+      ]
+    }
+  },
+  "Lateral pterygoid": {
+    "rule": "name",
+    "bones": {
+      "sphenoid_bone": [
+        "lateral_pterygoid"
+      ],
+      "mandible": [
+        "lateral_pterygoid"
+      ]
+    }
+  },
+  "Latissimus dorsi": {
+    "rule": "name",
+    "bones": {
+      "vertebra_t7": [
+        "latissimus_dorsi"
+      ],
+      "vertebra_t8": [
+        "latissimus_dorsi"
+      ],
+      "vertebra_t9": [
+        "latissimus_dorsi"
+      ],
+      "vertebra_t10": [
+        "latissimus_dorsi"
+      ],
+      "vertebra_t11": [
+        "latissimus_dorsi"
+      ],
+      "vertebra_t12": [
+        "latissimus_dorsi"
+      ],
+      "rib_9_left": [
+        "latissimus_dorsi"
+      ],
+      "rib_10_left": [
+        "latissimus_dorsi"
+      ],
+      "rib_11_left": [
+        "latissimus_dorsi"
+      ],
+      "rib_12_left": [
+        "latissimus_dorsi"
+      ],
+      "humerus_left": [
+        "latissimus_dorsi"
+      ]
+    }
+  },
+  "Latissimus dorsi (through the thoracolumbar fascia)": {
+    "rule": "variant",
+    "indirect": true,
+    "note": "Through the thoracolumbar fascia",
+    "bones": {
+      "vertebra_l1": [
+        "latissimus_dorsi"
+      ],
+      "vertebra_l2": [
+        "latissimus_dorsi"
+      ],
+      "vertebra_l3": [
+        "latissimus_dorsi"
+      ],
+      "vertebra_l4": [
+        "latissimus_dorsi"
+      ]
+    }
+  },
+  "Levator anguli oris": {
+    "rule": "name",
+    "bones": {
+      "maxilla_left": [
+        "levator_anguli_oris"
+      ]
+    }
+  },
+  "Levator ani": {
+    "rule": "variant",
+    "note": "The source has the parts of levator ani as separate muscles",
+    "bones": {
+      "hip_bone_left": [
+        "iliococcygeus",
+        "pubococcygeus",
+        "pubo_analis"
+      ]
+    }
+  },
+  "Levator ani (iliococcygeus)": {
+    "rule": "variant",
+    "bones": {
+      "coccyx": [
+        "iliococcygeus"
+      ]
+    }
+  },
+  "Levator labii superioris": {
+    "rule": "name",
+    "bones": {
+      "maxilla_left": [
+        "levator_labii_superioris"
+      ]
+    }
+  },
+  "Levator palpebrae superioris": {
+    "rule": "name",
+    "bones": {
+      "sphenoid_bone": [
+        "levator_palpebrae_superioris"
+      ]
+    }
+  },
+  "Levator scapulae": {
+    "rule": "name",
+    "bones": {
+      "vertebra_c1": [
+        "levator_scapulae"
+      ],
+      "vertebra_c3": [
+        "levator_scapulae"
+      ],
+      "vertebra_c4": [
+        "levator_scapulae"
+      ],
+      "scapula_left": [
+        "levator_scapulae"
+      ]
+    }
+  },
+  "Levatores costarum": {
+    "rule": "variant",
+    "bones": {
+      "vertebra_c7": [
+        "levatores_breves_costarum",
+        "levatores_longi_costarum"
+      ],
+      "vertebra_t1": [
+        "levatores_breves_costarum",
+        "levatores_longi_costarum"
+      ],
+      "vertebra_t2": [
+        "levatores_breves_costarum",
+        "levatores_longi_costarum"
+      ],
+      "vertebra_t3": [
+        "levatores_breves_costarum",
+        "levatores_longi_costarum"
+      ],
+      "vertebra_t4": [
+        "levatores_breves_costarum",
+        "levatores_longi_costarum"
+      ],
+      "vertebra_t5": [
+        "levatores_breves_costarum",
+        "levatores_longi_costarum"
+      ],
+      "vertebra_t6": [
+        "levatores_breves_costarum",
+        "levatores_longi_costarum"
+      ],
+      "vertebra_t7": [
+        "levatores_breves_costarum",
+        "levatores_longi_costarum"
+      ],
+      "vertebra_t8": [
+        "levatores_breves_costarum",
+        "levatores_longi_costarum"
+      ],
+      "vertebra_t9": [
+        "levatores_breves_costarum",
+        "levatores_longi_costarum"
+      ],
+      "vertebra_t10": [
+        "levatores_breves_costarum",
+        "levatores_longi_costarum"
+      ],
+      "vertebra_t11": [
+        "levatores_breves_costarum",
+        "levatores_longi_costarum"
+      ],
+      "rib_3_left": [
+        "levatores_breves_costarum",
+        "levatores_longi_costarum"
+      ],
+      "rib_4_left": [
+        "levatores_breves_costarum",
+        "levatores_longi_costarum"
+      ],
+      "rib_5_left": [
+        "levatores_breves_costarum",
+        "levatores_longi_costarum"
+      ],
+      "rib_6_left": [
+        "levatores_breves_costarum",
+        "levatores_longi_costarum"
+      ],
+      "rib_7_left": [
+        "levatores_breves_costarum",
+        "levatores_longi_costarum"
+      ],
+      "rib_8_left": [
+        "levatores_breves_costarum",
+        "levatores_longi_costarum"
+      ]
+    }
+  },
+  "Longissimus capitis": {
+    "rule": "name",
+    "bones": {
+      "temporal_bone_left": [
+        "longissimus_capitis"
+      ]
+    }
+  },
+  "Longus capitis": {
+    "rule": "name",
+    "bones": {
+      "vertebra_c3": [
+        "longus_capitis"
+      ],
+      "vertebra_c4": [
+        "longus_capitis"
+      ],
+      "vertebra_c5": [
+        "longus_capitis"
+      ],
+      "vertebra_c6": [
+        "longus_capitis"
+      ]
+    }
+  },
+  "Longus colli": {
+    "rule": "name",
+    "bones": {
+      "vertebra_c1": [
+        "longus_colli"
+      ],
+      "vertebra_c2": [
+        "longus_colli"
+      ],
+      "vertebra_c3": [
+        "longus_colli"
+      ],
+      "vertebra_c4": [
+        "longus_colli"
+      ],
+      "vertebra_c5": [
+        "longus_colli"
+      ],
+      "vertebra_c6": [
+        "longus_colli"
+      ],
+      "vertebra_c7": [
+        "longus_colli"
+      ],
+      "vertebra_t1": [
+        "longus_colli"
+      ]
+    }
+  },
+  "Masseter": {
+    "rule": "name",
+    "bones": {
+      "temporal_bone_left": [
+        "masseter"
+      ],
+      "zygomatic_bone_left": [
+        "masseter"
+      ],
+      "mandible": [
+        "masseter"
+      ]
+    }
+  },
+  "Medial pterygoid": {
+    "rule": "name",
+    "bones": {
+      "sphenoid_bone": [
+        "medial_pterygoid"
+      ],
+      "palatine_bone_left": [
+        "medial_pterygoid"
+      ],
+      "mandible": [
+        "medial_pterygoid"
+      ]
+    }
+  },
+  "Medial pterygoid (superficial head)": {
+    "rule": "variant",
+    "note": "The source has medial pterygoid as one object, without heads",
+    "bones": {
+      "maxilla_left": [
+        "medial_pterygoid"
+      ]
+    }
+  },
+  "Mentalis": {
+    "rule": "name",
+    "bones": {
+      "mandible": [
+        "mentalis"
+      ]
+    }
+  },
+  "Middle pharyngeal constrictor": {
+    "rule": "name",
+    "bones": {
+      "hyoid_bone": [
+        "middle_pharyngeal_constrictor"
+      ]
+    }
+  },
+  "Multifidus": {
+    "rule": "variant",
+    "bones": {
+      "vertebra_c2": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ],
+      "vertebra_c3": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ],
+      "vertebra_c4": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ],
+      "vertebra_c5": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ],
+      "vertebra_c6": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ],
+      "vertebra_c7": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ],
+      "vertebra_t1": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ],
+      "vertebra_t2": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ],
+      "vertebra_t3": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ],
+      "vertebra_t4": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ],
+      "vertebra_t5": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ],
+      "vertebra_t6": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ],
+      "vertebra_t7": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ],
+      "vertebra_t8": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ],
+      "vertebra_t9": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ],
+      "vertebra_t10": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ],
+      "vertebra_t11": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ],
+      "vertebra_t12": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ],
+      "vertebra_l1": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ],
+      "vertebra_l2": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ],
+      "vertebra_l3": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ],
+      "vertebra_l4": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ],
+      "vertebra_l5": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ],
+      "sacrum": [
+        "multifidus_colli",
+        "multifidus_thoracis",
+        "multifidus_lumborum"
+      ]
+    }
+  },
+  "Musculus uvulae": {
+    "rule": "unmatched",
+    "note": "Not in the source",
+    "question": 70,
+    "bones": {
+      "palatine_bone_left": []
+    }
+  },
+  "Mylohyoid": {
+    "rule": "name",
+    "bones": {
+      "mandible": [
+        "mylohyoid"
+      ],
+      "hyoid_bone": [
+        "mylohyoid"
+      ]
+    }
+  },
+  "Nasalis": {
+    "rule": "name",
+    "bones": {
+      "maxilla_left": [
+        "nasalis"
+      ]
+    }
+  },
+  "Obliquus capitis inferior": {
+    "rule": "variant",
+    "bones": {
+      "vertebra_c1": [
+        "obliquus_inferior_capitis"
+      ],
+      "vertebra_c2": [
+        "obliquus_inferior_capitis"
+      ]
+    }
+  },
+  "Obliquus capitis superior": {
+    "rule": "variant",
+    "bones": {
+      "occipital_bone": [
+        "obliquus_superior_capitis"
+      ],
+      "vertebra_c1": [
+        "obliquus_superior_capitis"
+      ]
+    }
+  },
+  "Obturator externus": {
+    "rule": "name",
+    "bones": {
+      "hip_bone_left": [
+        "obturator_externus"
+      ],
+      "femur_left": [
+        "obturator_externus"
+      ]
+    }
+  },
+  "Obturator internus": {
+    "rule": "name",
+    "bones": {
+      "hip_bone_left": [
+        "obturator_internus"
+      ],
+      "femur_left": [
+        "obturator_internus"
+      ]
+    }
+  },
+  "Occipitofrontalis (occipital belly)": {
+    "rule": "variant",
+    "bones": {
+      "occipital_bone": [
+        "occipitofrontalis_occipital_belly"
+      ]
+    }
+  },
+  "Omohyoid": {
+    "rule": "name",
+    "bones": {
+      "hyoid_bone": [
+        "omohyoid"
+      ],
+      "scapula_left": [
+        "omohyoid"
+      ]
+    }
+  },
+  "Opponens digiti minimi": {
+    "rule": "variant",
+    "bones": {
+      "hamate_left": [
+        "opponens_digiti_minimi_hand"
+      ],
+      "metacarpal_5_left": [
+        "opponens_digiti_minimi_hand"
+      ]
+    }
+  },
+  "Opponens pollicis": {
+    "rule": "name",
+    "bones": {
+      "trapezium_left": [
+        "opponens_pollicis"
+      ],
+      "metacarpal_1_left": [
+        "opponens_pollicis"
+      ]
+    }
+  },
+  "Orbicularis oculi": {
+    "rule": "name",
+    "bones": {
+      "maxilla_left": [
+        "orbicularis_oculi"
+      ]
+    }
+  },
+  "Orbicularis oculi (lacrimal part)": {
+    "rule": "variant",
+    "note": "The source has no lacrimal part; it is the deep palpebral part",
+    "bones": {
+      "lacrimal_bone_left": [
+        "orbicularis_oculi_palpebral_part"
+      ]
+    }
+  },
+  "Orbicularis oculi (orbital part)": {
+    "rule": "variant",
+    "bones": {
+      "frontal_bone": [
+        "orbicularis_oculi_orbital_part"
+      ]
+    }
+  },
+  "Pectineus": {
+    "rule": "name",
+    "bones": {
+      "hip_bone_left": [
+        "pectineus"
+      ],
+      "femur_left": [
+        "pectineus"
+      ]
+    }
+  },
+  "Pectoralis major": {
+    "rule": "name",
+    "bones": {
+      "sternum": [
+        "pectoralis_major"
+      ],
+      "clavicle_left": [
+        "pectoralis_major"
+      ],
+      "humerus_left": [
+        "pectoralis_major"
+      ]
+    }
+  },
+  "Pectoralis minor": {
+    "rule": "name",
+    "bones": {
+      "rib_3_left": [
+        "pectoralis_minor"
+      ],
+      "rib_4_left": [
+        "pectoralis_minor"
+      ],
+      "rib_5_left": [
+        "pectoralis_minor"
+      ],
+      "scapula_left": [
+        "pectoralis_minor"
+      ]
+    }
+  },
+  "Piriformis": {
+    "rule": "name",
+    "bones": {
+      "sacrum": [
+        "piriformis"
+      ],
+      "femur_left": [
+        "piriformis"
+      ]
+    }
+  },
+  "Plantaris": {
+    "rule": "name",
+    "bones": {
+      "femur_left": [
+        "plantaris"
+      ],
+      "calcaneus_left": [
+        "plantaris"
+      ]
+    }
+  },
+  "Platysma": {
+    "rule": "name",
+    "bones": {
+      "mandible": [
+        "platysma"
+      ]
+    }
+  },
+  "Popliteus": {
+    "rule": "name",
+    "bones": {
+      "femur_left": [
+        "popliteus"
+      ],
+      "tibia_left": [
+        "popliteus"
+      ]
+    }
+  },
+  "Procerus": {
+    "rule": "name",
+    "bones": {
+      "nasal_bone_left": [
+        "procerus"
+      ]
+    }
+  },
+  "Pronator quadratus": {
+    "rule": "name",
+    "bones": {
+      "radius_left": [
+        "pronator_quadratus"
+      ],
+      "ulna_left": [
+        "pronator_quadratus"
+      ]
+    }
+  },
+  "Pronator teres": {
+    "rule": "name",
+    "bones": {
+      "humerus_left": [
+        "pronator_teres"
+      ],
+      "radius_left": [
+        "pronator_teres"
+      ]
+    }
+  },
+  "Pronator teres (ulnar head)": {
+    "rule": "variant",
+    "note": "The source calls the ulnar head the deep head",
+    "bones": {
+      "ulna_left": [
+        "pronator_teres_deep_head"
+      ]
+    }
+  },
+  "Psoas major": {
+    "rule": "name",
+    "bones": {
+      "vertebra_t12": [
+        "psoas_major"
+      ],
+      "vertebra_l1": [
+        "psoas_major"
+      ],
+      "vertebra_l2": [
+        "psoas_major"
+      ],
+      "vertebra_l3": [
+        "psoas_major"
+      ],
+      "vertebra_l4": [
+        "psoas_major"
+      ],
+      "vertebra_l5": [
+        "psoas_major"
+      ]
+    }
+  },
+  "Quadratus femoris": {
+    "rule": "name",
+    "bones": {
+      "hip_bone_left": [
+        "quadratus_femoris"
+      ],
+      "femur_left": [
+        "quadratus_femoris"
+      ]
+    }
+  },
+  "Quadratus lumborum": {
+    "rule": "name",
+    "bones": {
+      "vertebra_l1": [
+        "quadratus_lumborum"
+      ],
+      "vertebra_l2": [
+        "quadratus_lumborum"
+      ],
+      "vertebra_l3": [
+        "quadratus_lumborum"
+      ],
+      "vertebra_l4": [
+        "quadratus_lumborum"
+      ],
+      "rib_12_left": [
+        "quadratus_lumborum"
+      ],
+      "hip_bone_left": [
+        "quadratus_lumborum"
+      ]
+    }
+  },
+  "Quadratus plantae": {
+    "rule": "name",
+    "bones": {
+      "calcaneus_left": [
+        "quadratus_plantae"
+      ]
+    }
+  },
+  "Quadriceps femoris (through the patellar ligament)": {
+    "rule": "variant",
+    "indirect": true,
+    "note": "The four heads are separate muscles in the source; they reach the tibia through the patellar ligament",
+    "bones": {
+      "tibia_left": [
+        "rectus_femoris",
+        "vastus_lateralis",
+        "vastus_medialis",
+        "vastus_intermedius"
+      ]
+    }
+  },
+  "Rectus abdominis": {
+    "rule": "name",
+    "bones": {
+      "sternum": [
+        "rectus_abdominis"
+      ],
+      "hip_bone_left": [
+        "rectus_abdominis"
+      ]
+    }
+  },
+  "Rectus abdominis (through its costal cartilage)": {
+    "rule": "variant",
+    "indirect": true,
+    "note": "Attached to the costal cartilages, not the ribs",
+    "bones": {
+      "rib_6_left": [
+        "rectus_abdominis"
+      ],
+      "rib_7_left": [
+        "rectus_abdominis"
+      ]
+    }
+  },
+  "Rectus capitis anterior": {
+    "rule": "variant",
+    "bones": {
+      "vertebra_c1": [
+        "rectus_anterior_capitis"
+      ]
+    }
+  },
+  "Rectus capitis lateralis": {
+    "rule": "variant",
+    "bones": {
+      "vertebra_c1": [
+        "rectus_lateralis_capitis"
+      ]
+    }
+  },
+  "Rectus capitis posterior major": {
+    "rule": "variant",
+    "bones": {
+      "occipital_bone": [
+        "rectus_posterior_major_capitis"
+      ],
+      "vertebra_c2": [
+        "rectus_posterior_major_capitis"
+      ]
+    }
+  },
+  "Rectus capitis posterior minor": {
+    "rule": "variant",
+    "bones": {
+      "occipital_bone": [
+        "rectus_posterior_minor_capitis"
+      ],
+      "vertebra_c1": [
+        "rectus_posterior_minor_capitis"
+      ]
+    }
+  },
+  "Rectus femoris": {
+    "rule": "name",
+    "bones": {
+      "hip_bone_left": [
+        "rectus_femoris"
+      ],
+      "patella_left": [
+        "rectus_femoris"
+      ]
+    }
+  },
+  "Rhomboid major": {
+    "rule": "name",
+    "bones": {
+      "vertebra_t2": [
+        "rhomboid_major"
+      ],
+      "vertebra_t3": [
+        "rhomboid_major"
+      ],
+      "vertebra_t4": [
+        "rhomboid_major"
+      ],
+      "vertebra_t5": [
+        "rhomboid_major"
+      ],
+      "scapula_left": [
+        "rhomboid_major"
+      ]
+    }
+  },
+  "Rhomboid minor": {
+    "rule": "name",
+    "bones": {
+      "vertebra_c7": [
+        "rhomboid_minor"
+      ],
+      "vertebra_t1": [
+        "rhomboid_minor"
+      ],
+      "scapula_left": [
+        "rhomboid_minor"
+      ]
+    }
+  },
+  "Rotatores": {
+    "rule": "name",
+    "bones": {
+      "vertebra_t6": [
+        "rotatores"
+      ]
+    }
+  },
+  "Sartorius": {
+    "rule": "name",
+    "bones": {
+      "hip_bone_left": [
+        "sartorius"
+      ],
+      "tibia_left": [
+        "sartorius"
+      ]
+    }
+  },
+  "Scalenus anterior": {
+    "rule": "name",
+    "bones": {
+      "vertebra_c3": [
+        "scalenus_anterior"
+      ],
+      "vertebra_c4": [
+        "scalenus_anterior"
+      ],
+      "vertebra_c5": [
+        "scalenus_anterior"
+      ],
+      "vertebra_c6": [
+        "scalenus_anterior"
+      ],
+      "rib_1_left": [
+        "scalenus_anterior"
+      ]
+    }
+  },
+  "Scalenus medius": {
+    "rule": "name",
+    "bones": {
+      "vertebra_c3": [
+        "scalenus_medius"
+      ],
+      "vertebra_c4": [
+        "scalenus_medius"
+      ],
+      "vertebra_c5": [
+        "scalenus_medius"
+      ],
+      "vertebra_c6": [
+        "scalenus_medius"
+      ],
+      "vertebra_c7": [
+        "scalenus_medius"
+      ],
+      "rib_1_left": [
+        "scalenus_medius"
+      ]
+    }
+  },
+  "Scalenus posterior": {
+    "rule": "name",
+    "bones": {
+      "vertebra_c4": [
+        "scalenus_posterior"
+      ],
+      "vertebra_c5": [
+        "scalenus_posterior"
+      ],
+      "vertebra_c6": [
+        "scalenus_posterior"
+      ],
+      "rib_2_left": [
+        "scalenus_posterior"
+      ]
+    }
+  },
+  "Second dorsal interosseous": {
+    "rule": "variant",
+    "note": "The source has the dorsal interossei of each hand and foot as one object",
+    "bones": {
+      "metacarpal_2_left": [
+        "dorsal_interossei_hand"
+      ],
+      "metacarpal_3_left": [
+        "dorsal_interossei_hand"
+      ],
+      "proximal_phalanx_hand_3_left": [
+        "dorsal_interossei_hand"
+      ],
+      "metatarsal_2_left": [
+        "dorsal_interossei_foot"
+      ],
+      "metatarsal_3_left": [
+        "dorsal_interossei_foot"
+      ],
+      "proximal_phalanx_foot_2_left": [
+        "dorsal_interossei_foot"
+      ]
+    }
+  },
+  "Second palmar interosseous": {
+    "rule": "variant",
+    "note": "The source has the palmar interossei as one object",
+    "bones": {
+      "metacarpal_4_left": [
+        "palmar_interossei"
+      ],
+      "proximal_phalanx_hand_4_left": [
+        "palmar_interossei"
+      ]
+    }
+  },
+  "Second plantar interosseous": {
+    "rule": "variant",
+    "note": "The source has the plantar interossei as one object",
+    "bones": {
+      "metatarsal_4_left": [
+        "plantar_interossei"
+      ],
+      "proximal_phalanx_foot_4_left": [
+        "plantar_interossei"
+      ]
+    }
+  },
+  "Semimembranosus": {
+    "rule": "name",
+    "bones": {
+      "hip_bone_left": [
+        "semimembranosus"
+      ],
+      "tibia_left": [
+        "semimembranosus"
+      ]
+    }
+  },
+  "Semispinalis capitis": {
+    "rule": "unmatched",
+    "note": "Not in the source (it has semispinalis colli and thoracis only)",
+    "question": 70,
+    "bones": {
+      "occipital_bone": []
+    }
+  },
+  "Semispinalis cervicis": {
+    "rule": "variant",
+    "note": "The source uses colli for cervicis",
+    "bones": {
+      "vertebra_c2": [
+        "semispinalis_colli"
+      ]
+    }
+  },
+  "Semitendinosus": {
+    "rule": "name",
+    "bones": {
+      "hip_bone_left": [
+        "semitendinosus"
+      ],
+      "tibia_left": [
+        "semitendinosus"
+      ]
+    }
+  },
+  "Serratus anterior": {
+    "rule": "name",
+    "bones": {
+      "rib_1_left": [
+        "serratus_anterior"
+      ],
+      "rib_2_left": [
+        "serratus_anterior"
+      ],
+      "rib_3_left": [
+        "serratus_anterior"
+      ],
+      "rib_4_left": [
+        "serratus_anterior"
+      ],
+      "rib_5_left": [
+        "serratus_anterior"
+      ],
+      "rib_6_left": [
+        "serratus_anterior"
+      ],
+      "rib_7_left": [
+        "serratus_anterior"
+      ],
+      "rib_8_left": [
+        "serratus_anterior"
+      ],
+      "scapula_left": [
+        "serratus_anterior"
+      ]
+    }
+  },
+  "Serratus posterior inferior": {
+    "rule": "name",
+    "bones": {
+      "vertebra_t11": [
+        "serratus_posterior_inferior"
+      ],
+      "vertebra_t12": [
+        "serratus_posterior_inferior"
+      ],
+      "rib_9_left": [
+        "serratus_posterior_inferior"
+      ],
+      "rib_10_left": [
+        "serratus_posterior_inferior"
+      ],
+      "rib_11_left": [
+        "serratus_posterior_inferior"
+      ],
+      "rib_12_left": [
+        "serratus_posterior_inferior"
+      ]
+    }
+  },
+  "Serratus posterior superior": {
+    "rule": "name",
+    "bones": {
+      "vertebra_c7": [
+        "serratus_posterior_superior"
+      ],
+      "vertebra_t1": [
+        "serratus_posterior_superior"
+      ],
+      "vertebra_t2": [
+        "serratus_posterior_superior"
+      ],
+      "vertebra_t3": [
+        "serratus_posterior_superior"
+      ],
+      "rib_2_left": [
+        "serratus_posterior_superior"
+      ],
+      "rib_3_left": [
+        "serratus_posterior_superior"
+      ],
+      "rib_4_left": [
+        "serratus_posterior_superior"
+      ]
+    }
+  },
+  "Soleus": {
+    "rule": "name",
+    "bones": {
+      "tibia_left": [
+        "soleus"
+      ],
+      "fibula_left": [
+        "soleus"
+      ],
+      "calcaneus_left": [
+        "soleus"
+      ]
+    }
+  },
+  "Splenius capitis": {
+    "rule": "name",
+    "bones": {
+      "occipital_bone": [
+        "splenius_capitis"
+      ],
+      "temporal_bone_left": [
+        "splenius_capitis"
+      ],
+      "vertebra_c7": [
+        "splenius_capitis"
+      ],
+      "vertebra_t1": [
+        "splenius_capitis"
+      ],
+      "vertebra_t2": [
+        "splenius_capitis"
+      ],
+      "vertebra_t3": [
+        "splenius_capitis"
+      ]
+    }
+  },
+  "Splenius cervicis": {
+    "rule": "variant",
+    "note": "The source uses colli for cervicis",
+    "bones": {
+      "vertebra_c1": [
+        "splenius_colli"
+      ],
+      "vertebra_t3": [
+        "splenius_colli"
+      ],
+      "vertebra_t4": [
+        "splenius_colli"
+      ],
+      "vertebra_t5": [
+        "splenius_colli"
+      ],
+      "vertebra_t6": [
+        "splenius_colli"
+      ]
+    }
+  },
+  "Stapedius": {
+    "rule": "unmatched",
+    "note": "Not in the source",
+    "question": 70,
+    "bones": {
+      "stapes_left": []
+    }
+  },
+  "Sternocleidomastoid": {
+    "rule": "name",
+    "bones": {
+      "occipital_bone": [
+        "sternocleidomastoid"
+      ],
+      "temporal_bone_left": [
+        "sternocleidomastoid"
+      ],
+      "clavicle_left": [
+        "sternocleidomastoid"
+      ]
+    }
+  },
+  "Sternocleidomastoid (sternal head)": {
+    "rule": "variant",
+    "note": "The source has sternocleidomastoid as one object, without heads",
+    "bones": {
+      "sternum": [
+        "sternocleidomastoid"
+      ]
+    }
+  },
+  "Sternohyoid": {
+    "rule": "name",
+    "bones": {
+      "hyoid_bone": [
+        "sternohyoid"
+      ],
+      "sternum": [
+        "sternohyoid"
+      ],
+      "clavicle_left": [
+        "sternohyoid"
+      ]
+    }
+  },
+  "Sternothyroid": {
+    "rule": "name",
+    "bones": {
+      "sternum": [
+        "sternothyroid"
+      ]
+    }
+  },
+  "Styloglossus": {
+    "rule": "unmatched",
+    "note": "Not in the source",
+    "question": 70,
+    "bones": {
+      "temporal_bone_left": []
+    }
+  },
+  "Stylohyoid": {
+    "rule": "name",
+    "bones": {
+      "temporal_bone_left": [
+        "stylohyoid"
+      ],
+      "hyoid_bone": [
+        "stylohyoid"
+      ]
+    }
+  },
+  "Stylopharyngeus": {
+    "rule": "name",
+    "bones": {
+      "temporal_bone_left": [
+        "stylopharyngeus"
+      ]
+    }
+  },
+  "Subclavius": {
+    "rule": "name",
+    "bones": {
+      "rib_1_left": [
+        "subclavius"
+      ],
+      "clavicle_left": [
+        "subclavius"
+      ]
+    }
+  },
+  "Subscapularis": {
+    "rule": "name",
+    "bones": {
+      "scapula_left": [
+        "subscapularis"
+      ],
+      "humerus_left": [
+        "subscapularis"
+      ]
+    }
+  },
+  "Superior gemellus": {
+    "rule": "name",
+    "bones": {
+      "femur_left": [
+        "superior_gemellus"
+      ]
+    }
+  },
+  "Supinator": {
+    "rule": "name",
+    "bones": {
+      "radius_left": [
+        "supinator"
+      ],
+      "ulna_left": [
+        "supinator"
+      ]
+    }
+  },
+  "Supraspinatus": {
+    "rule": "name",
+    "bones": {
+      "scapula_left": [
+        "supraspinatus"
+      ],
+      "humerus_left": [
+        "supraspinatus"
+      ]
+    }
+  },
+  "Temporalis": {
+    "rule": "name",
+    "bones": {
+      "frontal_bone": [
+        "temporalis"
+      ],
+      "parietal_bone_left": [
+        "temporalis"
+      ],
+      "temporal_bone_left": [
+        "temporalis"
+      ],
+      "sphenoid_bone": [
+        "temporalis"
+      ],
+      "mandible": [
+        "temporalis"
+      ]
+    }
+  },
+  "Tensor fasciae latae": {
+    "rule": "name",
+    "bones": {
+      "hip_bone_left": [
+        "tensor_fasciae_latae"
+      ]
+    }
+  },
+  "Tensor tympani": {
+    "rule": "unmatched",
+    "note": "Not in the source",
+    "question": 70,
+    "bones": {
+      "malleus_left": []
+    }
+  },
+  "Tensor veli palatini": {
+    "rule": "unmatched",
+    "note": "Not in the source",
+    "question": 70,
+    "bones": {
+      "sphenoid_bone": []
+    }
+  },
+  "Teres major": {
+    "rule": "name",
+    "bones": {
+      "scapula_left": [
+        "teres_major"
+      ],
+      "humerus_left": [
+        "teres_major"
+      ]
+    }
+  },
+  "Teres minor": {
+    "rule": "name",
+    "bones": {
+      "scapula_left": [
+        "teres_minor"
+      ],
+      "humerus_left": [
+        "teres_minor"
+      ]
+    }
+  },
+  "Third dorsal interosseous": {
+    "rule": "variant",
+    "note": "The source has the dorsal interossei of each hand and foot as one object",
+    "bones": {
+      "metacarpal_3_left": [
+        "dorsal_interossei_hand"
+      ],
+      "metacarpal_4_left": [
+        "dorsal_interossei_hand"
+      ],
+      "proximal_phalanx_hand_3_left": [
+        "dorsal_interossei_hand"
+      ],
+      "metatarsal_3_left": [
+        "dorsal_interossei_foot"
+      ],
+      "metatarsal_4_left": [
+        "dorsal_interossei_foot"
+      ],
+      "proximal_phalanx_foot_3_left": [
+        "dorsal_interossei_foot"
+      ]
+    }
+  },
+  "Third palmar interosseous": {
+    "rule": "variant",
+    "note": "The source has the palmar interossei as one object",
+    "bones": {
+      "metacarpal_5_left": [
+        "palmar_interossei"
+      ],
+      "proximal_phalanx_hand_5_left": [
+        "palmar_interossei"
+      ]
+    }
+  },
+  "Third plantar interosseous": {
+    "rule": "variant",
+    "note": "The source has the plantar interossei as one object",
+    "bones": {
+      "metatarsal_5_left": [
+        "plantar_interossei"
+      ],
+      "proximal_phalanx_foot_5_left": [
+        "plantar_interossei"
+      ]
+    }
+  },
+  "Thyrohyoid": {
+    "rule": "name",
+    "bones": {
+      "hyoid_bone": [
+        "thyrohyoid"
+      ]
+    }
+  },
+  "Tibialis anterior": {
+    "rule": "name",
+    "bones": {
+      "tibia_left": [
+        "tibialis_anterior"
+      ],
+      "medial_cuneiform_left": [
+        "tibialis_anterior"
+      ],
+      "metatarsal_1_left": [
+        "tibialis_anterior"
+      ]
+    }
+  },
+  "Tibialis posterior": {
+    "rule": "name",
+    "bones": {
+      "tibia_left": [
+        "tibialis_posterior"
+      ],
+      "fibula_left": [
+        "tibialis_posterior"
+      ],
+      "navicular_left": [
+        "tibialis_posterior"
+      ],
+      "cuboid_left": [
+        "tibialis_posterior"
+      ],
+      "medial_cuneiform_left": [
+        "tibialis_posterior"
+      ],
+      "intermediate_cuneiform_left": [
+        "tibialis_posterior"
+      ],
+      "lateral_cuneiform_left": [
+        "tibialis_posterior"
+      ]
+    }
+  },
+  "Transversus abdominis": {
+    "rule": "name",
+    "bones": {
+      "rib_11_left": [
+        "transversus_abdominis"
+      ],
+      "rib_12_left": [
+        "transversus_abdominis"
+      ],
+      "hip_bone_left": [
+        "transversus_abdominis"
+      ]
+    }
+  },
+  "Transversus abdominis (through its costal cartilage)": {
+    "rule": "variant",
+    "indirect": true,
+    "note": "Attached to the costal cartilages, not the ribs",
+    "bones": {
+      "rib_7_left": [
+        "transversus_abdominis"
+      ],
+      "rib_8_left": [
+        "transversus_abdominis"
+      ],
+      "rib_9_left": [
+        "transversus_abdominis"
+      ],
+      "rib_10_left": [
+        "transversus_abdominis"
+      ]
+    }
+  },
+  "Transversus thoracis": {
+    "rule": "name",
+    "bones": {
+      "sternum": [
+        "transversus_thoracis"
+      ]
+    }
+  },
+  "Trapezius": {
+    "rule": "name",
+    "bones": {
+      "occipital_bone": [
+        "trapezius"
+      ],
+      "vertebra_c7": [
+        "trapezius"
+      ],
+      "vertebra_t1": [
+        "trapezius"
+      ],
+      "vertebra_t2": [
+        "trapezius"
+      ],
+      "vertebra_t3": [
+        "trapezius"
+      ],
+      "vertebra_t4": [
+        "trapezius"
+      ],
+      "vertebra_t5": [
+        "trapezius"
+      ],
+      "vertebra_t6": [
+        "trapezius"
+      ],
+      "vertebra_t7": [
+        "trapezius"
+      ],
+      "vertebra_t8": [
+        "trapezius"
+      ],
+      "vertebra_t9": [
+        "trapezius"
+      ],
+      "vertebra_t10": [
+        "trapezius"
+      ],
+      "vertebra_t11": [
+        "trapezius"
+      ],
+      "vertebra_t12": [
+        "trapezius"
+      ],
+      "clavicle_left": [
+        "trapezius"
+      ],
+      "scapula_left": [
+        "trapezius"
+      ]
+    }
+  },
+  "Triceps brachii": {
+    "rule": "name",
+    "bones": {
+      "ulna_left": [
+        "triceps_brachii"
+      ]
+    }
+  },
+  "Triceps brachii (lateral and medial heads)": {
+    "rule": "variant",
+    "bones": {
+      "humerus_left": [
+        "triceps_brachii_lateral_head",
+        "triceps_brachii_medial_head"
+      ]
+    }
+  },
+  "Triceps brachii (long head)": {
+    "rule": "variant",
+    "bones": {
+      "scapula_left": [
+        "triceps_brachii_long_head"
+      ]
+    }
+  },
+  "Vastus intermedius": {
+    "rule": "name",
+    "bones": {
+      "femur_left": [
+        "vastus_intermedius"
+      ],
+      "patella_left": [
+        "vastus_intermedius"
+      ]
+    }
+  },
+  "Vastus lateralis": {
+    "rule": "name",
+    "bones": {
+      "femur_left": [
+        "vastus_lateralis"
+      ],
+      "patella_left": [
+        "vastus_lateralis"
+      ]
+    }
+  },
+  "Vastus medialis": {
+    "rule": "name",
+    "bones": {
+      "femur_left": [
+        "vastus_medialis"
+      ],
+      "patella_left": [
+        "vastus_medialis"
+      ]
+    }
+  },
+  "Zygomaticus major": {
+    "rule": "name",
+    "bones": {
+      "zygomatic_bone_left": [
+        "zygomaticus_major"
+      ]
+    }
+  },
+  "Zygomaticus minor": {
+    "rule": "name",
+    "bones": {
+      "zygomatic_bone_left": [
+        "zygomaticus_minor"
+      ]
+    }
+  }
+}

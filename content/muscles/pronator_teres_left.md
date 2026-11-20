@@ -1,0 +1,21 @@
+---
+id: pronator_teres_left
+kind: muscle
+name: Pronator teres
+latin: Musculus pronator teres
+commonName: null
+side: left
+region: [upper_limb, forearm]
+compartment: forearm_anterior_superficial
+parts: [pronator_teres_deep_head_left, pronator_teres_superficial_head_left]
+origin: []
+insertion:
+  - { structure: radius_left, landmark: pronator_tuberosity }
+actions:
+  - { joint: radio_ulnar_joints_left, movement: pronation, role: prime }
+  - { joint: elbow_joint_left, movement: flexion, role: assist }
+innervation: Median nerve (C6–C7)
+clinicalNote: "The median nerve passes between its two heads, where it can be compressed (pronator syndrome)."
+reviewed: false
+---
+Pronator teres is the most lateral muscle of the superficial flexor group and forms the medial border of the cubital fossa. Its humeral and ulnar heads converge on the middle of the lateral surface of the radius, at the pronator tuberosity, with the median nerve passing between them. It pronates the forearm, especially quickly or against resistance, and helps flex the elbow.

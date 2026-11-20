@@ -18,6 +18,7 @@ import { createOutline, disposeOutline, OUTLINE } from "../scene/outline";
 import { useViewer } from "../state/store";
 import { TISSUE_LAYERS, type TissueLayer } from "../state/url";
 import { LAYER_COLOURS, TENDON_COLOUR } from "./colours";
+import { loadSoftContent } from "../content/softContentLoader";
 import { loadLayerParts } from "./loadLayer";
 import { isTendinous, type SoftId } from "./softIds";
 import { SOFT_IDS } from "./softTable";
@@ -133,6 +134,8 @@ function TissueLayerScene({
     const st = useViewer.getState();
     const queue = lodsToLoad(lods, shownRef.current?.lod ?? null);
     if (queue.length === 0) return;
+    // The layer's text chunk (M8 plan decision 11), in parallel with its model file.
+    void loadSoftContent(layer).catch(() => undefined);
     (async () => {
       for (const lod of queue) {
         st.setLayerLoad(layer, { status: "loading", fetching: lod, received: 0, total: 0, error: null });

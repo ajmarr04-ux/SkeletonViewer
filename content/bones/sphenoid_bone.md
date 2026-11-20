@@ -28,6 +28,8 @@ landmarks:
   - { id: foramen_ovale, name: Foramen ovale, position: null }
   - { id: foramen_spinosum, name: Foramen spinosum, position: null }
   - { id: sphenoidal_sinus, name: Sphenoidal sinus, position: null }
+  - { id: infratemporal_crest, name: Infratemporal crest, position: null }
+  - { id: pterygoid_hamulus, name: Pterygoid hamulus, position: null }
 muscleAttachments: [Lateral pterygoid, Medial pterygoid, Temporalis, Tensor veli palatini, Extra-ocular muscles (from the common tendinous ring), Levator palpebrae superioris]
 clinicalNote: The pituitary gland is often reached surgically through the nose and the sphenoidal sinus (transsphenoidal surgery).
 reviewed: false

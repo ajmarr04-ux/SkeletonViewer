@@ -173,6 +173,7 @@ dialog.manual-share form { margin-top: 12px; text-align: right; }
 .panel-title { flex: 1; min-width: 0; }
 .panel-title h2 { margin: 0; font-size: 20px; line-height: 1.25; overflow-wrap: anywhere; }
 .panel-title .latin { margin: 2px 0 0; font-style: italic; font-size: 14px; color: #bdc1c6; }
+.panel-title .part-of-title { margin: 2px 0 0; font-size: 14px; color: #bdc1c6; }
 .icon-button {
   flex: none; min-width: 44px; min-height: 44px; border: 0; border-radius: 8px;
   background: transparent; color: #e8eaed; font-size: 22px; cursor: pointer;

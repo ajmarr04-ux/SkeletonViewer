@@ -45,6 +45,15 @@ landmarks:
   - id: inferior_articular_surface
     name: Inferior articular surface
     position: null
+  - id: medial_surface
+    name: Medial surface
+    position: null
+  - id: lateral_surface
+    name: Lateral surface
+    position: null
+  - id: posterior_surface
+    name: Posterior surface
+    position: null
 muscleAttachments:
   - Quadriceps femoris (through the patellar ligament)
   - Sartorius

@@ -35,6 +35,15 @@ landmarks:
   - id: malleolar_fossa
     name: Malleolar fossa
     position: null
+  - id: medial_surface
+    name: Medial surface
+    position: null
+  - id: lateral_surface
+    name: Lateral surface
+    position: null
+  - id: posterior_surface
+    name: Posterior surface
+    position: null
 muscleAttachments:
   - Biceps femoris
   - Fibularis longus
