@@ -315,12 +315,20 @@
           {
             "key": "scapulohumeral",
             "label": "Scapulohumeral muscles",
-            "children": []
+            "children": [
+              "deltoid_left",
+              "teres_major_left"
+            ]
           },
           {
             "key": "rotator_cuff",
             "label": "Rotator cuff",
-            "children": []
+            "children": [
+              "supraspinatus_left",
+              "infraspinatus_left",
+              "teres_minor_left",
+              "subscapularis_left"
+            ]
           }
         ]
       },
@@ -331,7 +339,11 @@
           {
             "key": "arm_anterior",
             "label": "Anterior compartment of the arm",
-            "children": []
+            "children": [
+              "biceps_brachii_left",
+              "brachialis_left",
+              "coracobrachialis_left"
+            ]
           },
           {
             "key": "arm_posterior",
@@ -349,22 +361,46 @@
           {
             "key": "forearm_anterior_superficial",
             "label": "Anterior forearm, superficial",
-            "children": []
+            "children": [
+              "pronator_teres_left",
+              "flexor_carpi_radialis_left",
+              "palmaris_longus_left",
+              "flexor_carpi_ulnaris_left",
+              "flexor_digitorum_superficialis_left"
+            ]
           },
           {
             "key": "forearm_anterior_deep",
             "label": "Anterior forearm, deep",
-            "children": []
+            "children": [
+              "flexor_digitorum_profundus_left",
+              "flexor_pollicis_longus_left",
+              "pronator_quadratus_left"
+            ]
           },
           {
             "key": "forearm_posterior_superficial",
             "label": "Posterior forearm, superficial",
-            "children": []
+            "children": [
+              "brachioradialis_left",
+              "extensor_carpi_radialis_longus_left",
+              "extensor_carpi_radialis_brevis_left",
+              "extensor_digitorum_left",
+              "extensor_digiti_minimi_left",
+              "extensor_carpi_ulnaris_left",
+              "anconeus_left"
+            ]
           },
           {
             "key": "forearm_posterior_deep",
             "label": "Posterior forearm, deep",
-            "children": []
+            "children": [
+              "supinator_left",
+              "abductor_pollicis_longus_left",
+              "extensor_pollicis_brevis_left",
+              "extensor_pollicis_longus_left",
+              "extensor_indicis_left"
+            ]
           }
         ]
       },
@@ -375,17 +411,30 @@
           {
             "key": "thenar",
             "label": "Thenar muscles",
-            "children": []
+            "children": [
+              "abductor_pollicis_brevis_left",
+              "flexor_pollicis_brevis_left",
+              "opponens_pollicis_left"
+            ]
           },
           {
             "key": "hypothenar",
             "label": "Hypothenar muscles",
-            "children": []
+            "children": [
+              "abductor_digiti_minimi_hand_left",
+              "flexor_digiti_minimi_hand_left",
+              "opponens_digiti_minimi_hand_left"
+            ]
           },
           {
             "key": "central_hand",
             "label": "Central hand muscles",
-            "children": []
+            "children": [
+              "adductor_pollicis_left",
+              "lumbrical_hand_left",
+              "dorsal_interossei_hand_left",
+              "palmar_interossei_left"
+            ]
           }
         ]
       }

@@ -72,6 +72,18 @@ landmarks:
   - id: crest_of_lesser_tubercle
     name: Crest of lesser tubercle
     position: null
+  - id: anterior_surface
+    name: Anterior surface
+    position: null
+  - id: medial_border
+    name: Medial border
+    position: null
+  - id: lateral_supracondylar_ridge
+    name: Lateral supracondylar ridge
+    position: null
+  - id: medial_supracondylar_ridge
+    name: Medial supracondylar ridge
+    position: null
 muscleAttachments:
   - Supraspinatus
   - Infraspinatus

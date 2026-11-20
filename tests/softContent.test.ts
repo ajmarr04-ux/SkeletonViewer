@@ -375,6 +375,25 @@ describe("real soft-tissue content", () => {
     expect(m.derived!.antagonists.latissimus_dorsi_left).toContain("pectoralis_major_clavicular_head_left");
     expect(m.derived!.attached.vertebra_l2!.origins).toContain("diaphragm");
   });
+  it("derives elbow, forearm and hand relationships (session AA, spec §10)", () => {
+    const m = compileSoftFromDisk("muscles");
+    const d = m.derived!;
+    // Spec §10's own example: biceps synergists include brachialis; antagonists include triceps.
+    expect(d.synergists.biceps_brachii_left).toEqual(expect.arrayContaining(["brachialis_left", "brachioradialis_left", "supinator_left"]));
+    expect(d.synergists.biceps_brachii_left).not.toContain("brachialis_right");
+    expect(d.antagonists.biceps_brachii_left).toEqual(expect.arrayContaining(["triceps_brachii_left", "pronator_quadratus_left"]));
+    // Wrist: ulnar deviation (adduction) pairs the ulnar flexor and extensor; the radial extensors oppose.
+    expect(d.synergists.flexor_carpi_ulnaris_left).toContain("extensor_carpi_ulnaris_left");
+    expect(d.antagonists.flexor_carpi_ulnaris_left).toContain("extensor_carpi_radialis_longus_left");
+    // Fingers: dorsal interossei abduct, palmar interossei adduct, across the MCP functional joint.
+    expect(d.antagonists.dorsal_interossei_hand_left).toContain("palmar_interossei_left");
+    // Attachments: the common flexor origin lists parts by their own ID; the lumbricals arise from a muscle.
+    expect(d.attached.humerus_left!.origins).toEqual(
+      expect.arrayContaining(["pronator_teres_superficial_head_left", "flexor_carpi_ulnaris_humeral_head_left", "flexor_carpi_radialis_left"]),
+    );
+    expect(d.attached.radius_right!.insertions).toEqual(expect.arrayContaining(["biceps_brachii_right", "supinator_right", "pronator_quadratus_right"]));
+    expect(d.attached.flexor_digitorum_profundus_left!.origins).toContain("lumbrical_hand_left");
+  });
   it("derives the triceps' attachments on the scapula, humerus and ulna", () => {
     const m = compileSoftFromDisk("muscles");
     expect(m.derived!.attached.scapula_left!.origins).toContain("triceps_brachii_long_head_left");

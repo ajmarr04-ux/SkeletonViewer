@@ -42,6 +42,21 @@ landmarks:
   - id: styloid_process
     name: Styloid process
     position: null
+  - id: supinator_crest
+    name: Supinator crest
+    position: null
+  - id: anterior_surface
+    name: Anterior surface
+    position: null
+  - id: medial_surface
+    name: Medial surface
+    position: null
+  - id: posterior_surface
+    name: Posterior surface
+    position: null
+  - id: posterior_border
+    name: Posterior border
+    position: null
 muscleAttachments:
   - Triceps brachii
   - Anconeus

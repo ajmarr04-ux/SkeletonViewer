@@ -42,6 +42,21 @@ landmarks:
   - id: carpal_articular_surface
     name: Carpal articular surface
     position: null
+  - id: anterior_oblique_line
+    name: Anterior oblique line
+    position: null
+  - id: pronator_tuberosity
+    name: Pronator tuberosity
+    position: null
+  - id: anterior_surface
+    name: Anterior surface
+    position: null
+  - id: posterior_surface
+    name: Posterior surface
+    position: null
+  - id: lateral_surface
+    name: Lateral surface
+    position: null
 muscleAttachments:
   - Biceps brachii
   - Supinator

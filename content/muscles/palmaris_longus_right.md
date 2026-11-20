@@ -1,0 +1,28 @@
+---
+# Generated from palmaris_longus_left.md by `npm run content:mirror`. Edit that file, not this one.
+id: palmaris_longus_right
+kind: muscle
+name: Palmaris longus
+latin: Musculus palmaris longus
+commonName: null
+side: right
+region:
+  - upper_limb
+  - forearm
+compartment: forearm_anterior_superficial
+parts:
+  - palmar_aponeurosis_right
+  - palmaris_longus_belly_right
+origin: []
+insertion:
+  - structure: palmar_aponeurosis_right
+  - soft: flexor retinaculum
+actions:
+  - joint: wrist_joint_right
+    movement: flexion
+    role: assist
+innervation: Median nerve (C7–C8)
+clinicalNote: It is absent on one or both sides in about one person in seven, and its tendon is a common donor for tendon grafts.
+reviewed: false
+---
+Palmaris longus is a small, inconstant muscle with a short belly and a long, thin tendon. It arises from the medial epicondyle with the other superficial flexors, passes in front of the flexor retinaculum, and spreads out as the palmar aponeurosis in the palm. It weakly flexes the wrist and tenses the palmar aponeurosis; the tendon stands out at the wrist when the thumb and little finger are pinched together.

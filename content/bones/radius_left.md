@@ -23,6 +23,11 @@ landmarks:
   - { id: styloid_process, name: Styloid process, position: null }
   - { id: ulnar_notch, name: Ulnar notch, position: null }
   - { id: carpal_articular_surface, name: Carpal articular surface, position: null }
+  - { id: anterior_oblique_line, name: Anterior oblique line, position: null }
+  - { id: pronator_tuberosity, name: Pronator tuberosity, position: null }
+  - { id: anterior_surface, name: Anterior surface, position: null }
+  - { id: posterior_surface, name: Posterior surface, position: null }
+  - { id: lateral_surface, name: Lateral surface, position: null }
 muscleAttachments: [Biceps brachii, Supinator, Pronator teres, Pronator quadratus, Brachioradialis, Flexor digitorum superficialis (radial head), Flexor pollicis longus, Abductor pollicis longus, Extensor pollicis brevis]
 clinicalNote: "A fall on an outstretched hand often breaks the distal end of the radius (a Colles fracture), tilting the fragment backwards into a \"dinner fork\" deformity."
 reviewed: false

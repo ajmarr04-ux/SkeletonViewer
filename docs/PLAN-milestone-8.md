@@ -28,7 +28,7 @@ Plus the migration: **200 distinct `muscleAttachments` strings** across the 238 
 | X | 1 (schemas and vocabulary files), 2 (compiler, mirror, derived data, panel text), 3 (migration table) | **Done.** See "Session X notes" |
 | Y | 4 (muscles: head and neck, about 84 files) | **Done.** See "Session Y notes" |
 | Z | 5 (muscles: back, thorax, abdomen and pelvis, about 66 files) | **Done.** See "Session Z notes" |
-| AA | 6 (muscles: upper limb, about 62 files) | Not started |
+| AA | 6 (muscles: upper limb, about 62 files) | **Done.** See "Session AA notes" |
 | AB | 7 (muscles: lower limb, about 67 files) | Not started |
 | AC | 8 (ligaments, 155 files; cartilage, discs and menisci, 43 files) | Not started |
 | AD | 9 (migration finished, `muscleAttachments` removed, strict validation), 10 (tests and no-regression), 11 (hosted copy) | Not started |
@@ -110,6 +110,16 @@ What was built, and where it differs from the plan (say if any should change):
 - **Questions added:** 70 to 77, under the new headings *Joints*, *Muscles: attachment migration* and *Muscles: upper limb*.
 - **Tests:** `tests/softContent.test.ts` (33: one passing and one failing case per rule on a small fixture, derived data, compiler, the real triceps attachments, joint mirroring, the matcher); `tests/e2e/soft-content.spec.ts` (written part: Latin, Part of, summary; ligament common name; an unwritten structure keeps the placeholder).
 - **Size:** main chunk `index` 293.3 kB gzipped (+0.3 kB over M7; budget +5). Content chunks: muscles 1.2 kB, ligaments 0.6 kB, cartilage 0.6 kB gzipped with the seed files.
+
+## Session AA notes (step 6, done)
+
+- **58 left files** (39 muscles, 19 parts; 58 mirrored), which with session X's triceps seed completes the upper limb: deltoid (3 parts) and teres major; the rotator cuff (4); the arm (biceps with 2 heads, brachialis, coracobrachialis); the anterior forearm, superficial (pronator teres, flexor carpi radialis, palmaris longus with its belly and the palmar aponeurosis, flexor carpi ulnaris, flexor digitorum superficialis, each with its heads) and deep (3); the posterior forearm, superficial (7) and deep (5); the hand (thenar 3, hypothenar 3, adductor pollicis, lumbricals, dorsal and palmar interossei). `muscle-hierarchy.json` is filled for every upper-limb compartment.
+- **No new functional joints:** the elbow, wrist and finger 2–5 sets from session X covered everything; the thumb and little finger use pair joints (QUESTIONS 100). Radial and ulnar deviation are `abduction` and `adduction` at the wrist (QUESTIONS 99).
+- **Two-way preview:** every old string on an upper-limb bone that names one of these muscles is matched by an origin or insertion (0 misses). Over the whole tree, 438 matched; the only misses are still session Z's 20 `indirect` costal-cartilage strings. The preview counts a string naming a muscle as matched when the muscle **or one of its parts** attaches to the bone (needed for e.g. "Pronator teres" on the humerus, where the superficial head carries the origin); session AD's check should use the same rule.
+- **Landmarks added:** humerus (4), radius (5), ulna (5); listed in QUESTIONS 106.
+- **Questions 99 to 107.**
+- **Tests:** the real-content derived-data test from spec §10: biceps' synergists include brachialis (same side only) and its antagonists include triceps; wrist ulnar deviation; dorsal against palmar interossei; the humerus's common flexor origin listed by part; the lumbricals arising from flexor digitorum profundus.
+- **Size:** the muscles content chunk is 62.1 kB gzipped with 403 files (lazy).
 
 ## Session Z notes (step 5, done)
 
