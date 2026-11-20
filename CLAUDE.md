@@ -26,6 +26,7 @@ A static browser app: a 3D atlas of the adult human skeleton (bones and teeth), 
 | `scripts/mapping/generate_ids.py` | Writes the two files above and checks them against the audit. Run with `npm run ids`. |
 | `assets/audit/z-anatomy.json` | Audit data for each object: triangles, bounding box, centroid, holes, loose vertices, modifiers, negative scale. |
 | `scripts/blender/audit_source.py` | Produces the audit. |
+| `scripts/blender/audit_soft_tissue.py`, `scripts/mapping/classify_soft_tissue.py` | M6 soft-tissue audit: raw facts from the source (about 1 minute in Blender) → `assets/audit/soft-tissue.json`; then classes and `assets/audit/REPORT-soft-tissue.md` (`npm run audit-soft`, no Blender). |
 | `scripts/setup-blender.sh` | Installs `bpy==5.3.0` into `.cache/venv` and fetches the pinned source into `.cache/z-anatomy/` (git-ignored). |
 | `tests/ids.test.ts` | Vitest tests of the ID list and the mapping. |
 | `scripts/blender/build_skeleton.py` | Blender pipeline: extract, clean, origins, AO bake, LODs, glTF export, `assets/build/manifest.json`. |

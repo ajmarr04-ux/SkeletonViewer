@@ -13,7 +13,7 @@ Out of scope here (later milestones): the Layers panel, per-layer batches, ghost
 | Session | Steps | Status |
 | --- | --- | --- |
 | (planning) | 0 (Milestone 5 handover, this plan) | **Done.** See step 0 |
-| P | 1 (soft-tissue audit), 2 (decision on `2: Muscular insertions`) | Not started |
+| P | 1 (soft-tissue audit), 2 (decision on `2: Muscular insertions`) | **Done.** See "Session P notes" and `assets/audit/REPORT-soft-tissue.md`. **Waiting for the user** at the checkpoint (articular cartilage absent) |
 | Q | 3 (soft-tissue ID list and mapping), 4 (mapping checks and questions) | Not started |
 | R | 5 (Blender pipeline for the new layers), 6 (compression and `check-models`), 7 (build report) | Not started |
 | S | 8 (debug layer view), 9 (alignment and no-regression tests), 10 (report back with counts), 11 (hosted copy) | Not started |
@@ -26,9 +26,9 @@ Triggers: "begin session P", "begin session Q", "begin session R" and "begin ses
 
 ## Exit criteria (from the musculoskeletal spec §11, M6)
 
-- [ ] Soft-tissue audit report and JSON for collections 2, 3, 4 and the cartilage in 1.
+- [x] Soft-tissue audit report and JSON for collections 2, 3, 4 and the cartilage in 1. (`assets/audit/REPORT-soft-tissue.md`, `assets/audit/soft-tissue.json`; session P.)
 - [ ] `soft-to-id.json` with every mesh mapped, merged or excluded (with reasons).
-- [ ] Decision recorded on `2: Muscular insertions` (patches usable or not).
+- [x] Decision recorded on `2: Muscular insertions` (patches usable or not). (**Usable**: 689 of 705 patches within 1 mm of a bone or cartilage surface; side from geometry. See the report.)
 - [ ] Six layer files exported, compressed, under budget, passing `check-models`.
 - [ ] A debug view (`?debug&layers=all`) shows every layer in place with no visible misalignment against the bones.
 - [ ] **Report back** with counts per kind (muscles, parts, tendons, ligaments, cartilage, discs, menisci) before writing content.
@@ -64,6 +64,10 @@ These fill gaps the spec leaves open. Each is the smallest choice that fits the 
    | `ligaments` | ~120k | ~40k | < 2.5 MB | < 1 MB |
    | `cartilage` | ~80k | ~30k | < 2 MB | < 1 MB |
 
+   | `attachments` (decision 12, added in session P) | ~150k | ~50k | < 3 MB | < 1 MB |
+
+   **Session P measured** (viewport-evaluated source, as the bone build evaluates): muscles 1.88M triangles, ligaments 172k, cartilage 171k, patches 931k (64k before their Subdivision and Solidify). So **every layer is over its high target** and is decimated; none keeps its source geometry. The targets stand. The per-object floor for patches is 64 triangles (a solidified sheet shows each face twice).
+
    Triangle counts must land within ±15% of the target (as for bones). If a layer's source total is below its high target, the high file keeps the source geometry and the target becomes the source count. The per-object floor is 300 triangles or the source count if lower, and LOD weights favour small structures (as for bones). Sizes extrapolate from the bones (500k tris = 2.6 MB) with headroom.
 9. **The bone pipeline is not re-run.** The shared Blender helpers (extract, clean, origins, AO, LOD, export) move into `scripts/blender/pipeline_lib.py`, imported by both `build_skeleton.py` and a new `build_soft_tissue.py`. The bone `.glb` files and `assets/build/manifest.json` are not rebuilt in M6, and `git diff --stat public/models/skeleton-*` must be empty at the end of every session. (Session R runs `build_skeleton.py --dry-run` or a single-bone build once after the refactor to prove it still works, writing outside the repo.)
 10. **AO per structure**, as for bones (spec §2.6): Cycles bake with only that structure visible; if that is too slow for about 1,000 structures (bones took about 45 s for the whole build), fall back to the scripted ray-cast AO already in `build_skeleton.py`, and record which was used per layer.
@@ -78,6 +82,21 @@ These fill gaps the spec leaves open. Each is the smallest choice that fits the 
 2. **Naming.** Many muscle names are Latin only, some may be fragments with numbered suffixes, and some may be one mesh for both sides. The generator fails on anything it can't place, and those go in the plan's notes and `QUESTIONS.md` for a decision.
 3. **Volume of mapping.** About 670 muscle meshes and 410 joint meshes. Session Q may run long; if it does, it finishes the muscles first and records where it stopped (the joints and cartilage mapping are simpler).
 4. **Draw cost of the debug view.** About a thousand separate meshes is fine for a debug view on desktop; it isn't a performance measure (that is M7, with batches).
+
+## Session P notes (steps 1 and 2, done)
+
+What was done, and where it differs from the plan (say if any should change):
+
+- **Scripts.** `scripts/blender/audit_soft_tissue.py` records raw facts from the source in about a minute: stats per mesh from the viewport-evaluated mesh in world space (reusing `mesh_stats` from `audit_source.py`, which now only runs `main()` as a script), base and evaluated triangle counts, modifier settings, the object parent chain, side from name and from the centroid, midline crossing, and for every insertion patch the median and 95th-percentile distance of its vertices to its parent bone and to the nearest bone or skeletal mesh. `scripts/mapping/classify_soft_tissue.py` (`npm run audit-soft`, plain Python, no Blender) adds the first-pass classes and writes the report, so the rules can change without reopening the source. The JSON has one object per line (1.9 MB).
+- **Counts.** 1,827 meshes with faces: 670 in `4: Muscular system`, 410 in `3: Joints`, 705 patches in `2: Muscular insertions`, and 42 skeletal meshes the bone build doesn't use. First-pass classes: 708 whole, 139 part, 31 doubtful (18 names), 244 excluded, 705 patches. Proposed layers: muscles 468 meshes, ligaments 300, cartilage 79 (both sides).
+- **Better than expected:** the muscle names are **English TA**, not Latin; every paired muscle is split left/right; no modelling fragments exist; the source already splits 24 muscles into anatomical heads, parts or bellies, and has 4 separate tendon or aponeurosis meshes (calcaneal tendon, the digastric intermediate tendon, the tendon of extensor digitorum longus, the epicranial aponeurosis); and its object parent tree gives region → compartment → muscle. All 57 major muscles checked are present.
+- **Worse than expected:** no articular cartilage on any joint surface (labra, menisci and articular discs only); no patellar ligament or quadriceps tendon; no craniovertebral ligaments; some small muscles missing (ear, auricular, most of the soft palate and perineum, subcostales, psoas minor). Listed in the report's "Structures absent from the source".
+- **Naming defects:** `Lateral temporomandibular ligament` has its sides swapped; `Iliocostalis colli muscle` lacks `.l`; `Intra-articular ligament of head of rib` and `Ulnopisiform ligament` exist on one side only. Patches: 50 have the wrong side suffix and 7 left twins are missing, so patch sides come from geometry.
+- **Step 2 decision: the patches are usable** (decision 12). 98% lie within 1 mm of a bone or cartilage surface. The exceptions are mostly real patches that span two bones and a membrane; `Rectus abdominis muscle.e*` is misplaced and its origin and insertion labels look swapped. Since patch names can be wrong, M8's origins and insertions come from references, and patches are only geometry. Session R exports them as `attachments-{high,low}.glb`, with the budget added to decision 8.
+- **Modifiers.** About 1,070 Subdivision and 1,060 Solidify modifiers, mostly on ligaments and patches (thin sheets thickened by 0.1–2 mm). The audit and the build both use the viewport evaluation; render levels would quadruple those meshes.
+- **Found in passing:** about 622 landmark helper objects in `1: Skeletal system` (for example `Apex of dens axis.j`) may give real positions for bone landmarks. Not in M6's scope; noted for M8.
+
+**Checkpoint (needs the user before session Q).** Stop conditions 1 to 3 don't hold. The plan's own checkpoint does: **articular cartilage is absent**. Proposed: go on without it, recording it per joint in `missing`, so the cartilage layer is the 20 costal cartilages, 23 intervertebral discs (plus nucleus pulposus), the interpubic disc, the 4 menisci and 8 articular discs, and, if session Q keeps them, the labra and the symphyses. The 18 doubtful names in the report (labra, iliotibial tract, linea alba, palmar and plantar aponeuroses, the laryngeal ligaments and others) are session Q's to decide, each with a `QUESTIONS.md` entry, unless the user wants to settle any now.
 
 ## Session P: audit (steps 1 and 2)
 

@@ -7,6 +7,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "ids": "python3 scripts/mapping/generate_ids.py",
+    "audit-soft": "python3 scripts/mapping/classify_soft_tissue.py",
     "check-models": "tsx scripts/check-models.ts",
     "build-models": "bash scripts/build-models.sh",
     "compress-models": "bash scripts/compress-models.sh",
