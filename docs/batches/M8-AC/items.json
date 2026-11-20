@@ -1,0 +1,2926 @@
+[
+ {
+  "n": 1,
+  "batch": "A",
+  "id": "inguinal_ligament_left",
+  "name": "Inguinal ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "abdominal_part_muscular_system",
+   "abdomen"
+  ],
+  "file": "content/ligaments/inguinal_ligament_left.md"
+ },
+ {
+  "n": 2,
+  "batch": "A",
+  "id": "pterygospinous_ligament_left",
+  "name": "Pterygospinous ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_skull",
+   "cranial_fibrous_joints",
+   "cranial_syndesmoses"
+  ],
+  "file": "content/ligaments/pterygospinous_ligament_left.md"
+ },
+ {
+  "n": 3,
+  "batch": "A",
+  "id": "sphenomandibular_ligament_left",
+  "name": "Sphenomandibular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_skull",
+   "cranial_fibrous_joints",
+   "cranial_syndesmoses"
+  ],
+  "file": "content/ligaments/sphenomandibular_ligament_left.md"
+ },
+ {
+  "n": 4,
+  "batch": "A",
+  "id": "stylohyoid_ligament_left",
+  "name": "Stylohyoid ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_skull",
+   "cranial_fibrous_joints",
+   "cranial_syndesmoses"
+  ],
+  "file": "content/ligaments/stylohyoid_ligament_left.md"
+ },
+ {
+  "n": 5,
+  "batch": "A",
+  "id": "stylomandibular_ligament_left",
+  "name": "Stylomandibular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_skull",
+   "cranial_fibrous_joints",
+   "cranial_syndesmoses"
+  ],
+  "file": "content/ligaments/stylomandibular_ligament_left.md"
+ },
+ {
+  "n": 6,
+  "batch": "A",
+  "id": "lateral_temporomandibular_ligament_left",
+  "name": "Lateral temporomandibular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_skull",
+   "temporomandibular_joint"
+  ],
+  "file": "content/ligaments/lateral_temporomandibular_ligament_left.md"
+ },
+ {
+  "n": 7,
+  "batch": "A",
+  "id": "anterior_longitudinal_ligament",
+  "name": "Anterior longitudinal ligament",
+  "kind": "ligament",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "fibrous_joints_vertebral_column"
+  ],
+  "file": "content/ligaments/anterior_longitudinal_ligament.md"
+ },
+ {
+  "n": 8,
+  "batch": "A",
+  "id": "intercornual_ligament_left",
+  "name": "Intercornual ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "fibrous_joints_vertebral_column"
+  ],
+  "file": "content/ligaments/intercornual_ligament_left.md"
+ },
+ {
+  "n": 9,
+  "batch": "A",
+  "id": "interspinous_ligaments",
+  "name": "Interspinous ligaments",
+  "kind": "ligament",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "fibrous_joints_vertebral_column"
+  ],
+  "file": "content/ligaments/interspinous_ligaments.md"
+ },
+ {
+  "n": 10,
+  "batch": "A",
+  "id": "ligamenta_flava",
+  "name": "Ligamenta flava",
+  "kind": "ligament",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "fibrous_joints_vertebral_column"
+  ],
+  "file": "content/ligaments/ligamenta_flava.md"
+ },
+ {
+  "n": 11,
+  "batch": "A",
+  "id": "nuchal_ligament",
+  "name": "Nuchal ligament",
+  "kind": "ligament",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "fibrous_joints_vertebral_column"
+  ],
+  "file": "content/ligaments/nuchal_ligament.md"
+ },
+ {
+  "n": 12,
+  "batch": "A",
+  "id": "posterior_longitudinal_ligament",
+  "name": "Posterior longitudinal ligament",
+  "kind": "ligament",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "fibrous_joints_vertebral_column"
+  ],
+  "file": "content/ligaments/posterior_longitudinal_ligament.md"
+ },
+ {
+  "n": 13,
+  "batch": "A",
+  "id": "supraspinous_ligament",
+  "name": "Supraspinous ligament",
+  "kind": "ligament",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "fibrous_joints_vertebral_column"
+  ],
+  "file": "content/ligaments/supraspinous_ligament.md"
+ },
+ {
+  "n": 14,
+  "batch": "A",
+  "id": "external_intercostal_membrane_left",
+  "name": "External intercostal membrane",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "thoracic_joints",
+   "fibrous_joints_thorax"
+  ],
+  "file": "content/ligaments/external_intercostal_membrane_left.md"
+ },
+ {
+  "n": 15,
+  "batch": "A",
+  "id": "internal_intercostal_membrane_left",
+  "name": "Internal intercostal membrane",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "thoracic_joints",
+   "fibrous_joints_thorax"
+  ],
+  "file": "content/ligaments/internal_intercostal_membrane_left.md"
+ },
+ {
+  "n": 16,
+  "batch": "A",
+  "id": "costotransverse_ligament_left",
+  "name": "Costotransverse ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "thoracic_joints",
+   "synovial_joints_thorax",
+   "costovertebral_joints",
+   "costotransverse_joint"
+  ],
+  "file": "content/ligaments/costotransverse_ligament_left.md"
+ },
+ {
+  "n": 17,
+  "batch": "A",
+  "id": "intra_articular_ligament_head_rib_left",
+  "name": "Intra-articular ligament of head of rib",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "thoracic_joints",
+   "synovial_joints_thorax",
+   "costovertebral_joints",
+   "joint_head_rib"
+  ],
+  "file": "content/ligaments/intra_articular_ligament_head_rib_left.md"
+ },
+ {
+  "n": 18,
+  "batch": "A",
+  "id": "radiate_ligament_head_rib_left",
+  "name": "Radiate ligament of head of rib",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "thoracic_joints",
+   "synovial_joints_thorax",
+   "costovertebral_joints",
+   "joint_head_rib"
+  ],
+  "file": "content/ligaments/radiate_ligament_head_rib_left.md"
+ },
+ {
+  "n": 19,
+  "batch": "B",
+  "id": "interosseous_membrane_forearm_left",
+  "name": "Interosseous membrane of forearm",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "fibrous_joints_free_upper_limb",
+   "radio_ulnar_syndesmoses"
+  ],
+  "file": "content/ligaments/interosseous_membrane_forearm_left.md"
+ },
+ {
+  "n": 20,
+  "batch": "B",
+  "id": "oblique_cord_left",
+  "name": "Oblique cord",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "fibrous_joints_free_upper_limb",
+   "radio_ulnar_syndesmoses"
+  ],
+  "file": "content/ligaments/oblique_cord_left.md"
+ },
+ {
+  "n": 21,
+  "batch": "B",
+  "id": "dorsal_radio_ulnar_ligament_left",
+  "name": "Dorsal radio-ulnar ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "distal_radio_ulnar_joint"
+  ],
+  "file": "content/ligaments/dorsal_radio_ulnar_ligament_left.md"
+ },
+ {
+  "n": 22,
+  "batch": "B",
+  "id": "palmar_radio_ulnar_ligament_left",
+  "name": "Palmar radio-ulnar ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "distal_radio_ulnar_joint"
+  ],
+  "file": "content/ligaments/palmar_radio_ulnar_ligament_left.md"
+ },
+ {
+  "n": 23,
+  "batch": "B",
+  "id": "annular_ligament_radius_left",
+  "name": "Annular ligament of radius",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "elbow_joint"
+  ],
+  "file": "content/ligaments/annular_ligament_radius_left.md"
+ },
+ {
+  "n": 24,
+  "batch": "B",
+  "id": "quadrate_ligament_left",
+  "name": "Quadrate ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "elbow_joint"
+  ],
+  "file": "content/ligaments/quadrate_ligament_left.md"
+ },
+ {
+  "n": 25,
+  "batch": "B",
+  "id": "radial_collateral_ligament_left",
+  "name": "Radial collateral ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "elbow_joint"
+  ],
+  "file": "content/ligaments/radial_collateral_ligament_left.md"
+ },
+ {
+  "n": 26,
+  "batch": "B",
+  "id": "ulnar_collateral_ligament_left",
+  "name": "Ulnar collateral ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "elbow_joint"
+  ],
+  "file": "content/ligaments/ulnar_collateral_ligament_left.md"
+ },
+ {
+  "n": 27,
+  "batch": "B",
+  "id": "coracohumeral_ligament_left",
+  "name": "Coracohumeral ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "glenohumeral_joint"
+  ],
+  "file": "content/ligaments/coracohumeral_ligament_left.md"
+ },
+ {
+  "n": 28,
+  "batch": "B",
+  "id": "inferior_glenohumeral_ligament_left",
+  "name": "Inferior glenohumeral ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "glenohumeral_joint"
+  ],
+  "file": "content/ligaments/inferior_glenohumeral_ligament_left.md"
+ },
+ {
+  "n": 29,
+  "batch": "B",
+  "id": "middle_glenohumeral_ligament_left",
+  "name": "Middle glenohumeral ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "glenohumeral_joint"
+  ],
+  "file": "content/ligaments/middle_glenohumeral_ligament_left.md"
+ },
+ {
+  "n": 30,
+  "batch": "B",
+  "id": "superior_glenohumeral_ligament_left",
+  "name": "Superior glenohumeral ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "glenohumeral_joint"
+  ],
+  "file": "content/ligaments/superior_glenohumeral_ligament_left.md"
+ },
+ {
+  "n": 31,
+  "batch": "B",
+  "id": "transverse_humeral_ligament_left",
+  "name": "Transverse humeral ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "glenohumeral_joint"
+  ],
+  "file": "content/ligaments/transverse_humeral_ligament_left.md"
+ },
+ {
+  "n": 32,
+  "batch": "B",
+  "id": "coraco_acromial_ligament_left",
+  "name": "Coraco-acromial ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_pectoral_girdle",
+   "fibrous_joints_pectoral_girdle"
+  ],
+  "file": "content/ligaments/coraco_acromial_ligament_left.md"
+ },
+ {
+  "n": 33,
+  "batch": "B",
+  "id": "inferior_transverse_scapular_ligament_left",
+  "name": "Inferior transverse scapular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_pectoral_girdle",
+   "fibrous_joints_pectoral_girdle"
+  ],
+  "file": "content/ligaments/inferior_transverse_scapular_ligament_left.md"
+ },
+ {
+  "n": 34,
+  "batch": "B",
+  "id": "superior_transverse_scapular_ligament_left",
+  "name": "Superior transverse scapular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_pectoral_girdle",
+   "fibrous_joints_pectoral_girdle"
+  ],
+  "file": "content/ligaments/superior_transverse_scapular_ligament_left.md"
+ },
+ {
+  "n": 35,
+  "batch": "B",
+  "id": "acromioclavicular_ligament_left",
+  "name": "Acromioclavicular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_pectoral_girdle",
+   "synovial_joints_pectoral_girdle",
+   "acromioclavicular_joint"
+  ],
+  "file": "content/ligaments/acromioclavicular_ligament_left.md"
+ },
+ {
+  "n": 36,
+  "batch": "B",
+  "id": "conoid_ligament_left",
+  "name": "Conoid ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_pectoral_girdle",
+   "synovial_joints_pectoral_girdle",
+   "acromioclavicular_joint"
+  ],
+  "file": "content/ligaments/conoid_ligament_left.md"
+ },
+ {
+  "n": 37,
+  "batch": "B",
+  "id": "trapezoid_ligament_left",
+  "name": "Trapezoid ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_pectoral_girdle",
+   "synovial_joints_pectoral_girdle",
+   "acromioclavicular_joint"
+  ],
+  "file": "content/ligaments/trapezoid_ligament_left.md"
+ },
+ {
+  "n": 38,
+  "batch": "B",
+  "id": "anterior_sternoclavicular_ligament_left",
+  "name": "Anterior sternoclavicular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_pectoral_girdle",
+   "synovial_joints_pectoral_girdle",
+   "sternoclavicular_joint"
+  ],
+  "file": "content/ligaments/anterior_sternoclavicular_ligament_left.md"
+ },
+ {
+  "n": 39,
+  "batch": "B",
+  "id": "costoclavicular_ligament_left",
+  "name": "Costoclavicular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_pectoral_girdle",
+   "synovial_joints_pectoral_girdle",
+   "sternoclavicular_joint"
+  ],
+  "file": "content/ligaments/costoclavicular_ligament_left.md"
+ },
+ {
+  "n": 40,
+  "batch": "B",
+  "id": "interclavicular_ligament_left",
+  "name": "Interclavicular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_pectoral_girdle",
+   "synovial_joints_pectoral_girdle",
+   "sternoclavicular_joint"
+  ],
+  "file": "content/ligaments/interclavicular_ligament_left.md"
+ },
+ {
+  "n": 41,
+  "batch": "B",
+  "id": "posterior_sternoclavicular_ligament_left",
+  "name": "Posterior sternoclavicular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_pectoral_girdle",
+   "synovial_joints_pectoral_girdle",
+   "sternoclavicular_joint"
+  ],
+  "file": "content/ligaments/posterior_sternoclavicular_ligament_left.md"
+ },
+ {
+  "n": 42,
+  "batch": "C",
+  "id": "dorsal_radiocarpal_ligament_left",
+  "name": "Dorsal radiocarpal ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "radiocarpal_joint"
+  ],
+  "file": "content/ligaments/dorsal_radiocarpal_ligament_left.md"
+ },
+ {
+  "n": 43,
+  "batch": "C",
+  "id": "radial_collateral_ligament_wrist_joint_left",
+  "name": "Radial collateral ligament of wrist joint",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "radiocarpal_joint"
+  ],
+  "file": "content/ligaments/radial_collateral_ligament_wrist_joint_left.md"
+ },
+ {
+  "n": 44,
+  "batch": "C",
+  "id": "radiocapitate_ligament_left",
+  "name": "Radiocapitate ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "radiocarpal_joint"
+  ],
+  "file": "content/ligaments/radiocapitate_ligament_left.md"
+ },
+ {
+  "n": 45,
+  "batch": "C",
+  "id": "radioscaphocapitate_ligament_left",
+  "name": "Radioscaphocapitate ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "radiocarpal_joint"
+  ],
+  "file": "content/ligaments/radioscaphocapitate_ligament_left.md"
+ },
+ {
+  "n": 46,
+  "batch": "C",
+  "id": "ulnar_collateral_ligament_wrist_joint_left",
+  "name": "Ulnar collateral ligament of wrist joint",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "radiocarpal_joint"
+  ],
+  "file": "content/ligaments/ulnar_collateral_ligament_wrist_joint_left.md"
+ },
+ {
+  "n": 47,
+  "batch": "C",
+  "id": "ulnocapitate_ligament_left",
+  "name": "Ulnocapitate ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "radiocarpal_joint"
+  ],
+  "file": "content/ligaments/ulnocapitate_ligament_left.md"
+ },
+ {
+  "n": 48,
+  "batch": "C",
+  "id": "ulnolunate_ligament_left",
+  "name": "Ulnolunate ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "radiocarpal_joint"
+  ],
+  "file": "content/ligaments/ulnolunate_ligament_left.md"
+ },
+ {
+  "n": 49,
+  "batch": "C",
+  "id": "ulnopisiform_ligament_left",
+  "name": "Ulnopisiform ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "radiocarpal_joint"
+  ],
+  "file": "content/ligaments/ulnopisiform_ligament_left.md"
+ },
+ {
+  "n": 50,
+  "batch": "C",
+  "id": "ulnotriquetral_ligament_left",
+  "name": "Ulnotriquetral ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "radiocarpal_joint"
+  ],
+  "file": "content/ligaments/ulnotriquetral_ligament_left.md"
+ },
+ {
+  "n": 51,
+  "batch": "C",
+  "id": "capitohamate_interosseous_ligament_left",
+  "name": "Capitohamate interosseous ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "intercarpal_joints"
+  ],
+  "file": "content/ligaments/capitohamate_interosseous_ligament_left.md"
+ },
+ {
+  "n": 52,
+  "batch": "C",
+  "id": "dorsal_intercarpal_ligaments_left",
+  "name": "Dorsal intercarpal ligaments",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "intercarpal_joints"
+  ],
+  "file": "content/ligaments/dorsal_intercarpal_ligaments_left.md"
+ },
+ {
+  "n": 53,
+  "batch": "C",
+  "id": "dorsal_scaphotriquetral_ligament_left",
+  "name": "Dorsal scaphotriquetral ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "intercarpal_joints"
+  ],
+  "file": "content/ligaments/dorsal_scaphotriquetral_ligament_left.md"
+ },
+ {
+  "n": 54,
+  "batch": "C",
+  "id": "dorsal_ulnocarpal_ligament_left",
+  "name": "Dorsal ulnocarpal ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "intercarpal_joints"
+  ],
+  "file": "content/ligaments/dorsal_ulnocarpal_ligament_left.md"
+ },
+ {
+  "n": 55,
+  "batch": "C",
+  "id": "lunotriquetral_interosseous_ligament_left",
+  "name": "Lunotriquetral interosseous ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "intercarpal_joints"
+  ],
+  "file": "content/ligaments/lunotriquetral_interosseous_ligament_left.md"
+ },
+ {
+  "n": 56,
+  "batch": "C",
+  "id": "palmar_capitohamate_ligament_left",
+  "name": "Palmar capitohamate ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "intercarpal_joints"
+  ],
+  "file": "content/ligaments/palmar_capitohamate_ligament_left.md"
+ },
+ {
+  "n": 57,
+  "batch": "C",
+  "id": "palmar_lunotriquetral_ligament_left",
+  "name": "Palmar lunotriquetral ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "intercarpal_joints"
+  ],
+  "file": "content/ligaments/palmar_lunotriquetral_ligament_left.md"
+ },
+ {
+  "n": 58,
+  "batch": "C",
+  "id": "palmar_scaphotriquetral_ligament_left",
+  "name": "Palmar scaphotriquetral ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "intercarpal_joints"
+  ],
+  "file": "content/ligaments/palmar_scaphotriquetral_ligament_left.md"
+ },
+ {
+  "n": 59,
+  "batch": "C",
+  "id": "palmar_trapezoideocapitate_ligament_left",
+  "name": "Palmar trapezoideocapitate ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "intercarpal_joints"
+  ],
+  "file": "content/ligaments/palmar_trapezoideocapitate_ligament_left.md"
+ },
+ {
+  "n": 60,
+  "batch": "C",
+  "id": "pisohamate_ligament_left",
+  "name": "Pisohamate ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "intercarpal_joints"
+  ],
+  "file": "content/ligaments/pisohamate_ligament_left.md"
+ },
+ {
+  "n": 61,
+  "batch": "C",
+  "id": "pisometacarpal_ligament_left",
+  "name": "Pisometacarpal ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "intercarpal_joints"
+  ],
+  "file": "content/ligaments/pisometacarpal_ligament_left.md"
+ },
+ {
+  "n": 62,
+  "batch": "D",
+  "id": "pisotriquetral_ligament_left",
+  "name": "Pisotriquetral ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "intercarpal_joints"
+  ],
+  "file": "content/ligaments/pisotriquetral_ligament_left.md"
+ },
+ {
+  "n": 63,
+  "batch": "D",
+  "id": "radiate_carpal_ligament_left",
+  "name": "Radiate carpal ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "intercarpal_joints"
+  ],
+  "file": "content/ligaments/radiate_carpal_ligament_left.md"
+ },
+ {
+  "n": 64,
+  "batch": "D",
+  "id": "scaphocapitate_ligament_left",
+  "name": "Scaphocapitate ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "intercarpal_joints"
+  ],
+  "file": "content/ligaments/scaphocapitate_ligament_left.md"
+ },
+ {
+  "n": 65,
+  "batch": "D",
+  "id": "scapholunate_interosseous_ligament_left",
+  "name": "Scapholunate interosseous ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "intercarpal_joints"
+  ],
+  "file": "content/ligaments/scapholunate_interosseous_ligament_left.md"
+ },
+ {
+  "n": 66,
+  "batch": "D",
+  "id": "scaphotrapeziotrapezoidal_ligament_left",
+  "name": "Scaphotrapeziotrapezoidal ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "intercarpal_joints"
+  ],
+  "file": "content/ligaments/scaphotrapeziotrapezoidal_ligament_left.md"
+ },
+ {
+  "n": 67,
+  "batch": "D",
+  "id": "trapeziotrapezoidal_interosseous_ligament_left",
+  "name": "Trapeziotrapezoidal interosseous ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "intercarpal_joints"
+  ],
+  "file": "content/ligaments/trapeziotrapezoidal_interosseous_ligament_left.md"
+ },
+ {
+  "n": 68,
+  "batch": "D",
+  "id": "trapezoideocapitate_interosseous_ligament_left",
+  "name": "Trapezoideocapitate interosseous ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "intercarpal_joints"
+  ],
+  "file": "content/ligaments/trapezoideocapitate_interosseous_ligament_left.md"
+ },
+ {
+  "n": 69,
+  "batch": "D",
+  "id": "triquetrocapitate_ligament_left",
+  "name": "Triquetrocapitate ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "intercarpal_joints"
+  ],
+  "file": "content/ligaments/triquetrocapitate_ligament_left.md"
+ },
+ {
+  "n": 70,
+  "batch": "D",
+  "id": "triquetrohamate_ligament_left",
+  "name": "Triquetrohamate ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "intercarpal_joints"
+  ],
+  "file": "content/ligaments/triquetrohamate_ligament_left.md"
+ },
+ {
+  "n": 71,
+  "batch": "D",
+  "id": "dorsal_carpometacarpal_ligaments_left",
+  "name": "Dorsal carpometacarpal ligaments",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "carpometacarpal_joints"
+  ],
+  "file": "content/ligaments/dorsal_carpometacarpal_ligaments_left.md"
+ },
+ {
+  "n": 72,
+  "batch": "D",
+  "id": "palmar_carpometacarpal_ligaments_left",
+  "name": "Palmar carpometacarpal ligaments",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "carpometacarpal_joints"
+  ],
+  "file": "content/ligaments/palmar_carpometacarpal_ligaments_left.md"
+ },
+ {
+  "n": 73,
+  "batch": "D",
+  "id": "dorsal_metacarpal_ligaments_left",
+  "name": "Dorsal metacarpal ligaments",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "intermetacarpal_joints"
+  ],
+  "file": "content/ligaments/dorsal_metacarpal_ligaments_left.md"
+ },
+ {
+  "n": 74,
+  "batch": "D",
+  "id": "interosseous_metacarpal_ligaments_left",
+  "name": "Interosseous metacarpal ligaments",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "intermetacarpal_joints"
+  ],
+  "file": "content/ligaments/interosseous_metacarpal_ligaments_left.md"
+ },
+ {
+  "n": 75,
+  "batch": "D",
+  "id": "palmar_metacarpal_ligaments_left",
+  "name": "Palmar metacarpal ligaments",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "intermetacarpal_joints"
+  ],
+  "file": "content/ligaments/palmar_metacarpal_ligaments_left.md"
+ },
+ {
+  "n": 76,
+  "batch": "D",
+  "id": "collateral_interphalangeal_ligaments_hand_left",
+  "name": "Collateral interphalangeal ligaments of hand",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "interphalangeal_joints_hand"
+  ],
+  "file": "content/ligaments/collateral_interphalangeal_ligaments_hand_left.md"
+ },
+ {
+  "n": 77,
+  "batch": "D",
+  "id": "palmar_interphalangeal_ligaments_left",
+  "name": "Palmar interphalangeal ligaments",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "interphalangeal_joints_hand"
+  ],
+  "file": "content/ligaments/palmar_interphalangeal_ligaments_left.md"
+ },
+ {
+  "n": 78,
+  "batch": "D",
+  "id": "collateral_metacarpophalangeal_ligaments_left",
+  "name": "Collateral metacarpophalangeal ligaments",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "metacarpophalangeal_joints"
+  ],
+  "file": "content/ligaments/collateral_metacarpophalangeal_ligaments_left.md"
+ },
+ {
+  "n": 79,
+  "batch": "D",
+  "id": "deep_transverse_metacarpal_ligament_left",
+  "name": "Deep transverse metacarpal ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "joints_hand",
+   "metacarpophalangeal_joints"
+  ],
+  "file": "content/ligaments/deep_transverse_metacarpal_ligament_left.md"
+ },
+ {
+  "n": 80,
+  "batch": "E",
+  "id": "iliofemoral_ligament_descending_part_left",
+  "name": "Descending part of iliofemoral ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "hip_joint"
+  ],
+  "file": "content/ligaments/iliofemoral_ligament_descending_part_left.md"
+ },
+ {
+  "n": 81,
+  "batch": "E",
+  "id": "iliofemoral_ligament_transverse_part_left",
+  "name": "Transverse part of iliofemoral ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "hip_joint"
+  ],
+  "file": "content/ligaments/iliofemoral_ligament_transverse_part_left.md"
+ },
+ {
+  "n": 82,
+  "batch": "E",
+  "id": "ischiofemoral_ligament_left",
+  "name": "Ischiofemoral ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "hip_joint"
+  ],
+  "file": "content/ligaments/ischiofemoral_ligament_left.md"
+ },
+ {
+  "n": 83,
+  "batch": "E",
+  "id": "ligament_head_femur_left",
+  "name": "Ligament of head of femur",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "hip_joint"
+  ],
+  "file": "content/ligaments/ligament_head_femur_left.md"
+ },
+ {
+  "n": 84,
+  "batch": "E",
+  "id": "pubofemoral_ligament_left",
+  "name": "Pubofemoral ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "hip_joint"
+  ],
+  "file": "content/ligaments/pubofemoral_ligament_left.md"
+ },
+ {
+  "n": 85,
+  "batch": "E",
+  "id": "transverse_acetabular_ligament_left",
+  "name": "Transverse acetabular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "hip_joint"
+  ],
+  "file": "content/ligaments/transverse_acetabular_ligament_left.md"
+ },
+ {
+  "n": 86,
+  "batch": "E",
+  "id": "inferior_pubic_ligament",
+  "name": "Inferior pubic ligament",
+  "kind": "ligament",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_pelvic_girdle",
+   "cartilaginous_joints_pelvic_girdle"
+  ],
+  "file": "content/ligaments/inferior_pubic_ligament.md"
+ },
+ {
+  "n": 87,
+  "batch": "E",
+  "id": "superior_pubic_ligament",
+  "name": "Superior pubic ligament",
+  "kind": "ligament",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_pelvic_girdle",
+   "cartilaginous_joints_pelvic_girdle"
+  ],
+  "file": "content/ligaments/superior_pubic_ligament.md"
+ },
+ {
+  "n": 88,
+  "batch": "E",
+  "id": "iliolumbar_ligament_left",
+  "name": "Iliolumbar ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_pelvic_girdle",
+   "fibrous_joints_pelvic_girdle"
+  ],
+  "file": "content/ligaments/iliolumbar_ligament_left.md"
+ },
+ {
+  "n": 89,
+  "batch": "E",
+  "id": "obturator_membrane_left",
+  "name": "Obturator membrane",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_pelvic_girdle",
+   "fibrous_joints_pelvic_girdle"
+  ],
+  "file": "content/ligaments/obturator_membrane_left.md"
+ },
+ {
+  "n": 90,
+  "batch": "E",
+  "id": "sacrospinous_ligament_left",
+  "name": "Sacrospinous ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_pelvic_girdle",
+   "fibrous_joints_pelvic_girdle"
+  ],
+  "file": "content/ligaments/sacrospinous_ligament_left.md"
+ },
+ {
+  "n": 91,
+  "batch": "E",
+  "id": "sacrotuberous_ligament_left",
+  "name": "Sacrotuberous ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_pelvic_girdle",
+   "fibrous_joints_pelvic_girdle"
+  ],
+  "file": "content/ligaments/sacrotuberous_ligament_left.md"
+ },
+ {
+  "n": 92,
+  "batch": "E",
+  "id": "anterior_sacro_iliac_ligament_left",
+  "name": "Anterior sacro-iliac ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_pelvic_girdle",
+   "synovial_joints_pelvic_girdle",
+   "sacro_iliac_joint"
+  ],
+  "file": "content/ligaments/anterior_sacro_iliac_ligament_left.md"
+ },
+ {
+  "n": 93,
+  "batch": "E",
+  "id": "interosseous_sacro_iliac_ligament_left",
+  "name": "Interosseous sacro-iliac ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_pelvic_girdle",
+   "synovial_joints_pelvic_girdle",
+   "sacro_iliac_joint"
+  ],
+  "file": "content/ligaments/interosseous_sacro_iliac_ligament_left.md"
+ },
+ {
+  "n": 94,
+  "batch": "E",
+  "id": "posterior_sacro_iliac_ligament_left",
+  "name": "Posterior sacro-iliac ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_pelvic_girdle",
+   "synovial_joints_pelvic_girdle",
+   "sacro_iliac_joint"
+  ],
+  "file": "content/ligaments/posterior_sacro_iliac_ligament_left.md"
+ },
+ {
+  "n": 95,
+  "batch": "F",
+  "id": "patellar_ligament_left",
+  "name": "Patellar ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_free_lower_limb",
+   "knee_joint"
+  ],
+  "file": "content/ligaments/patellar_ligament_left.md"
+ },
+ {
+  "n": 96,
+  "batch": "F",
+  "id": "interosseous_membrane_leg_left",
+  "name": "Interosseous membrane of leg",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "fibrous_joints_free_lower_limb"
+  ],
+  "file": "content/ligaments/interosseous_membrane_leg_left.md"
+ },
+ {
+  "n": 97,
+  "batch": "F",
+  "id": "anterior_tibiofibular_ligament_left",
+  "name": "Anterior tibiofibular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "fibrous_joints_free_lower_limb",
+   "tibiofibular_syndesmosis"
+  ],
+  "file": "content/ligaments/anterior_tibiofibular_ligament_left.md"
+ },
+ {
+  "n": 98,
+  "batch": "F",
+  "id": "posterior_tibiofibular_ligament_left",
+  "name": "Posterior tibiofibular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "fibrous_joints_free_lower_limb",
+   "tibiofibular_syndesmosis"
+  ],
+  "file": "content/ligaments/posterior_tibiofibular_ligament_left.md"
+ },
+ {
+  "n": 99,
+  "batch": "F",
+  "id": "transverse_tibiofibular_ligament_left",
+  "name": "Transverse tibiofibular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "fibrous_joints_free_lower_limb",
+   "tibiofibular_syndesmosis"
+  ],
+  "file": "content/ligaments/transverse_tibiofibular_ligament_left.md"
+ },
+ {
+  "n": 100,
+  "batch": "F",
+  "id": "anterior_meniscotibial_ligament_lateral_meniscus_left",
+  "name": "Anterior meniscotibial ligament (Lateral meniscus",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "knee_joint"
+  ],
+  "file": "content/ligaments/anterior_meniscotibial_ligament_lateral_meniscus_left.md"
+ },
+ {
+  "n": 101,
+  "batch": "F",
+  "id": "anterior_meniscotibial_ligament_medial_meniscus_left",
+  "name": "Anterior meniscotibial ligament (Medial meniscus",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "knee_joint"
+  ],
+  "file": "content/ligaments/anterior_meniscotibial_ligament_medial_meniscus_left.md"
+ },
+ {
+  "n": 102,
+  "batch": "F",
+  "id": "arcuate_popliteal_ligament_left",
+  "name": "Arcuate popliteal ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "knee_joint"
+  ],
+  "file": "content/ligaments/arcuate_popliteal_ligament_left.md"
+ },
+ {
+  "n": 103,
+  "batch": "F",
+  "id": "fibular_collateral_ligament_left",
+  "name": "Fibular collateral ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "knee_joint"
+  ],
+  "file": "content/ligaments/fibular_collateral_ligament_left.md"
+ },
+ {
+  "n": 104,
+  "batch": "F",
+  "id": "meniscopatellar_ligament_left",
+  "name": "Meniscopatellar ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "knee_joint"
+  ],
+  "file": "content/ligaments/meniscopatellar_ligament_left.md"
+ },
+ {
+  "n": 105,
+  "batch": "F",
+  "id": "oblique_popliteal_ligament_left",
+  "name": "Oblique popliteal ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "knee_joint"
+  ],
+  "file": "content/ligaments/oblique_popliteal_ligament_left.md"
+ },
+ {
+  "n": 106,
+  "batch": "F",
+  "id": "popliteofibular_ligament_left",
+  "name": "Popliteofibular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "knee_joint"
+  ],
+  "file": "content/ligaments/popliteofibular_ligament_left.md"
+ },
+ {
+  "n": 107,
+  "batch": "F",
+  "id": "posterior_cruciate_ligament_left",
+  "name": "Posterior cruciate ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "knee_joint"
+  ],
+  "file": "content/ligaments/posterior_cruciate_ligament_left.md"
+ },
+ {
+  "n": 108,
+  "batch": "F",
+  "id": "posterior_meniscotibial_ligament_lateral_meniscus_left",
+  "name": "Posterior meniscotibial ligament (Lateral meniscus",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "knee_joint"
+  ],
+  "file": "content/ligaments/posterior_meniscotibial_ligament_lateral_meniscus_left.md"
+ },
+ {
+  "n": 109,
+  "batch": "F",
+  "id": "posterior_meniscotibial_ligament_medial_meniscus_left",
+  "name": "Posterior meniscotibial ligament (Medial meniscus",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "knee_joint"
+  ],
+  "file": "content/ligaments/posterior_meniscotibial_ligament_medial_meniscus_left.md"
+ },
+ {
+  "n": 110,
+  "batch": "F",
+  "id": "tibial_collateral_ligament_deep_part_left",
+  "name": "Deep part of tibial collateral ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "knee_joint"
+  ],
+  "file": "content/ligaments/tibial_collateral_ligament_deep_part_left.md"
+ },
+ {
+  "n": 111,
+  "batch": "F",
+  "id": "tibial_collateral_ligament_superficial_part_left",
+  "name": "Superficial part of tibial collateral ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "knee_joint"
+  ],
+  "file": "content/ligaments/tibial_collateral_ligament_superficial_part_left.md"
+ },
+ {
+  "n": 112,
+  "batch": "F",
+  "id": "transverse_ligament_knee_left",
+  "name": "Transverse ligament of knee",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "knee_joint"
+  ],
+  "file": "content/ligaments/transverse_ligament_knee_left.md"
+ },
+ {
+  "n": 113,
+  "batch": "F",
+  "id": "anterior_ligament_fibular_head_left",
+  "name": "Anterior ligament of fibular head",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "superior_tibiofibular_joint"
+  ],
+  "file": "content/ligaments/anterior_ligament_fibular_head_left.md"
+ },
+ {
+  "n": 114,
+  "batch": "F",
+  "id": "posterior_ligament_fibular_head_left",
+  "name": "Posterior ligament of fibular head",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "superior_tibiofibular_joint"
+  ],
+  "file": "content/ligaments/posterior_ligament_fibular_head_left.md"
+ },
+ {
+  "n": 115,
+  "batch": "G",
+  "id": "anterior_talofibular_ligament_left",
+  "name": "Anterior talofibular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "ankle_joint",
+   "lateral_collateral_ligament_ankle"
+  ],
+  "file": "content/ligaments/anterior_talofibular_ligament_left.md"
+ },
+ {
+  "n": 116,
+  "batch": "G",
+  "id": "calcaneofibular_ligament_left",
+  "name": "Calcaneofibular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "ankle_joint",
+   "lateral_collateral_ligament_ankle"
+  ],
+  "file": "content/ligaments/calcaneofibular_ligament_left.md"
+ },
+ {
+  "n": 117,
+  "batch": "G",
+  "id": "posterior_talofibular_ligament_left",
+  "name": "Posterior talofibular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "ankle_joint",
+   "lateral_collateral_ligament_ankle"
+  ],
+  "file": "content/ligaments/posterior_talofibular_ligament_left.md"
+ },
+ {
+  "n": 118,
+  "batch": "G",
+  "id": "posterior_tibiotalar_ligament_left",
+  "name": "Posterior tibiotalar ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "ankle_joint",
+   "medial_collateral_ligament_ankle"
+  ],
+  "file": "content/ligaments/posterior_tibiotalar_ligament_left.md"
+ },
+ {
+  "n": 119,
+  "batch": "G",
+  "id": "tibiocalcaneal_ligament_left",
+  "name": "Tibiocalcaneal ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "ankle_joint",
+   "medial_collateral_ligament_ankle"
+  ],
+  "file": "content/ligaments/tibiocalcaneal_ligament_left.md"
+ },
+ {
+  "n": 120,
+  "batch": "G",
+  "id": "tibionavicular_ligament_left",
+  "name": "Tibionavicular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "ankle_joint",
+   "medial_collateral_ligament_ankle"
+  ],
+  "file": "content/ligaments/tibionavicular_ligament_left.md"
+ },
+ {
+  "n": 121,
+  "batch": "G",
+  "id": "anterior_talocalcaneal_ligament_left",
+  "name": "Anterior talocalcaneal ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intertarsal_joints"
+  ],
+  "file": "content/ligaments/anterior_talocalcaneal_ligament_left.md"
+ },
+ {
+  "n": 122,
+  "batch": "G",
+  "id": "calcaneocuboid_ligament_left",
+  "name": "Calcaneocuboid ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intertarsal_joints"
+  ],
+  "file": "content/ligaments/calcaneocuboid_ligament_left.md"
+ },
+ {
+  "n": 123,
+  "batch": "G",
+  "id": "calcaneonavicular_ligament_left",
+  "name": "Calcaneonavicular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intertarsal_joints"
+  ],
+  "file": "content/ligaments/calcaneonavicular_ligament_left.md"
+ },
+ {
+  "n": 124,
+  "batch": "G",
+  "id": "cuneocuboid_interosseous_ligament_left",
+  "name": "Cuneocuboid interosseous ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intertarsal_joints"
+  ],
+  "file": "content/ligaments/cuneocuboid_interosseous_ligament_left.md"
+ },
+ {
+  "n": 125,
+  "batch": "G",
+  "id": "dorsal_calcaneocuboid_ligament_left",
+  "name": "Dorsal calcaneocuboid ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intertarsal_joints"
+  ],
+  "file": "content/ligaments/dorsal_calcaneocuboid_ligament_left.md"
+ },
+ {
+  "n": 126,
+  "batch": "G",
+  "id": "dorsal_cuboideonavicular_ligament_left",
+  "name": "Dorsal cuboideonavicular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intertarsal_joints"
+  ],
+  "file": "content/ligaments/dorsal_cuboideonavicular_ligament_left.md"
+ },
+ {
+  "n": 127,
+  "batch": "G",
+  "id": "dorsal_cuneocuboid_ligament_left",
+  "name": "Dorsal cuneocuboid ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intertarsal_joints"
+  ],
+  "file": "content/ligaments/dorsal_cuneocuboid_ligament_left.md"
+ },
+ {
+  "n": 128,
+  "batch": "G",
+  "id": "dorsal_cuneonavicular_ligaments_left",
+  "name": "Dorsal cuneonavicular ligaments",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intertarsal_joints"
+  ],
+  "file": "content/ligaments/dorsal_cuneonavicular_ligaments_left.md"
+ },
+ {
+  "n": 129,
+  "batch": "G",
+  "id": "dorsal_intercuneiform_ligaments_left",
+  "name": "Dorsal intercuneiform ligaments",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intertarsal_joints"
+  ],
+  "file": "content/ligaments/dorsal_intercuneiform_ligaments_left.md"
+ },
+ {
+  "n": 130,
+  "batch": "G",
+  "id": "intercuneiform_interosseous_ligaments_left",
+  "name": "Intercuneiform interosseous ligaments",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intertarsal_joints"
+  ],
+  "file": "content/ligaments/intercuneiform_interosseous_ligaments_left.md"
+ },
+ {
+  "n": 131,
+  "batch": "G",
+  "id": "lateral_talocalcaneal_ligament_left",
+  "name": "Lateral talocalcaneal ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intertarsal_joints"
+  ],
+  "file": "content/ligaments/lateral_talocalcaneal_ligament_left.md"
+ },
+ {
+  "n": 132,
+  "batch": "G",
+  "id": "long_plantar_ligament_left",
+  "name": "Long plantar ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intertarsal_joints"
+  ],
+  "file": "content/ligaments/long_plantar_ligament_left.md"
+ },
+ {
+  "n": 133,
+  "batch": "G",
+  "id": "medial_talocalcaneal_ligament_left",
+  "name": "Medial talocalcaneal ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intertarsal_joints"
+  ],
+  "file": "content/ligaments/medial_talocalcaneal_ligament_left.md"
+ },
+ {
+  "n": 134,
+  "batch": "G",
+  "id": "plantar_calcaneocuboid_ligament_left",
+  "name": "Plantar calcaneocuboid ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intertarsal_joints"
+  ],
+  "file": "content/ligaments/plantar_calcaneocuboid_ligament_left.md"
+ },
+ {
+  "n": 135,
+  "batch": "H",
+  "id": "plantar_calcaneonavicular_ligament_left",
+  "name": "Plantar calcaneonavicular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intertarsal_joints"
+  ],
+  "file": "content/ligaments/plantar_calcaneonavicular_ligament_left.md"
+ },
+ {
+  "n": 136,
+  "batch": "H",
+  "id": "plantar_cuboideonavicular_ligament_left",
+  "name": "Plantar cuboideonavicular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intertarsal_joints"
+  ],
+  "file": "content/ligaments/plantar_cuboideonavicular_ligament_left.md"
+ },
+ {
+  "n": 137,
+  "batch": "H",
+  "id": "plantar_cuneocuboid_ligament_left",
+  "name": "Plantar cuneocuboid ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intertarsal_joints"
+  ],
+  "file": "content/ligaments/plantar_cuneocuboid_ligament_left.md"
+ },
+ {
+  "n": 138,
+  "batch": "H",
+  "id": "plantar_cuneonavicular_ligaments_left",
+  "name": "Plantar cuneonavicular ligaments",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intertarsal_joints"
+  ],
+  "file": "content/ligaments/plantar_cuneonavicular_ligaments_left.md"
+ },
+ {
+  "n": 139,
+  "batch": "H",
+  "id": "plantar_intercuneiform_ligaments_left",
+  "name": "Plantar intercuneiform ligaments",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intertarsal_joints"
+  ],
+  "file": "content/ligaments/plantar_intercuneiform_ligaments_left.md"
+ },
+ {
+  "n": 140,
+  "batch": "H",
+  "id": "posterior_talocalcaneal_ligament_left",
+  "name": "Posterior talocalcaneal ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intertarsal_joints"
+  ],
+  "file": "content/ligaments/posterior_talocalcaneal_ligament_left.md"
+ },
+ {
+  "n": 141,
+  "batch": "H",
+  "id": "talocalcaneal_interosseous_ligament_left",
+  "name": "Talocalcaneal interosseous ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intertarsal_joints"
+  ],
+  "file": "content/ligaments/talocalcaneal_interosseous_ligament_left.md"
+ },
+ {
+  "n": 142,
+  "batch": "H",
+  "id": "talonavicular_ligament_left",
+  "name": "Talonavicular ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intertarsal_joints"
+  ],
+  "file": "content/ligaments/talonavicular_ligament_left.md"
+ },
+ {
+  "n": 143,
+  "batch": "H",
+  "id": "dorsal_metatarsal_ligaments_left",
+  "name": "Dorsal metatarsal ligaments",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intermetatarsal_joints"
+  ],
+  "file": "content/ligaments/dorsal_metatarsal_ligaments_left.md"
+ },
+ {
+  "n": 144,
+  "batch": "H",
+  "id": "intersesamoid_ligament_left",
+  "name": "Intersesamoid ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intermetatarsal_joints"
+  ],
+  "file": "content/ligaments/intersesamoid_ligament_left.md"
+ },
+ {
+  "n": 145,
+  "batch": "H",
+  "id": "metatarsal_interosseous_ligaments_left",
+  "name": "Metatarsal interosseous ligaments",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intermetatarsal_joints"
+  ],
+  "file": "content/ligaments/metatarsal_interosseous_ligaments_left.md"
+ },
+ {
+  "n": 146,
+  "batch": "H",
+  "id": "plantar_metatarsal_ligaments_left",
+  "name": "Plantar metatarsal ligaments",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "intermetatarsal_joints"
+  ],
+  "file": "content/ligaments/plantar_metatarsal_ligaments_left.md"
+ },
+ {
+  "n": 147,
+  "batch": "H",
+  "id": "collateral_interphalangeal_ligaments_foot_left",
+  "name": "Collateral interphalangeal ligaments of foot",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "interphalangeal_joints_foot"
+  ],
+  "file": "content/ligaments/collateral_interphalangeal_ligaments_foot_left.md"
+ },
+ {
+  "n": 148,
+  "batch": "H",
+  "id": "plantar_interphalangeal_ligaments_left",
+  "name": "Plantar interphalangeal ligaments",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "interphalangeal_joints_foot"
+  ],
+  "file": "content/ligaments/plantar_interphalangeal_ligaments_left.md"
+ },
+ {
+  "n": 149,
+  "batch": "H",
+  "id": "collateral_metatarsophalangeal_ligaments_left",
+  "name": "Collateral metatarsophalangeal ligaments",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "metatarsophalangeal_joints"
+  ],
+  "file": "content/ligaments/collateral_metatarsophalangeal_ligaments_left.md"
+ },
+ {
+  "n": 150,
+  "batch": "H",
+  "id": "deep_transverse_metatarsal_ligament_left",
+  "name": "Deep transverse metatarsal ligament",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "metatarsophalangeal_joints"
+  ],
+  "file": "content/ligaments/deep_transverse_metatarsal_ligament_left.md"
+ },
+ {
+  "n": 151,
+  "batch": "H",
+  "id": "plantar_metatarsophalangeal_ligaments_left",
+  "name": "Plantar metatarsophalangeal ligaments",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "metatarsophalangeal_joints"
+  ],
+  "file": "content/ligaments/plantar_metatarsophalangeal_ligaments_left.md"
+ },
+ {
+  "n": 152,
+  "batch": "H",
+  "id": "cuneometatarsal_interosseous_ligaments_left",
+  "name": "Cuneometatarsal interosseous ligaments",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "tarsometatarsal_joints"
+  ],
+  "file": "content/ligaments/cuneometatarsal_interosseous_ligaments_left.md"
+ },
+ {
+  "n": 153,
+  "batch": "H",
+  "id": "dorsal_tarsometatarsal_ligaments_left",
+  "name": "Dorsal tarsometatarsal ligaments",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "tarsometatarsal_joints"
+  ],
+  "file": "content/ligaments/dorsal_tarsometatarsal_ligaments_left.md"
+ },
+ {
+  "n": 154,
+  "batch": "H",
+  "id": "plantar_tarsometatarsal_ligaments_left",
+  "name": "Plantar tarsometatarsal ligaments",
+  "kind": "ligament",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "joints_foot",
+   "tarsometatarsal_joints"
+  ],
+  "file": "content/ligaments/plantar_tarsometatarsal_ligaments_left.md"
+ },
+ {
+  "n": 155,
+  "batch": "I",
+  "id": "sacrococcygeal_symphysis",
+  "name": "Sacrococcygeal symphysis",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/sacrococcygeal_symphysis.md"
+ },
+ {
+  "n": 156,
+  "batch": "I",
+  "id": "intervertebral_disc_c2_c3",
+  "name": "Intervertebral disc C2-C3",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/intervertebral_disc_c2_c3.md"
+ },
+ {
+  "n": 157,
+  "batch": "I",
+  "id": "intervertebral_disc_c3_c4",
+  "name": "Intervertebral disc C3-C4",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/intervertebral_disc_c3_c4.md"
+ },
+ {
+  "n": 158,
+  "batch": "I",
+  "id": "intervertebral_disc_c4_c5",
+  "name": "Intervertebral disc C4-C5",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/intervertebral_disc_c4_c5.md"
+ },
+ {
+  "n": 159,
+  "batch": "I",
+  "id": "intervertebral_disc_c5_c6",
+  "name": "Intervertebral disc C5-C6",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/intervertebral_disc_c5_c6.md"
+ },
+ {
+  "n": 160,
+  "batch": "I",
+  "id": "intervertebral_disc_c6_c7",
+  "name": "Intervertebral disc C6-C7",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/intervertebral_disc_c6_c7.md"
+ },
+ {
+  "n": 161,
+  "batch": "I",
+  "id": "intervertebral_disc_c7_t1",
+  "name": "Intervertebral disc C7-T1",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/intervertebral_disc_c7_t1.md"
+ },
+ {
+  "n": 162,
+  "batch": "I",
+  "id": "intervertebral_disc_t1_t2",
+  "name": "Intervertebral disc T1-T2",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/intervertebral_disc_t1_t2.md"
+ },
+ {
+  "n": 163,
+  "batch": "I",
+  "id": "intervertebral_disc_t2_t3",
+  "name": "Intervertebral disc T2-T3",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/intervertebral_disc_t2_t3.md"
+ },
+ {
+  "n": 164,
+  "batch": "I",
+  "id": "intervertebral_disc_t3_t4",
+  "name": "Intervertebral disc T3-T4",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/intervertebral_disc_t3_t4.md"
+ },
+ {
+  "n": 165,
+  "batch": "I",
+  "id": "intervertebral_disc_t4_t5",
+  "name": "Intervertebral disc T4-T5",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/intervertebral_disc_t4_t5.md"
+ },
+ {
+  "n": 166,
+  "batch": "I",
+  "id": "intervertebral_disc_t5_t6",
+  "name": "Intervertebral disc T5-T6",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/intervertebral_disc_t5_t6.md"
+ },
+ {
+  "n": 167,
+  "batch": "I",
+  "id": "intervertebral_disc_t6_t7",
+  "name": "Intervertebral disc T6-T7",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/intervertebral_disc_t6_t7.md"
+ },
+ {
+  "n": 168,
+  "batch": "I",
+  "id": "intervertebral_disc_t7_t8",
+  "name": "Intervertebral disc T7-T8",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/intervertebral_disc_t7_t8.md"
+ },
+ {
+  "n": 169,
+  "batch": "I",
+  "id": "intervertebral_disc_t8_t9",
+  "name": "Intervertebral disc T8-T9",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/intervertebral_disc_t8_t9.md"
+ },
+ {
+  "n": 170,
+  "batch": "I",
+  "id": "intervertebral_disc_t9_t10",
+  "name": "Intervertebral disc T9-T10",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/intervertebral_disc_t9_t10.md"
+ },
+ {
+  "n": 171,
+  "batch": "I",
+  "id": "intervertebral_disc_t10_t11",
+  "name": "Intervertebral disc T10-T11",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/intervertebral_disc_t10_t11.md"
+ },
+ {
+  "n": 172,
+  "batch": "I",
+  "id": "intervertebral_disc_t11_t12",
+  "name": "Intervertebral disc T11-T12",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/intervertebral_disc_t11_t12.md"
+ },
+ {
+  "n": 173,
+  "batch": "I",
+  "id": "intervertebral_disc_t12_l1",
+  "name": "Intervertebral disc T12-L1",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/intervertebral_disc_t12_l1.md"
+ },
+ {
+  "n": 174,
+  "batch": "I",
+  "id": "intervertebral_disc_l1_l2",
+  "name": "Intervertebral disc L1-L2",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/intervertebral_disc_l1_l2.md"
+ },
+ {
+  "n": 175,
+  "batch": "I",
+  "id": "intervertebral_disc_l2_l3",
+  "name": "Intervertebral disc L2-L3",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/intervertebral_disc_l2_l3.md"
+ },
+ {
+  "n": 176,
+  "batch": "I",
+  "id": "intervertebral_disc_l3_l4",
+  "name": "Intervertebral disc L3-L4",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/intervertebral_disc_l3_l4.md"
+ },
+ {
+  "n": 177,
+  "batch": "I",
+  "id": "intervertebral_disc_l4_l5",
+  "name": "Intervertebral disc L4-L5",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/intervertebral_disc_l4_l5.md"
+ },
+ {
+  "n": 178,
+  "batch": "I",
+  "id": "intervertebral_disc_l5_s1",
+  "name": "Intervertebral disc L5-S1",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_vertebral_column",
+   "cartilaginous_joints_vertebral_column",
+   "intervertebral_symphysis"
+  ],
+  "file": "content/cartilage/intervertebral_disc_l5_s1.md"
+ },
+ {
+  "n": 179,
+  "batch": "J",
+  "id": "costal_cartilage_1_left",
+  "name": "Costal cartilage of rib 1",
+  "kind": "cartilage",
+  "side": "left",
+  "sourceGroup": [
+   "thoracic_skeleton",
+   "costal_cartilages"
+  ],
+  "file": "content/cartilage/costal_cartilage_1_left.md"
+ },
+ {
+  "n": 180,
+  "batch": "J",
+  "id": "costal_cartilage_2_left",
+  "name": "Costal cartilage of rib 2",
+  "kind": "cartilage",
+  "side": "left",
+  "sourceGroup": [
+   "thoracic_skeleton",
+   "costal_cartilages"
+  ],
+  "file": "content/cartilage/costal_cartilage_2_left.md"
+ },
+ {
+  "n": 181,
+  "batch": "J",
+  "id": "costal_cartilage_3_left",
+  "name": "Costal cartilage of rib 3",
+  "kind": "cartilage",
+  "side": "left",
+  "sourceGroup": [
+   "thoracic_skeleton",
+   "costal_cartilages"
+  ],
+  "file": "content/cartilage/costal_cartilage_3_left.md"
+ },
+ {
+  "n": 182,
+  "batch": "J",
+  "id": "costal_cartilage_4_left",
+  "name": "Costal cartilage of rib 4",
+  "kind": "cartilage",
+  "side": "left",
+  "sourceGroup": [
+   "thoracic_skeleton",
+   "costal_cartilages"
+  ],
+  "file": "content/cartilage/costal_cartilage_4_left.md"
+ },
+ {
+  "n": 183,
+  "batch": "J",
+  "id": "costal_cartilage_5_left",
+  "name": "Costal cartilage of rib 5",
+  "kind": "cartilage",
+  "side": "left",
+  "sourceGroup": [
+   "thoracic_skeleton",
+   "costal_cartilages"
+  ],
+  "file": "content/cartilage/costal_cartilage_5_left.md"
+ },
+ {
+  "n": 184,
+  "batch": "J",
+  "id": "costal_cartilage_6_left",
+  "name": "Costal cartilage of rib 6",
+  "kind": "cartilage",
+  "side": "left",
+  "sourceGroup": [
+   "thoracic_skeleton",
+   "costal_cartilages"
+  ],
+  "file": "content/cartilage/costal_cartilage_6_left.md"
+ },
+ {
+  "n": 185,
+  "batch": "J",
+  "id": "costal_cartilage_7_left",
+  "name": "Costal cartilage of rib 7",
+  "kind": "cartilage",
+  "side": "left",
+  "sourceGroup": [
+   "thoracic_skeleton",
+   "costal_cartilages"
+  ],
+  "file": "content/cartilage/costal_cartilage_7_left.md"
+ },
+ {
+  "n": 186,
+  "batch": "J",
+  "id": "costal_cartilage_8_left",
+  "name": "Costal cartilage of rib 8",
+  "kind": "cartilage",
+  "side": "left",
+  "sourceGroup": [
+   "thoracic_skeleton",
+   "costal_cartilages"
+  ],
+  "file": "content/cartilage/costal_cartilage_8_left.md"
+ },
+ {
+  "n": 187,
+  "batch": "J",
+  "id": "costal_cartilage_9_left",
+  "name": "Costal cartilage of rib 9",
+  "kind": "cartilage",
+  "side": "left",
+  "sourceGroup": [
+   "thoracic_skeleton",
+   "costal_cartilages"
+  ],
+  "file": "content/cartilage/costal_cartilage_9_left.md"
+ },
+ {
+  "n": 188,
+  "batch": "J",
+  "id": "costal_cartilage_10_left",
+  "name": "Costal cartilage of rib 10",
+  "kind": "cartilage",
+  "side": "left",
+  "sourceGroup": [
+   "thoracic_skeleton",
+   "costal_cartilages"
+  ],
+  "file": "content/cartilage/costal_cartilage_10_left.md"
+ },
+ {
+  "n": 189,
+  "batch": "J",
+  "id": "acetabular_labrum_left",
+  "name": "Acetabular labrum",
+  "kind": "cartilage",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "hip_joint"
+  ],
+  "file": "content/cartilage/acetabular_labrum_left.md"
+ },
+ {
+  "n": 190,
+  "batch": "J",
+  "id": "lateral_meniscus_left",
+  "name": "Lateral meniscus",
+  "kind": "meniscus",
+  "side": "left",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_free_lower_limb",
+   "synovial_joints_free_lower_limb",
+   "knee_joint"
+  ],
+  "file": "content/cartilage/lateral_meniscus_left.md"
+ },
+ {
+  "n": 191,
+  "batch": "J",
+  "id": "interpubic_disc",
+  "name": "Interpubic disc",
+  "kind": "disc",
+  "side": "midline",
+  "sourceGroup": [
+   "joints_lower_limb",
+   "joints_pelvic_girdle",
+   "cartilaginous_joints_pelvic_girdle"
+  ],
+  "file": "content/cartilage/interpubic_disc.md"
+ },
+ {
+  "n": 192,
+  "batch": "J",
+  "id": "articular_disc_temporomandibular_joint_left",
+  "name": "Articular disc of temporomandibular joint",
+  "kind": "meniscus",
+  "side": "left",
+  "sourceGroup": [
+   "joints_skull",
+   "temporomandibular_joint"
+  ],
+  "file": "content/cartilage/articular_disc_temporomandibular_joint_left.md"
+ },
+ {
+  "n": 193,
+  "batch": "J",
+  "id": "articular_disc_distal_radio_ulnar_joint_left",
+  "name": "Articular disc of distal radio-ulnar joint",
+  "kind": "meniscus",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "distal_radio_ulnar_joint"
+  ],
+  "file": "content/cartilage/articular_disc_distal_radio_ulnar_joint_left.md"
+ },
+ {
+  "n": 194,
+  "batch": "J",
+  "id": "glenoid_labrum_left",
+  "name": "Glenoid labrum",
+  "kind": "cartilage",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_free_upper_limb",
+   "synovial_joints_free_upper_limb",
+   "glenohumeral_joint"
+  ],
+  "file": "content/cartilage/glenoid_labrum_left.md"
+ },
+ {
+  "n": 195,
+  "batch": "J",
+  "id": "articular_disc_acromioclavicular_joint_left",
+  "name": "Articular disc of acromioclavicular joint",
+  "kind": "meniscus",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_pectoral_girdle",
+   "synovial_joints_pectoral_girdle",
+   "acromioclavicular_joint"
+  ],
+  "file": "content/cartilage/articular_disc_acromioclavicular_joint_left.md"
+ },
+ {
+  "n": 196,
+  "batch": "J",
+  "id": "articular_disc_sternoclavicular_joint_left",
+  "name": "Articular disc of sternoclavicular joint",
+  "kind": "meniscus",
+  "side": "left",
+  "sourceGroup": [
+   "joints_upper_limb",
+   "joints_pectoral_girdle",
+   "synovial_joints_pectoral_girdle",
+   "sternoclavicular_joint"
+  ],
+  "file": "content/cartilage/articular_disc_sternoclavicular_joint_left.md"
+ }
+]
