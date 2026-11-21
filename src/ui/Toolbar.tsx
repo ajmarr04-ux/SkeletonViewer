@@ -2,7 +2,8 @@ import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { PRESETS, type Preset } from "../camera/math";
 import { explodeMovers } from "../scene/Explode";
 import { isolationView } from "../scene/isolation";
-import { expandRegion, hasMesh, isNewKind, setColourMode, setGhostMode, showAllHidden, showRelated } from "../state/selection";
+import { useSoftTiersVersion } from "../content/softRelations";
+import { expandRegion, hasMesh, isMuscleKind, setColourMode, setGhostMode, showAllHidden, showRelated, tierBlockedReason } from "../state/selection";
 import { GHOST_OPACITY, useViewer } from "../state/store";
 import { takeScreenshot } from "./capture";
 import { ExplodeSlider } from "./ExplodeSlider";
@@ -146,28 +147,29 @@ export function Toolbar() {
     },
   ];
   // Show related / Expand region (spec §7 toolbar: one button, the next tier). A group has no tiers.
-  // The new kinds have tier 0 only in M7 (plan decision 8): no Related button.
-  const tiers = sel !== null && !isNewKind(sel);
-  if (tiers && tier === 0) {
+  // A soft structure gets them once its content has loaded (M9 plan decisions 4 and 5).
+  useSoftTiersVersion();
+  const muscle = sel !== null && isMuscleKind(sel);
+  if (sel !== null && tier === 0 && tierBlockedReason(sel, 1) === null) {
     tools.push({
       key: "related",
       label: "Related",
       overflow: false,
       bar: (
-        <button type="button" className="tool" aria-label="Related" data-testid="tool-related" title="Show related bones" onClick={showRelated}>
+        <button type="button" className="tool" aria-label="Related" data-testid="tool-related" title={muscle ? "Show attachments" : "Show related"} onClick={showRelated}>
           <RelatedIcon />
           <span className="tool-label">Related</span>
         </button>
       ),
     });
   }
-  if (tiers && tier === 1) {
+  if (sel !== null && tier === 1 && tierBlockedReason(sel, 2) === null) {
     tools.push({
       key: "region",
       label: "Region",
       overflow: false,
       bar: (
-        <button type="button" className="tool" aria-label="Region" data-testid="tool-region" title="Expand to the region" onClick={expandRegion}>
+        <button type="button" className="tool" aria-label="Region" data-testid="tool-region" title={muscle ? "Show functional group" : "Expand to the region"} onClick={expandRegion}>
           <RegionIcon />
           <span className="tool-label">Region</span>
         </button>

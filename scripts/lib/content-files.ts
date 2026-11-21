@@ -4,10 +4,11 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { boneMuscleLists } from "../../src/content/compile";
+import { boneAttachedRows, type BoneAttachedRows } from "../../src/content/compile";
 import { splitFrontMatter } from "../../src/content/frontmatter";
 import { oppositeOf } from "../../src/content/placeholder";
-import { compileSoftLayer, type SoftLayerContent } from "../../src/content/softCompile";
+import type { Patch } from "../../src/content/softRoles";
+import { compileSoftLayer, withSoftTiers, type SoftCompileDeps, type SoftLayerContent } from "../../src/content/softCompile";
 import { LAYER_FOLDERS, type SoftLayer } from "../../src/content/softSchema";
 import type { SoftIdEntry } from "../../src/content/softValidate";
 import type { IdEntry } from "../../src/content/validate";
@@ -97,21 +98,49 @@ export function makeOpposite(soft: SoftIdEntry[] = readSoftIds()): (id: string) 
   };
 }
 
-/** One layer's compiled soft-tissue content, read from disk (the Vite plugin and `npm run content`). */
-export function compileSoftFromDisk(layer: SoftLayer, files = readSoftFiles()[layer]): SoftLayerContent {
+function softDeps(): SoftCompileDeps {
   const kinds = new Map(readSoftIds().map((e) => [e.id, e.kind]));
   const movements = readJson("content/movements.json") as { antagonistPairs: [string, string][] };
-  return compileSoftLayer(layer, files, {
+  return {
     kindOf: (id) => kinds.get(id),
     pairJoints: (readJson("content/articulations.json") as { joint: string }[]).map((a) => a.joint),
     functionalJoints: Object.fromEntries((readJson("content/joints.json") as { id: string; articulations: string[] }[]).map((j) => [j.id, j.articulations])),
     antagonistPairs: movements.antagonistPairs,
-  });
+  };
 }
 
-/** Each bone's derived muscle list for the panel (M8 plan decision 13), from the muscles layer's content. */
-export function readBoneMuscles(): Record<string, string[]> {
+/** One layer's compiled soft-tissue content, read from disk (`npm run content`, the scripts and tests). No tier sets. */
+export function compileSoftFromDisk(layer: SoftLayer, files = readSoftFiles()[layer]): SoftLayerContent {
+  return compileSoftLayer(layer, files, softDeps());
+}
+
+/** Every joint's name: the articulation pairs (articulations.json) and the functional joints (joints.json). */
+export function readJointNames(): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const a of readJson("content/articulations.json") as { joint: string; name: string }[]) out[a.joint] = a.name;
+  for (const j of readJson("content/joints.json") as { id: string; name: string }[]) out[j.id] = j.name;
+  return out;
+}
+
+/** The attachment patches (M6) as `soft-to-id.json` maps them (M9 plan decision 6). */
+export function readPatches(): Record<string, Patch> {
+  const raw = readJson("assets/mapping/soft-to-id.json") as { attachments: Record<string, { structures: string[]; end: Patch["end"]; on?: string | null }> };
+  return Object.fromEntries(Object.entries(raw.attachments).map(([id, p]) => [id, { structures: p.structures, end: p.end, on: p.on ?? null }]));
+}
+
+/** Every layer compiled, with the tier sets and the muscles' roles (M9 plan decisions 4, 6, 7): what the lazy chunks ship. */
+export function compileAllSoftFromDisk(files = readSoftFiles()): Record<SoftLayer, SoftLayerContent> {
+  const deps = softDeps();
+  const layers = Object.fromEntries(SOFT_LAYERS.map((l) => [l, compileSoftLayer(l, files[l], deps)])) as Record<SoftLayer, SoftLayerContent>;
+  return withSoftTiers(layers, { ...deps, patches: readPatches(), jointNames: readJointNames() });
+}
+
+/** Each bone's derived Origins and Insertions for the panel (M8 plan decision 13, M9 decision 9), from the muscles layer's content. */
+export function readBoneAttached(): Record<string, BoneAttachedRows> {
   const muscles = compileSoftFromDisk("muscles");
-  const soft = new Map(readSoftIds().map((e) => [e.id, e.name]));
-  return boneMuscleLists(muscles.derived?.attached ?? {}, (id) => muscles.entries[id]?.fm.name ?? soft.get(id) ?? id);
+  const soft = new Map(readSoftIds().map((e) => [e.id, e]));
+  return boneAttachedRows(muscles.derived?.attached ?? {}, (id) => {
+    const e = soft.get(id);
+    return { name: muscles.entries[id]?.fm.name ?? e?.name ?? id, side: e?.side ?? "midline" };
+  });
 }

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { buildIndex, loadSearcher, buildSearchData, makeSearcher, parseQuery } from "../src/content/search";
 import { validateSynonyms } from "../src/content/validate";
-import { readIds, readJson } from "../scripts/lib/content-files";
+import { readIds, readJson, readSoftIds } from "../scripts/lib/content-files";
+import { readSoftTree } from "../scripts/lib/soft-tree-data";
+import { isSoftNode, type SoftTreeNode } from "../src/content/softTree";
 import { readSearchDocuments } from "../scripts/lib/search-data";
 
 const docs = readSearchDocuments();
@@ -65,8 +67,41 @@ describe("search (plan step 1)", () => {
 
 describe("synonyms.json validation", () => {
   const idList = readIds();
+  const groupKeys = new Set<string>();
+  const walk = (n: SoftTreeNode) => {
+    groupKeys.add(n.key);
+    n.children.forEach((c) => isSoftNode(c) && walk(c));
+  };
+  readSoftTree().roots.forEach(walk);
+  const soft = { ids: readSoftIds(), groupKeys };
   it("the real file is valid", () => {
-    expect(validateSynonyms(readJson("content/synonyms.json"), idList)).toEqual([]);
+    expect(validateSynonyms(readJson("content/synonyms.json"), idList, soft)).toEqual([]);
+  });
+  it("checks soft-tissue IDs and the group synonyms (M9 plan decision 12)", () => {
+    const errors = validateSynonyms(
+      {
+        anterior_cruciate_ligament_right: ["ACL"],
+        groups: {
+          "muscles.nowhere": { terms: ["x"] },
+          "muscles.sets.half": { terms: ["half"], label: "Half" },
+          "muscles.sets.bad": { terms: ["bad"], label: "Bad", members: ["femur_left", "soleus_right"] },
+          "quads.elsewhere": { terms: ["q"], label: "Q", members: ["soleus_left"] },
+          "muscles.upper_limb.shoulder.rotator_cuff": { terms: ["cuff", "Cuff"] },
+        },
+      },
+      idList,
+      soft,
+    ).join("\n");
+    expect(errors).toMatch(/anterior_cruciate_ligament_right: write paired terms under the left ID/);
+    expect(errors).toMatch(/muscles.nowhere: no such group in the soft tree/);
+    expect(errors).toMatch(/muscles.sets.half: a set needs both label and members/);
+    expect(errors).toMatch(/femur_left is not a muscle/);
+    expect(errors).toMatch(/soleus_right: list the left muscle/);
+    expect(errors).toMatch(/quads.elsewhere: a set's key starts with muscles.sets./);
+    expect(errors).toMatch(/"Cuff" is listed twice/);
+    expect(validateSynonyms({ anterior_cruciate_ligament_left: ["ACL"] }, idList)).toEqual([
+      "synonyms.json anterior_cruciate_ligament_left: no such ID in content/ids.json or content/soft-ids.json",
+    ]);
   });
   it("rejects unknown IDs, right-side keys, empty, repeated and side terms", () => {
     const errors = validateSynonyms(

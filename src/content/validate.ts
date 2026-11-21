@@ -33,7 +33,10 @@ export type ContentInput = {
   opposite: (id: string) => string | null;
   /** content/synonyms.json (Milestone 5); not checked when absent. */
   synonyms?: unknown;
+  /** What soft-tissue synonyms may name (M9 plan decision 12): the soft-tissue table and the soft tree's group keys. */
+  softSynonyms?: SoftSynonymTargets;
 };
+export type SoftSynonymTargets = { ids: readonly { id: string; side: string; kind: string }[]; groupKeys: ReadonlySet<string> };
 export type ContentOptions = { allowMissingContent?: boolean };
 export type ContentReport = { errors: string[]; warnings: string[]; files: number };
 
@@ -219,7 +222,7 @@ export function validateContent(input: ContentInput, opts: ContentOptions = {}):
     }
   }
 
-  if (input.synonyms !== undefined) errors.push(...validateSynonyms(input.synonyms, input.ids));
+  if (input.synonyms !== undefined) errors.push(...validateSynonyms(input.synonyms, input.ids, input.softSynonyms));
 
   return { errors, warnings, files: input.files.size };
 }
@@ -230,21 +233,18 @@ const SIDE_WORD = /\b(left|right)\b/i;
  * content/synonyms.json (plan decision 1): known IDs only, no right-side keys
  * (pairs are written under the left ID), no empty or repeated terms, and no
  * side words (the side comes from the object, and the left key's terms are
- * reused for the right).
+ * reused for the right). Since M9 (plan decision 12) the IDs may be soft-tissue
+ * structures, and `groups` maps soft group keys to terms; an entry with `label`
+ * and `members` defines its own set (a key under `muscles.sets.`, members left
+ * or midline muscles).
  */
-export function validateSynonyms(raw: unknown, ids: IdEntry[]): string[] {
+export function validateSynonyms(raw: unknown, ids: IdEntry[], soft: SoftSynonymTargets = { ids: [], groupKeys: new Set() }): string[] {
   const res = synonymsSchema.safeParse(raw);
   if (!res.success) return zodLines("synonyms.json", res.error);
   const errors: string[] = [];
-  const byId = new Map(ids.map((e) => [e.id, e]));
-  for (const [id, terms] of Object.entries(res.data)) {
-    const where = `synonyms.json ${id}`;
-    const e = byId.get(id);
-    if (!e) {
-      errors.push(`${where}: no such ID in content/ids.json`);
-      continue;
-    }
-    if (e.side === "right") errors.push(`${where}: write paired terms under the left ID`);
+  const byId = new Map<string, { side: string; kind: string }>(ids.map((e) => [e.id, e]));
+  for (const e of soft.ids) byId.set(e.id, e);
+  const checkTerms = (where: string, terms: readonly string[]) => {
     const seen = new Set<string>();
     for (const t of terms) {
       const norm = t.trim().toLowerCase();
@@ -253,6 +253,32 @@ export function validateSynonyms(raw: unknown, ids: IdEntry[]): string[] {
       else if (SIDE_WORD.test(norm)) errors.push(`${where}: "${t}" names a side`);
       seen.add(norm);
     }
+  };
+  const { groups, ...terms } = res.data;
+  for (const [id, list] of Object.entries(terms)) {
+    const where = `synonyms.json ${id}`;
+    const e = byId.get(id);
+    if (!e) {
+      errors.push(`${where}: no such ID in content/ids.json or content/soft-ids.json`);
+      continue;
+    }
+    if (e.side === "right") errors.push(`${where}: write paired terms under the left ID`);
+    checkTerms(where, list);
+  }
+  for (const [key, g] of Object.entries(groups ?? {})) {
+    const where = `synonyms.json groups ${key}`;
+    const own = g.members !== undefined || g.label !== undefined;
+    if (own) {
+      if (!g.members || !g.label) errors.push(`${where}: a set needs both label and members`);
+      if (!key.startsWith("muscles.sets.")) errors.push(`${where}: a set's key starts with muscles.sets.`);
+      if (soft.groupKeys.has(key)) errors.push(`${where}: already a group in the tree`);
+      for (const m of g.members ?? []) {
+        const e = byId.get(m);
+        if (!e || e.kind !== "muscle") errors.push(`${where}: ${m} is not a muscle in content/soft-ids.json`);
+        else if (e.side === "right") errors.push(`${where}: ${m}: list the left muscle (the right is added)`);
+      }
+    } else if (!soft.groupKeys.has(key)) errors.push(`${where}: no such group in the soft tree`);
+    checkTerms(where, g.terms);
   }
   return errors;
 }

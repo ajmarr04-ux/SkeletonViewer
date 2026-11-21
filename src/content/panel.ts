@@ -2,7 +2,7 @@
 // Objects whose file isn't written yet fall back to the placeholder text
 // ("Not written yet"); the articulations always come from articulations.json.
 
-import type { CompiledContent, CompiledEntry } from "./compile";
+import type { AttachedRow, CompiledContent, CompiledEntry } from "./compile";
 import { groupTrail } from "./labels";
 import { panelModel as placeholderModel, type PanelModel as PlaceholderModel } from "./placeholder";
 import { adjacentTeeth, relations as appRelations, type Relations } from "./relations";
@@ -28,7 +28,13 @@ export type PanelModel = Omit<PlaceholderModel, "sections" | "latin" | "common">
   landmarks: string[] | null;
   /** How many landmarks have a 3D position (none yet: plan decision 9). */
   landmarkPositions: number;
-  muscles: string[] | null;
+  /**
+   * Attached muscles (spec §5.4; M9 plan decision 9): the muscles and parts
+   * with their origin, and those with their insertion, on this bone, each a
+   * link. Null while the content is unwritten.
+   */
+  origins: PanelLink[] | null;
+  insertions: PanelLink[] | null;
   clinical: string | null;
 };
 
@@ -56,6 +62,17 @@ export function linkLabel(id: string, focus: string): string {
   return `${e.name} (${e.side})`;
 }
 
+/** A bone's landmark name by its ID, if written (the muscle panels name an attachment's landmark). */
+export function landmarkName(c: CompiledEntry | undefined, landmark: string): string | undefined {
+  const i = c?.landmarkIds.indexOf(landmark) ?? -1;
+  return i < 0 ? undefined : c!.landmarks[i];
+}
+
+/** A muscle or part attached to a bone: its name, with the side only when it differs from the bone's (both sides on a midline bone). */
+export function attachedLabel(row: AttachedRow, boneSide: Entry["side"]): string {
+  return row.side === "midline" || row.side === boneSide ? row.name : `${row.name} (${row.side})`;
+}
+
 export function panelModel(id: string, content: CompiledContent | null, rel: Relations = appRelations): PanelModel | null {
   const base = placeholderModel(id);
   if (!base) return null;
@@ -80,7 +97,8 @@ export function panelModel(id: string, content: CompiledContent | null, rel: Rel
     neighbours: [...neighbours].filter((t) => BY_ID.has(t)).map((t) => ({ id: t, label: linkLabel(t, id) })),
     landmarks: c?.landmarks ?? null,
     landmarkPositions: c?.landmarkPositions ?? 0,
-    muscles: c?.muscles ?? null,
+    origins: c ? c.attached.origins.map((r) => ({ id: r.id, label: attachedLabel(r, base.side) })) : null,
+    insertions: c ? c.attached.insertions.map((r) => ({ id: r.id, label: attachedLabel(r, base.side) })) : null,
     clinical: c ? c.clinical : null,
   };
 }

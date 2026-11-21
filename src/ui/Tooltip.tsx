@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { displayName } from "../content/names";
+import { resolveClick } from "../state/isolation";
+import { parentOf } from "../state/selection";
 import { useViewer } from "../state/store";
 
 /** Hover delay before the name shows (spec §6: about 150 ms). */
@@ -11,7 +13,9 @@ const OFFSET = { x: 14, y: 18 };
  * Desktop hover tooltip (spec §6): the bone's name after the pointer has
  * rested on it for 150 ms. Hover is mouse-only (the rig never sets it for
  * touch or pen, nor during a drag). Hidden on wheel until the pointer moves
- * again, and never for the selected bone, which the info panel names.
+ * again, and never for the selected bone, which the info panel names. It
+ * names what a click would select: a muscle's part names the muscle until the
+ * muscle (or a sibling part) is selected (spec §5.1).
  */
 export function Tooltip() {
   const hovered = useViewer((s) => s.hovered);
@@ -56,7 +60,7 @@ export function Tooltip() {
     const top = Math.min(Math.max(4, cursor.y - OFFSET.y), window.innerHeight - 32);
     return (
       <div ref={ref} className="tooltip" role="tooltip" data-testid="tooltip" data-id={cursor.id} data-cursor="true" style={{ left, top }}>
-        {displayName(cursor.id)}
+        {displayName(resolveClick(cursor.id, sel, parentOf))}
       </div>
     );
   }
@@ -68,7 +72,7 @@ export function Tooltip() {
   const top = pos.y + OFFSET.y + h > window.innerHeight ? pos.y - OFFSET.y - h : pos.y + OFFSET.y;
   return (
     <div ref={ref} className="tooltip" role="tooltip" data-testid="tooltip" data-id={shown} style={{ left, top }}>
-      {displayName(shown)}
+      {displayName(resolveClick(shown, sel, parentOf))}
     </div>
   );
 }

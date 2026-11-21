@@ -1,9 +1,12 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { ancestorsOf, groupAncestors, groupOf } from "../content/groups";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
+import { ancestorsOf, groupAncestors, groupOf, softTree, softTreeVersion, subscribeSoftTree } from "../content/groups";
 import type { SearchHit, Searcher } from "../content/search";
-import { loadSearch } from "../content/searchLoader";
-import { TOP_KEYS, treeKey, typeAhead, visibleRows, type TreeRow } from "../content/tree";
-import { hasMesh, isolateGroup, selectAndFrame, selectObject } from "../state/selection";
+import { mergeSearchers } from "../content/searchMerge";
+import { loadSearch, loadSoftSearch } from "../content/searchLoader";
+import { isSoftId, softEntry } from "../content/softRegistry";
+import { loadSoftTree } from "../content/softTreeLoader";
+import { SOFT_ROOT_KEYS, TOP_KEYS, openable, treeKey, typeAhead, visibleRows, type TreeRow } from "../content/tree";
+import { hasMesh, isolateGroup, selectAndFrame, selectLink } from "../state/selection";
 import { useViewer } from "../state/store";
 import { focusCanvas } from "./canvasFocus";
 import { PHONE_QUERY, useMedia } from "./useMedia";
@@ -147,9 +150,21 @@ function SidebarPanel() {
 }
 
 /** The search field (combobox) with its results (listbox); the tree shows while the field is empty. */
-function Search({ searcher, onChosen, tree }: { searcher: Searcher | null; onChosen: () => void; tree: React.ReactNode }) {
+function Search({ searcher: boneSearcher, onChosen, tree }: { searcher: Searcher | null; onChosen: () => void; tree: React.ReactNode }) {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
+  // The soft-tissue index (M9 plan decision 12): fetched on the first keystroke, then merged with the bones'.
+  const [softSearcher, setSoftSearcher] = useState<Searcher | null>(null);
+  const wantSoft = query.trim() !== "";
+  useEffect(() => {
+    if (!wantSoft || softSearcher) return;
+    let live = true;
+    void loadSoftSearch().then((s) => live && setSoftSearcher(() => s));
+    return () => {
+      live = false;
+    };
+  }, [wantSoft, softSearcher]);
+  const searcher = useMemo(() => (boneSearcher && softSearcher ? mergeSearchers(boneSearcher, softSearcher) : boneSearcher), [boneSearcher, softSearcher]);
   const hits: SearchHit[] = useMemo(() => (searcher && query.trim() ? searcher(query, 30) : []), [searcher, query]);
   useEffect(() => setActive(0), [hits]);
   const searching = query.trim() !== "";
@@ -160,7 +175,8 @@ function Search({ searcher, onChosen, tree }: { searcher: Searcher | null; onCho
   }, [current]);
 
   const choose = (hit: SearchHit) => {
-    selectAndFrame(hit.id);
+    if (hit.group) void isolateGroup(hit.id);
+    else void selectAndFrame(hit.id);
     onChosen();
   };
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -180,18 +196,26 @@ function Search({ searcher, onChosen, tree }: { searcher: Searcher | null; onCho
     }
   };
 
-  const status = !searching ? "" : !searcher ? "Loading the search index…" : hits.length === 0 ? "No matches." : `${hits.length} ${hits.length === 1 ? "match" : "matches"}.`;
+  const status = !searching
+    ? ""
+    : !searcher
+      ? "Loading the search index…"
+      : hits.length === 0 && !softSearcher
+        ? "Searching muscles, ligaments and cartilage…"
+        : hits.length === 0
+          ? "No matches."
+          : `${hits.length} ${hits.length === 1 ? "match" : "matches"}.`;
   return (
     <>
       <div className="search">
         <label htmlFor={SEARCH_ID} className="visually-hidden">
-          Search bones and teeth
+          Search bones, teeth, muscles, ligaments and cartilage
         </label>
         <input
           id={SEARCH_ID}
           type="search"
           className="search-input"
-          placeholder="Search bones and teeth"
+          placeholder="Search the body"
           autoComplete="off"
           spellCheck={false}
           role="combobox"
@@ -224,7 +248,8 @@ function Search({ searcher, onChosen, tree }: { searcher: Searcher | null; onCho
           >
             <span className="result-label">{h.label}</span>
             {h.match && <span className="result-match">{h.match}</span>}
-            {!hasMesh(h.id) && <span className="result-match">No 3D model</span>}
+            {h.group && <span className="result-match">Group</span>}
+            {!(h.drawn ?? hasMesh(h.id)) && <span className="result-match">No 3D model</span>}
           </li>
         ))}
       </ul>
@@ -247,7 +272,14 @@ function Tree({ onChosen }: { onChosen: () => void }) {
   const grp = useViewer((s) => s.grp);
   const [open, setOpen] = useState<ReadonlySet<string>>(() => new Set(TOP_KEYS));
   const [focusKey, setFocusKey] = useState<string>(TOP_KEYS[0] ?? "");
-  const rows = useMemo(() => visibleRows(open), [open]);
+  // The soft roots' rows arrive with the soft tree's lazy chunk (M9 plan decision 11).
+  const treeVersion = useSyncExternalStore(subscribeSoftTree, softTreeVersion);
+  // treeVersion is a dependency on purpose (the rows read the registered soft tree).
+  const rows = useMemo(() => visibleRows(open), [open, treeVersion]);
+  const softLoading = softTree() === null && SOFT_ROOT_KEYS.some((k) => open.has(k));
+  useEffect(() => {
+    if (softLoading) void loadSoftTree();
+  }, [softLoading]);
   const moveFocus = useRef(false);
   const typed = useRef({ text: "", at: 0 });
 
@@ -255,12 +287,15 @@ function Tree({ onChosen }: { onChosen: () => void }) {
   const target = sel ?? grp;
   useEffect(() => {
     if (target === null) return;
-    const branch = sel !== null ? ancestorsOf(sel) : groupAncestors(target);
+    // A soft structure (M9): its branch is known once the soft tree has loaded; a part opens its muscle too.
+    if (sel !== null && isSoftId(sel) && softTree() === null) void loadSoftTree();
+    const parent = sel !== null ? (softEntry(sel)?.parent ?? null) : null;
+    const branch = sel !== null ? [...ancestorsOf(sel), ...(parent ? [parent] : [])] : groupAncestors(target);
     if (branch.length === 0 && sel !== null) return;
     setOpen((o) => (branch.every((k) => o.has(k)) ? o : new Set([...o, ...branch])));
     // A tooth-type group isn't in the tree's branches: its row sits under Teeth.
     setFocusKey(target);
-  }, [target, sel]);
+  }, [target, sel, treeVersion]);
   useEffect(() => {
     if (target === null) return;
     document.getElementById(rowId(target))?.scrollIntoView({ block: "nearest" });
@@ -284,13 +319,14 @@ function Tree({ onChosen }: { onChosen: () => void }) {
     });
   const activate = (row: TreeRow) => {
     if (row.kind === "leaf") {
-      selectObject(row.key);
+      // A soft structure may need its table loaded first (and turns its layer on), as a panel link does.
+      void selectLink(row.key);
       onChosen();
     } else if (row.kind === "type") isolate(row.key);
     else toggle(row.key);
   };
   const isolate = (key: string) => {
-    isolateGroup(key);
+    void isolateGroup(key);
     onChosen();
   };
   const focusRow = (key: string) => {
@@ -334,7 +370,7 @@ function Tree({ onChosen }: { onChosen: () => void }) {
 
   return (
     <>
-      <ul role="tree" aria-label="Skeleton" aria-describedby="tree-help" className="tree" data-testid="tree" onKeyDown={onKeyDown}>
+      <ul role="tree" aria-label="Body" aria-describedby="tree-help" className="tree" data-testid="tree" onKeyDown={onKeyDown}>
         {rows.map((r) => {
           const selected = r.key === sel || (sel === null && r.key === grp);
           return (
@@ -345,7 +381,8 @@ function Tree({ onChosen }: { onChosen: () => void }) {
               aria-level={r.level}
               aria-posinset={r.pos}
               aria-setsize={r.size}
-              aria-expanded={r.kind === "group" ? open.has(r.key) : undefined}
+              aria-expanded={openable(r) ? open.has(r.key) : undefined}
+              aria-busy={r.soft && r.level === 1 && open.has(r.key) && softLoading ? true : undefined}
               aria-selected={selected}
               tabIndex={r.key === tabKey ? 0 : -1}
               className={`tree-row tree-${r.kind}`}
@@ -362,10 +399,25 @@ function Tree({ onChosen }: { onChosen: () => void }) {
                   {open.has(r.key) ? "▾" : "▸"}
                 </span>
               )}
+              {r.expandable && (
+                // A muscle with parts: the row selects the muscle; the chevron opens its parts (keyboard: arrows).
+                <span
+                  className="tree-chevron tree-chevron-toggle"
+                  aria-hidden="true"
+                  data-testid={`expand-${r.key}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setFocusKey(r.key);
+                    toggle(r.key);
+                  }}
+                >
+                  {open.has(r.key) ? "▾" : "▸"}
+                </span>
+              )}
               <span className="tree-label">
                 {r.label}
-                {r.kind !== "leaf" && <span className="tree-count"> ({r.count})</span>}
-                {r.kind === "leaf" && !hasMesh(r.key) && <span className="tree-count"> · no 3D model</span>}
+                {r.kind !== "leaf" && r.count !== null && <span className="tree-count"> ({r.count})</span>}
+                {r.kind === "leaf" && !(r.drawn ?? hasMesh(r.key)) && <span className="tree-count"> · no 3D model</span>}
               </span>
               {r.kind !== "leaf" && (
                 <button
@@ -389,7 +441,7 @@ function Tree({ onChosen }: { onChosen: () => void }) {
         })}
       </ul>
       <p id="tree-help" className="tree-help muted">
-        Arrow keys move; Enter opens a group or selects; I isolates a group; / searches.
+        Arrow keys move (Right opens a group or a muscle's parts); Enter opens a group or selects; I isolates a group; / searches.
       </p>
     </>
   );

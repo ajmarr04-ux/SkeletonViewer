@@ -40,7 +40,15 @@ test.describe("search", () => {
     }
 
     await input.fill("femur");
-    await expect(results.getByRole("option")).toHaveCount(2);
+    // M9 (session AI): the soft index is merged in after the first keystroke, so the two femurs
+    // come first, then the ligament of the head of the femur, left and right.
+    await expect(results.getByRole("option")).toHaveCount(4);
+    await expect(results.getByRole("option").locator(".result-label")).toHaveText([
+      /^Femur \(left\)$/,
+      /^Femur \(right\)$/,
+      /ligament.*head.*femur.*left/i,
+      /ligament.*head.*femur.*right/i,
+    ]);
     await expect(input).toHaveAttribute("aria-activedescendant", "result-femur_left");
     await page.keyboard.press("ArrowDown");
     await expect(input).toHaveAttribute("aria-activedescendant", "result-femur_right");

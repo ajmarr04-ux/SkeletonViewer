@@ -13,7 +13,9 @@ import { layerReport, type LayerManifest, type LayerReport } from "../scene/debu
 import { disposeParts } from "../scene/loadSkeleton";
 import { lodsToLoad, type Lod } from "../scene/lod";
 import { accentTint, createBoneMaterial, createGhostMaterial, tintFor } from "../scene/material";
-import { useLayerBatches, type LayerBatches } from "../scene/layerRegistry";
+import { MAX_PARTS, useLayerBatches, usePatchBatch, type LayerBatches, type PatchBatch } from "../scene/layerRegistry";
+import { TINT_COLOURS, TINT_ROLES, type TintRole } from "../scene/tints";
+import { layerOfId } from "../state/selection";
 import { createOutline, disposeOutline, OUTLINE } from "../scene/outline";
 import { useViewer } from "../state/store";
 import { TISSUE_LAYERS, type TissueLayer } from "../state/url";
@@ -67,6 +69,9 @@ function createMaterials(opacity: number): Materials {
 const TENDON_TINT = tintFor(TENDON_COLOUR, LAYER_COLOURS.muscles);
 const WHITE = new Color(1, 1, 1);
 const ACCENTS = Object.fromEntries(TISSUE_LAYERS.map((l) => [l, accentTint(LAYER_COLOURS[l])])) as Record<TissueLayer, Color>;
+const TINTS = Object.fromEntries(
+  TISSUE_LAYERS.map((l) => [l, Object.fromEntries(TINT_ROLES.map((r) => [r, tintFor(TINT_COLOURS[r], LAYER_COLOURS[l])])) as Record<TintRole, Color>]),
+) as Record<TissueLayer, Record<TintRole, Color>>;
 export function layerBaseTint(id: string): Color {
   return isTendinous(softIdOf(id)) ? TENDON_TINT : WHITE;
 }
@@ -105,8 +110,68 @@ export function LayerScenes({ lods, ready, debug }: { lods: Lod[]; ready: boolea
       {wanted.map((layer) => (
         <TissueLayerScene key={layer} layer={layer} lods={lods} ready={ready} debug={debug} materials={materials[layer]} />
       ))}
+      <PatchScene lods={lods} ready={ready} />
     </>
   );
+}
+
+/** A muscle or part at tier 1 or 2: the patches are wanted (M9 plan decision 6). */
+const wantsPatches = (s: { sel: string | null; tier: number }): boolean => s.tier > 0 && s.sel !== null && layerOfId(s.sel) === "muscles";
+
+/**
+ * The attachment patches (M9 plan decision 6): `attachments-<lod>.glb`, the
+ * final LOD of the plan only, fetched the first time a muscle or part reaches
+ * tier 1 and kept after that. One solid batch, white material (the instance
+ * colour is the tint), drawn in front of the bone it lies on (polygon offset,
+ * as in M6's debug view). `Isolation` shows only the patches the view wants.
+ */
+function PatchScene({ lods, ready }: { lods: Lod[]; ready: boolean }) {
+  const want = useViewer((s) => wantsPatches(s));
+  const [wanted, setWanted] = useState(false);
+  if (want && !wanted) setWanted(true);
+  const [shown, setShown] = useState<PatchBatch | null>(null);
+  const lod = lods[lods.length - 1] ?? "low";
+  const [material] = useState(() => {
+    const m = createBoneMaterial("#ffffff", "patches");
+    m.polygonOffset = true;
+    m.polygonOffsetFactor = -1;
+    m.polygonOffsetUnits = -4;
+    return m;
+  });
+  useEffect(() => () => material.dispose(), [material]);
+  useEffect(() => {
+    if (!wanted || !ready || shown?.lod === lod) return;
+    let cancelled = false;
+    void (async () => {
+      const parts = await loadLayerParts("attachments", lod, () => {});
+      if (cancelled) {
+        disposeParts(parts);
+        return;
+      }
+      const solid = batchLayer(parts, material, { name: "patches", instanceColours: true });
+      disposeParts(parts);
+      solid.boneIds.forEach((_, i) => solid.mesh.setVisibleAt(i, false));
+      solid.mesh.visible = false;
+      solid.mesh.raycast = () => {}; // never picked: a click goes to the bone or muscle under it
+      const batch: PatchBatch = { lod, solid, tint: { origin: tintFor(TINT_COLOURS.origin, "#ffffff"), insertion: tintFor(TINT_COLOURS.insertion, "#ffffff") } };
+      setShown(batch);
+      usePatchBatch.setState({ batch });
+    })().catch(() => {
+      // Without the patch file, every origin and insertion falls back to the whole-structure tint (`withTints`).
+      if (!cancelled) usePatchBatch.setState({ failed: true });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [wanted, ready, lod, material, shown?.lod]);
+  useEffect(() => {
+    if (!shown) return;
+    return () => {
+      disposeBatchedSkeleton(shown.solid);
+      if (usePatchBatch.getState().batch === shown) usePatchBatch.setState({ batch: null });
+    };
+  }, [shown]);
+  return shown ? <primitive object={shown.solid.mesh} /> : null;
 }
 
 function TissueLayerScene({
@@ -156,7 +221,10 @@ function TissueLayerScene({
           selected: createOutline(solid, OUTLINE.selected.colour, OUTLINE.selected.widthPx, `outline-selected-${layer}`),
           hover: createOutline(solid, OUTLINE.hover.colour, OUTLINE.hover.widthPx, `outline-hover-${layer}`),
         };
-        const batches: LayerBatches = { lod, solid, ghost, outlines, base: layerBaseTint, accent: ACCENTS[layer] };
+        const moreSelected = Array.from({ length: layer === "muscles" ? MAX_PARTS - 1 : 0 }, (_, i) =>
+          createOutline(solid, OUTLINE.selected.colour, OUTLINE.selected.widthPx, `outline-selected-${layer}-${i + 2}`),
+        );
+        const batches: LayerBatches = { lod, solid, ghost, outlines, moreSelected, base: layerBaseTint, accent: ACCENTS[layer], tint: TINTS[layer] };
         setShown(batches);
         // Isolation (main chunk) applies the view to the new batches as soon as they are registered.
         useLayerBatches.setState({ [layer]: batches });
@@ -192,6 +260,7 @@ function TissueLayerScene({
       // The outlines share the solid batch's buffers: free them together.
       disposeOutline(shown.outlines.selected);
       disposeOutline(shown.outlines.hover);
+      shown.moreSelected.forEach(disposeOutline);
       disposeBatchedSkeleton(shown.solid);
       disposeBatchedSkeleton(shown.ghost);
       if (useLayerBatches.getState()[layer] === shown) useLayerBatches.setState({ [layer]: undefined });
@@ -204,6 +273,9 @@ function TissueLayerScene({
       <primitive object={shown.solid.mesh} />
       <primitive object={shown.outlines.selected.mesh} />
       <primitive object={shown.outlines.hover.mesh} />
+      {shown.moreSelected.map((o) => (
+        <primitive key={o.mesh.name} object={o.mesh} />
+      ))}
       <primitive object={shown.ghost.mesh} />
     </>
   );

@@ -152,21 +152,33 @@ test("clicking a muscle over a bone selects the muscle; the placeholder panel an
   const at = await centreOf(page, "biceps_brachii_short_head_left");
   const picked = await page.evaluate(({ x, y }) => window.__viewer!.pick(x, y), at);
   expect(picked).toMatch(/^biceps_brachii_(short|long)_head_left$/);
+  // M9 (spec §5.1): the first click selects the whole biceps; both heads are focused and outlined.
   await page.mouse.click(at.x, at.y);
   const panel = page.getByTestId("info-panel");
-  await expect(panel).toHaveAttribute("data-id", picked!);
-  await expect(page).toHaveURL(new RegExp(`sel=${picked}`));
+  await expect(panel).toHaveAttribute("data-id", "biceps_brachii_left");
+  await expect(page).toHaveURL(/sel=biceps_brachii_left(&|$)/);
   await expect(page.getByTestId("breadcrumb")).toContainText("Muscles");
-  await expect(panel.getByTestId("part-of")).toHaveText(/Part of Biceps brachii/);
-  await expect(panel.getByTestId("show-related")).toBeDisabled();
+  // M9 session AF: a muscle has tiers ("Show attachments") once its content has loaded.
+  await expect(panel.getByTestId("show-related")).toHaveText("Show attachments");
+  await expect(panel.getByTestId("show-related")).toBeEnabled();
   await expect(panel.getByTestId("expand-region")).toBeDisabled();
-  await expect(page.getByTestId("tool-related")).toHaveCount(0);
+  await expect(page.getByTestId("tool-related")).toHaveCount(1);
   const debug = page.getByTestId("debug");
+  const heads = "biceps_brachii_long_head_left,biceps_brachii_short_head_left";
+  await expect(debug).toHaveAttribute("data-focus", "biceps_brachii_left");
+  await expect(debug).toHaveAttribute("data-focus-ids", heads);
+  await expect(debug).toHaveAttribute("data-outlines-selected", heads);
+  // Tier 0: the bones become ghosts, the biceps stays solid, the other muscles ghosted.
+  await expect(debug).toHaveAttribute("data-solid", "0");
+  await expect.poll(() => counts(page)).toMatch(/muscles:2\/475/);
+  // A second click selects the head under the pointer.
+  await page.mouse.click(at.x, at.y);
+  await expect(panel).toHaveAttribute("data-id", picked!);
+  await expect(panel.getByTestId("part-of")).toHaveText(/Part of Biceps brachii/);
   await expect(debug).toHaveAttribute("data-focus", picked!);
   await expect(debug).toHaveAttribute("data-outline-selected", picked!);
-  // Tier 0: the bones become ghosts, the muscle stays solid, the other muscles ghosted.
-  await expect(debug).toHaveAttribute("data-solid", "0");
-  await expect.poll(() => counts(page)).toMatch(/muscles:1\/476/);
+  await expect.poll(() => counts(page)).toMatch(/muscles:2\/475/); // the other head stays solid
+  await page.keyboard.press("Escape"); // back to the biceps
   // Same point with the muscles ghosted: no part of the biceps can be picked (a bone or nothing).
   await page.keyboard.press("Escape");
   await openPanel(page);

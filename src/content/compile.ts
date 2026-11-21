@@ -16,9 +16,11 @@ export type CompiledEntry = {
   functions: string[];
   /** Landmark names, and whether any has a position yet (decision 9: none do). */
   landmarks: string[];
+  /** The landmarks' IDs, in the same order as `landmarks` (M9: the muscle panels name an attachment's landmark). */
+  landmarkIds: string[];
   landmarkPositions: number;
-  /** Muscles and parts attached to the bone, derived from their origins and insertions (M8 plan decision 13). */
-  muscles: string[];
+  /** Muscles and parts attached to the bone, derived from their origins and insertions (M8 plan decision 13; links since M9). */
+  attached: BoneAttachedRows;
   clinical: string | null;
   /** The 40 to 80 word summary as HTML. */
   summary: string;
@@ -29,38 +31,36 @@ export type CompiledContent = Record<string, CompiledEntry>;
 /** Attachments per bone, as the muscles layer derives them (`SoftDerived.attached`). */
 export type BoneAttachments = Record<string, { origins: readonly string[]; insertions: readonly string[] }>;
 
+/** One muscle or part attached to a bone, as the bone panel lists it. */
+export type AttachedRow = { id: string; name: string; side: "left" | "right" | "midline" };
+export type BoneAttachedRows = { origins: AttachedRow[]; insertions: AttachedRow[] };
+export const NO_ATTACHED: BoneAttachedRows = { origins: [], insertions: [] };
+
 /**
- * The panel's "Major muscle attachments" text for each bone (M8 plan decision
- * 13; links are M9's): each muscle or part by name, with whether the bone holds
- * its origin, its insertion or both. The left and right muscles on a midline
- * bone share a name, so they show once.
+ * The bone panel's Origins and Insertions (spec §5.4; M9 plan decision 9):
+ * each muscle or part declaring an attachment on the bone, by name (left
+ * before right where both sides share a midline bone). A muscle reached only
+ * through a part is listed by the part, as the part declares it. A structure
+ * that is both origin and insertion is in both lists.
  */
-export function boneMuscleLists(attached: BoneAttachments, nameOf: (id: string) => string): Record<string, string[]> {
-  const out: Record<string, string[]> = {};
-  for (const [bone, { origins, insertions }] of Object.entries(attached)) {
-    const roles = new Map<string, { o: boolean; i: boolean }>();
-    const mark = (ids: readonly string[], key: "o" | "i") => {
-      for (const id of ids) {
-        const name = nameOf(id);
-        const r = roles.get(name) ?? { o: false, i: false };
-        r[key] = true;
-        roles.set(name, r);
-      }
-    };
-    mark(origins, "o");
-    mark(insertions, "i");
-    out[bone] = [...roles]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([name, r]) => `${name} (${r.o && r.i ? "origin and insertion" : r.o ? "origin" : "insertion"})`);
-  }
+export function boneAttachedRows(
+  attached: BoneAttachments,
+  info: (id: string) => { name: string; side: AttachedRow["side"] },
+): Record<string, BoneAttachedRows> {
+  const rows = (ids: readonly string[]) =>
+    ids
+      .map((id) => ({ id, ...info(id) }))
+      .sort((a, b) => a.name.localeCompare(b.name) || a.side.localeCompare(b.side) || a.id.localeCompare(b.id));
+  const out: Record<string, BoneAttachedRows> = {};
+  for (const [bone, { origins, insertions }] of Object.entries(attached)) out[bone] = { origins: rows(origins), insertions: rows(insertions) };
   return out;
 }
 
 /**
- * Compile every file. `muscles` is `boneMuscleLists` of the muscles layer. Throws on the first file that doesn't parse (the build
+ * Compile every file. `attached` is `boneAttachedRows` of the muscles layer. Throws on the first file that doesn't parse (the build
  * runs validate-content first, which lists every problem).
  */
-export function compileContent(files: Map<string, string>, muscles: Record<string, string[]> = {}): CompiledContent {
+export function compileContent(files: Map<string, string>, attached: Record<string, BoneAttachedRows> = {}): CompiledContent {
   const out: CompiledContent = {};
   for (const [name, text] of [...files].sort(([a], [b]) => a.localeCompare(b))) {
     const { data, body } = splitFrontMatter(text);
@@ -76,8 +76,9 @@ export function compileContent(files: Map<string, string>, muscles: Record<strin
       toothType: d.toothType,
       functions: d.functions,
       landmarks: d.landmarks.map((l) => l.name),
+      landmarkIds: d.landmarks.map((l) => l.id),
       landmarkPositions: d.landmarks.filter((l) => l.position !== null).length,
-      muscles: muscles[name] ?? [],
+      attached: attached[name] ?? NO_ATTACHED,
       clinical: d.clinicalNote,
       summary: (marked.parse(body, { async: false, gfm: true }) as string).trim(),
       reviewed: d.reviewed,

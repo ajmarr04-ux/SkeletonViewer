@@ -68,12 +68,12 @@ describe("hasFlag", () => {
 });
 
 describe("selection in the URL", () => {
-  const ids = new Set(["femur_left", "tooth_18"]);
+  const ids = new Set(["femur_left", "tooth_18", "triceps_brachii_left"]);
   const isId = (id: string) => ids.has(id);
 
   it("reads sel, tier and ghost, dropping unknown IDs", () => {
-    expect(parseUrlState("?sel=femur_left&tier=1&ghost=0", isId)).toEqual({ cam: null, sel: "femur_left", tier: 1, grp: null, ghost: "hide", color: null, layers: null, hid: [] });
-    expect(parseUrlState("?sel=nope&tier=2", isId)).toEqual({ cam: null, sel: null, tier: 0, grp: null, ghost: "ghost", color: null, layers: null, hid: [] });
+    expect(parseUrlState("?sel=femur_left&tier=1&ghost=0", isId)).toEqual({ cam: null, sel: "femur_left", tier: 1, grp: null, ghost: "hide", color: null, layers: null, hid: [], ant: false });
+    expect(parseUrlState("?sel=nope&tier=2", isId)).toEqual({ cam: null, sel: null, tier: 0, grp: null, ghost: "ghost", color: null, layers: null, hid: [], ant: false });
     expect(parseUrlState("?tier=2", isId).tier).toBe(0);
     expect(parseUrlState("?sel=femur_left&tier=7", isId).tier).toBe(0);
     expect(parseUrlState("?sel=tooth_18", isId).sel).toBe("tooth_18");
@@ -96,10 +96,22 @@ describe("selection in the URL", () => {
   });
 
   it("round-trips a full state", () => {
-    const state = { cam: { position: [0, 1, 2], target: [0, 0.85, 0], offset: [0.1, 0] }, sel: "femur_left", tier: 2, grp: null, ghost: "hide", color: null, layers: null, hid: [] } as const;
+    const state = { cam: { position: [0, 1, 2], target: [0, 0.85, 0], offset: [0.1, 0] }, sel: "femur_left", tier: 2, grp: null, ghost: "hide", color: null, layers: null, hid: [], ant: false } as const;
     const search = serialiseUrlState(state as never, "");
     expect(search).toBe("?sel=femur_left&tier=2&ghost=0&cam=0,1,2,0,0.85,0,0.1,0");
     expect(parseUrlState(search, isId)).toEqual(state);
+  });
+
+  it("reads and writes ant=1 only at tier 2, right after the tier (M9 plan decision 7)", () => {
+    expect(parseUrlState("?sel=triceps_brachii_left&tier=2&ant=1", isId).ant).toBe(true);
+    expect(parseUrlState("?sel=triceps_brachii_left&tier=1&ant=1", isId).ant).toBe(false);
+    expect(parseUrlState("?sel=triceps_brachii_left&tier=2&ant=yes", isId).ant).toBe(false);
+    expect(parseUrlState("?ant=1", isId).ant).toBe(false);
+    expect(serialiseUrlState({ ant: true }, "?sel=triceps_brachii_left&tier=2&ghost=0")).toBe("?sel=triceps_brachii_left&tier=2&ant=1&ghost=0");
+    expect(serialiseUrlState({ ant: false }, "?sel=triceps_brachii_left&tier=2&ant=1")).toBe("?sel=triceps_brachii_left&tier=2");
+    // Leaving tier 2 drops it, whatever the old URL said.
+    expect(serialiseUrlState({ tier: 1 }, "?sel=triceps_brachii_left&tier=2&ant=1")).toBe("?sel=triceps_brachii_left&tier=1");
+    expect(serialiseUrlState({ ant: true }, "?sel=triceps_brachii_left&tier=1")).toBe("?sel=triceps_brachii_left&tier=1");
   });
 
   it("reads and writes grp (exclusive with sel)", () => {

@@ -39,7 +39,7 @@ export async function fetchWithProgress(url: string, expected: number, onProgres
 }
 
 /** One layer at one LOD: a part per named node, geometry plus world matrix (nothing moves). */
-export async function loadLayerParts(layer: TissueLayer, lod: Lod, onProgress: Progress): Promise<BonePart[]> {
+export async function loadLayerParts(layer: TissueLayer | "attachments", lod: Lod, onProgress: Progress): Promise<BonePart[]> {
   const url = layerUrl(layer, lod);
   const data = await fetchWithProgress(url, layerBytes(layer, lod), onProgress);
   return partsFromGlb(data, `${layer}-${lod}.glb`, url.replace(/[^/]*$/, ""));

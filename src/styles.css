@@ -174,6 +174,14 @@ dialog.manual-share form { margin-top: 12px; text-align: right; }
 .panel-title h2 { margin: 0; font-size: 20px; line-height: 1.25; overflow-wrap: anywhere; }
 .panel-title .latin { margin: 2px 0 0; font-style: italic; font-size: 14px; color: #bdc1c6; }
 .panel-title .part-of-title { margin: 2px 0 0; font-size: 14px; color: #bdc1c6; }
+/* "Part of <muscle>" (M9): a link in the title, at least 24 px tall (WCAG 2.2 target size). */
+.link-inline {
+  min-height: 24px; padding: 0 2px; border: 0; border-radius: 4px; background: none;
+  color: #8ab4f8; font: inherit; font-style: italic; text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+}
+.link-inline:hover, .link-inline:focus-visible { background: #2a2d31; }
+.link-inline:focus-visible { outline: 2px solid #8ab4f8; outline-offset: 1px; }
+.soft-attachment { margin: 4px 0; }
 .icon-button {
   flex: none; min-width: 44px; min-height: 44px; border: 0; border-radius: 8px;
   background: transparent; color: #e8eaed; font-size: 22px; cursor: pointer;
@@ -283,6 +291,9 @@ dialog.manual-share form { margin-top: 12px; text-align: right; }
 .tree-row[aria-selected="true"] { background: #2f3540; box-shadow: inset 3px 0 0 #8ab4f8; }
 .tree-chevron { width: 14px; flex: none; color: #bdc1c6; }
 .tree-leaf .tree-label { padding-left: 18px; }
+/* A muscle with parts (M9): its chevron takes the place of the leaf indent. */
+.tree-leaf .tree-chevron-toggle { cursor: pointer; }
+.tree-leaf .tree-chevron-toggle + .tree-label { padding-left: 4px; }
 .tree-type .tree-label { padding-left: 18px; }
 .tree-label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .tree-group > .tree-label { font-weight: 600; }
@@ -323,6 +334,8 @@ dialog.manual-share form { margin-top: 12px; text-align: right; }
 .legend-item:hover { background: rgb(255 255 255 / 0.1); }
 .legend-item[aria-current="true"] { background: rgb(61 139 253 / 0.22); }
 .legend-swatch { flex: none; width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgb(0 0 0 / 0.5); }
+/* Layer colours and the origin / insertion / antagonist chips (M9): a key, not buttons. */
+.legend-chip { display: flex; align-items: center; gap: 8px; min-height: 24px; padding: 0 8px; color: #e8eaed; }
 /* With the side panel or the sidebar on a narrow window, the legend would sit under the toolbar: lift it. */
 @media (max-width: 1099px) {
   .legend { bottom: 100px; }
@@ -332,7 +345,7 @@ dialog.manual-share form { margin-top: 12px; text-align: right; }
   .legend { padding: 4px; }
   .legend-title { display: none; }
   .legend ul { display: grid; grid-template-columns: auto auto; gap: 0 2px; }
-  .legend-item { min-height: 24px; padding: 0 6px; gap: 5px; font-size: 12px; }
+  .legend-item, .legend-chip { min-height: 24px; padding: 0 6px; gap: 5px; font-size: 12px; }
 }
 @media (max-width: 599px) {
   .legend {
@@ -342,7 +355,7 @@ dialog.manual-share form { margin-top: 12px; text-align: right; }
   .legend-title { display: none; }
   .legend ul { display: flex; flex-wrap: wrap; gap: 0 2px; }
   .legend li { flex: 0 0 auto; }
-  .legend-item { min-height: 24px; padding: 0 6px; gap: 5px; font-size: 12px; }
+  .legend-item, .legend-chip { min-height: 24px; padding: 0 6px; gap: 5px; font-size: 12px; }
   .sheet[data-snap="full"] ~ .legend, .sheet[data-snap="half"] ~ .legend { display: none; }
 }
 
@@ -363,6 +376,9 @@ dialog.manual-share form { margin-top: 12px; text-align: right; }
 .layers-panel { padding: 4px 8px; font-size: 14px; min-width: 260px; max-width: min(360px, 90vw); }
 .layer-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 .layer-presets .button[aria-pressed="true"] { outline: 2px solid #3d8bfd; outline-offset: 1px; }
+/* "Show antagonists" while on (M9): the same pressed look as the layer presets, plus a tick. */
+.panel-actions .button[aria-pressed="true"] { outline: 2px solid #3d8bfd; outline-offset: 1px; }
+.panel-actions .button[aria-pressed="true"]::before { content: "✓ "; }
 .layer-row { border: 0; border-top: 1px solid #3c4043; margin: 0; padding: 6px 0; }
 .layer-row > legend { font-weight: 600; padding: 0; float: left; width: 100%; margin-bottom: 2px; }
 .layer-modes { clear: both; display: flex; flex-wrap: wrap; gap: 4px 14px; }

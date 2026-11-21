@@ -157,9 +157,11 @@ export type UrlState = {
   layers: LayerSetting | null;
   /** Hidden structures (`hid=`, spec §5.5), capped at `HIDDEN_URL_CAP`. */
   hid: string[];
+  /** Antagonists shown (`ant=1`, M9 plan decision 7). Only with a selection at tier 2 (a muscle's: the view checks the kind). */
+  ant: boolean;
 };
 
-const MANAGED = ["sel", "tier", "grp", "ghost", "color", "hid", "cam"] as const;
+const MANAGED = ["sel", "tier", "ant", "grp", "ghost", "color", "hid", "cam"] as const;
 
 /**
  * Read the app's parameters. `isId` says which IDs exist: an unknown `sel` is
@@ -182,14 +184,15 @@ export function parseUrlState(
   const color = q.get("color") === "region" ? "region" : null;
   const layers = parseLayers(q.get("layers"));
   const hid = parseHidden(q.get("hid")).ids;
-  return { cam: parseCam(q.get("cam")), sel, tier, grp, ghost, color, layers, hid };
+  const ant = tier === 2 && q.get("ant") === "1";
+  return { cam: parseCam(q.get("cam")), sel, tier, grp, ghost, color, layers, hid, ant };
 }
 
 /**
  * Write the given parts of the state into `search`. Parts not given keep their
  * value from `search`; every other parameter is kept verbatim (including bare
  * flags such as `?debug`). The app's own parameters go last, in the order
- * sel, tier (or grp), ghost, color, layers, hid, cam, and only when they differ from the defaults.
+ * sel, tier, ant (or grp), ghost, color, layers, hid, cam, and only when they differ from the defaults.
  * `layers` in M6's debug format (`layers=all`) is kept verbatim unless `state` sets the layers.
  * Returns "" or a string starting with "?".
  */
@@ -204,7 +207,8 @@ export function serialiseUrlState(state: Partial<UrlState>, search: string): str
   if (merged.sel !== null) {
     kept.push(`sel=${encodeURIComponent(merged.sel)}`);
     if (merged.tier !== 0) kept.push(`tier=${merged.tier}`);
-  } else if (merged.grp !== null) kept.push(`grp=${encodeURIComponent(merged.grp)}`);
+    if (merged.tier === 2 && merged.ant) kept.push("ant=1");
+  } else if (merged.grp !== null) kept.push(`grp=${encodeURIComponent(merged.grp).replace(/%3A/g, ":")}`); // `grp=attached:femur_left` (M9)
   if (merged.ghost === "hide") kept.push("ghost=0");
   if (merged.color === "region") kept.push("color=region");
   if (ownLayers && merged.layers && !isDefaultLayers(merged.layers)) kept.push(`layers=${formatLayers(merged.layers)}`);
