@@ -6,7 +6,7 @@ Done when: every kind's panel sections (pure model in `softPanel.ts`, tested) re
 
 ## State
 - Last commit: M9-AG (origins, insertions, antagonists), on `claude/keen-clarke-32a10a`.
-- `npm run check`: pass. Vitest 487 tests. E2E: E2E_RESULT. Main chunk MAIN_SIZE.
+- `npm run check`: pass. Vitest 487 tests. E2E: `tints.spec.ts` (new, 4/4) plus 13 touched specs 102/103 in one run (17.3 min); the one failure, the keyboard search step (`keyboard.spec.ts:186`, the same flake as AF), passed re-run alone. Main chunk 296.51 kB gzipped (Vite's figure; AF's commit measured 297.95 kB). Muscles content chunk +13.7 kB gzipped for the roles.
 - Open fan-out work: none.
 
 ## Waiting on the user (none blocks AH)
