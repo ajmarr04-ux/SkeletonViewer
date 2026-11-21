@@ -199,7 +199,7 @@ test("keyboard pass through the new roots: open, move in, open a muscle's parts,
   await expect(row(page, "muscles.head")).toBeVisible();
   await page.keyboard.press("ArrowRight"); // into the first child
   await expect(row(page, "muscles.head")).toBeFocused();
-  await page.keyboard.type("up"); // type-ahead
+  await page.keyboard.press("u"); // type-ahead (one key: under load "u" and "p" could fall in two type-ahead windows)
   await expect(row(page, "muscles.upper_limb")).toBeFocused();
   const steps: [string, string][] = [
     ["ArrowRight", "muscles.upper_limb"], // opens

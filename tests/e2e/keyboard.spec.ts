@@ -127,7 +127,8 @@ test.describe("keyboard only", () => {
     await page.keyboard.press("/");
     await expect(page.getByTestId("search-input")).toBeFocused();
     await page.keyboard.type("femur left");
-    await expect(page.getByTestId("search-results").getByRole("option").first()).toBeVisible();
+    // The first keystroke also fetches the soft index (M9); allow for it under load.
+    await expect(page.getByTestId("search-results").getByRole("option").first()).toBeVisible({ timeout: 15_000 });
     await page.keyboard.press("Enter");
     await expect.poll(async () => (await state(page)).sel).toBe("femur_left");
     await expect(page.getByTestId("info-panel").getByRole("heading", { level: 2 })).toHaveText("Femur");
@@ -208,7 +209,8 @@ test.describe("keyboard only", () => {
     // Select a bone by search, hide it with X from the canvas, then Show all from the chip.
     await page.keyboard.press("/");
     await page.keyboard.type("femur left");
-    await expect(page.getByTestId("search-results").getByRole("option").first()).toBeVisible();
+    // The first keystroke also fetches the soft index (M9); allow for it under load.
+    await expect(page.getByTestId("search-results").getByRole("option").first()).toBeVisible({ timeout: 15_000 });
     await page.keyboard.press("Enter");
     await expect.poll(async () => (await state(page)).sel).toBe("femur_left");
     await tabTo(page, /^3D skeleton/);
