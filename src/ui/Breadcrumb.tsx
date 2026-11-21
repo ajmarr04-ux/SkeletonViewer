@@ -1,4 +1,5 @@
-import { crumbGroups, ancestorsOf, groupAncestors, groupOf } from "../content/groups";
+import { useSyncExternalStore } from "react";
+import { crumbGroups, ancestorsOf, groupAncestors, groupOf, softTreeVersion, subscribeSoftTree } from "../content/groups";
 import { panelModel } from "../content/placeholder";
 import { softPanelModel } from "../content/softPanel";
 import { useSoftContent } from "../content/softContentLoader";
@@ -27,6 +28,8 @@ export function Breadcrumb() {
   const grp = useViewer((s) => s.grp);
   const softLayer = sel === null ? null : softLayerOf(sel);
   const softContent = useSoftContent(softLayer);
+  // Soft groups (M9) can be crumbs once the soft tree has loaded (it isn't fetched for this).
+  useSyncExternalStore(subscribeSoftTree, softTreeVersion);
   let up: string | null = null;
   let trail: string[];
   let links: (string | null)[];
@@ -37,7 +40,8 @@ export function Breadcrumb() {
     if (!model) return null;
     trail = tier > 0 ? [...model.trail, TIER_CRUMBS[tier]] : model.trail;
     up = soft?.partOf?.id ?? null;
-    links = bone ? crumbGroups(trail, ancestorsOf(sel)) : trail.map((_, i) => (i === soft!.parentCrumb ? UP : null));
+    const groups = crumbGroups(trail, ancestorsOf(sel));
+    links = bone ? groups : trail.map((_, i) => (i === soft!.parentCrumb ? UP : groups[i]!));
   } else if (grp !== null) {
     const g = groupOf(grp);
     if (!g) return null;
@@ -85,7 +89,7 @@ export function Breadcrumb() {
                   {label}
                 </button>
               ) : i !== last && key ? (
-                <button type="button" className="crumb-link" data-group={key} onClick={() => isolateGroup(key)}>
+                <button type="button" className="crumb-link" data-group={key} onClick={() => void isolateGroup(key)}>
                   {label}
                 </button>
               ) : (

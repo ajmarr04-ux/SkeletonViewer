@@ -6,7 +6,8 @@
 import MiniSearch, { type AsPlainObject, type Options, type SearchResult as RawResult } from "minisearch";
 import type { CompiledContent } from "./compile";
 import { displayName } from "./names";
-import type { Synonyms } from "./schema";
+import type { GroupSynonym, Synonyms } from "./schema";
+import type { SoftTreeData, SoftTreeNode } from "./softTree";
 
 type Side = "left" | "right" | "midline";
 type IdEntry = { id: string; name: string; kind: string; side: Side };
@@ -21,6 +22,12 @@ export type SearchDoc = {
   /** FDI number for teeth ("36"), else "". */
   fdi: string;
   side: Side;
+  /** Soft-tissue documents (M9): the display name, ready-made ("Biceps brachii (left)"; a group's name). */
+  label?: string;
+  /** Soft-tissue documents: something is drawn for it (its mesh, or its parts'). */
+  drawn?: boolean;
+  /** A group synonym's document: choosing it isolates the group `id` (M9 plan decision 12). */
+  group?: true;
 };
 
 export type SearchHit = {
@@ -29,6 +36,12 @@ export type SearchHit = {
   label: string;
   /** The matched term when it isn't the name: "Thigh bone", "Os coxae", "FDI 36"; else null. */
   match: string | null;
+  /** True for a group (the ID is a group key): choosing it isolates the group. */
+  group: boolean;
+  /** Something is drawn for it; null for bones (the app knows from ids.json). */
+  drawn: boolean | null;
+  /** minisearch's score, for merging the bone and soft-tissue results. */
+  score: number;
 };
 
 /** What the virtual module exports: the serialised index and the documents. */
@@ -48,10 +61,11 @@ const processTerm = (term: string): string | null => {
 
 export const SEARCH_OPTIONS: Options<SearchDoc> = {
   fields: [...FIELDS],
+  // Soft documents have no FDI number: a missing field is "".
   storeFields: [],
   extractField: (doc, field) => {
     const v = (doc as Record<string, unknown>)[field];
-    return Array.isArray(v) ? v.join(" · ") : (v as string);
+    return Array.isArray(v) ? v.join(" · ") : ((v as string | undefined) ?? "");
   },
   processTerm,
   searchOptions: {
@@ -89,6 +103,52 @@ export function searchDocuments(
       side: e.side,
     };
   });
+}
+
+type SoftSearchId = { id: string; name: string; side: Side; meshAvailable: boolean; parts?: string[]; latin?: string | null };
+
+/**
+ * The soft-tissue documents (M9 plan decision 12): every structure (name, Latin
+ * and common name from its content file, the synonyms of its left or midline
+ * twin), and one document per group synonym, whose choosing isolates the group.
+ */
+export function softSearchDocuments(
+  softIds: readonly SoftSearchId[],
+  frontMatter: (id: string) => { latin?: string | null; commonName?: string | null } | undefined,
+  synonyms: Synonyms,
+  groups: Readonly<Record<string, GroupSynonym>>,
+  tree: SoftTreeData,
+): SearchDoc[] {
+  const byId = new Map(softIds.map((e) => [e.id, e]));
+  const docs: SearchDoc[] = softIds.map((e) => {
+    const fm = frontMatter(e.id);
+    const left = e.side === "right" ? e.id.replace(/_right$/, "_left") : e.id;
+    return {
+      id: e.id,
+      name: e.name,
+      latin: fm?.latin ?? e.latin ?? "",
+      common: fm?.commonName ?? "",
+      synonyms: synonyms[left] ?? [],
+      fdi: "",
+      side: e.side,
+      label: e.side === "midline" ? e.name : `${e.name} (${e.side})`,
+      drawn: e.meshAvailable || (e.parts ?? []).some((p) => byId.get(p)?.meshAvailable === true),
+    };
+  });
+  const nodes = new Map<string, SoftTreeNode>();
+  const walk = (n: SoftTreeNode) => {
+    nodes.set(n.key, n);
+    n.children.forEach((c) => "key" in c && walk(c)); // isSoftNode, inlined: this module's chunk shares nothing with the tree
+  };
+  tree.roots.forEach(walk);
+  const sets = new Map(tree.sets.map((x) => [x.key, x]));
+  for (const [key, g] of Object.entries(groups)) {
+    const node = nodes.get(key);
+    const name = node?.name ?? sets.get(key)?.label;
+    if (name === undefined) continue;
+    docs.push({ id: key, name: node?.label ?? name, latin: "", common: "", synonyms: g.terms, fdi: "", side: "midline", label: name, drawn: true, group: true });
+  }
+  return docs;
 }
 
 export function buildIndex(docs: readonly SearchDoc[]): MiniSearch<SearchDoc> {
@@ -151,6 +211,7 @@ function matchLabel(doc: SearchDoc, r: RawResult): string | null {
 }
 
 export type Searcher = (query: string, limit?: number) => SearchHit[];
+export { mergeSearchers } from "./searchMerge";
 
 /** A search function over a built (or loaded) index. */
 export function makeSearcher(index: MiniSearch<SearchDoc>, docs: readonly SearchDoc[]): Searcher {
@@ -162,7 +223,7 @@ export function makeSearcher(index: MiniSearch<SearchDoc>, docs: readonly Search
     for (const r of index.search(text)) {
       const doc = byId.get(r.id as string);
       if (!doc || (side !== null && doc.side !== side)) continue;
-      out.push({ id: doc.id, label: displayName(doc.id), match: matchLabel(doc, r) });
+      out.push({ id: doc.id, label: doc.label ?? displayName(doc.id), match: matchLabel(doc, r), group: doc.group === true, drawn: doc.drawn ?? null, score: r.score });
       if (out.length >= limit) break;
     }
     return out;

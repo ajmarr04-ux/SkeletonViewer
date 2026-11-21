@@ -37,3 +37,13 @@ declare module "virtual:skeleton-soft-content-cartilage" {
   const content: import("./softCompile").SoftLayerContent;
   export default content;
 }
+declare module "virtual:skeleton-soft-tree" {
+  /** The sidebar's Muscles, Ligaments and Cartilage roots (src/content/softTree.ts; M9 plan decision 11). */
+  const tree: import("./softTree").SoftTreeData;
+  export default tree;
+}
+declare module "virtual:skeleton-search-soft" {
+  /** The soft-tissue search index with the group synonyms (src/content/search.ts; M9 plan decision 12). */
+  const data: import("./search").SearchData;
+  export default data;
+}

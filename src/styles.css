@@ -291,6 +291,9 @@ dialog.manual-share form { margin-top: 12px; text-align: right; }
 .tree-row[aria-selected="true"] { background: #2f3540; box-shadow: inset 3px 0 0 #8ab4f8; }
 .tree-chevron { width: 14px; flex: none; color: #bdc1c6; }
 .tree-leaf .tree-label { padding-left: 18px; }
+/* A muscle with parts (M9): its chevron takes the place of the leaf indent. */
+.tree-leaf .tree-chevron-toggle { cursor: pointer; }
+.tree-leaf .tree-chevron-toggle + .tree-label { padding-left: 4px; }
 .tree-type .tree-label { padding-left: 18px; }
 .tree-label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .tree-group > .tree-label { font-weight: 600; }

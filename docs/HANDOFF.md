@@ -1,23 +1,22 @@
-# Handoff — written 2026-11-21 at the end of M9-AH
+# Handoff — written 2026-11-21 at the end of M9-AI
 
 ## Next session
-**M9-AI: sidebar and search** (`docs/PLAN-milestone-9.md`, step 5; decisions 11–12). Trigger: "begin session AI".
-Done when: Muscles / Ligaments / Cartilage tree roots (lazy tree chunk), soft groups in `grp=` (isolating one turns its layer On), the soft search index with synonyms and group synonyms ("ACL", "rotator cuff" …); `content-writer` fan-out for synonyms only if the list runs to ~60+ structures; e2e: expand Muscles → Upper limb → triceps → long head, "ACL" selects, "rotator cuff" isolates, keyboard pass; chunk sizes recorded.
+**M9-AJ: wrap-up** (`docs/PLAN-milestone-9.md`, step 6). Trigger: "begin session AJ".
+Done when: the spec's journey test (`tests/e2e/interaction.spec.ts`: full skeleton → muscles on → triceps → long head → Show attachments (scapula + ulna tinted) → Show functional group → Back ×4 → full view); the full e2e suite through `verifier`; main chunk vs M8 measured properly; lazy chunk sizes; `npm run perf-load` vs M8; exit criteria ticked; PR to `main`, merge, deploy, `/m9/` confirmed, README row and plan updated.
 
 ## State
-- Last commit: M9-AH (panels, bone Origins/Insertions links, "Show attached muscles") plus its notes, on `claude/keen-clarke-32a10a`.
-- `npm run check`: pass. Vitest 508 tests. E2E: `attached.spec.ts` (new, 7/7) plus 15 touched specs, 116/116 in one run (15.3 min).
-- Main chunk 298.98 kB gzipped (Vite's figure; AG 296.51). Bone content chunk 31.6 → 41.6 kB gzipped.
-- Open fan-out work: none.
+- Last commit: M9-AI (sidebar roots, soft groups, soft search and synonyms) on `claude/keen-clarke-32a10a`.
+- `npm run check`: pass. Vitest 528 tests. E2E: `soft-sidebar.spec.ts` (new, 5/5) plus the touched specs, see the plan's AI notes.
+- Main chunk 300.28 kB gzipped (AH 298.98): about +8.2 kB over M8 (292.1), budget +10, so AJ has ~1.8 kB left. Soft tree chunk 12.2 kB, soft search 37.0 kB gzipped.
+- Open fan-out work: none (the synonyms were written in-session; reasons in the notes).
 
-## Waiting on the user (none blocks AI)
-- The patch report, `assets/build/REPORT-patches.md` (QUESTIONS 132–134), any time before AJ.
+## Waiting on the user (none blocks AJ)
+- QUESTIONS 135–138 (group synonym sets, the synonym list, how the tree is cut, four truncated meniscotibial names), any time.
+- The patch report, `assets/build/REPORT-patches.md` (QUESTIONS 132–134).
 - Still open from earlier: the real-device muscles-layer load time (M7), the per-browser `?bench` table (M5 step 12), the content review of `content/QUESTIONS.md`.
 
 ## Things the next session must know
-- The user confirmed (2026-11-21) that a bone's related set gains its muscles, ligaments and cartilage when those layers are on, as built in AF. Nothing to change.
-- `groupOf`/`isGroupKey` (`src/content/groups.ts`) now also build dynamic groups (`attached:<bone>`, from `attachedTo` in `softRelations.ts`); soft groups for the tree can follow the same pattern (a `Group` with members, drawn by `groupView`, which expands a muscle into its parts). `showMusclesFor` in `selection.ts` turns a layer On for a group link; generalise it for soft groups.
-- `grp=` keeps `:` unescaped in the URL.
-- Links to soft structures go through `selectLink` (loads the soft table first); tree rows and search results for soft IDs need the same.
-- `content/synonyms.json` is checked by `validate-content`; it accepts bone IDs only today.
-- M9's QUESTIONS continue at **135**.
+- `isolateGroup` and `selectAndFrame` are async now (they load the soft tree / soft table first when needed); for known IDs and keys they still act synchronously.
+- Soft group keys: `muscles.<path>`, `ligaments.<joint>[.<pair>]`, `cartilage.<kind>[.<joint>]`, `muscles.sets.*`; unknown until the soft tree chunk registers (`registerSoftTree`).
+- Measure the main chunk against M8 by the same method in AJ (Vite's gzip figure for `index-*.js`, and check no shared chunk was split off that the main chunk loads eagerly: AI hit that once via a runtime import from `search.ts`).
+- M9's QUESTIONS continue at **139**.

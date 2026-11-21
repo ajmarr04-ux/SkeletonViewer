@@ -68,7 +68,7 @@ export function Legend() {
                   data-region={r.region}
                   aria-current={grp === r.group ? "true" : undefined}
                   title={`Isolate: ${r.name}`}
-                  onClick={() => isolateGroup(r.group)}
+                  onClick={() => void isolateGroup(r.group)}
                 >
                   <span className="legend-swatch" style={{ background: regionColour(r.region) }} aria-hidden="true" />
                   {r.name}

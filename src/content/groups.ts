@@ -9,8 +9,10 @@ import ids from "../../content/ids.json";
 import { groupTrail } from "./labels";
 import { displayName } from "./names";
 import type { HierarchyNode } from "./schema";
+import type { TissueLayer } from "../state/url";
 import { attachedTo } from "./softRelations";
 import { softEntry } from "./softRegistry";
+import { SOFT_ROOTS, isSoftNode, nodeMembers, type SoftTreeData, type SoftTreeNode } from "./softTree";
 
 export type Group = {
   key: string;
@@ -29,6 +31,8 @@ export type Group = {
    * muscles' content has loaded (the members are then the bone alone).
    */
   attached?: { bone: string; origins: readonly string[]; insertions: readonly string[]; loading: boolean };
+  /** A soft-tissue group (M9 plan decision 11): the layer its members are drawn in. */
+  layer?: TissueLayer;
 };
 
 type IdEntry = { id: string; name: string; group: string[]; kind: string; meshAvailable: boolean };
@@ -112,9 +116,66 @@ function attachedGroup(key: string, bone: string): Group {
   };
 }
 
-export const isGroupKey = (key: string): boolean => GROUPS.has(key) || attachedBoneOf(key) !== null;
+// --- Soft-tissue groups (M9 plan decision 11): every inner node of the soft
+// tree, plus the group synonyms' own sets. Registered when the soft tree's lazy
+// chunk loads (src/content/softTreeLoader.ts); unknown until then.
+const SOFT_GROUPS = new Map<string, Group>();
+/** Structure → the soft group it sits in (a part → its muscle's group). */
+const SOFT_PARENT = new Map<string, string>();
+/** Soft structures with something drawn (from the tree, so counts are right before the ID table loads). */
+const SOFT_DRAWN = new Set<string>();
+let softTreeData: SoftTreeData | null = null;
+const softListeners = new Set<() => void>();
+let softVersion = 0;
+
+/** Called by the soft tree's lazy chunk. Idempotent. */
+export function registerSoftTree(data: SoftTreeData): void {
+  if (softTreeData) return;
+  softTreeData = data;
+  const walk = (n: SoftTreeNode, layer: TissueLayer, parent: string | null, trail: string[]) => {
+    const here = [...trail, n.label];
+    SOFT_GROUPS.set(n.key, { key: n.key, label: n.label, name: n.name, trail: here, members: nodeMembers(n), parent, layer });
+    for (const c of n.children) {
+      if (isSoftNode(c)) walk(c, layer, n.key, here);
+      else {
+        SOFT_PARENT.set(c.id, n.key);
+        if (c.drawn) SOFT_DRAWN.add(c.id);
+        for (const p of c.parts ?? []) {
+          SOFT_PARENT.set(p.id, n.key);
+          if (p.drawn) SOFT_DRAWN.add(p.id);
+        }
+      }
+    }
+  };
+  data.roots.forEach((r) => walk(r, r.key as TissueLayer, null, []));
+  for (const s of data.sets) SOFT_GROUPS.set(s.key, { key: s.key, label: s.label, name: s.label, trail: [SOFT_ROOTS[0].label, s.label], members: s.members, parent: SOFT_ROOTS[0].key, layer: "muscles" });
+  softVersion++;
+  softListeners.forEach((l) => l());
+}
+/** The soft tree once loaded, else null. */
+export const softTree = (): SoftTreeData | null => softTreeData;
+/** For React (useSyncExternalStore): changes when the soft tree registers. */
+export const softTreeVersion = (): number => softVersion;
+export function subscribeSoftTree(l: () => void): () => void {
+  softListeners.add(l);
+  return () => softListeners.delete(l);
+}
+/** For tests: forget the soft tree. */
+export function resetSoftTree(): void {
+  softTreeData = null;
+  SOFT_GROUPS.clear();
+  SOFT_PARENT.clear();
+  SOFT_DRAWN.clear();
+}
+/** The layer a group's members are drawn in, if they need one turned on: a soft group's, or the muscles for an attached group. */
+export function groupLayer(key: string): TissueLayer | null {
+  if (attachedBoneOf(key) !== null) return "muscles";
+  return SOFT_GROUPS.get(key)?.layer ?? null;
+}
+
+export const isGroupKey = (key: string): boolean => GROUPS.has(key) || SOFT_GROUPS.has(key) || attachedBoneOf(key) !== null;
 export function groupOf(key: string): Group | undefined {
-  const g = GROUPS.get(key);
+  const g = GROUPS.get(key) ?? SOFT_GROUPS.get(key);
   if (g) return g;
   const bone = attachedBoneOf(key);
   return bone === null ? undefined : attachedGroup(key, bone);
@@ -123,7 +184,7 @@ export function groupOf(key: string): Group | undefined {
 const MESHED = new Set(ENTRIES.filter((e) => e.meshAvailable).map((e) => e.id));
 /** Something is drawn for it: a bone with a mesh, a soft structure with one, or a muscle whose parts have. */
 const drawn = (id: string): boolean => {
-  if (MESHED.has(id)) return true;
+  if (MESHED.has(id) || SOFT_DRAWN.has(id)) return true;
   const s = softEntry(id);
   return s !== undefined && (s.mesh || (s.parts?.length ?? 0) > 0);
 };
@@ -171,10 +232,10 @@ for (const g of GROUPS.values()) {
 /** The tree branch an object sits in, top down (group keys); empty for an unknown ID. */
 export function ancestorsOf(id: string): string[] {
   const out: string[] = [];
-  let k: string | null | undefined = PARENT_OF_LEAF.get(id);
+  let k: string | null | undefined = PARENT_OF_LEAF.get(id) ?? SOFT_PARENT.get(id);
   while (k) {
     out.unshift(k);
-    k = GROUPS.get(k)?.parent;
+    k = groupOf(k)?.parent;
   }
   return out;
 }
@@ -184,10 +245,10 @@ export function groupAncestors(key: string): string[] {
   const bone = attachedBoneOf(key);
   if (bone !== null) return ancestorsOf(bone);
   const out: string[] = [];
-  let k = GROUPS.get(key)?.parent ?? null;
+  let k = groupOf(key)?.parent ?? null;
   while (k) {
     out.unshift(k);
-    k = GROUPS.get(k)?.parent ?? null;
+    k = groupOf(k)?.parent ?? null;
   }
   return out;
 }
@@ -199,6 +260,6 @@ export function groupAncestors(key: string): string[] {
 export function crumbGroups(trail: readonly string[], ancestors: readonly string[]): (string | null)[] {
   return trail.map((_, i) => {
     const want = trail.slice(0, i + 1).join("\u0000");
-    return ancestors.find((k) => GROUPS.get(k)?.trail.join("\u0000") === want) ?? null;
+    return ancestors.find((k) => groupOf(k)?.trail.join("\u0000") === want) ?? null;
   });
 }

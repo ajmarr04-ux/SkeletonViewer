@@ -12,7 +12,8 @@ import { marked } from "marked";
 import type { Plugin } from "vite";
 import { compileContent } from "../../src/content/compile";
 import { SOFT_LAYERS, bonesDir, compileAllSoftFromDisk, readBoneAttached, readContentFiles, root, softDir } from "./content-files";
-import { readSearchData } from "./search-data";
+import { readSearchData, readSoftSearchData } from "./search-data";
+import { readSoftTree } from "./soft-tree-data";
 
 const CONTENT = "virtual:skeleton-content";
 const SEARCH = "virtual:skeleton-search";
@@ -29,6 +30,13 @@ export function attributionHtml(markdown: string = readFileSync(attributionFile,
   return html.replace(/<a href="(https?:[^"]+)"/g, '<a href="$1" target="_blank" rel="noopener noreferrer"');
 }
 const synonymsFile = join(root, "content/synonyms.json");
+/** The soft tree (M9 plan decision 11) and the soft-tissue search index (decision 12): one lazy chunk each. */
+const SOFT_TREE = "virtual:skeleton-soft-tree";
+const SOFT_SEARCH = "virtual:skeleton-search-soft";
+const softExtra = new Map<string, () => unknown>([
+  ["\0" + SOFT_TREE, readSoftTree],
+  ["\0" + SOFT_SEARCH, readSoftSearchData],
+]);
 const SOFT_PREFIX = "virtual:skeleton-soft-content-";
 const softModules = new Map(SOFT_LAYERS.map((l) => ["\0" + SOFT_PREFIX + l, l]));
 /** Files the soft-tissue chunks are built from, besides the content folders. */
@@ -44,10 +52,18 @@ export function contentPlugin(): Plugin {
           ? RESOLVED_SEARCH
           : id === ATTRIBUTION
             ? RESOLVED_ATTRIBUTION
-            : softModules.has("\0" + id)
+            : softModules.has("\0" + id) || softExtra.has("\0" + id)
               ? "\0" + id
               : null,
     load(id) {
+      const extra = softExtra.get(id);
+      if (extra) {
+        SOFT_LAYERS.forEach((l) => this.addWatchFile(softDir(l)));
+        softDeps.forEach((f) => this.addWatchFile(f));
+        this.addWatchFile(synonymsFile);
+        this.addWatchFile(join(root, "content/muscle-hierarchy.json"));
+        return `export default ${JSON.stringify(extra())};`;
+      }
       const layer = softModules.get(id);
       if (layer) {
         const dir = softDir(layer);
@@ -81,7 +97,7 @@ export function contentPlugin(): Plugin {
       const reload = (file: string) => {
         const soft = SOFT_LAYERS.some((l) => file.startsWith(softDir(l))) || softDeps.includes(file);
         if (!file.startsWith(bonesDir) && file !== synonymsFile && !soft) return;
-        for (const r of [RESOLVED_CONTENT, RESOLVED_SEARCH, ...softModules.keys()]) {
+        for (const r of [RESOLVED_CONTENT, RESOLVED_SEARCH, ...softModules.keys(), ...softExtra.keys()]) {
           const mod = server.moduleGraph.getModuleById(r);
           if (mod) server.moduleGraph.invalidateModule(mod);
         }

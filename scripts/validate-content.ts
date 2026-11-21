@@ -23,6 +23,16 @@ import {
   root,
 } from "./lib/content-files";
 import { readFileSync } from "node:fs";
+import { isSoftNode, type SoftTreeNode } from "../src/content/softTree";
+import { readSoftTree } from "./lib/soft-tree-data";
+
+// The soft tree's group keys, for the group synonyms (M9 plan decision 12).
+const groupKeys = new Set<string>();
+const walkTree = (n: SoftTreeNode) => {
+  groupKeys.add(n.key);
+  n.children.forEach((c) => isSoftNode(c) && walkTree(c));
+};
+readSoftTree().roots.forEach(walkTree);
 
 const allowMissingContent = process.argv.includes("--allow-missing-content");
 const allowMissingSoft = process.argv.includes("--allow-missing-soft");
@@ -40,6 +50,7 @@ const report = validateContent(
     hierarchy: readJson("content/hierarchy.json"),
     opposite: oppositeOf,
     synonyms: readJson("content/synonyms.json"),
+    softSynonyms: { ids: readSoftIds(), groupKeys },
   },
   { allowMissingContent },
 );

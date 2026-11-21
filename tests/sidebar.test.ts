@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { tabCursor } from "../src/camera/input";
 import { ancestorsOf, crumbGroups, GROUPS, groupAnnouncement, groupCounts, groupOf, isGroupKey } from "../src/content/groups";
-import { TOP_KEYS, treeKey, typeAhead, visibleRows } from "../src/content/tree";
+import { SOFT_ROOT_KEYS, TOP_KEYS, treeKey, typeAhead, visibleRows } from "../src/content/tree";
 import { groupView, isolationView } from "../src/scene/isolation";
 import ids from "../content/ids.json";
 
@@ -71,7 +71,7 @@ describe("groups (plan decision 5)", () => {
 
 describe("tree (plan step 2)", () => {
   it("shows the top level, and children of open groups", () => {
-    expect(visibleRows(new Set()).map((r) => r.key)).toEqual([...TOP_KEYS]);
+    expect(visibleRows(new Set()).map((r) => r.key)).toEqual([...TOP_KEYS, ...SOFT_ROOT_KEYS]);
     const rows = visibleRows(new Set(["dentition"]));
     expect(rows.map((r) => r.key)).toContain("dentition.type.molars");
     const molars = rows.find((r) => r.key === "dentition.type.molars")!;
@@ -86,7 +86,7 @@ describe("tree (plan step 2)", () => {
     expect(treeKey(rows, open, "axial", "ArrowLeft")).toEqual({ kind: "close", key: "axial" });
     expect(treeKey(rows, open, "axial.skull", "ArrowLeft")).toEqual({ kind: "focus", key: "axial" });
     expect(treeKey(rows, open, "axial.skull", "Home")).toEqual({ kind: "focus", key: "axial" });
-    expect(treeKey(rows, open, "axial", "End")).toEqual({ kind: "focus", key: "dentition" });
+    expect(treeKey(rows, open, "axial", "End")).toEqual({ kind: "focus", key: "cartilage" });
     expect(treeKey(rows, open, "axial.skull", "*")).toEqual({ kind: "openSiblings", keys: ["axial.skull", "axial.vertebral_column", "axial.thorax"] });
   });
   it("type-ahead finds the next row by its label", () => {

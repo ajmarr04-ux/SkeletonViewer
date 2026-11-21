@@ -10,7 +10,9 @@
 // it replaces the entry instead (history.back() would leave the site).
 
 import ids from "../../content/ids.json";
-import { attachedBoneOf, attachedKey, isGroupKey } from "../content/groups";
+import { attachedBoneOf, attachedKey, groupLayer, isGroupKey } from "../content/groups";
+import { looksLikeSoftGroup } from "../content/softTree";
+import { loadSoftTree } from "../content/softTreeLoader";
 import { loadSoftContent } from "../content/softContentLoader";
 import { displayName } from "../content/names";
 import { hideTargets, isSoftId, softEntry, softLayerOf } from "../content/softRegistry";
@@ -37,6 +39,7 @@ import {
   type LayerMode,
   type LayerSetting,
   type MuscleDepth,
+  type TissueLayer,
   type UrlState,
 } from "./url";
 
@@ -119,10 +122,24 @@ function showLayerOf(id: string): void {
   if (layer && layer !== "bones" && useViewer.getState().layers[layer] === "off") setLayerMode(layer, "on");
 }
 export const goBack = (): void => dispatchIsolation({ type: "back" });
-/** Isolate a whole group from the tree or the legend (plan decision 5). */
-export const isolateGroup = (key: string): void => {
-  if (isGroupKey(key)) dispatchIsolation({ type: "group", key });
-};
+/**
+ * Isolate a whole group from the tree, the legend or a search result (plan
+ * decision 5). A soft-tissue group (M9 plan decision 11) turns its layer On if
+ * it is Off, as selecting a structure does, and is framed once that layer is
+ * on screen. A soft group key not yet known loads the soft tree first.
+ */
+export async function isolateGroup(key: string): Promise<void> {
+  if (!isGroupKey(key) && looksLikeSoftGroup(key)) await loadSoftTree();
+  if (!isGroupKey(key)) return;
+  const layer = groupLayer(key);
+  if (layer !== null && attachedBoneOf(key) === null) {
+    showLayerForGroup(key);
+    dispatchIsolation({ type: "group", key });
+    void frameWhenLayerShown(layer, key);
+    return;
+  }
+  dispatchIsolation({ type: "group", key });
+}
 /**
  * A link to a soft-tissue structure from a bone's panel (M9 plan decision 9):
  * the soft-tissue table may not be loaded yet (every new layer off), so load
@@ -143,15 +160,36 @@ export async function selectLink(id: string): Promise<void> {
 export function isolateAttached(bone: string): void {
   const key = attachedKey(bone);
   if (!isGroupKey(key)) return;
-  showMusclesFor(key);
+  showLayerForGroup(key);
   dispatchIsolation({ type: "group", key });
   void frameWhenMusclesReady(key);
 }
 
-/** An attached-muscles group needs the muscles layer showing: an Off layer is turned On (link, Back/Forward). */
-function showMusclesFor(grp: string | null): void {
-  if (grp === null || attachedBoneOf(grp) === null) return;
-  if (useViewer.getState().layers.muscles === "off") setLayerMode("muscles", "on");
+/**
+ * A group whose members are soft tissue needs their layer showing: an Off layer
+ * is turned On (the muscles for an attached-muscles group; a soft group's own
+ * layer). Used by the actions, URL links and Back/Forward.
+ */
+function showLayerForGroup(grp: string | null): void {
+  const layer = grp === null ? null : groupLayer(grp);
+  if (layer !== null && useViewer.getState().layers[layer] === "off") setLayerMode(layer, "on");
+}
+
+/** Resolves once a layer's batch is on screen. */
+function whenLayerShown(layer: TissueLayer): Promise<void> {
+  return new Promise<void>((resolve) => {
+    if (useLayerBatches.getState()[layer]) return resolve();
+    const off = useLayerBatches.subscribe((b) => {
+      if (!b[layer]) return;
+      off();
+      resolve();
+    });
+  });
+}
+
+async function frameWhenLayerShown(layer: TissueLayer, key: string): Promise<void> {
+  await whenLayerShown(layer);
+  if (useViewer.getState().grp === key) frameSoon();
 }
 
 async function frameWhenMusclesReady(key: string): Promise<void> {
@@ -160,23 +198,19 @@ async function frameWhenMusclesReady(key: string): Promise<void> {
   } catch {
     return;
   }
-  await new Promise<void>((resolve) => {
-    if (useLayerBatches.getState().muscles) return resolve();
-    const off = useLayerBatches.subscribe((b) => {
-      if (!b.muscles) return;
-      off();
-      resolve();
-    });
-  });
-  if (useViewer.getState().grp === key) frameSoon();
+  await frameWhenLayerShown("muscles", key);
 }
 
 /**
  * Choose a search result (plan decision 3): select at tier 0 and frame it,
  * as `F` would after a click. The one place where a selection moves the camera.
  */
-export function selectAndFrame(id: string): void {
+export async function selectAndFrame(id: string): Promise<void> {
+  // A soft-tissue result (M9 plan decision 12): load the table, turn the layer on, frame once it shows.
+  if (!isKnownId(id)) await loadSoftIds();
   if (!isKnownId(id)) return;
+  showLayerOf(id);
+  const layer = layerOfId(id);
   const st = useViewer.getState();
   if (st.sel !== id || st.tier !== 0) {
     if (st.sel === id) {
@@ -185,7 +219,9 @@ export function selectAndFrame(id: string): void {
       window.history.replaceState(window.history.state, "", urlWith({ sel: id, tier: 0, grp: null }));
     } else dispatchIsolation({ type: "select", id });
   }
-  if (isDrawn(id)) frameSoon();
+  if (!isDrawn(id)) return;
+  if (layer !== null && layer !== "bones") await whenLayerShown(layer);
+  if (useViewer.getState().sel === id) frameSoon();
 }
 /** Why "Show related" / "Expand" wait for a soft structure's content chunk (M9 plan decision 4). */
 export const LOADING_CONTENT_REASON = "Loading content…";
@@ -380,9 +416,11 @@ export function initSelectionFromUrl(): UrlState {
   }
   st.setHidden(url.hid);
   if (url.grp !== null && attachedBoneOf(url.grp) !== null) {
-    showMusclesFor(url.grp);
+    showLayerForGroup(url.grp);
     if (url.cam === null) void frameWhenMusclesReady(url.grp);
   }
+  const rawGrp = new URLSearchParams(window.location.search).get("grp");
+  if (url.sel === null && url.grp === null && rawGrp !== null && looksLikeSoftGroup(rawGrp)) void softGroupFromUrl(rawGrp, url.cam !== null);
   const over = parseHidden(new URLSearchParams(window.location.search).get("hid")).dropped;
   if (over > 0) st.showToast(`Only the first ${url.hid.length} hidden structures are kept in the link`);
   const rawSel = new URLSearchParams(window.location.search).get("sel");
@@ -405,14 +443,7 @@ export async function selectSoftFromUrl(id: string, hasCam: boolean): Promise<vo
   }
   const layer = softLayerOf(id)!;
   showLayerOf(id);
-  if (isDrawn(id)) await new Promise<void>((resolve) => {
-    if (useLayerBatches.getState()[layer]) return resolve();
-    const off = useLayerBatches.subscribe((b) => {
-      if (!b[layer]) return;
-      off();
-      resolve();
-    });
-  });
+  if (isDrawn(id)) await whenLayerShown(layer);
   const now = useViewer.getState();
   if (now.sel !== null) return; // the user selected something meanwhile
   // The link's tier and `ant=1` (M9: soft structures have tiers now; the sets appear when the content chunk loads).
@@ -429,12 +460,41 @@ export async function selectSoftFromUrl(id: string, hasCam: boolean): Promise<vo
 }
 
 /**
+ * `grp=` naming a soft-tissue group (M9 plan decision 11): load the soft tree;
+ * if the group is real, isolate it (turning its layer on if Off), framed once
+ * the layer shows unless the link carries a camera. An unknown key is dropped
+ * from the URL, as for bone groups.
+ */
+export async function softGroupFromUrl(key: string, hasCam: boolean): Promise<void> {
+  await loadSoftTree();
+  const st = useViewer.getState();
+  if (!isGroupKey(key)) {
+    if (st.sel === null && st.grp === null) window.history.replaceState(window.history.state, "", urlWith({ grp: null }));
+    return;
+  }
+  if (st.sel !== null || st.grp !== null) return; // the user chose something meanwhile
+  st.setIsolation({ sel: null, tier: 0, grp: key });
+  showLayerForGroup(key);
+  const layer = groupLayer(key);
+  if (!hasCam && layer !== null) void frameWhenLayerShown(layer, key);
+}
+
+/**
  * Browser Back / Forward. When the isolation changes, only the isolation
  * follows the URL: the camera stays where it is (moving it back as well would
  * jump the view), and the entry's `cam` is updated to match. When only the
  * camera differs, the camera follows.
  */
 export function onPopState(): void {
+  // An entry naming a soft group the page hasn't loaded yet: load the soft tree, then apply it.
+  const rawGrp = new URLSearchParams(window.location.search).get("grp");
+  if (rawGrp !== null && !isGroupKey(rawGrp) && looksLikeSoftGroup(rawGrp)) {
+    const at = window.location.href;
+    void loadSoftTree().then(() => {
+      if (window.location.href === at && isGroupKey(rawGrp)) onPopState();
+    });
+    return;
+  }
   const url = parseUrlState(window.location.search, isKnownId, isGroupKey);
   const st = useViewer.getState();
   // Colour-by-region isn't history: an older entry keeps today's colours, and its URL is brought up to date.
@@ -458,7 +518,7 @@ export function onPopState(): void {
   const newSel = url.sel !== st.sel ? url.sel : null;
   st.setIsolation({ sel: url.sel, tier: url.tier, grp: url.grp, ant: url.ant });
   st.setGhostMode(url.ghost);
-  showMusclesFor(url.grp);
+  showLayerForGroup(url.grp);
   if (st.camera) window.history.replaceState(window.history.state, "", urlWith({ cam: st.camera }));
   if (newSel !== null && isDrawn(newSel)) st.requestCamera({ kind: "repivot", id: newSel });
 }
