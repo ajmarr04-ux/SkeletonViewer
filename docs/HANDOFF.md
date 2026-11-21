@@ -1,22 +1,23 @@
-# Handoff — written 2026-11-21 at the end of M9-AG
+# Handoff — written 2026-11-21 at the end of M9-AH
 
 ## Next session
-**M9-AH: panels and the bone cross-link** (`docs/PLAN-milestone-9.md`, step 4; decisions 9–10). Trigger: "begin session AH".
-Done when: every kind's panel sections (pure model in `softPanel.ts`, tested) rendered by `InfoPanel.tsx` with links; the bone panel's Origins/Insertions link lists replacing M8's plain text, with row hover highlighting; "Show attached muscles" as `grp=attached:<bone>` (store, URL, reducer, turns the muscles layer On, disabled "No muscles attach here"); e2e: panel sections, a link selecting a part, `grp=attached:femur_left` round trip, 200% reflow and axe on the new sections.
+**M9-AI: sidebar and search** (`docs/PLAN-milestone-9.md`, step 5; decisions 11–12). Trigger: "begin session AI".
+Done when: Muscles / Ligaments / Cartilage tree roots (lazy tree chunk), soft groups in `grp=` (isolating one turns its layer On), the soft search index with synonyms and group synonyms ("ACL", "rotator cuff" …); `content-writer` fan-out for synonyms only if the list runs to ~60+ structures; e2e: expand Muscles → Upper limb → triceps → long head, "ACL" selects, "rotator cuff" isolates, keyboard pass; chunk sizes recorded.
 
 ## State
-- Last commit: M9-AG (origins, insertions, antagonists), on `claude/keen-clarke-32a10a`.
-- `npm run check`: pass. Vitest 487 tests. E2E: `tints.spec.ts` (new, 4/4) plus 13 touched specs 102/103 in one run (17.3 min); the one failure, the keyboard search step (`keyboard.spec.ts:186`, the same flake as AF), passed re-run alone. Main chunk 296.51 kB gzipped (Vite's figure; AF's commit measured 297.95 kB). Muscles content chunk +13.7 kB gzipped for the roles.
+- Last commit: M9-AH (panels, bone Origins/Insertions links, "Show attached muscles") plus its notes, on `claude/keen-clarke-32a10a`.
+- `npm run check`: pass. Vitest 508 tests. E2E: `attached.spec.ts` (new, 7/7) plus 15 touched specs, 116/116 in one run (15.3 min).
+- Main chunk 298.98 kB gzipped (Vite's figure; AG 296.51). Bone content chunk 31.6 → 41.6 kB gzipped.
 - Open fan-out work: none.
 
-## Waiting on the user (none blocks AH)
-- The patch report, `assets/build/REPORT-patches.md` (QUESTIONS 132–134): 185 patches never drawn because the content disagrees, 1,373 content attachments drawn as whole-bone tints, 846 synergist/antagonist overlaps shown as synergists, and the 4-outline cap for "both origin and insertion" bones. Any time before AJ.
+## Waiting on the user (none blocks AI)
+- The patch report, `assets/build/REPORT-patches.md` (QUESTIONS 132–134), any time before AJ.
 - From AF: should a **bone's** related set gain its muscles, ligaments and cartilage when those layers are on (built that way)?
 - Still open from earlier: the real-device muscles-layer load time (M7), the per-browser `?bench` table (M5 step 12), the content review of `content/QUESTIONS.md`.
 
 ## Things the next session must know
-- Each muscle's roles (`softRoles(id)` in `softRelations.ts`: `o`/`i` = patches + whole-structure fallbacks, `ant`) come from the muscles content chunk; AH's Origin/Insertion sections can read the front matter directly (`useSoftContent`), but should agree with these.
-- The derived `attached` map (`SoftDerived.attached`, structure → origins/insertions) already exists in the muscles chunk: use it for the bone panel's link lists and for `grp=attached:<bone>`.
-- `setIsolation` now takes `ant`, and every isolation step writes `ant` off; a new group kind must keep that (pass nothing).
-- Soft `sel=` links now keep their tier (`selectSoftFromUrl`).
-- M9's QUESTIONS continue at **135**. The plan's ΔE ≥ 20 for the tints was relaxed to the spec's ≥ 8 except for neighbouring pairs (session notes).
+- `groupOf`/`isGroupKey` (`src/content/groups.ts`) now also build dynamic groups (`attached:<bone>`, from `attachedTo` in `softRelations.ts`); soft groups for the tree can follow the same pattern (a `Group` with members, drawn by `groupView`, which expands a muscle into its parts). `showMusclesFor` in `selection.ts` turns a layer On for a group link; generalise it for soft groups.
+- `grp=` keeps `:` unescaped in the URL.
+- Links to soft structures go through `selectLink` (loads the soft table first); tree rows and search results for soft IDs need the same.
+- `content/synonyms.json` is checked by `validate-content`; it accepts bone IDs only today.
+- M9's QUESTIONS continue at **135**.
