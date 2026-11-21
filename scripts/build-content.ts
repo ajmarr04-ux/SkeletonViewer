@@ -4,9 +4,9 @@
 import { writeFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 import { compileContent } from "../src/content/compile";
-import { SOFT_LAYERS, compileAllSoftFromDisk, readBoneMuscles, readContentFiles } from "./lib/content-files";
+import { SOFT_LAYERS, compileAllSoftFromDisk, readBoneAttached, readContentFiles } from "./lib/content-files";
 
-const compiled = compileContent(readContentFiles(), readBoneMuscles());
+const compiled = compileContent(readContentFiles(), readBoneAttached());
 const json = JSON.stringify(compiled);
 const kb = (n: number) => `${(n / 1024).toFixed(1)} KB`;
 console.log(`content: ${Object.keys(compiled).length} file(s), ${kb(json.length)} raw, ${kb(gzipSync(json).length)} gzipped`);

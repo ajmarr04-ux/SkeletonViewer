@@ -91,7 +91,7 @@ export function isolationView(
   parentOf: (id: string) => string | null = softParent,
   modes: LayerModes = DEFAULT_LAYERS,
 ): IsolationView {
-  if (sel === null) return grp === null ? FULL_VIEW : groupView(grp, ghostMode, hasMesh);
+  if (sel === null) return grp === null ? FULL_VIEW : groupView(grp, ghostMode, hasMesh, partsOf);
   // A muscle with parts is drawn as its parts (spec §5.1 rule 1); a selected part keeps its siblings solid,
   // in the muscle colour (rule 2).
   const focusIds = hasMesh(sel) ? [sel] : partsOf(sel).filter(hasMesh);
@@ -108,9 +108,10 @@ export function isolationView(
  * with no focus (normal bone colour, no outline); the rest ghosted or hidden as
  * at tier 0.
  */
-export function groupView(grp: string, ghostMode: GhostMode, hasMesh: (id: string) => boolean): IsolationView {
+export function groupView(grp: string, ghostMode: GhostMode, hasMesh: (id: string) => boolean, partsOf: PartsOf = softParts): IsolationView {
   const g = groupOf(grp);
-  const solid = new Set((g?.members ?? []).filter(hasMesh));
+  // A muscle with parts (an attached-muscles group, M9) is drawn as its parts.
+  const solid = new Set((g?.members ?? []).flatMap((id) => (hasMesh(id) ? [id] : partsOf(id).filter(hasMesh))));
   if (solid.size === 0) return FULL_VIEW;
   return { isolated: true, focus: null, focusIds: [], solid, ghosts: ghostMode === "ghost", joint: [], jointPartner: null };
 }
@@ -121,12 +122,14 @@ export function groupView(grp: string, ghostMode: GhostMode, hasMesh: (id: strin
  * highlight lasts) and brighter; the partner gets the joint outline. Objects
  * without a mesh are skipped. Nothing moves.
  */
-export function withJoint(view: IsolationView, joint: { a: string; b: string } | null, hasMesh: (id: string) => boolean): IsolationView {
+export function withJoint(view: IsolationView, joint: { a: string; b: string } | null, hasMesh: (id: string) => boolean, partsOf: PartsOf = softParts): IsolationView {
   if (joint === null) return view;
-  const bones = [joint.a, joint.b].filter(hasMesh);
+  // The partner may be a muscle with parts (a bone panel's attached-muscle row, M9): its parts are highlighted.
+  const partners = hasMesh(joint.b) ? [joint.b] : partsOf(joint.b).filter(hasMesh);
+  const bones = [...(hasMesh(joint.a) ? [joint.a] : []), ...partners];
   if (bones.length === 0) return view;
   const solid = view.solid === null ? null : new Set([...view.solid, ...bones]);
-  const partner = hasMesh(joint.b) ? joint.b : null;
+  const partner = partners[0] ?? null;
   return { ...view, solid, joint: bones, jointPartner: partner };
 }
 

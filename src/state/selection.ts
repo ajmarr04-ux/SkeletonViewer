@@ -10,7 +10,8 @@
 // it replaces the entry instead (history.back() would leave the site).
 
 import ids from "../../content/ids.json";
-import { isGroupKey } from "../content/groups";
+import { attachedBoneOf, attachedKey, isGroupKey } from "../content/groups";
+import { loadSoftContent } from "../content/softContentLoader";
 import { displayName } from "../content/names";
 import { hideTargets, isSoftId, softEntry, softLayerOf } from "../content/softRegistry";
 import { loadSoftIds } from "../content/loadSoftIds";
@@ -122,6 +123,54 @@ export const goBack = (): void => dispatchIsolation({ type: "back" });
 export const isolateGroup = (key: string): void => {
   if (isGroupKey(key)) dispatchIsolation({ type: "group", key });
 };
+/**
+ * A link to a soft-tissue structure from a bone's panel (M9 plan decision 9):
+ * the soft-tissue table may not be loaded yet (every new layer off), so load
+ * it first, then select (turning the structure's layer on, as any selection does).
+ */
+export async function selectLink(id: string): Promise<void> {
+  if (!isKnownId(id)) await loadSoftIds();
+  selectObject(id);
+}
+
+/**
+ * "Show attached muscles" (spec §5.4; M9 plan decision 10): isolate the bone
+ * and every muscle and part with an attachment on it, as the group
+ * `attached:<bone>`. An explicit request for muscles, so an Off muscles layer
+ * is turned On (as selecting a muscle does). Framed once the muscles are on
+ * screen (their content and model load with the layer).
+ */
+export function isolateAttached(bone: string): void {
+  const key = attachedKey(bone);
+  if (!isGroupKey(key)) return;
+  showMusclesFor(key);
+  dispatchIsolation({ type: "group", key });
+  void frameWhenMusclesReady(key);
+}
+
+/** An attached-muscles group needs the muscles layer showing: an Off layer is turned On (link, Back/Forward). */
+function showMusclesFor(grp: string | null): void {
+  if (grp === null || attachedBoneOf(grp) === null) return;
+  if (useViewer.getState().layers.muscles === "off") setLayerMode("muscles", "on");
+}
+
+async function frameWhenMusclesReady(key: string): Promise<void> {
+  try {
+    await loadSoftContent("muscles");
+  } catch {
+    return;
+  }
+  await new Promise<void>((resolve) => {
+    if (useLayerBatches.getState().muscles) return resolve();
+    const off = useLayerBatches.subscribe((b) => {
+      if (!b.muscles) return;
+      off();
+      resolve();
+    });
+  });
+  if (useViewer.getState().grp === key) frameSoon();
+}
+
 /**
  * Choose a search result (plan decision 3): select at tier 0 and frame it,
  * as `F` would after a click. The one place where a selection moves the camera.
@@ -330,6 +379,10 @@ export function initSelectionFromUrl(): UrlState {
     window.history.replaceState(window.history.state, "", urlWith({ layers }));
   }
   st.setHidden(url.hid);
+  if (url.grp !== null && attachedBoneOf(url.grp) !== null) {
+    showMusclesFor(url.grp);
+    if (url.cam === null) void frameWhenMusclesReady(url.grp);
+  }
   const over = parseHidden(new URLSearchParams(window.location.search).get("hid")).dropped;
   if (over > 0) st.showToast(`Only the first ${url.hid.length} hidden structures are kept in the link`);
   const rawSel = new URLSearchParams(window.location.search).get("sel");
@@ -405,6 +458,7 @@ export function onPopState(): void {
   const newSel = url.sel !== st.sel ? url.sel : null;
   st.setIsolation({ sel: url.sel, tier: url.tier, grp: url.grp, ant: url.ant });
   st.setGhostMode(url.ghost);
+  showMusclesFor(url.grp);
   if (st.camera) window.history.replaceState(window.history.state, "", urlWith({ cam: st.camera }));
   if (newSel !== null && isDrawn(newSel)) st.requestCamera({ kind: "repivot", id: newSel });
 }

@@ -13,7 +13,8 @@ import { focusCanvas } from "./canvasFocus";
  * tier at the end ("› Related", "› Region"). "Skeleton" goes back to the full
  * skeleton; a group level (Milestone 5) isolates that group. For a muscle
  * part (Milestone 9, spec §5.1) the muscle's crumb selects the muscle: one
- * level up at tier 0 (a Back step), a new focus from tiers 1 and 2.
+ * level up at tier 0 (a Back step), a new focus from tiers 1 and 2. For an
+ * attached-muscles group (spec §5.4) the bone's crumb selects the bone.
  */
 export const TIER_CRUMBS = ["", "Related", "Region"] as const;
 
@@ -42,6 +43,11 @@ export function Breadcrumb() {
     if (!g) return null;
     trail = g.trail;
     links = crumbGroups(trail, groupAncestors(grp));
+    // "Show attached muscles" (M9): the bone's crumb selects the bone.
+    if (g.attached) {
+      up = g.attached.bone;
+      links[trail.length - 2] = UP;
+    }
   } else return null;
   const last = trail.length - 1;
   return (

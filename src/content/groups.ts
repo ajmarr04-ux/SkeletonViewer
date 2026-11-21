@@ -7,7 +7,10 @@
 import hierarchy from "../../content/hierarchy.json";
 import ids from "../../content/ids.json";
 import { groupTrail } from "./labels";
+import { displayName } from "./names";
 import type { HierarchyNode } from "./schema";
+import { attachedTo } from "./softRelations";
+import { softEntry } from "./softRegistry";
 
 export type Group = {
   key: string;
@@ -20,10 +23,17 @@ export type Group = {
   /** Every object in the group, in tree order (wisdom teeth included). */
   members: string[];
   parent: string | null;
+  /**
+   * "Show attached muscles" (spec §5.4; M9 plan decision 10): the bone and the
+   * muscles and parts with an origin or insertion on it. `loading` until the
+   * muscles' content has loaded (the members are then the bone alone).
+   */
+  attached?: { bone: string; origins: readonly string[]; insertions: readonly string[]; loading: boolean };
 };
 
-type IdEntry = { id: string; group: string[]; kind: string; meshAvailable: boolean };
+type IdEntry = { id: string; name: string; group: string[]; kind: string; meshAvailable: boolean };
 const ENTRIES = ids as IdEntry[];
+const BY_ID = new Map(ENTRIES.map((e) => [e.id, e]));
 
 /** Labels that only qualify their parent ("Left", "Upper"), so a group's name joins them on. */
 const QUALIFIERS = new Set(["left", "right", "upper", "lower"]);
@@ -75,16 +85,54 @@ function build(): Map<string, Group> {
 
 export const GROUPS: ReadonlyMap<string, Group> = build();
 
-export const isGroupKey = (key: string): boolean => GROUPS.has(key);
-export const groupOf = (key: string): Group | undefined => GROUPS.get(key);
+/** `grp=attached:<bone>` (M9 plan decision 10). */
+export const ATTACHED_PREFIX = "attached:";
+export const attachedKey = (bone: string): string => `${ATTACHED_PREFIX}${bone}`;
+/** The bone of an `attached:<bone>` key (a bone or tooth in ids.json), else null. */
+export function attachedBoneOf(key: string): string | null {
+  if (!key.startsWith(ATTACHED_PREFIX)) return null;
+  const bone = key.slice(ATTACHED_PREFIX.length);
+  return BY_ID.has(bone) ? bone : null;
+}
+
+/** The attached-muscles group of a bone, built from what the muscles' content declares (once loaded). */
+function attachedGroup(key: string, bone: string): Group {
+  const e = BY_ID.get(bone)!;
+  const a = attachedTo(bone);
+  const origins = a?.origins ?? [];
+  const insertions = a?.insertions ?? [];
+  return {
+    key,
+    label: "Attached muscles",
+    name: `Muscles attached to ${displayName(bone)}`,
+    trail: [...groupTrail(e.group), e.name, "Attached muscles"],
+    members: [bone, ...new Set([...origins, ...insertions])],
+    parent: null,
+    attached: { bone, origins, insertions, loading: a === null },
+  };
+}
+
+export const isGroupKey = (key: string): boolean => GROUPS.has(key) || attachedBoneOf(key) !== null;
+export function groupOf(key: string): Group | undefined {
+  const g = GROUPS.get(key);
+  if (g) return g;
+  const bone = attachedBoneOf(key);
+  return bone === null ? undefined : attachedGroup(key, bone);
+}
 
 const MESHED = new Set(ENTRIES.filter((e) => e.meshAvailable).map((e) => e.id));
+/** Something is drawn for it: a bone with a mesh, a soft structure with one, or a muscle whose parts have. */
+const drawn = (id: string): boolean => {
+  if (MESHED.has(id)) return true;
+  const s = softEntry(id);
+  return s !== undefined && (s.mesh || (s.parts?.length ?? 0) > 0);
+};
 
 /** Members with a 3D model, and all members. */
 export function groupCounts(key: string): { shown: number; total: number } {
-  const g = GROUPS.get(key);
+  const g = groupOf(key);
   if (!g) return { shown: 0, total: 0 };
-  return { shown: g.members.filter((id) => MESHED.has(id)).length, total: g.members.length };
+  return { shown: g.members.filter(drawn).length, total: g.members.length };
 }
 
 /**
@@ -93,8 +141,13 @@ export function groupCounts(key: string): { shown: number; total: number } {
  * (returning from one of its members) it starts "Back to".
  */
 export function groupAnnouncement(key: string, back = false): string {
-  const g = GROUPS.get(key);
+  const g = groupOf(key);
   if (!g) return "Full skeleton";
+  if (g.attached) {
+    const n = g.members.length - 1;
+    const what = g.attached.loading ? "loading the muscles" : n === 0 ? "no muscles attach here" : `${n} ${n === 1 ? "muscle or part" : "muscles and parts"}`;
+    return `${back ? "Back to " : ""}${g.name}: ${what}.`;
+  }
   const { shown, total } = groupCounts(key);
   const missing = shown < total ? `, ${shown} of ${total} have a 3D model` : "";
   return `${back ? "Back to " : ""}${g.name}: ${shown} shown${missing}.`;
@@ -128,6 +181,8 @@ export function ancestorsOf(id: string): string[] {
 
 /** The ancestors of a group, top down, without the group itself. */
 export function groupAncestors(key: string): string[] {
+  const bone = attachedBoneOf(key);
+  if (bone !== null) return ancestorsOf(bone);
   const out: string[] = [];
   let k = GROUPS.get(key)?.parent ?? null;
   while (k) {

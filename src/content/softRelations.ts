@@ -13,14 +13,22 @@ import type { SoftTierData, SoftTierEntry } from "./softTiers";
 const tiers = new Map<string, SoftTierEntry>();
 const roles = new Map<string, MuscleRoles>();
 const reverse = new Map<string, string[]>();
+/** Bone (or any structure) → the muscles and parts declaring an origin or insertion on it (the muscles chunk's `derived.attached`). */
+let attached: Record<string, { origins: readonly string[]; insertions: readonly string[] }> | null = null;
 const registered = new Set<string>();
 const listeners = new Set<() => void>();
 let version = 0;
 
 /** Called when a layer's content chunk loads. Idempotent per layer. */
-export function registerSoftTiers(layer: string, data: SoftTierData | undefined, muscleRoles?: Record<string, MuscleRoles>): void {
+export function registerSoftTiers(
+  layer: string,
+  data: SoftTierData | undefined,
+  muscleRoles?: Record<string, MuscleRoles>,
+  attachedMap?: Record<string, { origins: readonly string[]; insertions: readonly string[] }>,
+): void {
   if (!data || registered.has(layer)) return;
   registered.add(layer);
+  if (attachedMap) attached = attachedMap;
   for (const [id, e] of Object.entries(data.tiers)) tiers.set(id, e);
   for (const [id, r] of Object.entries(muscleRoles ?? {})) roles.set(id, r);
   for (const [s, ids] of Object.entries(data.reverse)) reverse.set(s, [...(reverse.get(s) ?? []), ...ids]);
@@ -34,6 +42,7 @@ export function resetSoftTiers(): void {
   roles.clear();
   reverse.clear();
   registered.clear();
+  attached = null;
   version++;
 }
 
@@ -55,6 +64,16 @@ export const softRoles = (id: string): MuscleRoles | undefined => roles.get(id);
 
 /** The soft structures related to a structure (a bone) at tier 1, from every loaded layer. */
 export const reverseRelated = (id: string): readonly string[] => reverse.get(id) ?? [];
+
+/**
+ * The muscles and parts attached to a structure (spec §5.4: "Show attached
+ * muscles"), as declared in their origins and insertions; null until the
+ * muscles' content has loaded.
+ */
+export function attachedTo(structure: string): { origins: readonly string[]; insertions: readonly string[] } | null {
+  if (attached === null) return null;
+  return attached[structure] ?? { origins: [], insertions: [] };
+}
 
 export const softTiersVersion = (): number => version;
 export function subscribeSoftTiers(l: () => void): () => void {

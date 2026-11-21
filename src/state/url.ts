@@ -208,7 +208,7 @@ export function serialiseUrlState(state: Partial<UrlState>, search: string): str
     kept.push(`sel=${encodeURIComponent(merged.sel)}`);
     if (merged.tier !== 0) kept.push(`tier=${merged.tier}`);
     if (merged.tier === 2 && merged.ant) kept.push("ant=1");
-  } else if (merged.grp !== null) kept.push(`grp=${encodeURIComponent(merged.grp)}`);
+  } else if (merged.grp !== null) kept.push(`grp=${encodeURIComponent(merged.grp).replace(/%3A/g, ":")}`); // `grp=attached:femur_left` (M9)
   if (merged.ghost === "hide") kept.push("ghost=0");
   if (merged.color === "region") kept.push("color=region");
   if (ownLayers && merged.layers && !isDefaultLayers(merged.layers)) kept.push(`layers=${formatLayers(merged.layers)}`);

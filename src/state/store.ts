@@ -17,7 +17,12 @@ export const LABELS_KEY = "skeleton-viewer:labels";
  * - `centre`: ease the bone to the middle of the view and orbit about it (double-click);
  * - `goto`: go to a pose (browser Back / Forward).
  */
-export type JointHighlight = { a: string; b: string; name: string };
+/**
+ * A highlight from the panel (plan step 7): an articulation's two bones, or (M9)
+ * a bone and a muscle or part attached to it. `text` replaces the joint
+ * announcement when given.
+ */
+export type JointHighlight = { a: string; b: string; name: string; text?: string };
 
 export type CameraCommand =
   | { kind: "preset"; preset: Preset }

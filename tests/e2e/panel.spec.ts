@@ -33,7 +33,7 @@ test.describe("desktop panel", () => {
     await expect(panel).toContainText("Lower limb");
     await expect(panel).toContainText("Long bone");
     await expect(panel).not.toContainText("Not written yet");
-    for (const h of ["Summary", "Functions", "Articulations", "Key landmarks", "Major muscle attachments", "Clinical note"]) {
+    for (const h of ["Summary", "Functions", "Articulations", "Key landmarks", "Attached muscles", "Clinical note"]) {
       await expect(panel.getByRole("heading", { level: 3, name: h })).toBeVisible();
     }
     await expect(panel.getByRole("button", { name: "Show related" })).toBeEnabled();

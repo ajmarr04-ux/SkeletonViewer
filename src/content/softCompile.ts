@@ -34,6 +34,8 @@ export type SoftLayerContent = {
   tiers?: SoftTierData;
   /** Muscles layer only: origin/insertion patches and fallback structures, antagonists (M9 plan decisions 6 and 7); added by `withSoftTiers`. */
   roles?: Record<string, MuscleRoles>;
+  /** Names of the joints this layer's structures name (actions, `joint`), for the panel (M9 plan decision 9); added by `withSoftTiers`. */
+  joints?: Record<string, string>;
 };
 
 export type SoftCompileDeps = {
@@ -98,16 +100,25 @@ function deriveAll(entries: Record<string, SoftCompiledEntry>, deps: SoftCompile
  */
 export function withSoftTiers(
   layers: Record<SoftLayer, SoftLayerContent>,
-  deps: Pick<SoftCompileDeps, "pairJoints" | "functionalJoints"> & { patches?: Record<string, Patch> },
+  deps: Pick<SoftCompileDeps, "pairJoints" | "functionalJoints"> & { patches?: Record<string, Patch>; jointNames?: Record<string, string> },
 ): Record<SoftLayer, SoftLayerContent> {
   const fm: Record<string, SoftFm> = {};
   for (const c of Object.values(layers)) for (const [id, e] of Object.entries(c.entries)) fm[id] = e.fm;
   const tiers = buildSoftTiers({ fm, synergists: layers.muscles.derived?.synergists ?? {}, pairJoints: deps.pairJoints, functionalJoints: deps.functionalJoints });
   const d = layers.muscles.derived;
   const roles = buildMuscleRoles({ fm, patches: deps.patches ?? {}, synergists: d?.synergists ?? {}, antagonists: d?.antagonists ?? {} });
+  const names = deps.jointNames ?? {};
+  const joints = (c: SoftLayerContent) => {
+    const out: Record<string, string> = {};
+    for (const { fm: f } of Object.values(c.entries)) {
+      const named = "joint" in f ? [f.joint] : f.actions.map((a) => a.joint);
+      for (const j of named) if (j !== null && names[j] !== undefined) out[j] = names[j];
+    }
+    return out;
+  };
   return {
-    muscles: { ...layers.muscles, tiers: tiers.muscles, roles },
-    ligaments: { ...layers.ligaments, tiers: tiers.ligaments },
-    cartilage: { ...layers.cartilage, tiers: tiers.cartilage },
+    muscles: { ...layers.muscles, tiers: tiers.muscles, roles, joints: joints(layers.muscles) },
+    ligaments: { ...layers.ligaments, tiers: tiers.ligaments, joints: joints(layers.ligaments) },
+    cartilage: { ...layers.cartilage, tiers: tiers.cartilage, joints: joints(layers.cartilage) },
   };
 }

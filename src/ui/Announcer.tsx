@@ -46,7 +46,7 @@ export function Announcer() {
   // Joint highlighting (plan step 7): "Hip joint: femur and hip bone highlighted." Only when it turns on.
   const joint = useViewer((s) => s.joint);
   useEffect(() => {
-    if (joint) setText(jointAnnouncement(joint.name, joint.a, joint.b));
+    if (joint) setText(joint.text ?? jointAnnouncement(joint.name, joint.a, joint.b));
   }, [joint]);
   return (
     <div className="visually-hidden" aria-live="polite" role="status" data-testid="announcer">

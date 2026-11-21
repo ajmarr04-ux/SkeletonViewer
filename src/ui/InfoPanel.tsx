@@ -3,12 +3,12 @@ import { NO_PANEL } from "../camera/math";
 import { groupCounts, groupOf, type Group } from "../content/groups";
 import { useContent } from "../content/loader";
 import { displayName } from "../content/names";
-import { panelModel, type PanelLink, type PanelModel } from "../content/panel";
+import { landmarkName, panelModel, type PanelLink, type PanelModel } from "../content/panel";
 import { NOT_WRITTEN } from "../content/placeholder";
 import { useSoftContent } from "../content/softContentLoader";
-import { softPanelModel, type SoftPanelModel } from "../content/softPanel";
+import { softPanelModel, softSections, type AttachmentList, type ActionRow, type SoftLink, type SoftPanelModel, type SoftSections } from "../content/softPanel";
 import { softLayerOf } from "../content/softRegistry";
-import { expandRegion, goBack, hasMesh, hideSelected, isMuscleKind, selectObject, setAntagonists, showRelated, switchSide, tierBlockedReason } from "../state/selection";
+import { expandRegion, goBack, hasMesh, hideSelected, isMuscleKind, isolateAttached, selectLink, setAntagonists, showRelated, switchSide, tierBlockedReason } from "../state/selection";
 import { useSoftTiersVersion } from "../content/softRelations";
 import { useViewer, type JointHighlight } from "../state/store";
 import { focusCanvas } from "./canvasFocus";
@@ -69,7 +69,8 @@ export function InfoPanel() {
 
   let view: PanelView;
   if (model) view = { id: model.id, group: null, head: <Title model={model} />, body: <Body model={model} /> };
-  else if (soft) view = { id: soft.id, group: null, head: <SoftTitle model={soft} />, body: <SoftBody model={soft} /> };
+  else if (soft) view = { id: soft.id, group: null, head: <SoftTitle model={soft} />, body: <SoftBody model={soft} sections={softSections(soft.id, softContent, (b, l) => landmarkName(content?.[b], l))} /> };
+  else if (group?.attached) view = { id: null, group: group.key, head: <GroupTitle group={group} />, body: <AttachedGroupBody group={group} /> };
   else if (group) view = { id: null, group: group.key, head: <GroupTitle group={group} />, body: <GroupBody group={group} /> };
   else return null;
   return phone ? <Sheet key="sheet" view={view} /> : <SidePanel key="side" view={view} />;
@@ -259,7 +260,21 @@ function Title({ model }: { model: PanelModel }) {
 }
 
 function GroupTitle({ group }: { group: Group }) {
+  useSoftTiersVersion(); // an attached-muscles group fills in when the muscles' content arrives
   const { shown, total } = groupCounts(group.key);
+  if (group.attached) {
+    const n = group.members.length - 1;
+    return (
+      <div className="panel-title">
+        <h2 id="panel-title" tabIndex={-1}>
+          {group.name}
+        </h2>
+        <p className="latin" data-testid="group-count">
+          {group.attached.loading ? "Loading the muscles…" : `Group · ${n} ${n === 1 ? "muscle or part" : "muscles and parts"}`}
+        </p>
+      </div>
+    );
+  }
   return (
     <div className="panel-title">
       <h2 id="panel-title" tabIndex={-1}>
@@ -295,15 +310,75 @@ function GroupBody({ group }: { group: Group }) {
   );
 }
 
+/**
+ * "Show attached muscles" (spec §5.4): the bone, then its Origins and
+ * Insertions as links (hovering one highlights it); Back returns to the bone.
+ */
+function AttachedGroupBody({ group }: { group: Group }) {
+  useSoftTiersVersion();
+  const a = group.attached!;
+  const bone = { id: a.bone, label: displayName(a.bone) };
+  const rows = (ids: readonly string[]) => ids.map((id) => ({ id, label: displayName(id) })).sort((x, y) => x.label.localeCompare(y.label));
+  return (
+    <>
+      <section className="panel-section" aria-labelledby="h-bone" data-testid="section-bone">
+        <h3 id="h-bone">Bone</h3>
+        <ul className="links">
+          <li>
+            <LinkButton link={bone} />
+          </li>
+        </ul>
+      </section>
+      {a.loading ? (
+        <p className="muted">Loading the muscles…</p>
+      ) : (
+        <Section title="Attached muscles" testId="muscles">
+          <AttachedList title="Origins" testId="origins" bone={a.bone} rows={rows(a.origins)} role="origin" />
+          <AttachedList title="Insertions" testId="insertions" bone={a.bone} rows={rows(a.insertions)} role="insertion" />
+        </Section>
+      )}
+      <div className="panel-actions">
+        <button type="button" className="button primary" data-testid="panel-back" onClick={back}>
+          Back
+        </button>
+      </div>
+    </>
+  );
+}
+
+/**
+ * A bone's Origins or Insertions (spec §5.4; M9 plan decision 9): each muscle
+ * or part a link that selects it; hovering or focusing a row (press-and-hold
+ * on touch) highlights it with the bone, as an articulation row does.
+ */
+function AttachedList({ title, testId, bone, rows, role }: { title: string; testId: string; bone: string; rows: PanelLink[]; role: "origin" | "insertion" }) {
+  return (
+    <div data-testid={`attached-${testId}`}>
+      <h4>{title}</h4>
+      {rows.length ? (
+        <ul className="links">
+          {rows.map((r) => (
+            <li key={r.id}>
+              <LinkButton link={r} joint={{ a: bone, b: r.id, name: r.label, text: `${r.label}: ${role} on ${displayName(bone)}, highlighted.` }} />
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="muted">None.</p>
+      )}
+    </div>
+  );
+}
+
 /** A related object in the panel: selecting it makes it the new focus; focus moves to the panel's title. */
 function selectFromPanel(id: string) {
-  selectObject(id);
-  requestAnimationFrame(() => document.getElementById("panel-title")?.focus());
+  void selectLink(id).then(() => requestAnimationFrame(() => document.getElementById("panel-title")?.focus()));
 }
 
 function Body({ model }: { model: PanelModel }) {
   const tier = useViewer((s) => s.tier);
   const isTooth = model.kind === "tooth";
+  const noMuscles = model.origins !== null && model.origins.length + (model.insertions?.length ?? 0) === 0;
   return (
     <>
       {(!model.written || model.common) && (
@@ -360,9 +435,16 @@ function Body({ model }: { model: PanelModel }) {
           {model.landmarkPositions === 0 && <span className="muted"> (no positions yet)</span>}
         </label>
       </Section>
-      <Section title="Major muscle attachments" testId="muscles">
-        {model.muscles ? (
-          model.muscles.length ? <List items={model.muscles} inline /> : <p className="muted">{isTooth ? "None (teeth have no muscle attachments)." : "None."}</p>
+      <Section title="Attached muscles" testId="muscles">
+        {model.origins && model.insertions ? (
+          noMuscles ? (
+            <p className="muted">{isTooth ? "None (teeth have no muscle attachments)." : "None."}</p>
+          ) : (
+            <>
+              <AttachedList title="Origins" testId="origins" bone={model.id} rows={model.origins} role="origin" />
+              <AttachedList title="Insertions" testId="insertions" bone={model.id} rows={model.insertions} role="insertion" />
+            </>
+          )
         ) : (
           <Unwritten />
         )}
@@ -391,11 +473,27 @@ function Body({ model }: { model: PanelModel }) {
         >
           Expand region
         </button>
+        <button
+          type="button"
+          className="button"
+          data-testid="show-attached"
+          disabled={model.origins === null || noMuscles}
+          aria-describedby={noMuscles ? "attached-reason" : undefined}
+          title={noMuscles ? "No muscles attach here" : "Show the bone with every muscle attached to it"}
+          onClick={() => isolateAttached(model.id)}
+        >
+          Show attached muscles
+        </button>
         {model.meshAvailable && <HideButton />}
         <button type="button" className="button primary" data-testid="panel-back" onClick={back}>
           Back
         </button>
       </div>
+      {noMuscles && (
+        <p className="muted" id="attached-reason" data-testid="attached-reason">
+          Show attached muscles: no muscles attach here.
+        </p>
+      )}
     </>
   );
 }
@@ -436,7 +534,10 @@ function SoftTitle({ model }: { model: SoftPanelModel }) {
       )}
       {model.partOf && (
         <p className="part-of-title" data-testid="part-of">
-          <span className="muted">Part of</span> <i>{model.partOf.name}</i>
+          <span className="muted">Part of</span>{" "}
+          <button type="button" className="link-inline" data-testid={`link-${model.partOf.id}`} onClick={() => selectFromPanel(model.partOf!.id)}>
+            {model.partOf.name}
+          </button>
         </p>
       )}
     </div>
@@ -446,9 +547,10 @@ function SoftTitle({ model }: { model: SoftPanelModel }) {
 /**
  * The panel for a muscle, ligament or cartilage structure: kind, layer, side,
  * and the written summary (M8), else "Not written yet" (M7 plan decision 12).
- * Its tiers since M9 (session AF); the kind-specific sections arrive in session AH.
+ * Its tiers since M9 (session AF) and its kind-specific sections (session AH,
+ * spec §7), in the spec's order after the summary.
  */
-function SoftBody({ model }: { model: SoftPanelModel }) {
+function SoftBody({ model, sections }: { model: SoftPanelModel; sections: SoftSections | null }) {
   return (
     <>
       {model.pair && <SideToggle pair={model.pair} current={model.id} />}
@@ -465,6 +567,8 @@ function SoftBody({ model }: { model: SoftPanelModel }) {
       <Section title="Summary" testId="summary">
         {model.summary !== null ? <div className="summary" dangerouslySetInnerHTML={{ __html: model.summary }} /> : <Unwritten />}
       </Section>
+      {sections?.kind === "muscle" && <MuscleSectionsView s={sections} />}
+      {sections && sections.kind !== "muscle" && <JoinSectionsView s={sections} />}
       <div className="panel-actions">
         <SoftTierButtons id={model.id} />
         {model.meshAvailable && <HideButton />}
@@ -473,6 +577,115 @@ function SoftBody({ model }: { model: SoftPanelModel }) {
         </button>
       </div>
       <TierReason id={model.id} />
+    </>
+  );
+}
+
+/** Links to structures (each selects its target). */
+function Links({ links, empty }: { links: SoftLink[]; empty: string }) {
+  if (links.length === 0) return <p className="muted">{empty}</p>;
+  return (
+    <ul className="links">
+      {links.map((l) => (
+        <li key={l.id}>
+          <LinkButton link={l} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** An origin or insertion: each structure a link with its landmark, or the free text; a part's inherited one says so. */
+function Attachments({ list }: { list: AttachmentList }) {
+  return (
+    <>
+      {list.inheritedFrom && <p className="muted">As the whole muscle ({list.inheritedFrom.label}):</p>}
+      {list.rows.length === 0 ? (
+        <p className="muted">None listed.</p>
+      ) : (
+        <ul className="links">
+          {list.rows.map((r, i) => (
+            <li key={`${r.link?.id ?? r.text}-${i}`}>{r.link ? (
+                <LinkButton link={r.link} detail={[r.landmark, r.part].filter(Boolean).join(" · ") || undefined} />
+              ) : (
+                <p className="soft-attachment">
+                  {r.text}
+                  {r.part && <span className="muted"> · {r.part}</span>}
+                </p>
+              )}</li>
+          ))}
+        </ul>
+      )}
+    </>
+  );
+}
+
+const actionText = (a: ActionRow) => `${a.joint} · ${a.movement} · ${a.role}`;
+
+/** Muscle and part sections (spec §7): Parts, Origin, Insertion, Actions, Synergists, Antagonists, Innervation, Clinical note. */
+function MuscleSectionsView({ s }: { s: Extract<SoftSections, { kind: "muscle" }> }) {
+  return (
+    <>
+      {s.parts.length > 0 && (
+        <Section title="Parts" testId="parts">
+          <Links links={s.parts} empty="" />
+        </Section>
+      )}
+      <Section title="Origin" testId="origin">
+        <Attachments list={s.origin} />
+      </Section>
+      <Section title="Insertion" testId="insertion">
+        <Attachments list={s.insertion} />
+      </Section>
+      <Section title="Actions" testId="actions">
+        {s.actions.length > 0 && <List items={s.actions.map(actionText)} />}
+        {s.inheritedActions.length > 0 && (
+          <>
+            <h4>With the whole muscle</h4>
+            <List items={s.inheritedActions.map(actionText)} />
+          </>
+        )}
+        {s.actions.length + s.inheritedActions.length === 0 && (s.functions.length ? <List items={s.functions} /> : <p className="muted">None listed.</p>)}
+      </Section>
+      <Section title="Synergists" testId="synergists">
+        <Links links={s.synergists} empty="None found." />
+      </Section>
+      <Section title="Antagonists" testId="antagonists">
+        <Links links={s.antagonists} empty="None found." />
+      </Section>
+      <Section title="Innervation" testId="innervation">
+        {s.innervation ? (
+          <p>
+            {s.innervation.text}
+            {s.innervation.inheritedFrom && <span className="muted"> (as the whole muscle)</span>}
+          </p>
+        ) : (
+          <p className="muted">Not listed.</p>
+        )}
+      </Section>
+      <Section title="Clinical note" testId="clinical">
+        {s.clinical ? <p>{s.clinical}</p> : <p className="muted">None.</p>}
+      </Section>
+    </>
+  );
+}
+
+/** Ligament and cartilage sections (spec §7): Joint, Connects or Attached to, Functions, Clinical note. */
+function JoinSectionsView({ s }: { s: Extract<SoftSections, { kind: "ligament" | "cartilage" }> }) {
+  return (
+    <>
+      <Section title="Joint" testId="joint">
+        {s.joint ? <p>{s.joint}</p> : <p className="muted">Not part of a joint.</p>}
+      </Section>
+      <Section title={s.kind === "ligament" ? "Connects" : "Attached to"} testId={s.kind === "ligament" ? "connects" : "attached-to"}>
+        <Links links={s.links} empty="None listed." />
+      </Section>
+      <Section title="Functions" testId="functions">
+        <List items={s.functions} />
+      </Section>
+      <Section title="Clinical note" testId="clinical">
+        {s.clinical ? <p>{s.clinical}</p> : <p className="muted">None.</p>}
+      </Section>
     </>
   );
 }
