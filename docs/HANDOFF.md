@@ -1,21 +1,22 @@
-# Handoff — written 2026-11-20 at the end of M9-AF
+# Handoff — written 2026-11-21 at the end of M9-AG
 
 ## Next session
-**M9-AG: origins, insertions, antagonists** (`docs/PLAN-milestone-9.md`, step 3; decisions 6–8). Trigger: "begin session AG".
-Done when: the attachments batch loads lazily at muscle tier 1 and 2; the content-wins agreement rule and `npm run content:patch-check` → `assets/build/REPORT-patches.md`; whole-bone fallback tint; antagonist toggle (`ant=1`, muscle tier 2 only); `tints` filled (origin, insertion, antagonist) with the ΔE test; legend chips; draw calls still < 20 with every layer on; e2e: triceps long head tier 1 tints scapula and ulna, antagonist toggle, `ant=1` round trip.
+**M9-AH: panels and the bone cross-link** (`docs/PLAN-milestone-9.md`, step 4; decisions 9–10). Trigger: "begin session AH".
+Done when: every kind's panel sections (pure model in `softPanel.ts`, tested) rendered by `InfoPanel.tsx` with links; the bone panel's Origins/Insertions link lists replacing M8's plain text, with row hover highlighting; "Show attached muscles" as `grp=attached:<bone>` (store, URL, reducer, turns the muscles layer On, disabled "No muscles attach here"); e2e: panel sections, a link selecting a part, `grp=attached:femur_left` round trip, 200% reflow and axe on the new sections.
 
 ## State
-- Last commit: M9-AF (tiers per kind), on `claude/keen-clarke-32a10a`.
-- `npm run check`: pass. Vitest 463 tests. E2E: `tiers.spec.ts` (new, 3/3) plus 13 touched specs 102/103 (the keyboard search step flaked under load and passed re-run alone). Main chunk +0.8 kB gzipped over AE (Vite's figure: 297.95 kB).
+- Last commit: M9-AG (origins, insertions, antagonists), on `claude/keen-clarke-32a10a`.
+- `npm run check`: pass. Vitest 487 tests. E2E: E2E_RESULT. Main chunk MAIN_SIZE.
 - Open fan-out work: none.
 
-## Waiting on the user
-- Decision 3's bone half (built as the plan read it): with muscles (or ligaments, cartilage) on, a **bone's** related set also gains the muscles attached to it, the ligaments connecting it and the cartilage on it. Say if bones should stay bones-only (one line in `relatedAt` to change).
-- Still open from earlier: the real-device muscles-layer load time (M7), the per-browser `?bench` table (M5 step 12), the content review of `content/QUESTIONS.md` (1–131).
+## Waiting on the user (none blocks AH)
+- The patch report, `assets/build/REPORT-patches.md` (QUESTIONS 132–134): 185 patches never drawn because the content disagrees, 1,373 content attachments drawn as whole-bone tints, 846 synergist/antagonist overlaps shown as synergists, and the 4-outline cap for "both origin and insertion" bones. Any time before AJ.
+- From AF: should a **bone's** related set gain its muscles, ligaments and cartilage when those layers are on (built that way)?
+- Still open from earlier: the real-device muscles-layer load time (M7), the per-browser `?bench` table (M5 step 12), the content review of `content/QUESTIONS.md`.
 
 ## Things the next session must know
-- Tier sets live in the lazy content chunks (`tiers`, `reverse`), built by `buildSoftTiers` from every layer; the main chunk sees them through `src/content/softRelations.ts`. `relatedAt(id, tier, modes)` is the one place the layer filter is applied; `isolationView(…, modes)` defaults to bones only.
-- `sceneView`'s `tints` is still the empty map: AG fills it. The tier-1 set of a muscle/part is exactly the structures its origin + (resolved) insertion name, so AG's origin/insertion split can come from the same front matter (`attachmentsOf` in `softTiers.ts` merges them; split it).
-- There are no `R`/`E` keys (the plan assumed them); none were added.
-- `__viewer.solidNow(id)` (debug) tells whether a structure is drawn solid right now.
-- M9's QUESTIONS start at 132 (none written in AF).
+- Each muscle's roles (`softRoles(id)` in `softRelations.ts`: `o`/`i` = patches + whole-structure fallbacks, `ant`) come from the muscles content chunk; AH's Origin/Insertion sections can read the front matter directly (`useSoftContent`), but should agree with these.
+- The derived `attached` map (`SoftDerived.attached`, structure → origins/insertions) already exists in the muscles chunk: use it for the bone panel's link lists and for `grp=attached:<bone>`.
+- `setIsolation` now takes `ant`, and every isolation step writes `ant` off; a new group kind must keep that (pass nothing).
+- Soft `sel=` links now keep their tier (`selectSoftFromUrl`).
+- M9's QUESTIONS continue at **135**. The plan's ΔE ≥ 20 for the tints was relaxed to the spec's ≥ 8 except for neighbouring pairs (session notes).

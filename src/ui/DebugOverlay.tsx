@@ -73,6 +73,12 @@ export function DebugOverlay(p: Props) {
       data-joint={iso ? iso.joint.join(",") : ""}
       data-layer-counts={iso ? Object.entries(iso.layers).map(([l, c]) => `${l}:${c.solid}/${c.ghost}`).join(",") : ""}
       data-hidden={iso ? iso.hidden : ""}
+      data-tint-origin={iso?.tints.origin?.join(",") ?? ""}
+      data-tint-insertion={iso?.tints.insertion?.join(",") ?? ""}
+      data-tint-antagonist={iso?.tints.antagonist?.join(",") ?? ""}
+      data-patches-origin={iso ? iso.patches.origin.join(",") : ""}
+      data-patches-insertion={iso ? iso.patches.insertion.join(",") : ""}
+      data-outlines-both={iso ? iso.both.join(",") : ""}
       data-colour={iso?.colour ?? ""}
       data-explode={explode}
       data-highlight-ms={iso?.highlightMs != null ? iso.highlightMs.toFixed(1) : ""}

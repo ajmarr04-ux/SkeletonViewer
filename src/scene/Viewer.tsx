@@ -26,6 +26,7 @@ import { createBoneMaterial, createGhostMaterial } from "./material";
 import { Explode } from "./Explode";
 import { Isolation, type IsolationStats, type SkeletonScene } from "./Isolation";
 import { createOutline, disposeOutline, OUTLINE } from "./outline";
+import { BOTH_OUTLINE, MAX_BOTH_OUTLINES } from "./tints";
 import { Tooltip } from "../ui/Tooltip";
 import { InfoPanel } from "../ui/InfoPanel";
 import { Breadcrumb } from "../ui/Breadcrumb";
@@ -53,6 +54,7 @@ function disposeScene(s: SkeletonScene): void {
   // The outlines share the solid batch's buffers: free them together.
   disposeOutline(s.outlines.selected);
   disposeOutline(s.outlines.hover);
+  s.both.forEach(disposeOutline);
   disposeBatchedSkeleton(s.ghost);
   disposeBatchedSkeleton(s.skeleton);
 }
@@ -147,7 +149,11 @@ export function Viewer() {
           selected: createOutline(skeleton, OUTLINE.selected.colour, OUTLINE.selected.widthPx, "outline-selected"),
           hover: createOutline(skeleton, OUTLINE.hover.colour, OUTLINE.hover.widthPx, "outline-hover"),
         };
-        setShown({ lod, skeleton, ghost, outlines });
+        // Origin-and-insertion bones with no patch (M9): the origin tint plus an outline (spec §5.3).
+        const both = Array.from({ length: MAX_BOTH_OUTLINES }, (_, i) =>
+          createOutline(skeleton, BOTH_OUTLINE.colour, BOTH_OUTLINE.widthPx, `outline-both-${i + 1}`),
+        );
+        setShown({ lod, skeleton, ghost, outlines, both });
         useViewer.getState().setLodActive(lod);
         void loadContent(); // the panel text, off the first frame's path (plan step 4)
         setLoadTimes((t) => ({ ...t, [lod]: loaded.loadedAtMs }));
@@ -194,6 +200,7 @@ export function Viewer() {
         {shown && <primitive object={shown.skeleton.mesh} />}
         {shown && <primitive object={shown.outlines.selected.mesh} />}
         {shown && <primitive object={shown.outlines.hover.mesh} />}
+        {shown?.both.map((o) => <primitive key={o.mesh.name} object={o.mesh} />)}
         {shown && <primitive object={shown.ghost.mesh} />}
         <Isolation scene={shown} onStats={debug ? setIsoStats : undefined} />
         <Explode scene={shown} onRestored={debug ? recheckBounds : undefined} />

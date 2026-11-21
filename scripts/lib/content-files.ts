@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { boneMuscleLists } from "../../src/content/compile";
 import { splitFrontMatter } from "../../src/content/frontmatter";
 import { oppositeOf } from "../../src/content/placeholder";
+import type { Patch } from "../../src/content/softRoles";
 import { compileSoftLayer, withSoftTiers, type SoftCompileDeps, type SoftLayerContent } from "../../src/content/softCompile";
 import { LAYER_FOLDERS, type SoftLayer } from "../../src/content/softSchema";
 import type { SoftIdEntry } from "../../src/content/softValidate";
@@ -113,11 +114,17 @@ export function compileSoftFromDisk(layer: SoftLayer, files = readSoftFiles()[la
   return compileSoftLayer(layer, files, softDeps());
 }
 
-/** Every layer compiled, with the tier sets (M9 plan decision 4): what the lazy chunks ship. */
+/** The attachment patches (M6) as `soft-to-id.json` maps them (M9 plan decision 6). */
+export function readPatches(): Record<string, Patch> {
+  const raw = readJson("assets/mapping/soft-to-id.json") as { attachments: Record<string, { structures: string[]; end: Patch["end"]; on?: string | null }> };
+  return Object.fromEntries(Object.entries(raw.attachments).map(([id, p]) => [id, { structures: p.structures, end: p.end, on: p.on ?? null }]));
+}
+
+/** Every layer compiled, with the tier sets and the muscles' roles (M9 plan decisions 4, 6, 7): what the lazy chunks ship. */
 export function compileAllSoftFromDisk(files = readSoftFiles()): Record<SoftLayer, SoftLayerContent> {
   const deps = softDeps();
   const layers = Object.fromEntries(SOFT_LAYERS.map((l) => [l, compileSoftLayer(l, files[l], deps)])) as Record<SoftLayer, SoftLayerContent>;
-  return withSoftTiers(layers, deps);
+  return withSoftTiers(layers, { ...deps, patches: readPatches() });
 }
 
 /** Each bone's derived muscle list for the panel (M8 plan decision 13), from the muscles layer's content. */

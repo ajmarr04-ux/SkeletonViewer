@@ -7,11 +7,14 @@ import { Color } from "three";
 import idsJson from "../../content/ids.json";
 import { groupOf } from "../content/groups";
 import { relations } from "../content/relations";
-import { reverseRelated, softRelated } from "../content/softRelations";
+import { reverseRelated, softRelated, softRoles } from "../content/softRelations";
+import type { MuscleRoles, Role } from "../content/softRoles";
+import type { TintRole } from "./tints";
 import type { Tier } from "../state/isolation";
 import { DEFAULT_LAYERS, LAYERS, type GhostMode, type Layer, type LayerModes, type MuscleDepth } from "../state/url";
 import { peeledAt, softEntry, softLayerOf } from "../content/softRegistry";
 import type { BatchedSkeleton } from "./batchSkeleton";
+import { usePatchBatch } from "./layerRegistry";
 import { accentTint as makeAccentTint } from "./material";
 
 export type IsolationView = {
@@ -32,6 +35,12 @@ export type IsolationView = {
   joint: readonly string[];
   /** The joint's partner (not the focus), which gets the joint outline; or null. */
   jointPartner: string | null;
+  /** Structures drawn in a tint instead of their own colour (M9: `withTints`). */
+  tints?: ReadonlyMap<string, TintRole>;
+  /** Attachment patches wanted (patch ID → role and the structure it lies on); drawn if that structure is (`sceneView`). */
+  patches?: ReadonlyMap<string, { role: Role; on: string }>;
+  /** Tinted origin that is also an insertion (no patch): gets the insertion-coloured outline too (spec §5.3). */
+  both?: readonly string[];
 };
 
 export const FULL_VIEW: IsolationView = { isolated: false, focus: null, focusIds: [], solid: null, ghosts: false, joint: [], jointPartner: null };
@@ -56,10 +65,7 @@ const layerOfAny = (id: string): Layer | null => (BONES.has(id) ? "bones" : soft
  */
 export function relatedAt(id: string, tier: Tier, modes: LayerModes = DEFAULT_LAYERS): string[] {
   if (tier === 0) return [];
-  const showing = (x: string) => {
-    const l = layerOfAny(x);
-    return l !== null && modes[l] !== "off";
-  };
+  const showing = (x: string) => isShowing(x, modes);
   if (!BONES.has(id)) return softRelated(id, tier).filter(showing);
   const bones = relations.visibleAt(id, tier).filter((x) => x !== id);
   const soft = TISSUE.some((l) => modes[l] !== "off") ? (tier === 1 ? [id] : [id, ...bones]).flatMap((b) => reverseRelated(b)) : [];
@@ -124,6 +130,60 @@ export function withJoint(view: IsolationView, joint: { a: string; b: string } |
   return { ...view, solid, joint: bones, jointPartner: partner };
 }
 
+/**
+ * Origins, insertions and antagonists (spec §5.2–5.3; M9 plan decisions 6–8),
+ * for a muscle or part at tier 1 or 2. The content decides: the agreeing
+ * patches are wanted (drawn where the structure they lie on is drawn); every
+ * structure the content names with no agreeing patch is tinted whole, in the
+ * origin or insertion colour (one that is both: origin, plus an outline). At
+ * tier 2 with `ant`, the antagonists are added solid in their tint (only those
+ * in a layer that is showing). The focus is never tinted. Anything else: unchanged.
+ */
+export function withTints(
+  iso: IsolationView,
+  sel: string | null,
+  tier: Tier,
+  ant: boolean,
+  hasMesh: (id: string) => boolean,
+  modes: LayerModes = DEFAULT_LAYERS,
+  rolesOf: (id: string) => MuscleRoles | undefined = softRoles,
+  patchesFailed = false,
+): IsolationView {
+  if (sel === null || tier === 0 || iso.solid === null) return iso;
+  const r = rolesOf(sel);
+  if (!r) return iso;
+  const focus = new Set(iso.focusIds);
+  const drawn = (x: string) => iso.solid!.has(x) && !focus.has(x);
+  const tints = new Map<string, TintRole>();
+  const both: string[] = [];
+  // With no patch file, the patches' structures are tinted whole too.
+  const whole = (set: MuscleRoles["o"]) => (patchesFailed ? [...set.f, ...set.p.map(([, on]) => on)] : set.f);
+  for (const x of whole(r.o)) if (drawn(x)) tints.set(x, "origin");
+  for (const x of whole(r.i)) {
+    if (!drawn(x)) continue;
+    if (tints.get(x) === "origin") both.push(x);
+    else tints.set(x, "insertion");
+  }
+  const patches = new Map<string, { role: Role; on: string }>();
+  if (!patchesFailed) for (const [pid, on] of r.o.p) patches.set(pid, { role: "origin", on });
+  if (!patchesFailed) for (const [pid, on] of r.i.p) patches.set(pid, { role: "insertion", on });
+  let solid = iso.solid;
+  if (tier === 2 && ant) {
+    const more = r.ant.filter((x) => !focus.has(x) && hasMesh(x) && isShowing(x, modes));
+    if (more.length > 0) {
+      solid = new Set([...iso.solid, ...more]);
+      for (const x of more) tints.set(x, "antagonist");
+    }
+  }
+  return { ...iso, solid, tints, patches, both };
+}
+
+/** Is a structure's layer On or Ghost? */
+const isShowing = (x: string, modes: LayerModes): boolean => {
+  const l = layerOfAny(x);
+  return l !== null && modes[l] !== "off";
+};
+
 /** How one layer's structures are drawn (M7 plan decisions 6 and 8). */
 export type LayerShow = {
   /** Drawn solid (and pickable). Null means every structure of the layer. */
@@ -149,12 +209,17 @@ export type SceneView = {
   hidden: ReadonlySet<string>;
   joint: readonly string[];
   jointPartner: string | null;
-  /** Extra colours by structure (M9). Empty in M7. */
-  tints: ReadonlyMap<string, string>;
+  /** Structures drawn in a tint instead of their own colour (origin, insertion, antagonist). */
+  tints: ReadonlyMap<string, TintRole>;
+  /** Attachment patches drawn, by role: only those whose structure is drawn solid. */
+  patches: ReadonlyMap<string, Role>;
+  /** Tinted origins that are also insertions (spec §5.3: plus an outline). */
+  both: readonly string[];
 };
 
 const NO_IDS: ReadonlySet<string> = new Set();
-const NO_TINTS: ReadonlyMap<string, string> = new Map();
+const NO_TINTS: ReadonlyMap<string, TintRole> = new Map();
+const NO_PATCHES: ReadonlyMap<string, Role> = new Map();
 
 /**
  * Combine the isolation with the layer modes and the hidden structures (M7
@@ -183,7 +248,27 @@ export function sceneView(iso: IsolationView, modes: LayerModes, hidden: Readonl
       layers[layer] = { solid: iso.solid, rest };
     }
   }
-  return { isolated: iso.isolated, focus: iso.focus, focusIds: iso.focusIds, layers, hidden, joint: iso.joint, jointPartner: iso.jointPartner, tints: NO_TINTS };
+  const view: SceneView = {
+    isolated: iso.isolated,
+    focus: iso.focus,
+    focusIds: iso.focusIds,
+    layers,
+    hidden,
+    joint: iso.joint,
+    jointPartner: iso.jointPartner,
+    tints: iso.tints ?? NO_TINTS,
+    patches: NO_PATCHES,
+    both: iso.both ?? [],
+  };
+  if (iso.patches && iso.patches.size > 0) {
+    const patches = new Map<string, Role>();
+    for (const [pid, p] of iso.patches) {
+      const l = layerOfAny(p.on);
+      if (l !== null && shownIn(view, l, p.on) === "solid") patches.set(pid, p.role);
+    }
+    view.patches = patches;
+  }
+  return view;
 }
 
 /** Where one structure of `layer` is drawn in a view. */
@@ -208,6 +293,7 @@ export function viewOf(
     tier: Tier;
     ghostMode: GhostMode;
     grp: string | null;
+    antagonists?: boolean;
     joint: { a: string; b: string } | null;
     layers: LayerModes;
     hidden: ReadonlySet<string>;
@@ -216,7 +302,9 @@ export function viewOf(
   hasMesh: (id: string) => boolean,
   peel: (stop: MuscleDepth) => ReadonlySet<string> = peeledAt,
 ): SceneView {
-  const iso = withJoint(isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp, softParts, softParent, st.layers), st.joint, hasMesh);
+  const base = isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp, softParts, softParent, st.layers);
+  const tinted = withTints(base, st.sel, st.tier, st.antagonists ?? false, hasMesh, st.layers, softRoles, usePatchBatch.getState().failed);
+  const iso = withJoint(tinted, st.joint, hasMesh);
   return sceneView(iso, st.layers, withPeeled(st.hidden, peel(st.muscleDepth ?? 0)));
 }
 
@@ -281,7 +369,9 @@ export function boneAccent(): Color {
  * nothing to draw is switched off, so it costs no draw call. The focus gets
  * `accent`, a highlighted joint's bones their tint times `JOINT_GAIN`, and the
  * structures in `previous` (the last focus and joint) go back to their base
- * colour. Only visibility and colours change; nothing moves (spec §12).
+ * colour. With `tint`, structures in `view.tints` get their role's colour (M9);
+ * a structure tinted before must be in `previous` to get its colour back.
+ * Only visibility and colours change; nothing moves (spec §12).
  */
 export function applyLayerView(
   layer: Layer,
@@ -291,6 +381,7 @@ export function applyLayerView(
   previous: readonly string[],
   base: BaseTint,
   accent: Color,
+  tint?: Readonly<Record<TintRole, Color>>,
 ): { solid: number; ghost: number } {
   let nSolid = 0;
   let nGhost = 0;
@@ -309,9 +400,19 @@ export function applyLayerView(
   solid.mesh.visible = nSolid > 0;
   if (ghost) ghost.mesh.visible = nGhost > 0;
   for (const id of previous) {
-    if (view.focusIds.includes(id) || view.joint.includes(id)) continue;
+    if (view.focusIds.includes(id) || view.joint.includes(id) || (tint && view.tints.has(id))) continue;
     const i = solid.instanceOf.get(id);
     if (i !== undefined) solid.mesh.setColorAt(i, base(id));
+  }
+  const own = (id: string): Color => {
+    const t = tint && view.tints.get(id);
+    return t ? tint[t] : base(id);
+  };
+  if (tint) {
+    for (const [id, role] of view.tints) {
+      const i = solid.instanceOf.get(id);
+      if (i !== undefined) solid.mesh.setColorAt(i, tint[role]);
+    }
   }
   for (const id of view.focusIds) {
     const i = solid.instanceOf.get(id);
@@ -320,7 +421,7 @@ export function applyLayerView(
   for (const id of view.joint) {
     const i = solid.instanceOf.get(id);
     if (i === undefined) continue;
-    _tint.copy(view.focusIds.includes(id) ? accent : base(id)).multiplyScalar(JOINT_GAIN);
+    _tint.copy(view.focusIds.includes(id) ? accent : own(id)).multiplyScalar(JOINT_GAIN);
     solid.mesh.setColorAt(i, _tint);
   }
   return { solid: nSolid, ghost: nGhost };

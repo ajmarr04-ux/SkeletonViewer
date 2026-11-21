@@ -8,7 +8,7 @@ import { NOT_WRITTEN } from "../content/placeholder";
 import { useSoftContent } from "../content/softContentLoader";
 import { softPanelModel, type SoftPanelModel } from "../content/softPanel";
 import { softLayerOf } from "../content/softRegistry";
-import { expandRegion, goBack, hasMesh, hideSelected, isMuscleKind, selectObject, showRelated, switchSide, tierBlockedReason } from "../state/selection";
+import { expandRegion, goBack, hasMesh, hideSelected, isMuscleKind, selectObject, setAntagonists, showRelated, switchSide, tierBlockedReason } from "../state/selection";
 import { useSoftTiersVersion } from "../content/softRelations";
 import { useViewer, type JointHighlight } from "../state/store";
 import { focusCanvas } from "./canvasFocus";
@@ -516,7 +516,25 @@ function SoftTierButtons({ id }: { id: string }) {
       >
         {expandLabel}
       </button>
+      {muscle && tier === 2 && <AntagonistToggle />}
     </>
+  );
+}
+
+/** "Show antagonists" (spec §5.2, M9 plan decision 7): only at a muscle's tier 2, off by default; `ant=1`. */
+function AntagonistToggle() {
+  const on = useViewer((s) => s.antagonists);
+  return (
+    <button
+      type="button"
+      className="button"
+      data-testid="show-antagonists"
+      aria-pressed={on}
+      title={on ? "Hide the antagonists" : "Show the muscles that oppose it, in their own colour"}
+      onClick={() => setAntagonists(!on)}
+    >
+      Show antagonists
+    </button>
   );
 }
 

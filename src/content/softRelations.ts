@@ -7,19 +7,22 @@
 // with the layer.
 
 import { useSyncExternalStore } from "react";
+import type { MuscleRoles } from "./softRoles";
 import type { SoftTierData, SoftTierEntry } from "./softTiers";
 
 const tiers = new Map<string, SoftTierEntry>();
+const roles = new Map<string, MuscleRoles>();
 const reverse = new Map<string, string[]>();
 const registered = new Set<string>();
 const listeners = new Set<() => void>();
 let version = 0;
 
 /** Called when a layer's content chunk loads. Idempotent per layer. */
-export function registerSoftTiers(layer: string, data: SoftTierData | undefined): void {
+export function registerSoftTiers(layer: string, data: SoftTierData | undefined, muscleRoles?: Record<string, MuscleRoles>): void {
   if (!data || registered.has(layer)) return;
   registered.add(layer);
   for (const [id, e] of Object.entries(data.tiers)) tiers.set(id, e);
+  for (const [id, r] of Object.entries(muscleRoles ?? {})) roles.set(id, r);
   for (const [s, ids] of Object.entries(data.reverse)) reverse.set(s, [...(reverse.get(s) ?? []), ...ids]);
   version++;
   listeners.forEach((l) => l());
@@ -28,6 +31,7 @@ export function registerSoftTiers(layer: string, data: SoftTierData | undefined)
 /** For tests: forget everything registered. */
 export function resetSoftTiers(): void {
   tiers.clear();
+  roles.clear();
   reverse.clear();
   registered.clear();
   version++;
@@ -45,6 +49,9 @@ export function softRelated(id: string, tier: 0 | 1 | 2): string[] {
   if (!e || tier === 0) return [];
   return tier === 1 || e.t2 === null ? e.t1 : [...e.t1, ...e.t2];
 }
+
+/** A muscle's or part's origin, insertion and antagonists for the tints (M9 plan decisions 6 and 7), once loaded. */
+export const softRoles = (id: string): MuscleRoles | undefined => roles.get(id);
 
 /** The soft structures related to a structure (a bone) at tier 1, from every loaded layer. */
 export const reverseRelated = (id: string): readonly string[] => reverse.get(id) ?? [];

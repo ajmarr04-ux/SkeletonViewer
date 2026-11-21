@@ -32,7 +32,7 @@ const synonymsFile = join(root, "content/synonyms.json");
 const SOFT_PREFIX = "virtual:skeleton-soft-content-";
 const softModules = new Map(SOFT_LAYERS.map((l) => ["\0" + SOFT_PREFIX + l, l]));
 /** Files the soft-tissue chunks are built from, besides the content folders. */
-const softDeps = ["content/soft-ids.json", "content/articulations.json", "content/joints.json", "content/movements.json"].map((f) => join(root, f));
+const softDeps = ["content/soft-ids.json", "content/articulations.json", "content/joints.json", "content/movements.json", "assets/mapping/soft-to-id.json"].map((f) => join(root, f));
 
 export function contentPlugin(): Plugin {
   return {

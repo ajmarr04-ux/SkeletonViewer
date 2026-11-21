@@ -8,6 +8,7 @@ import type { TissueLayer } from "../state/url";
 import type { BatchedSkeleton } from "./batchSkeleton";
 import type { Lod } from "./lod";
 import type { Outline } from "./outline";
+import type { TintRole } from "./tints";
 
 /** The most parts any muscle has (checked against content/soft-ids.json in tests/nestedSelection.test.ts). */
 export const MAX_PARTS = 3;
@@ -28,7 +29,18 @@ export type LayerBatches = {
   base: (id: string) => Color;
   /** The instance colour of the selected structure in this layer's material. */
   accent: Color;
+  /** Instance colours of the origin, insertion and antagonist tints in this layer's material (M9). */
+  tint: Record<TintRole, Color>;
 };
+
+/**
+ * The attachment patches (M9 plan decision 6): one solid batch, loaded the
+ * first time a muscle or part reaches tier 1, drawn only while patches are
+ * wanted. Instance colours: `tint` by role. Never picked.
+ */
+export type PatchBatch = { lod: Lod; solid: BatchedSkeleton; tint: Record<"origin" | "insertion", Color> };
+/** `failed`: the patch file could not be loaded, so the tints fall back to whole structures. */
+export const usePatchBatch = create<{ batch: PatchBatch | null; failed: boolean }>(() => ({ batch: null, failed: false }));
 
 /** The batches on screen per layer. Set by `LayerScenes`, read by `Isolation` and the camera rig. */
 export const useLayerBatches = create<Partial<Record<TissueLayer, LayerBatches>>>(() => ({}));

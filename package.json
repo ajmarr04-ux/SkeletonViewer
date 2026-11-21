@@ -22,6 +22,7 @@
     "validate-content": "tsx scripts/validate-content.ts",
     "content:mirror": "tsx scripts/content/mirror.ts",
     "content:migrate-attachments": "tsx scripts/content/migrate-attachments.ts",
+    "content:patch-check": "tsx scripts/content/patch-check.ts",
     "content:hierarchy": "tsx scripts/content/build-hierarchy.ts",
     "prebuild": "npm run validate-content && npm run content",
     "content": "tsx scripts/build-content.ts",

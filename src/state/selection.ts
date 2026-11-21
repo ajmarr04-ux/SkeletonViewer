@@ -78,7 +78,7 @@ export function dispatchIsolation(action: IsolationAction): void {
   }
   st.setIsolation(state);
   const write = (step: HistoryStep, s: Isolation) => {
-    const url = urlWith({ sel: s.sel, tier: s.tier, grp: s.grp });
+    const url = urlWith({ sel: s.sel, tier: s.tier, grp: s.grp, ant: false });
     if (step === "push") window.history.pushState({ ...window.history.state, skvDepth: depthNow() + 1 }, "", url);
     else window.history.replaceState(window.history.state, "", url);
   };
@@ -157,6 +157,18 @@ export function tierBlockedReason(id: string | null, tier: 1 | 2): string | null
 
 /** A muscle or muscle part: its tiers are "Show attachments" and "Show functional group" (M9 plan decision 5). */
 export const isMuscleKind = (id: string): boolean => softLayerOf(id) === "muscles";
+
+/** Can the antagonist toggle be used now? Only at a muscle's or part's tier 2 (M9 plan decision 7). */
+export const antagonistsAvailable = (st: { sel: string | null; tier: number }): boolean => st.tier === 2 && st.sel !== null && isMuscleKind(st.sel);
+
+/** "Show antagonists" on or off: store and URL (`ant=1`), no new history entry. */
+export function setAntagonists(on: boolean): void {
+  const st = useViewer.getState();
+  if (on && !antagonistsAvailable(st)) return;
+  if (st.antagonists === on) return;
+  st.setAntagonists(on);
+  window.history.replaceState(window.history.state, "", urlWith({ ant: on }));
+}
 
 /** Tier 1 (spec §6 "Show related"; for a muscle "Show attachments"). */
 export const showRelated = (): void => {
@@ -300,7 +312,7 @@ export function presetOf(layers: LayerSetting["layers"]): LayerPreset | null {
 export function initSelectionFromUrl(): UrlState {
   const url = parseUrlState(window.location.search, isKnownId, isGroupKey);
   const st = useViewer.getState();
-  st.setIsolation({ sel: url.sel, tier: url.tier, grp: url.grp });
+  st.setIsolation({ sel: url.sel, tier: url.tier, grp: url.grp, ant: url.ant });
   st.setGhostMode(url.ghost);
   const colour: ColourMode = url.color === "region" || storedFlag(COLOUR_MODE_KEY) ? "region" : "bone";
   st.setColourMode(colour);
@@ -328,7 +340,7 @@ export function initSelectionFromUrl(): UrlState {
 /**
  * `sel=` naming a soft-tissue structure (plan decision 12): load the table; if
  * the ID is real, turn its layer on (if Off) and select it once that layer is
- * on screen, at tier 0, framed unless the link carries a camera. An unknown ID
+ * on screen, at the link's tier (M9; with `ant=1` at a muscle's tier 2), framed unless the link carries a camera. An unknown ID
  * is dropped from the URL, as for bones.
  */
 export async function selectSoftFromUrl(id: string, hasCam: boolean): Promise<void> {
@@ -350,8 +362,13 @@ export async function selectSoftFromUrl(id: string, hasCam: boolean): Promise<vo
   });
   const now = useViewer.getState();
   if (now.sel !== null) return; // the user selected something meanwhile
-  now.setIsolation({ sel: id, tier: 0 });
-  window.history.replaceState(window.history.state, "", urlWith({ sel: id, tier: 0, grp: null }));
+  // The link's tier and `ant=1` (M9: soft structures have tiers now; the sets appear when the content chunk loads).
+  const q = new URLSearchParams(window.location.search);
+  const t = Number(q.get("tier"));
+  const tier = t === 1 || t === 2 ? t : 0;
+  const ant = tier === 2 && q.get("ant") === "1" && isMuscleKind(id);
+  now.setIsolation({ sel: id, tier, ant });
+  window.history.replaceState(window.history.state, "", urlWith({ sel: id, tier, grp: null, ant }));
   if (isDrawn(id)) {
     if (hasCam) now.requestCamera({ kind: "repivot", id });
     else frameSoon();
@@ -379,13 +396,14 @@ export function onPopState(): void {
   }
   // Hidden structures belong to the history entry (spec §5.5: Back un-hides).
   st.setHidden(url.hid);
-  const isolationChanged = url.sel !== st.sel || url.tier !== st.tier || url.grp !== st.grp || url.ghost !== st.ghostMode;
+  const isolationChanged =
+    url.sel !== st.sel || url.tier !== st.tier || url.grp !== st.grp || url.ghost !== st.ghostMode || url.ant !== st.antagonists;
   if (!isolationChanged) {
     st.requestCamera({ kind: "goto", cam: url.cam });
     return;
   }
   const newSel = url.sel !== st.sel ? url.sel : null;
-  st.setIsolation({ sel: url.sel, tier: url.tier, grp: url.grp });
+  st.setIsolation({ sel: url.sel, tier: url.tier, grp: url.grp, ant: url.ant });
   st.setGhostMode(url.ghost);
   if (st.camera) window.history.replaceState(window.history.state, "", urlWith({ cam: st.camera }));
   if (newSel !== null && isDrawn(newSel)) st.requestCamera({ kind: "repivot", id: newSel });

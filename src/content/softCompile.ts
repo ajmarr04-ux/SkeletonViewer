@@ -8,6 +8,7 @@
 import { marked } from "marked";
 import { derive, type DeriveMuscle } from "./derive";
 import { splitFrontMatter } from "./frontmatter";
+import { buildMuscleRoles, type MuscleRoles, type Patch } from "./softRoles";
 import { buildSoftTiers, type SoftTierData } from "./softTiers";
 import { LAYER_FOLDERS, schemaForKind, type SoftFm, type SoftLayer } from "./softSchema";
 
@@ -31,6 +32,8 @@ export type SoftLayerContent = {
   derived: SoftDerived | null;
   /** Tier sets (M9 plan decision 4), from every layer's content; added by `withSoftTiers`. */
   tiers?: SoftTierData;
+  /** Muscles layer only: origin/insertion patches and fallback structures, antagonists (M9 plan decisions 6 and 7); added by `withSoftTiers`. */
+  roles?: Record<string, MuscleRoles>;
 };
 
 export type SoftCompileDeps = {
@@ -95,13 +98,15 @@ function deriveAll(entries: Record<string, SoftCompiledEntry>, deps: SoftCompile
  */
 export function withSoftTiers(
   layers: Record<SoftLayer, SoftLayerContent>,
-  deps: Pick<SoftCompileDeps, "pairJoints" | "functionalJoints">,
+  deps: Pick<SoftCompileDeps, "pairJoints" | "functionalJoints"> & { patches?: Record<string, Patch> },
 ): Record<SoftLayer, SoftLayerContent> {
   const fm: Record<string, SoftFm> = {};
   for (const c of Object.values(layers)) for (const [id, e] of Object.entries(c.entries)) fm[id] = e.fm;
   const tiers = buildSoftTiers({ fm, synergists: layers.muscles.derived?.synergists ?? {}, pairJoints: deps.pairJoints, functionalJoints: deps.functionalJoints });
+  const d = layers.muscles.derived;
+  const roles = buildMuscleRoles({ fm, patches: deps.patches ?? {}, synergists: d?.synergists ?? {}, antagonists: d?.antagonists ?? {} });
   return {
-    muscles: { ...layers.muscles, tiers: tiers.muscles },
+    muscles: { ...layers.muscles, tiers: tiers.muscles, roles },
     ligaments: { ...layers.ligaments, tiers: tiers.ligaments },
     cartilage: { ...layers.cartilage, tiers: tiers.cartilage },
   };

@@ -24,7 +24,7 @@ export function loadSoftContent(layer: TissueLayer): Promise<SoftLayerContent> {
   if (done) return Promise.resolve(done);
   pending[layer] ??= importers[layer]().then((m) => {
     loaded[layer] = m.default;
-    registerSoftTiers(layer, m.default.tiers);
+    registerSoftTiers(layer, m.default.tiers, m.default.roles);
     version++;
     listeners.forEach((l) => l());
     return m.default;

@@ -323,6 +323,8 @@ dialog.manual-share form { margin-top: 12px; text-align: right; }
 .legend-item:hover { background: rgb(255 255 255 / 0.1); }
 .legend-item[aria-current="true"] { background: rgb(61 139 253 / 0.22); }
 .legend-swatch { flex: none; width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgb(0 0 0 / 0.5); }
+/* Layer colours and the origin / insertion / antagonist chips (M9): a key, not buttons. */
+.legend-chip { display: flex; align-items: center; gap: 8px; min-height: 24px; padding: 0 8px; color: #e8eaed; }
 /* With the side panel or the sidebar on a narrow window, the legend would sit under the toolbar: lift it. */
 @media (max-width: 1099px) {
   .legend { bottom: 100px; }
@@ -332,7 +334,7 @@ dialog.manual-share form { margin-top: 12px; text-align: right; }
   .legend { padding: 4px; }
   .legend-title { display: none; }
   .legend ul { display: grid; grid-template-columns: auto auto; gap: 0 2px; }
-  .legend-item { min-height: 24px; padding: 0 6px; gap: 5px; font-size: 12px; }
+  .legend-item, .legend-chip { min-height: 24px; padding: 0 6px; gap: 5px; font-size: 12px; }
 }
 @media (max-width: 599px) {
   .legend {
@@ -342,7 +344,7 @@ dialog.manual-share form { margin-top: 12px; text-align: right; }
   .legend-title { display: none; }
   .legend ul { display: flex; flex-wrap: wrap; gap: 0 2px; }
   .legend li { flex: 0 0 auto; }
-  .legend-item { min-height: 24px; padding: 0 6px; gap: 5px; font-size: 12px; }
+  .legend-item, .legend-chip { min-height: 24px; padding: 0 6px; gap: 5px; font-size: 12px; }
   .sheet[data-snap="full"] ~ .legend, .sheet[data-snap="half"] ~ .legend { display: none; }
 }
 
@@ -363,6 +365,9 @@ dialog.manual-share form { margin-top: 12px; text-align: right; }
 .layers-panel { padding: 4px 8px; font-size: 14px; min-width: 260px; max-width: min(360px, 90vw); }
 .layer-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 .layer-presets .button[aria-pressed="true"] { outline: 2px solid #3d8bfd; outline-offset: 1px; }
+/* "Show antagonists" while on (M9): the same pressed look as the layer presets, plus a tick. */
+.panel-actions .button[aria-pressed="true"] { outline: 2px solid #3d8bfd; outline-offset: 1px; }
+.panel-actions .button[aria-pressed="true"]::before { content: "✓ "; }
 .layer-row { border: 0; border-top: 1px solid #3c4043; margin: 0; padding: 6px 0; }
 .layer-row > legend { font-weight: 600; padding: 0; float: left; width: 100%; margin-bottom: 2px; }
 .layer-modes { clear: both; display: flex; flex-wrap: wrap; gap: 4px 14px; }
