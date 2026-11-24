@@ -1,19 +1,21 @@
-# Handoff — written 2026-11-24 at the end of M11 session AS
+# Handoff — written 2026-11-24 at the end of M11 session AT
 
 ## Next session
-AT (design): descriptor types, `src/systems/registry.ts` and the four layer descriptors (bones, cartilage, ligaments, muscles); the layer-identity tables in step 2's list moved onto them.
-Done when: step 2's tables are deleted, the goldens are unchanged, and `npm run check` is green.
+AU (routine): the kind tables in the runtime moved onto `KindDescriptor`s (plan step 3's list: `SoftKind`, `PartType`, `isTendinous`, `isMuscleKind`, the bone kind union, `layerOfKind`, `groupLayer`, `focusLayerOf` and label priorities, `NOUNS`/`ORDER`, `MAX_PARTS`/part level, cursor stops, `muscleDepth*.ts`).
+Done when: step 3's list is deleted, the goldens are unchanged, `announce.test.ts` wording unchanged, and `npm run check` is green.
 
 ## State
-- Last commit: AS (goldens `58d1e72`, then the baseline notes, `bench-container` and this handoff)
-- `npm run check`: pass (38 files, 567 tests including `tests/golden.test.ts`; check-models, validate-content, migrate-attachments OK)
-- Open fan-out work: none (M11 plans no subagents)
+- Last commit: AT (`683c4c4` code and plan notes, then this handoff)
+- `npm run check`: pass (39 files, 574 tests incl. goldens and the new `tests/registry.test.ts`)
+- e2e run in AT: layers, layers-debug, smoke, polish, tints, nested, announce, labels-layers, interaction (61 pass)
+- Open fan-out work: none
 
 ## Waiting on the user
-None needed before AT. Decisions 1–8 in `docs/PLAN-milestone-11.md` still stand unless the user changes them.
+None.
 
 ## Things the next session must know
-- Goldens: `npm run golden` compares; never `--write --force` without the user's approval of the difference. If AT moves a function the harness imports (`tests/golden/harness.ts`), change the import, not the snapshot.
-- The URL golden runs the real `initSelectionFromUrl` in Vitest with a stubbed `window` (no extraction was needed). It records some M10 quirks on purpose (step 1 notes): don't "fix" them in M11.
-- Baseline (step 1 table): main chunk 470.1 kB (budget ≤ 500.1); bench bones 1 draw call / 499,981 tris, all layers 4 / 1,499,634. AY re-runs `npm run bench-container` and `perf-load` in the same container for parity.
-- `LayerId` must stay a TS union derived from the registry (decision 3); URL codes `b c l m` and `formatLayers` output must match `urls.json`'s `serialised` byte for byte.
+- Registry API: `src/systems/registry.ts` (`LAYER_IDS`, `LAZY_LAYERS`, `EAGER_LAYER`, `DEPTH_LAYER`, `layerOfKind`, `hasNestedParts`, `layerLabel`, `layerColour`, …). Types `LayerId` / `LazyLayerId` are derived from the descriptors; `TissueLayer` is gone.
+- Kinds today carry only `id` (+ `parentOf` on `muscle`). AU adds `noun` and `labelPriority` to `KindDescriptor` and the four `layer.ts` files, and deletes the tables in the same commit.
+- Left on purpose for AW: the presets in `selection.ts` / `LayersPanel.tsx` and `presetOfModes` + "Skeleton: bones only." in `announce.ts`. For AV: `SOFT_LAYERS`/budgets in `model-checks.ts`, soft-content `importers`, `registry.content.ts`.
+- Main chunk 471.2 kB (+1.0 on the baseline); the registry sits in a shared chunk Rolldown names `model-checks-*.js`.
+- Goldens: `npm run golden` compares; never `--write --force` without the user's approval.
