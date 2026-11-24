@@ -3,7 +3,7 @@
 A browser-based 3D atlas of the adult human skeleton: 206 bones and 32 teeth,
 each a separate object in its true anatomical position. Static site, no
 backend. The build spec is [`SPEC (2).md`](<SPEC (2).md>); milestones 6 to 10 add
-muscles, ligaments and cartilage, per [`SPEC-musculoskeletal.md`](SPEC-musculoskeletal.md).
+muscles, ligaments and cartilage, per [`SPEC-musculoskeletal.md`](SPEC-musculoskeletal.md); milestones 11 to 15 turn it into a platform for more body systems, per [`SPEC-platform.md`](SPEC-platform.md).
 
 ## Milestones
 
@@ -19,6 +19,7 @@ muscles, ligaments and cartilage, per [`SPEC-musculoskeletal.md`](SPEC-musculosk
 | 8: Content (muscle, ligament and cartilage files; movements and joints; attachment migration) | https://ajmarr04-ux.github.io/SkeletonViewer/m8/ | Live (frozen at `0833b48`; [plan](docs/PLAN-milestone-8.md)) |
 | 9: Interaction (muscle → part selection, tiers per kind, origins and insertions, panel sections, sidebar and search for the new kinds) | https://ajmarr04-ux.github.io/SkeletonViewer/m9/ | Live (frozen at `ef6ee75`; [plan](docs/PLAN-milestone-9.md)) |
 | 10: Polish and measurement (labels, colours, announcements and keyboard for the new kinds; performance budgets; `STATUS.md`) | https://ajmarr04-ux.github.io/SkeletonViewer/m10/ | Live (frozen at `317b445`; [plan](docs/PLAN-milestone-10.md)) |
+| 11: Registry (layer and kind descriptors, one registry, grouped Layers panel; platform phase, [`SPEC-platform.md`](SPEC-platform.md)) | https://ajmarr04-ux.github.io/SkeletonViewer/m11/ | In progress ([plan](docs/PLAN-milestone-11.md)) |
 
 Known issues and requested changes for later milestones: [`docs/BACKLOG.md`](docs/BACKLOG.md).
 
