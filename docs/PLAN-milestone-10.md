@@ -26,9 +26,9 @@ Out of scope: content review and the open content questions (spec §13 of `SPEC 
 | AL | Colour-vision pass over every colour the layers add, legend chips and label contrast (step 2) | none | decision 3 | one colour test covering every pair that can be on screen together; legend and label contrast tested; any colour change recorded | **Done.** See step 2 |
 | AM | Screen-reader announcements for the new kinds, layers, depth, Hide and the part level (step 3) | none | decision 4 | every row of decision 4's table tested as a pure function and in e2e through the live region | **Done.** See step 3 |
 | AN | Keyboard pass for the new kinds: the spec's journey by keys only, Tab cursor across layers and parts, axe on every new state (step 4) | none | decision 5 | `keyboard.spec.ts` journey passes; gaps fixed | **Done.** See step 4 |
-| AO | Performance measurement in the container and the tools for the user's run; **ends with the user gate** (step 5) | none | decisions 6–7 | budget table filled for everything the container can measure; bench links ready; deploy of `main` for the user's run | Not started |
-| AP | The user's PC and iPhone results recorded; each miss fixed or its fallback taken (step 6) | none | the user's numbers | §9 table complete; misses documented | Not started (waits on the user) |
-| AQ | `STATUS.md` brought up to date for M6–M10 (step 7) | none | decision 8 | every section true of the build; §6 and §7 tables extended | Not started |
+| AO | Performance measurement in the container and the tools for the user's run; **ends with the user gate** (step 5) | none | decisions 6–7 | budget table filled for everything the container can measure; bench links ready; deploy of `main` for the user's run | **Skipped** for now (user, 2026-11-24) |
+| AP | The user's PC and iPhone results recorded; each miss fixed or its fallback taken (step 6) | none | the user's numbers | §9 table complete; misses documented | **Skipped** with AO |
+| AQ | `STATUS.md` brought up to date for M6–M10 (step 7) | none | decision 8 | every section true of the build; §6 and §7 tables extended | **Done.** See "Session AQ notes" |
 | AR | Wrap-up: full e2e, no-regression, main chunk vs M9 and M5, perf-load, hosted copy, programme close (step 8) | `verifier` × 1 for the full Playwright run | all of the above | exit criteria ticked; `/m10/` live; decision 9 done | Not started |
 
 Triggers: "begin session AK" to "begin session AR". Every session follows `docs/WORKFLOW.md`: read `docs/HANDOFF.md` and this file, do the one serial task, end with `npx tsc --noEmit`, `npx vitest run`, `npm run check` and the e2e specs it touched (the full suite in AR, through `verifier`), then commit, push to the session branch, write `docs/HANDOFF.md` and stop.
@@ -45,7 +45,7 @@ No fan-out is planned: every session changes shared code or one shared document,
 - [ ] Labels, legend chips and colours pass the existing colour-vision check.
 - [x] Keyboard and screen-reader announcements cover the new kinds, layers and the part level. (Announcements: AM; keyboard: AN.)
 - [ ] Performance budgets met (or misses documented with the fallback taken).
-- [ ] `STATUS.md` updated (new sections for layers; §6 and §7 tables extended).
+- [x] `STATUS.md` updated (new sections for layers; §6 and §7 tables extended).
 - [ ] No regression: with every new layer off, the main chunk grows by at most 5 kB gzipped over M9 (decision 6), no soft-tissue chunk is requested, and the full e2e suite passes.
 - [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
 
@@ -209,6 +209,11 @@ No fan-out is planned: every session changes shared code or one shared document,
 
 ## Step 7: `STATUS.md` (session AQ)
 - Decision 8.
+
+### Session AQ notes (2026-11-24)
+- **AO and AP skipped** at the user's request: the session went straight from AN to AQ. Every real-device figure M7 didn't already take (layer load, soft click → highlight, the muscle tier 2 bench) is marked *unmeasured* in `STATUS.md` §6 and §7, and the prefetch fallback (decision 7) was not built. The budget table below stays empty. If the user wants the gate later, AO and AP can still run before AR.
+- `STATUS.md` keeps its eight sections and gains, per decision 8: §1 the new folders and files; §2 the soft-tissue source, audit, mapping and build; §3 a file table for all ten models, layer loading, batches, the layer view, depth, Hide, tints, colours and draw calls; §4 soft-ids, the three soft schemas with real examples, `joints.json`, `movements.json`, the muscle hierarchy, the depth file, synonyms' `groups`, the migration record and the final counts; §5 nested selection, tiers per kind, attached muscles, soft groups, panels, sidebar and search, and M10's labels, the full announcement table and the new keys; §6 every measurement from M6 to M10 (bench, perf-load, label layout, chunk sizes; the gate's rows unmeasured); §7 split into the bone spec and the musculoskeletal spec, with AL's four colour changes and the region pause; §8 loose ends brought up to date (`"current": 10` and AR's close, QUESTIONS 139, the patch disagreements, behaviour notes from AM and AN).
+- Sources: the M6–M10 plans, `STATUS-M10.md` (the read-only review written before this session, whose numbers were re-checked against the repo where they are used: one correction, `movements.json` has 24 movements, not 21), the build reports and the code. Nothing was re-measured. `STATUS-M10.md` stays as the forward look for the next phase; its intro now points here.
 
 ## Step 8: Wrap-up (session AR)
 - Full e2e through `verifier`; main chunk vs M9 (decision 6) and vs M5 (spec §9); `perf-load` vs M9; `git diff public/models/` empty; PR to `main`, merge, deploy, confirm `/m10/`, README row; decision 9.

@@ -1,6 +1,6 @@
 # Skeleton Viewer: status after the musculoskeletal phase (M6–M10)
 
-Written 2026-11-24 for whoever plans the next phase: organs, nervous system, vessels and lymphatics on top of the finished musculoskeletal build. `STATUS.md` covers the bone build (M1–M5); this file covers what M6–M10 added and what the next phase starts from. Every number was read from the repository or measured on the date above. **Unmeasured** means exactly that.
+Written 2026-11-24 for whoever plans the next phase: organs, nervous system, vessels and lymphatics on top of the finished musculoskeletal build. `STATUS.md` describes the whole build, layers included (updated in M10 session AQ); this file looks forward: what M6–M10 added and what the next phase starts from. Every number was read from the repository or measured on the date above. **Unmeasured** means exactly that.
 
 **Where M10 stands.** Sessions AK (labels), AL (colour vision), AM (announcements) and AN (keyboard) are done on branch `claude/keen-clarke-32a10a`. Session AO, the real-device performance gate, was skipped at the user's request, so AP (the user's results) has nothing to record yet. AQ (`STATUS.md`) and AR (wrap-up, `/m10/`, programme close) are not done, and M10 is not merged to `main`. This session changed no code, content or assets. It only wrote this file and the audit outputs in §9.
 
@@ -165,7 +165,7 @@ Each relationship has its **own data shape and its own implementation**. There i
 | Bone region (bone tier 2) | `content/regions.json`: `{"frontal_bone": ["occipital_bone", …]}` | `relations.ts` |
 | Functional joint | `content/joints.json`, 47: `{"id":"shoulder_girdle_left","name":"Joints of the shoulder girdle","side":"left","articulations":["sternoclavicular_joint_left","acromioclavicular_joint_left"]}` | `derive.ts` `pairsOf`/`sameJoint`, `softTiers.ts` `jointScope` |
 | Origin / insertion | Front matter: `origin: []`, `insertion: [{ structure: ulna_left, landmark: olecranon }]`; or `{ soft: "…" }` for a non-object; a part may say `inherit` | `softTiers.ts` (tier 1), `softRoles.ts` (`MuscleRoles = { o: {p,f}, i: {p,f}, ant }`: patches `p` and whole-tint fallbacks `f`) |
-| Action | `actions: [{ joint: elbow_joint_left, movement: extension, role: prime }]`; `movements.json` lists the 21 allowed movements and `antagonistPairs` | `derive.ts` `actionsOf` (a part inherits its parent's) |
+| Action | `actions: [{ joint: elbow_joint_left, movement: extension, role: prime }]`; `movements.json` lists the 24 allowed movements and `antagonistPairs` | `derive.ts` `actionsOf` (a part inherits its parent's) |
 | Synergists / antagonists | **Derived, never written**: same joint and movement with role prime/assist = synergist; opposite movement (from `antagonistPairs`) = antagonist; `synergistOverrides: { add, remove }` per muscle | `src/content/derive.ts` (`synergistsOf`, `antagonistsOf`), compiled into the muscles chunk |
 | Ligament → bones, joint | `connects: [femur_left, tibia_left]`, `joint: knee_joint_left \| null` | `softTiers.ts`: t1 = `connects`, t2 = everything at the same joint |
 | Cartilage → structures, joint | `attachedTo: [tibia_left, tibial_collateral_ligament_deep_part_left]`, `joint` | Same as ligaments |
@@ -400,7 +400,7 @@ Full results: `assets/audit/REPORT-body-systems.md`. Raw per-object rows and the
 - Vite still warns about extensionless imports (from M5).
 
 **Process**
-- `STATUS.md` still describes M5 (session AQ). M10 is unmerged, and `/m10/` is undeployed and unfrozen (session AR).
+- `STATUS.md` was brought up to date in session AQ. M10 is unmerged, and `/m10/` is undeployed and unfrozen (session AR).
 - The per-browser `?bench` table (M5 step 12) is still empty.
 - Playwright is not in CI. Only Chromium is automated. No VoiceOver pass has been done.
 

@@ -1,21 +1,21 @@
-# Handoff — written 2026-11-24 at the end of M10 session AN
+# Handoff — written 2026-11-24 at the end of M10 session AQ
 
 ## Next session
-**AO**: performance measurement in the container and the tools for the user's run (plan step 5, decision 7). **It ends with the user gate**: AO's branch goes to `main` through a PR so `/m10/` has the build; the user runs the three bench links and `?debug&layers=b:on,c:on,l:on,m:on` on PC and iPhone and pastes the overlays.
-Done when: the budget table is filled for everything the container can measure (triangle budget Vitest test on the manifests, draw calls < 20 with every layer on + muscle tier 2 + antagonists + patches + outlines, click → highlight for a muscle, a part and a ligament, the network floor for layer load), the bench links are ready, and `main` is deployed for the user's run. Trigger: "begin session AO".
+**AR**: M10 wrap-up and programme close (plan step 8, decision 9). Full e2e through `verifier` (or in the background); main chunk against M9 (decision 6) and against M5 `71f04d0` with the agreed method (spec §9, ≤ +150 kB); `perf-load` against M9; `git diff public/models/` empty; PR to `main`, merge, deploy, confirm `/m10/`, README row; then freeze `m10` at the merge commit in `deploy/pages.json` and set `"current": null`. Update `STATUS.md` §6 (bundle growth over M5) and §8 (the freeze) with what AR measures and does.
+Trigger: "begin session AR". If the user wants the real-device gate after all, AO and AP run first ("begin session AO").
 
 ## State
-- AM done (its 81-test e2e run passed after it closed). AN done: `R`/`E` tier keys and `Shift+X` (Show all) in `keyAction`; `X` hides the Tab cursor's structure (`hideStructure`, `src/state/selection.ts`; the selection stays unless it is the one hidden; the next Tab continues after it); `cursorStops` (`src/camera/input.ts`) makes a muscle one stop until it or a part is selected, then its parts; soft stops in the panel's layer order. `aria-keyshortcuts` on the tier buttons and the chip. Notes under step 4 of `docs/PLAN-milestone-10.md`.
-- `npm run check`: pass. Vitest 561 pass. E2E: `keyboard`, `a11y` pass; `joints`, `layers`, `select`, `sidebar`, `soft-sidebar`, `viewer`, `announce` re-run: 75 pass.
-- Main chunk 470.4 kB (+2.3 over M9; budget +5).
+- The user skipped AO and AP (measurement and the PC/iPhone gate) and went straight to AQ.
+- AQ done: `STATUS.md` rewritten for the whole build (eight sections, as decision 8 asks). Unmeasured real-device figures are marked as such; the prefetch fallback was never built. `STATUS-M10.md` stays as the forward look; its intro now points to `STATUS.md`, and its "21 movements" was corrected to 24. Notes under step 7 of `docs/PLAN-milestone-10.md`; the sessions table marks AO/AP skipped and AQ done.
+- No code, content or assets changed. `npm run check`: see the session's final message.
 - Open fan-out work: none.
 
 ## Waiting on the user
-- QUESTIONS 139 (AL's colours and the region pause). Nothing blocks AO until its own gate.
-- Optional: a VoiceOver pass on the iPhone (decision 5 offers it as a hand check, not a gate).
-- Still open, any time: a glance at `/m9/`; QUESTIONS 132–138 and `assets/build/REPORT-patches.md`; the per-browser `?bench` table (M5 step 12).
+- Whether to run AO/AP before AR, or close M10 with the gate unmeasured.
+- QUESTIONS 139 (AL's colours and the region pause).
+- Optional: a VoiceOver pass on the iPhone.
+- Still open, any time: QUESTIONS 132–138 and `assets/build/REPORT-patches.md`; the per-browser `?bench` table (M5 step 12).
 
 ## Things the next session must know
-- The keyboard journey takes about 4 minutes in the container (muscles load under SwiftShader); its limit is 7. Tests that load the muscles need generous timeouts.
-- `STATUS.md` (AQ) must list AL's colour changes and region pause, AM's announcement table, and AN's new keys (`R`, `E`, `Shift+X`, `X` on the cursor).
+- The full e2e run is about 23 specs and 160 tests; the keyboard journey alone takes about 4 minutes (limit 7). Run Playwright one at a time (port 4173).
 - M10's next question is **140**.
