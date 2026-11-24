@@ -6,7 +6,7 @@ import { registerSoftIds, resetSoftIds } from "../src/content/softRegistry";
 import { MUSCLE_REGION_LABELS, partLabel, softAnnouncement, softPanelModel } from "../src/content/softPanel";
 import type { SoftLayerContent } from "../src/content/softCompile";
 import { trimSoftIds, type RawSoftId } from "../src/layers/softIds";
-import { MAX_PARTS } from "../src/scene/layerRegistry";
+import { maxPartsOf, NESTED_LAYER } from "../src/systems/registry";
 import { isolationView, sceneView, shownIn } from "../src/scene/isolation";
 import { FULL_SKELETON, isolationStep, levelOf, resolveClick, type Isolation, type IsolationAction, type ParentOf } from "../src/state/isolation";
 import { DEFAULT_MODES } from "../src/systems/registry";
@@ -96,7 +96,7 @@ describe("views, panel and announcements with the real table", () => {
   const heads = ["triceps_brachii_lateral_head_left", "triceps_brachii_long_head_left", "triceps_brachii_medial_head_left"];
 
   it("no muscle has more parts than the outlines cover", () => {
-    expect(Math.max(...RAW.map((e) => e.parts?.length ?? 0))).toBeLessThanOrEqual(MAX_PARTS);
+    expect(Math.max(...RAW.map((e) => e.parts?.length ?? 0))).toBeLessThanOrEqual(maxPartsOf(NESTED_LAYER));
   });
 
   it("a muscle with parts is drawn as its parts, all focused (rule 1)", () => {

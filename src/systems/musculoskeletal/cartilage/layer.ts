@@ -17,5 +17,9 @@ export const cartilage = defineLayer({
   },
   contentChunk: "virtual:skeleton-soft-content-cartilage",
   defaultSetting: "off",
-  kinds: [{ id: "cartilage" }, { id: "disc" }, { id: "meniscus" }],
+  kinds: [
+    { id: "cartilage", noun: { one: "cartilage", many: "cartilages" }, labelPriority: 3 },
+    { id: "disc", noun: { one: "disc", many: "discs" }, labelPriority: 4 },
+    { id: "meniscus", noun: { one: "meniscus", many: "menisci" }, labelPriority: 5 },
+  ],
 });

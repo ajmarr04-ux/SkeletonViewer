@@ -23,7 +23,7 @@ import { isolationView, isPickableIn, viewOf } from "../scene/isolation";
 import { useLayerBatches } from "../scene/layerRegistry";
 import { softEntries } from "../content/softRegistry";
 import { type Layer } from "../state/url";
-import { EAGER_LAYER, LAYER_IDS, LAZY_LAYERS } from "../systems/registry";
+import { EAGER_LAYER, LAYER_IDS, LAZY_LAYERS, NESTED_LAYER } from "../systems/registry";
 
 /** Everything that covers the canvas for framing: the info panel, the breadcrumb and the sidebar. */
 function framingInset() {
@@ -597,7 +597,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       st.setKeyCursor({ id, x: at?.x ?? 0, y: at?.y ?? 0 });
       // A muscle has no mesh of its own: its first solid part is outlined, as a pointer over it would.
       const view = viewOf(st, hasMesh);
-      cursorHover = hasMesh(id) ? id : (drawnIds(id).find((p) => isPickableIn(view, layerOfId(p) ?? "muscles", p)) ?? null);
+      cursorHover = hasMesh(id) ? id : (drawnIds(id).find((p) => isPickableIn(view, layerOfId(p) ?? NESTED_LAYER, p)) ?? null);
       st.setHovered(cursorHover);
       const off = at && !at.inView ? " Off screen: press F to frame it." : "";
       st.say(`${spokenName(id)}. ${list.indexOf(id) + 1} of ${list.length}.${off}`);

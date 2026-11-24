@@ -1,11 +1,10 @@
 // The soft-tissue ID table as the viewer uses it (M7 plan decisions 12, 15).
 // Pure: no three.js or React, so Vitest covers it directly.
 
-import type { LazyLayerId } from "../systems/registry";
+import { isTendinousType, type LazyLayerId, type PartType, type SoftKind } from "../systems/registry";
 import { depthOf, type Depth } from "../content/muscleDepth";
 
-export type SoftKind = "muscle" | "muscle_part" | "ligament" | "cartilage" | "disc" | "meniscus";
-export type PartType = "head" | "belly" | "portion" | "tendon" | "aponeurosis";
+export type { PartType, SoftKind };
 
 /** One entry of content/soft-ids.json (M6), as generated. */
 export type RawSoftId = {
@@ -49,9 +48,9 @@ export function trimSoftIds(raw: readonly RawSoftId[], depths: Readonly<Record<s
   });
 }
 
-/** Tendons and aponeuroses get the lighter muscle colour (spec §6.3). */
+/** Tendons and aponeuroses get the lighter muscle colour (spec §6.3; the part types' `tendinous`). */
 export function isTendinous(e: SoftId | undefined): boolean {
-  return e?.partType === "tendon" || e?.partType === "aponeurosis";
+  return isTendinousType(e?.partType);
 }
 
 /** The IDs with a mesh in one layer's files, in table order. */

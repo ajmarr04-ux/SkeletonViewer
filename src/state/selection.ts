@@ -23,7 +23,7 @@ import { FULL_SKELETON, isolationStep, resolveClick, type HistoryStep, type Isol
 import { COLOUR_MODE_KEY, type ColourMode } from "../scene/regionColours";
 import { LAYERS_KEY, storedFlag, useViewer } from "./store";
 import { DEFAULT_LAYER_SETTING, formatLayers, isDefaultLayers, isUserLayersValue, HIDDEN_URL_CAP, parseHidden, parseLayers, parseUrlState, serialiseUrlState, type GhostMode, type Layer, type LayerMode, type LayerSetting, type MuscleDepth, type UrlState } from "./url";
-import { EAGER_LAYER, isLazyLayer, LAYER_IDS, LAZY_LAYERS, type LazyLayerId } from "../systems/registry";
+import { EAGER_LAYER, isLazyLayer, LAYER_IDS, LAZY_LAYERS, NESTED_LAYER, type LazyLayerId } from "../systems/registry";
 
 type IdEntry = { id: string; meshAvailable: boolean };
 const ENTRIES = ids as IdEntry[];
@@ -176,11 +176,11 @@ async function frameWhenLayerShown(layer: LazyLayerId, key: string): Promise<voi
 
 async function frameWhenMusclesReady(key: string): Promise<void> {
   try {
-    await loadSoftContent("muscles");
+    await loadSoftContent(NESTED_LAYER);
   } catch {
     return;
   }
-  await frameWhenLayerShown("muscles", key);
+  await frameWhenLayerShown(NESTED_LAYER, key);
 }
 
 /**
@@ -222,8 +222,8 @@ export function tierBlockedReason(id: string | null, tier: 1 | 2): string | null
   return null;
 }
 
-/** A muscle or muscle part: its tiers are "Show attachments" and "Show functional group" (M9 plan decision 5). */
-export const isMuscleKind = (id: string): boolean => softLayerOf(id) === "muscles";
+/** A muscle or muscle part (the layer with parts): its tiers are "Show attachments" and "Show functional group" (M9 plan decision 5). */
+export const isMuscleKind = (id: string): boolean => softLayerOf(id) === NESTED_LAYER;
 
 /** Can the antagonist toggle be used now? Only at a muscle's or part's tier 2 (M9 plan decision 7). */
 export const antagonistsAvailable = (st: { sel: string | null; tier: number }): boolean => st.tier === 2 && st.sel !== null && isMuscleKind(st.sel);

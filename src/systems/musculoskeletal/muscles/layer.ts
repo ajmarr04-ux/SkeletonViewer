@@ -31,5 +31,20 @@ export const muscles = defineLayer({
       debugManifest: () => import("../../../../assets/build/manifest-attachments.json"),
     },
   ],
-  kinds: [{ id: "muscle", parentOf: { childKind: "muscle_part", selection: "nested" } }, { id: "muscle_part" }],
+  kinds: [
+    {
+      id: "muscle",
+      noun: { one: "muscle", many: "muscles" },
+      labelPriority: 0,
+      // The most parts any muscle has (checked against content/soft-ids.json in tests/nestedSelection.test.ts).
+      parentOf: { childKind: "muscle_part", selection: "nested", maxParts: 3 },
+    },
+    {
+      id: "muscle_part",
+      noun: { one: "part", many: "parts" },
+      labelPriority: 1,
+      // Tendons and aponeuroses get the lighter muscle colour (spec §6.3).
+      partTypes: [{ id: "head" }, { id: "belly" }, { id: "portion" }, { id: "tendon", tendinous: true }, { id: "aponeurosis", tendinous: true }],
+    },
+  ],
 });

@@ -13,12 +13,12 @@ import { layerReport, loadLayerManifest, type LayerReport } from "../scene/debug
 import { disposeParts } from "../scene/loadSkeleton";
 import { lodsToLoad, type Lod } from "../scene/lod";
 import { accentTint, createBoneMaterial, createGhostMaterial, tintFor } from "../scene/material";
-import { MAX_PARTS, useLayerBatches, usePatchBatch, type LayerBatches, type PatchBatch } from "../scene/layerRegistry";
+import { useLayerBatches, usePatchBatch, type LayerBatches, type PatchBatch } from "../scene/layerRegistry";
 import { TINT_COLOURS, TINT_ROLES, type TintRole } from "../scene/tints";
 import { layerOfId } from "../state/selection";
 import { createOutline, disposeOutline, OUTLINE } from "../scene/outline";
 import { useViewer } from "../state/store";
-import { hasNestedParts, LAZY_LAYERS, layerColour, layerDescriptor, OVERLAYS, type LazyLayerId } from "../systems/registry";
+import { LAZY_LAYERS, layerColour, layerDescriptor, maxPartsOf, OVERLAYS, type LazyLayerId } from "../systems/registry";
 import { TENDON_COLOUR } from "./colours";
 import { loadSoftContent } from "../content/softContentLoader";
 import { loadLayerParts } from "./loadLayer";
@@ -206,7 +206,7 @@ function TissueLayerScene({
           selected: createOutline(solid, OUTLINE.selected.colour, OUTLINE.selected.widthPx, `outline-selected-${layer}`),
           hover: createOutline(solid, OUTLINE.hover.colour, OUTLINE.hover.widthPx, `outline-hover-${layer}`),
         };
-        const moreSelected = Array.from({ length: hasNestedParts(layer) ? MAX_PARTS - 1 : 0 }, (_, i) =>
+        const moreSelected = Array.from({ length: Math.max(0, maxPartsOf(layer) - 1) }, (_, i) =>
           createOutline(solid, OUTLINE.selected.colour, OUTLINE.selected.widthPx, `outline-selected-${layer}-${i + 2}`),
         );
         const batches: LayerBatches = { lod, solid, ghost, outlines, moreSelected, base: layerBaseTint, accent: ACCENTS[layer]!, tint: TINTS[layer]! };

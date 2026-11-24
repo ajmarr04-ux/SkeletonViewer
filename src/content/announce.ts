@@ -6,11 +6,10 @@
 // one message (risk 3: the selection wins, the layer change is folded in).
 
 import ids from "../../content/ids.json";
-import type { SoftKind } from "../layers/softIds";
 import { isolationView, withTints } from "../scene/isolation";
 import type { Tier } from "../state/isolation";
 import { type Layer, type LayerMode, type LayerModes, type MuscleDepth } from "../state/url";
-import { isLazyLayer, LAYER_IDS, LAZY_LAYERS, layerLabel, type LazyLayerId } from "../systems/registry";
+import { COUNT_ORDER, countKind, isLazyLayer, kindNoun, LAYER_IDS, LAZY_LAYERS, layerLabel, type KindId, type LazyLayerId } from "../systems/registry";
 import { groupAnnouncement, groupOf } from "./groups";
 import { displayName } from "./names";
 import { announcement as boneAnnouncement } from "./placeholder";
@@ -20,41 +19,31 @@ import { softEntry } from "./softRegistry";
 // ---------------------------------------------------------------------------
 // Names and counts
 
-const BONE_IDS = new Set((ids as { id: string }[]).map((e) => e.id));
+const BONE_KINDS = new Map((ids as { id: string; kind: KindId }[]).map((e) => [e.id, e.kind]));
 
 /** "Femur, left", "Biceps brachii, left", "Sternum", "Upper right canine". */
 export function spokenName(id: string): string {
   return displayName(id).replace(/ \((left|right)\)$/, ", $1");
 }
 
-/** What a structure counts as in "2 bones and 3 parts". */
-export type CountKind = "bone" | SoftKind;
-const NOUNS: Record<CountKind, [string, string]> = {
-  bone: ["bone", "bones"],
-  muscle: ["muscle", "muscles"],
-  muscle_part: ["part", "parts"],
-  ligament: ["ligament", "ligaments"],
-  cartilage: ["cartilage", "cartilages"],
-  disc: ["disc", "discs"],
-  meniscus: ["meniscus", "menisci"],
-};
-const ORDER: readonly CountKind[] = ["bone", "muscle", "muscle_part", "ligament", "cartilage", "disc", "meniscus"];
+/** What a structure counts as in "2 bones and 3 parts" (the kinds' nouns; a tooth counts as a bone). */
+export type CountKind = KindId;
 export type KindCounts = Partial<Record<CountKind, number>>;
 
 /** "3 bones", "1 meniscus". */
-export const counted = (n: number, kind: CountKind): string => `${n} ${NOUNS[kind][n === 1 ? 0 : 1]}`;
+export const counted = (n: number, kind: CountKind): string => `${n} ${kindNoun(kind, n)}`;
 
-/** "2 bones and 3 parts", "8 bones, 12 muscles and 2 ligaments"; "" when empty. */
+/** "2 bones and 3 parts", "8 bones, 12 muscles and 2 ligaments"; "" when empty. Kinds in the registry's `COUNT_ORDER`. */
 export function countsPhrase(counts: KindCounts): string {
-  const parts = ORDER.filter((k) => (counts[k] ?? 0) > 0).map((k) => counted(counts[k]!, k));
+  const parts = COUNT_ORDER.filter((k) => (counts[k] ?? 0) > 0).map((k) => counted(counts[k]!, k));
   if (parts.length <= 1) return parts[0] ?? "";
   return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
 }
 
 /** The kind a structure is counted as: bones and teeth are bones; a soft structure its kind. */
 export function countKindOf(id: string): CountKind | null {
-  if (BONE_IDS.has(id)) return "bone";
-  return softEntry(id)?.kind ?? null;
+  const kind = BONE_KINDS.get(id) ?? softEntry(id)?.kind;
+  return kind === undefined ? null : countKind(kind);
 }
 
 /**

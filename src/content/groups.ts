@@ -9,7 +9,7 @@ import ids from "../../content/ids.json";
 import { groupTrail } from "./labels";
 import { displayName } from "./names";
 import type { HierarchyNode } from "./schema";
-import type { LazyLayerId } from "../systems/registry";
+import { NESTED_LAYER, type LazyLayerId } from "../systems/registry";
 import { attachedTo } from "./softRelations";
 import { softEntry } from "./softRegistry";
 import { SOFT_ROOTS, isSoftNode, nodeMembers, type SoftTreeData, type SoftTreeNode } from "./softTree";
@@ -167,9 +167,9 @@ export function resetSoftTree(): void {
   SOFT_PARENT.clear();
   SOFT_DRAWN.clear();
 }
-/** The layer a group's members are drawn in, if they need one turned on: a soft group's, or the muscles for an attached group. */
+/** The layer a group's members are drawn in, if they need one turned on: a soft group's, or the muscles (the layer with parts) for an attached group. */
 export function groupLayer(key: string): LazyLayerId | null {
-  if (attachedBoneOf(key) !== null) return "muscles";
+  if (attachedBoneOf(key) !== null) return NESTED_LAYER;
   return SOFT_GROUPS.get(key)?.layer ?? null;
 }
 

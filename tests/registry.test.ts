@@ -10,8 +10,13 @@ import {
   EAGER_LAYER,
   LAYER_IDS,
   LAZY_LAYERS,
+  COUNT_ORDER,
+  countKind,
+  hasNestedParts,
+  LABEL_ORDER,
   layerByCode,
   layerOfKind,
+  NESTED_LAYER,
   OVERLAYS,
   REGISTRY,
   SYSTEMS,
@@ -50,6 +55,17 @@ describe("registry", () => {
     expect(Math.min(...REGISTRY.map((l) => l.ghostOrder))).toBe(REGISTRY.find((l) => l.id === EAGER_LAYER)!.ghostOrder);
     expect(LAZY_LAYERS).toEqual(LAYER_IDS.filter((l) => l !== EAGER_LAYER));
     expect(REGISTRY.filter((l) => "depth" in l).map((l) => l.id)).toEqual([DEPTH_LAYER]);
+  });
+
+  // Session AU: the kind tables moved onto the kind descriptors. These pin M10's orders.
+  it("kinds: counted in M10's order (teeth as bones); labels' focus order; one layer with parts", () => {
+    expect(COUNT_ORDER).toEqual(["bone", "muscle", "muscle_part", "ligament", "cartilage", "disc", "meniscus"]);
+    expect(countKind("tooth")).toBe("bone");
+    expect(LABEL_ORDER).toEqual(["muscles", "ligaments", "cartilage", "bones"]);
+    expect(REGISTRY.filter((l) => hasNestedParts(l.id)).map((l) => l.id)).toEqual([NESTED_LAYER]);
+    for (const l of REGISTRY)
+      for (const k of l.kinds)
+        if ("parentOf" in k) expect(layerOfKind(k.parentOf.childKind)).toBe(l.id);
   });
 
   it("the default modes have only the eager layer on (M10's default)", () => {

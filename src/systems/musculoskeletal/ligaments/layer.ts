@@ -17,5 +17,5 @@ export const ligaments = defineLayer({
   },
   contentChunk: "virtual:skeleton-soft-content-ligaments",
   defaultSetting: "off",
-  kinds: [{ id: "ligament" }],
+  kinds: [{ id: "ligament", noun: { one: "ligament", many: "ligaments" }, labelPriority: 2 }],
 });

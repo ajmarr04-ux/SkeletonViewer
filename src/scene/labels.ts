@@ -2,6 +2,8 @@
 // Pure: the scene projects each object's centre to the screen, and this module
 // picks which labels to show and where, greedily by priority. No three.js.
 
+import { EAGER_LAYER, LABEL_ORDER, type LayerId } from "../systems/registry";
+
 /** A rectangle in client pixels. */
 export type Rect = { left: number; top: number; right: number; bottom: number };
 
@@ -181,10 +183,11 @@ export function labelKey(id: string, parentOf: (id: string) => string | null, pa
 /**
  * The focus layer (M10 plan decision 2): the selected structure's layer; with
  * nothing selected (or its layer unknown), the topmost layer that is On, in the
- * order muscles, ligaments, cartilage, bones.
+ * registry's label order (the kinds' `labelPriority`: muscles, ligaments,
+ * cartilage, bones), else the eager layer.
  */
-export function focusLayerOf(selLayer: string | null, modes: Readonly<Record<"bones" | "cartilage" | "ligaments" | "muscles", string>>): string {
+export function focusLayerOf(selLayer: string | null, modes: Readonly<Record<LayerId, string>>): string {
   if (selLayer !== null) return selLayer;
-  for (const l of ["muscles", "ligaments", "cartilage", "bones"] as const) if (modes[l] === "on") return l;
-  return "bones";
+  for (const l of LABEL_ORDER) if (modes[l] === "on") return l;
+  return EAGER_LAYER;
 }

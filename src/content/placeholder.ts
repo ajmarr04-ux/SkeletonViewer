@@ -4,10 +4,11 @@
 // the real content files arrive in Milestone 4. Nothing is invented (spec §12).
 
 import ids from "../../content/ids.json";
+import type { EagerKind } from "../systems/registry";
 import { groupTrail, regionLabel, TOOTH_TYPES } from "./labels";
 
 export type Side = "left" | "right" | "midline";
-export type IdEntry = { id: string; name: string; kind: "bone" | "tooth"; side: Side; group: string[]; meshAvailable: boolean };
+export type IdEntry = { id: string; name: string; kind: EagerKind; side: Side; group: string[]; meshAvailable: boolean };
 
 export const NOT_WRITTEN = "Not written yet";
 export const NO_MODEL_NOTE = "No 3D model: this tooth is absent from the source model.";
@@ -24,7 +25,7 @@ export type PanelModel = {
   /** Common name ("kneecap"), or null until the content is written. */
   common: string | null;
   side: Side;
-  kind: "bone" | "tooth";
+  kind: EagerKind;
   /** Badge row: region, bone or tooth type, and the draft note. */
   badges: { region: string; type: string; draft: boolean };
   /** Breadcrumb under "Skeleton", ending with the object's name. */

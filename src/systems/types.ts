@@ -54,10 +54,28 @@ export type OverlaySpec = {
 /** How the sidebar root is built (M12 defines and fills it). */
 export type TreeSpec = Record<string, never>;
 
+/** A kind's subtype (a muscle part's `partType`). */
+export type PartTypeSpec = {
+  id: string;
+  /** Drawn in the layer's lighter tendon tint (spec §6.3). */
+  tendinous?: boolean;
+};
+
 export type KindDescriptor = {
   id: string;
-  /** Muscle → part: a click selects the parent first, then the part (spec §5.1). */
-  parentOf?: { childKind: string; selection: "nested" };
+  /** For announcements ("3 parts"). Kinds with the same noun are counted together (a tooth counts as a bone). */
+  noun: { one: string; many: string };
+  /**
+   * Lower comes first. The layer whose kinds rank first is the labels' focus
+   * layer when nothing is selected (M10 plan decision 2: the topmost layer that
+   * is On); announcements count the eager layer's kinds first, then the others
+   * in this order.
+   */
+  labelPriority: number;
+  /** Muscle → part: a click selects the parent first, then the part (spec §5.1); `maxParts` = the most parts any parent has (one outline each). */
+  parentOf?: { childKind: string; selection: "nested"; maxParts: number };
+  /** The values of the entries' `partType`, in order. */
+  partTypes?: readonly PartTypeSpec[];
 };
 
 export type LayerDescriptor = {

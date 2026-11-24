@@ -4,15 +4,20 @@
 // right share an entry. A part takes its own entry if it has one, else its
 // muscle's.
 
+import { DEPTH_LAYER, layerOfKind } from "../systems/registry";
+
 export type Depth = 1 | 2 | 3;
 /** The fields of a soft-tissue ID entry the rules need. */
 export type DepthEntry = { id: string; kind: string; parent?: string | null };
+
+/** A kind of the layer with the depth control (muscle, muscle part). */
+export const hasDepth = (kind: string): boolean => layerOfKind(kind) === DEPTH_LAYER;
 
 export const sideFree = (id: string): string => id.replace(/_(left|right)$/, "");
 
 /** A muscle's or part's depth, or undefined for anything else (or a gap in the table). */
 export function depthOf(e: DepthEntry, table: Readonly<Record<string, Depth>>): Depth | undefined {
-  if (e.kind !== "muscle" && e.kind !== "muscle_part") return undefined;
+  if (!hasDepth(e.kind)) return undefined;
   return table[sideFree(e.id)] ?? (e.parent ? table[sideFree(e.parent)] : undefined);
 }
 

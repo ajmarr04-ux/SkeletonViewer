@@ -6,12 +6,12 @@
 // chunk.
 
 import { z } from "zod";
+import { PART_TYPES, type PartType } from "../systems/registry";
 
 const snake = z.string().regex(/^[a-z0-9]+(?:_[a-z0-9]+)*$/, "must be snake_case");
 const text = z.string().trim().min(1);
 const side = z.enum(["left", "right", "midline"]);
 
-export const PART_TYPES = ["head", "belly", "portion", "tendon", "aponeurosis"] as const;
 export const ROLES = ["prime", "assist", "stabiliser"] as const;
 export const CARTILAGE_KINDS = ["cartilage", "disc", "meniscus"] as const;
 
@@ -60,7 +60,7 @@ const inheritable = z.union([z.literal("inherit"), z.array(attachmentSchema)]);
 export const musclePartSchema = z.strictObject({
   id: snake,
   kind: z.literal("muscle_part"),
-  partType: z.enum(PART_TYPES),
+  partType: z.enum(PART_TYPES as [PartType, ...PartType[]]),
   /** Null only for a part without a muscle (the linea alba). */
   parent: snake.nullable(),
   alsoServes: z.array(snake),

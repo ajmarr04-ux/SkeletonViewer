@@ -7,7 +7,7 @@ import { cartilage } from "./musculoskeletal/cartilage/layer";
 import { ligaments } from "./musculoskeletal/ligaments/layer";
 import { muscles } from "./musculoskeletal/muscles/layer";
 import { musculoskeletal } from "./musculoskeletal/system";
-import type { LayerDescriptor, LayerMode, OverlaySpec, SystemDescriptor } from "./types";
+import type { KindDescriptor, LayerDescriptor, LayerMode, OverlaySpec, SystemDescriptor } from "./types";
 
 /** Systems, in Layers-panel order. */
 export const SYSTEMS = [musculoskeletal] as const satisfies readonly SystemDescriptor[];
@@ -24,6 +24,16 @@ export type EagerLayerId = Extract<Registered, { models: { eager: true } }>["id"
 /** The layer with a depth control (the muscles). */
 export type DepthLayerId = Extract<Registered, { depth: object }>["id"];
 export type SystemId = (typeof SYSTEMS)[number]["id"];
+
+type RegisteredKind = Registered["kinds"][number];
+/** Every kind. */
+export type KindId = RegisteredKind["id"];
+/** The eager layer's kinds (`content/ids.json`: bone, tooth). */
+export type EagerKind = Extract<Registered, { models: { eager: true } }>["kinds"][number]["id"];
+/** The lazy layers' kinds (`content/soft-ids.json`). */
+export type SoftKind = Extract<Registered, { models: { eager: false } }>["kinds"][number]["id"];
+/** A muscle part's `partType`. */
+export type PartType = Extract<RegisteredKind, { partTypes: unknown }>["partTypes"][number]["id"];
 
 const BY_ID = new Map<string, LayerDescriptor>(REGISTRY.map((l) => [l.id, l]));
 const BY_CODE = new Map<string, LayerDescriptor>(REGISTRY.map((l) => [l.code, l]));
@@ -58,8 +68,40 @@ export const OVERLAYS: readonly (OverlaySpec & { layer: LayerId })[] = REGISTRY.
 const KIND_LAYER = new Map<string, LayerId>(REGISTRY.flatMap((l) => l.kinds.map((k) => [k.id, l.id] as const)));
 export const layerOfKind = (kind: string): LayerId | undefined => KIND_LAYER.get(kind);
 
-/** The layer whose kinds have parts selected through their parent (muscles → parts), or false. */
-export const hasNestedParts = (id: LayerId): boolean => layerDescriptor(id).kinds.some((k) => k.parentOf !== undefined);
+const KIND = new Map<string, KindDescriptor>(REGISTRY.flatMap((l) => (l.kinds as readonly KindDescriptor[]).map((k) => [k.id, k] as const)));
+export const kindDescriptor = (kind: KindId): KindDescriptor => KIND.get(kind)!;
+
+/** Does the layer have kinds whose parts are selected through their parent (muscles → parts)? */
+export const hasNestedParts = (id: LayerId): boolean => layerDescriptor(id).kinds.some((k) => "parentOf" in k);
+/** The most parts any structure of the layer has (one selection outline each); 0 for a layer without parts. */
+export const maxPartsOf = (id: LayerId): number =>
+  Math.max(0, ...(layerDescriptor(id).kinds as readonly KindDescriptor[]).map((k) => k.parentOf?.maxParts ?? 0));
+/** The layer whose structures have parts (the muscles): their attachments, functional groups and antagonists. */
+export const NESTED_LAYER: LazyLayerId = REGISTRY.find((l) => hasNestedParts(l.id))!.id as LazyLayerId;
+
+/** Every part type, in order (the content schema's enum). */
+export const PART_TYPES: readonly PartType[] = [...KIND.values()].flatMap((k) => (k.partTypes ?? []).map((t) => t.id as PartType));
+const TENDINOUS = new Set([...KIND.values()].flatMap((k) => (k.partTypes ?? []).filter((t) => t.tendinous).map((t) => t.id)));
+/** Drawn in the tendon tint (tendons and aponeuroses). */
+export const isTendinousType = (t: string | undefined): boolean => t !== undefined && TENDINOUS.has(t);
+
+/** "bone" / "bones". */
+export const kindNoun = (kind: KindId, n = 1): string => (n === 1 ? kindDescriptor(kind).noun.one : kindDescriptor(kind).noun.many);
+const byPriority = (a: KindDescriptor, b: KindDescriptor) => a.labelPriority - b.labelPriority;
+/** The kind a structure is counted as: the first kind with its noun (a tooth counts as a bone). */
+const COUNT_AS = new Map([...KIND.values()].map((k) => [k.id, [...KIND.values()].find((o) => o.noun.one === k.noun.one)!.id as KindId]));
+export const countKind = (kind: KindId): KindId => COUNT_AS.get(kind)!;
+/** The counted kinds in announcement order: the eager layer's first, then the others by `labelPriority`. */
+export const COUNT_ORDER: readonly KindId[] = [
+  ...(layerDescriptor(EAGER_LAYER).kinds as readonly KindDescriptor[]),
+  ...[...KIND.values()].filter((k) => layerOfKind(k.id) !== EAGER_LAYER).sort(byPriority),
+]
+  .map((k) => k.id as KindId)
+  .filter((k) => countKind(k) === k);
+
+/** Layers in label order: the topmost first (the labels' focus layer when nothing is selected). */
+const layerRank = (l: LayerDescriptor) => Math.min(...l.kinds.map((k) => k.labelPriority));
+export const LABEL_ORDER: readonly LayerId[] = [...REGISTRY].sort((a, b) => layerRank(a) - layerRank(b)).map((l) => l.id);
 
 /** The layer's name in the Layers panel, announcements and badges ("Muscles"). */
 export const layerLabel = (id: LayerId): string => layerDescriptor(id).label;

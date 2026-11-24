@@ -3,7 +3,8 @@
 // stays out of the viewer's main chunk.
 
 import type { ZodError } from "zod";
-import { depthOf, sideFree, type DepthEntry } from "./muscleDepth";
+import { kindNoun, type KindId } from "../systems/registry";
+import { depthOf, hasDepth, sideFree, type DepthEntry } from "./muscleDepth";
 import { muscleDepthSchema, type MuscleDepthTable } from "./schema";
 
 /**
@@ -17,7 +18,7 @@ export function validateMuscleDepth(raw: unknown, entries: readonly DepthEntry[]
   if (!res.success) return zodErrors(res.error);
   const table: MuscleDepthTable = res.data;
   const errors: string[] = [];
-  const muscular = entries.filter((e) => e.kind === "muscle" || e.kind === "muscle_part");
+  const muscular = entries.filter((e) => hasDepth(e.kind));
   const keys = new Set(muscular.map((e) => sideFree(e.id)));
   for (const key of Object.keys(table)) {
     if (/_(left|right)$/.test(key)) errors.push(`muscle-depth.json ${key}: write the key without the side`);
@@ -28,8 +29,8 @@ export function validateMuscleDepth(raw: unknown, entries: readonly DepthEntry[]
     const key = sideFree(e.id);
     if (seen.has(key)) continue;
     seen.add(key);
-    if (depthOf(e, table) === undefined) errors.push(`muscle-depth.json: ${e.kind === "muscle" ? "muscle" : "part"} ${key} has no depth`);
-    if (e.kind === "muscle_part" && e.parent && table[key] !== undefined && table[key] === table[sideFree(e.parent)]) {
+    if (depthOf(e, table) === undefined) errors.push(`muscle-depth.json: ${kindNoun(e.kind as KindId)} ${key} has no depth`);
+    if (e.parent && table[key] !== undefined && table[key] === table[sideFree(e.parent)]) {
       errors.push(`muscle-depth.json ${key}: same depth as its muscle; leave it out`);
     }
   }

@@ -11,7 +11,7 @@ import { focusLayerOf, LABEL, labelKey, labelPriority, layoutLabels, leaderEnd, 
 import { hasMesh } from "../state/selection";
 import { useLayerBatches } from "../scene/layerRegistry";
 import { type Layer } from "../state/url";
-import { LAZY_LAYERS } from "../systems/registry";
+import { EAGER_LAYER, hasNestedParts, LABEL_ORDER, LAZY_LAYERS } from "../systems/registry";
 import { useViewer } from "../state/store";
 
 /** Re-layout at most this often while the camera moves (plan decision 7). */
@@ -149,16 +149,16 @@ function computeLayout(sources: readonly Source[], camera: PerspectiveCamera, ca
   const pxPerUnit = height / 2 / Math.tan((camera.fov * Math.PI) / 360);
   camera.getWorldPosition(_camPos);
   const groups = new Map<string, Group>();
-  // Occlusion isn't tested (as in M5): with the muscles solid, a bone is labelled only when isolation keeps it solid.
-  const musclesSolid = st.layers.muscles === "on";
+  // Occlusion isn't tested (as in M5): with the topmost layer (the muscles) solid, a bone is labelled only when isolation keeps it solid.
+  const topSolid = st.layers[LABEL_ORDER[0]!] === "on";
   for (const { layer, batch: skeleton, spheres } of sources) {
     if (!skeleton.mesh.visible) continue;
     skeleton.boneIds.forEach((id, i) => {
       if (!skeleton.mesh.getVisibleAt(i)) return;
-      if (layer === "bones" && musclesSolid && !(view.isolated && view.layers.bones.solid?.has(id))) return;
+      if (layer === EAGER_LAYER && topSolid && !(view.isolated && view.layers[EAGER_LAYER].solid?.has(id))) return;
       skeleton.mesh.getMatrixAt(i, _m);
       _sphere.copy(spheres[i]!).applyMatrix4(_m);
-      const key = layer === "bones" ? id : labelKey(id, parentOf, partLevelMuscle);
+      const key = hasNestedParts(layer) ? labelKey(id, parentOf, partLevelMuscle) : id;
       const priority = Math.min(labelPriority(id, view.focus, tier1, tier2), labelPriority(key, view.focus, tier1, tier2));
       const g = groups.get(key);
       if (g) {
@@ -187,7 +187,7 @@ function computeLayout(sources: readonly Source[], camera: PerspectiveCamera, ca
     minSizePx: view.isolated ? LABEL.minSizeIsolatedPx : LABEL.minSizePx,
     measure: measureText,
     obstacles,
-    focusLayer: focusLayerOf(st.sel === null ? null : (softLayerOf(st.sel) ?? "bones"), st.layers),
+    focusLayer: focusLayerOf(st.sel === null ? null : (softLayerOf(st.sel) ?? EAGER_LAYER), st.layers),
   });
 }
 

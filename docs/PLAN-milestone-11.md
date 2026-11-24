@@ -26,7 +26,7 @@ Session kinds: **design** = strong model (schemas, architecture); **routine** = 
 | (planning) | design | M10 → M11 handover and this plan (step 0) | none | `SPEC-platform.md` | `current` 11, plan written | **Done.** See step 0 |
 | AS | design | Record the four golden snapshots and the M10 performance baseline, before any refactor (step 1) | none | decisions 1, 6 | `tests/golden/*.json` committed; `tests/golden.test.ts` passes in `npm run check`; baseline table filled | **Done.** See step 1 |
 | AT | design | Descriptor types, `src/systems/registry.ts` and the four layer descriptors; layer-identity tables (codes, defaults, labels, colours, ghost order, depth) moved onto them (step 2) | none | decisions 2–4 | the tables in step 2's list are deleted; goldens unchanged; `check` green |**Done.** See step 2 |
-| AU | routine | Kind tables in the runtime moved onto `KindDescriptor`s (step 3) | none | AT's types | step 3's list deleted; goldens unchanged | |
+| AU | routine | Kind tables in the runtime moved onto `KindDescriptor`s (step 3) | none | AT's types | step 3's list deleted; goldens unchanged | **Done.** See step 3 |
 | AV | routine | Build-side and content-side tables (TS scripts, virtual modules, loaders, schemas, model checks) driven by the registry (step 4) | none | decision 2 | step 4's list deleted; `check-models` and `validate-content` output unchanged | |
 | AW | design | Layers panel grouped by system with a group control; presets from the registry (step 5) | none | decision 5 | panel, keyboard and a11y e2e pass (changes listed); announcements tested | |
 | AX | design | Registry isolation test and the fixture layer (step 6) | none | decisions 7–8 | isolation test green with only the allowlisted later-milestone files; fixture proves the M11 surfaces | |
@@ -162,7 +162,21 @@ Tables to delete and replace (from `STATUS-M10.md` §3): `LAYERS`, `TISSUE_LAYER
 
 `SoftKind`, `PartType`, `isTendinous` (`src/layers/softIds.ts`); `isMuscleKind` and `loadSoftContent("muscles")` (`src/state/selection.ts`); the bone `kind` union (`src/content/placeholder.ts`); `layerOfKind`/`SoftLayerName` (`src/content/softTiers.ts`, the lookup only; the rules stay for M12); `groupLayer` (`src/content/groups.ts`); `focusLayerOf` and the kind priorities (`src/scene/labels.ts`, `src/ui/Labels.tsx`: `labelPriority`); `NOUNS` and `ORDER` (`src/content/announce.ts`: `noun` and layer order; wording must not change, checked by `announce.test.ts`); `MAX_PARTS` and the muscle part level (`parentOf`); cursor stops (`src/camera/CameraRig.tsx`); `muscleDepth*.ts` keyed by the `depth` layer.
 
-*Notes added when the session runs.*
+**Done** (2026-11-24). Goldens unchanged; `announce.test.ts` unchanged and passing; `npm run check` green (39 files, 575 tests); e2e: see the handoff. `git diff public/models/ content/` empty.
+
+**What exists now.**
+- `KindDescriptor` gains `noun` (`one`/`many`), `labelPriority`, `parentOf.maxParts` and `partTypes` (`{ id, tendinous? }`). The four `layer.ts` files fill them: priorities muscle 0, muscle_part 1, ligament 2, cartilage 3, disc 4, meniscus 5, bone/tooth 6; the tooth's noun is "bone"/"bones".
+- `src/systems/registry.ts`: types `KindId`, `EagerKind`, `SoftKind`, `PartType`, all **derived from the descriptors' literals** (checked: a wrong literal fails `tsc`); lookups `kindDescriptor`, `kindNoun`, `countKind` (the first kind with the same noun: tooth → bone), `COUNT_ORDER` (the eager layer's kinds, then the rest by `labelPriority`: bone, muscle, muscle_part, ligament, cartilage, disc, meniscus = M10's `ORDER`), `LABEL_ORDER` (layers by their kinds' lowest priority: muscles, ligaments, cartilage, bones = M10's focus order), `NESTED_LAYER` (the layer with parts), `maxPartsOf`, `PART_TYPES`, `isTendinousType`.
+- `tests/registry.test.ts` + 1 test pinning both orders, tooth → bone, one nested layer, `childKind` in its parent's layer.
+
+**Tables deleted:** `SoftKind`/`PartType` literal unions and `isTendinous`' literals (`softIds.ts`, re-exporting the registry's types); `"bone" | "tooth"` (`placeholder.ts`, `validate.ts`: `EagerKind`); `layerOfKind`/`SoftLayerName` in `softTiers.ts` (registry `layerOfKind`, the output record built from `LAZY_LAYERS`; the per-kind rules stay for M12); `groupLayer`'s and `isMuscleKind`'s `"muscles"` and `loadSoftContent("muscles")` (`NESTED_LAYER`); `focusLayerOf`'s order and `"bones"` (`LABEL_ORDER`, `EAGER_LAYER`) and Labels.tsx's `"bones"`/`st.layers.muscles` (eager layer, top of `LABEL_ORDER`, `hasNestedParts` for the label key); `NOUNS`/`ORDER`/`BONE_IDS` (`announce.ts`: `kindNoun`, `COUNT_ORDER`, `countKind`); `MAX_PARTS` (`maxPartsOf`); the cursor's `"muscles"` fallback (`CameraRig.tsx`); `muscleDepth.ts`/`muscleDepthRules.ts`' kind checks (`hasDepth` = kind of `DEPTH_LAYER`; the "muscle"/"part" error word is the kind's noun). Also `softSchema.ts`' `PART_TYPES` now reads the registry (one table instead of two; the rest of `softSchema.ts` is AV's).
+
+**Decisions taken in the session.**
+- One number, `labelPriority`, gives both M10 orders: focus = lowest first; counts = the eager layer first, then lowest first. Pinned by the registry test, so a new layer has to choose deliberately.
+- Kinds that share a noun are counted together (tooth as bone), so `countsPhrase`/`counted` keep M10's wording with no `countAs` field.
+- Left on purpose (wording or rules, M12): `counted(…, "muscle")`, `bone: 0` and the part → `"muscle"` fallback in `announce.ts`; the per-kind tier rules in `softTiers.ts`; `KIND_LABELS` (`softPanel.ts`); `layer: "muscles"` on the synonym sets in `groups.ts` (soft tree). For AV: `CARTILAGE_KINDS` and the rest of `softSchema.ts`.
+
+**Main chunk:** 471.4 kB gzip -9 (index 298.0 + meshoptimizer 167.6 + names 2.7 + registry 2.2 + softRegistry 0.5 + runtime 0.5; +0.2 on AT). The shared chunk is now named `registry-*.js` (it was `model-checks-*.js`).
 
 ## Step 4 (AV): build-side and content-side tables
 
