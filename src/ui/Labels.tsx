@@ -2,11 +2,12 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Box3, Matrix4, Sphere, Vector3, type PerspectiveCamera } from "three";
 import { displayName } from "../content/names";
-import { relations } from "../content/relations";
+import { softEntry, softLayerOf } from "../content/softRegistry";
+import { subscribeSoftTiers } from "../content/softRelations";
 import type { BatchedSkeleton } from "../scene/batchSkeleton";
-import { viewOf } from "../scene/isolation";
+import { relatedAt, viewOf } from "../scene/isolation";
 import { recordLabelLayout } from "../scene/bench";
-import { LABEL, labelPriority, layoutLabels, leaderEnd, type LabelCandidate, type PlacedLabel, type Rect } from "../scene/labels";
+import { focusLayerOf, LABEL, labelKey, labelPriority, layoutLabels, leaderEnd, type LabelCandidate, type PlacedLabel, type Rect } from "../scene/labels";
 import { hasMesh } from "../state/selection";
 import { useLayerBatches } from "../scene/layerRegistry";
 import { TISSUE_LAYERS, type Layer } from "../state/url";
@@ -78,6 +79,14 @@ export function LabelProbe({ skeleton }: { skeleton: BatchedSkeleton | null }) {
       }),
     [],
   );
+  // The soft tier sets arrive with the lazy content chunks (M9 AF): rank again once they do.
+  useEffect(
+    () =>
+      subscribeSoftTiers(() => {
+        last.current.dirty = true;
+      }),
+    [],
+  );
 
   useFrame(() => {
     const st = useViewer.getState();
@@ -118,17 +127,27 @@ function rectOf(el: Element): Rect {
 /** One layer's solid batch and its instances' local bounding spheres. */
 type Source = { layer: Layer; batch: BatchedSkeleton; spheres: Sphere[] };
 
+const parentOf = (id: string): string | null => softEntry(id)?.parent ?? null;
+
+/** One label to place: a structure, or a muscle as the union of its drawn parts (M10 plan decision 1). */
+type Group = { sphere: Sphere; layer: Layer; priority: number };
+
 function computeLayout(sources: readonly Source[], camera: PerspectiveCamera, canvas: HTMLCanvasElement): PlacedLabel[] {
   const st = useViewer.getState();
   const view = viewOf(st, hasMesh);
-  const tier1 = new Set(st.sel && view.isolated ? relations.visibleAt(st.sel, 1) : []);
-  const tier2 = new Set(st.sel && view.isolated ? relations.visibleAt(st.sel, 2) : []);
+  // M10 plan decision 1: the kind-aware tier sets, following the layers showing (as isolation does).
+  const related = st.sel !== null && view.isolated;
+  const tier1 = new Set(related ? relatedAt(st.sel!, 1, st.layers) : []);
+  const tier2 = new Set(related ? relatedAt(st.sel!, 2, st.layers) : []);
+  // At the part level the selected part's muscle is labelled part by part, its siblings at tier 1.
+  const partLevelMuscle = st.sel !== null ? parentOf(st.sel) : null;
+  if (related && partLevelMuscle !== null) for (const p of softEntry(partLevelMuscle)?.parts ?? []) tier1.add(p);
   const area = rectOf(canvas);
   const width = area.right - area.left;
   const height = area.bottom - area.top;
   const pxPerUnit = height / 2 / Math.tan((camera.fov * Math.PI) / 360);
   camera.getWorldPosition(_camPos);
-  const candidates: LabelCandidate[] = [];
+  const groups = new Map<string, Group>();
   // Occlusion isn't tested (as in M5): with the muscles solid, a bone is labelled only when isolation keeps it solid.
   const musclesSolid = st.layers.muscles === "on";
   for (const { layer, batch: skeleton, spheres } of sources) {
@@ -138,17 +157,28 @@ function computeLayout(sources: readonly Source[], camera: PerspectiveCamera, ca
       if (layer === "bones" && musclesSolid && !(view.isolated && view.layers.bones.solid?.has(id))) return;
       skeleton.mesh.getMatrixAt(i, _m);
       _sphere.copy(spheres[i]!).applyMatrix4(_m);
-      _c.copy(_sphere.center).project(camera);
-      if (_c.z < -1 || _c.z > 1) return;
-      const dist = _camPos.distanceTo(_sphere.center);
-      candidates.push({
-        id,
-        text: displayName(id),
-        x: area.left + ((_c.x + 1) / 2) * width,
-        y: area.top + ((1 - _c.y) / 2) * height,
-        sizePx: dist > 0 ? (_sphere.radius / dist) * pxPerUnit : Infinity,
-        priority: labelPriority(id, view.focus, tier1, tier2),
-      });
+      const key = layer === "bones" ? id : labelKey(id, parentOf, partLevelMuscle);
+      const priority = Math.min(labelPriority(id, view.focus, tier1, tier2), labelPriority(key, view.focus, tier1, tier2));
+      const g = groups.get(key);
+      if (g) {
+        g.sphere.union(_sphere);
+        g.priority = Math.min(g.priority, priority);
+      } else groups.set(key, { sphere: _sphere.clone(), layer, priority });
+    });
+  }
+  const candidates: LabelCandidate[] = [];
+  for (const [id, { sphere, layer, priority }] of groups) {
+    _c.copy(sphere.center).project(camera);
+    if (_c.z < -1 || _c.z > 1) continue;
+    const dist = _camPos.distanceTo(sphere.center);
+    candidates.push({
+      id,
+      text: displayName(id),
+      x: area.left + ((_c.x + 1) / 2) * width,
+      y: area.top + ((1 - _c.y) / 2) * height,
+      sizePx: dist > 0 ? (sphere.radius / dist) * pxPerUnit : Infinity,
+      priority,
+      layer,
     });
   }
   const obstacles = [...document.querySelectorAll(OBSTACLES)].map(rectOf).filter((r) => r.right > r.left && r.bottom > r.top);
@@ -156,6 +186,7 @@ function computeLayout(sources: readonly Source[], camera: PerspectiveCamera, ca
     minSizePx: view.isolated ? LABEL.minSizeIsolatedPx : LABEL.minSizePx,
     measure: measureText,
     obstacles,
+    focusLayer: focusLayerOf(st.sel === null ? null : (softLayerOf(st.sel) ?? "bones"), st.layers),
   });
 }
 

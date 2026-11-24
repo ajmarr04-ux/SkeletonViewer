@@ -227,7 +227,7 @@ test("Hide: the button and X hide, the chip shows all, browser Back un-hides", a
   await expect(page).not.toHaveURL(/sel=/);
   await expect(debug).toHaveAttribute("data-solid", "233");
   await expect(debug).toHaveAttribute("data-hidden", "1");
-  await expect(page.getByTestId("announcer")).toHaveText("Femur (left) hidden. 1 hidden.");
+  await expect(page.getByTestId("announcer")).toHaveText("Femur, left, hidden. 1 hidden.");
   // A hidden bone can't be picked.
   const femur = await centreOf(page, "femur_left");
   expect(await page.evaluate(({ x, y }) => window.__viewer!.pick(x, y), femur)).not.toBe("femur_left");
@@ -303,7 +303,7 @@ test("the depth control peels muscles away (hidden, not ghosted), in the URL and
   await expect.poll(() => muscleCounts(page)).toEqual({ solid: EXPECTED.muscles, ghost: 0 });
   await page.getByTestId("muscle-depth-1").check();
   await expect(page).toHaveURL(/layers=b:on,c:off,l:off,m:on:1/);
-  await expect(page.getByTestId("announcer")).toHaveText(/^Superficial muscles hidden\. \d+ muscles hidden$/);
+  await expect(page.getByTestId("announcer")).toHaveText(/^Superficial muscles hidden: \d+ muscles\.$/);
   const s1 = (await muscleCounts(page))!;
   expect(s1.ghost).toBe(0);
   expect(s1.solid).toBeLessThan(EXPECTED.muscles);
@@ -321,7 +321,7 @@ test("the depth control peels muscles away (hidden, not ghosted), in the URL and
   await expect.poll(() => muscleCounts(page)).toEqual({ solid: 0, ghost: s2.solid });
   expect(await page.evaluate(() => localStorage.getItem("skeleton-viewer:layers"))).toBe("b:on,c:off,l:off,m:ghost:2");
   await page.getByTestId("muscle-depth-0").check();
-  await expect(page.getByTestId("announcer")).toHaveText("All muscles shown");
+  await expect(page.getByTestId("announcer")).toHaveText("All muscles shown.");
   await expect.poll(() => muscleCounts(page)).toEqual({ solid: 0, ghost: EXPECTED.muscles });
   await expect(page).toHaveURL(/m:ghost(&|$)/);
 });

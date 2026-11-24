@@ -1,4 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
+import softIds from "../../content/soft-ids.json" with { type: "json" };
+
+type Soft = { id: string; layer: string; parent?: string | null; parts?: string[]; meshAvailable: boolean };
+const SOFT = new Map((softIds as Soft[]).map((e) => [e.id, e]));
 
 // Milestone 5 session O, plan step 11: the keyboard-only pass, scripted.
 // Only page.keyboard is used to drive the app (no clicks, no window.__viewer
@@ -223,6 +227,112 @@ test.describe("keyboard only", () => {
     await page.keyboard.press("Enter");
     await expect(page).not.toHaveURL(/hid=/);
     await expect(page.getByTestId("show-all-hidden")).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+  test("M10: the M9 journey by keys only (decision 5)", async ({ page }) => {
+    // The muscles load under SwiftShader (60–120 s), then the content chunk.
+    test.setTimeout(420_000);
+    const errors = await open(page);
+    await page.locator("body").focus();
+    // Open Layers and turn the muscles on.
+    await tabTo(page, "Layers");
+    await page.keyboard.press("Enter");
+    const rowOfFocus = () => page.evaluate(() => (document.activeElement?.closest(".layer-row") as HTMLElement | null)?.dataset.layer ?? null);
+    for (let i = 0; i < 12 && (await rowOfFocus()) !== "muscles"; i++) await page.keyboard.press("Tab");
+    await page.keyboard.press("ArrowLeft");
+    await page.keyboard.press("ArrowLeft");
+    await expect(page).toHaveURL(/layers=b:on,c:off,l:off,m:on/);
+    await expect(page.locator(".layer-row[data-layer=muscles]")).toHaveAttribute("data-status", "ready", { timeout: 120_000 });
+    await page.keyboard.press("Escape");
+
+    // Reach the triceps through search; Enter selects it.
+    await page.keyboard.press("/");
+    await page.keyboard.type("left triceps brachii");
+    await expect(page.getByTestId("search-results").getByRole("option").first()).toHaveText(/Triceps brachii \(left\)/, { timeout: 15_000 });
+    await page.keyboard.press("Enter");
+    await expect.poll(async () => (await state(page)).sel).toBe("triceps_brachii_left");
+
+    // Its long head: the Tab cursor walks the triceps' parts now; Enter selects the part.
+    await tabTo(page, /^3D skeleton/);
+    const stops: string[] = [];
+    for (let i = 0; i < 4; i++) {
+      await page.keyboard.press("Tab");
+      const c = (await state(page)).cursor;
+      if (c === null) break;
+      stops.push(c);
+      if (c === "triceps_brachii_long_head_left") break;
+    }
+    expect(stops.every((c) => c.startsWith("triceps_brachii_") && c.endsWith("_head_left")), stops.join()).toBe(true);
+    await page.keyboard.press("Enter");
+    await expect.poll(async () => (await state(page)).sel).toBe("triceps_brachii_long_head_left");
+
+    // R: Show attachments; E: Show functional group (once the muscles' content has loaded).
+    await expect(page.getByTestId("show-related")).toBeEnabled({ timeout: 60_000 });
+    await expect(page.getByTestId("show-related")).toHaveAttribute("aria-keyshortcuts", "R");
+    await page.keyboard.press("r");
+    await expect.poll(async () => (await state(page)).tier).toBe(1);
+    await page.keyboard.press("e");
+    await expect.poll(async () => (await state(page)).tier).toBe(2);
+
+    // The antagonist toggle, by Tab and Enter.
+    await tabTo(page, "Show antagonists");
+    await page.keyboard.press("Enter");
+    await expect(page.getByTestId("show-antagonists")).toHaveAttribute("aria-pressed", "true");
+    await expect(page).toHaveURL(/ant=1/);
+
+    // Back ×4 by Escape from the canvas: tier 1, the part, the muscle, the full skeleton.
+    await tabTo(page, /^3D skeleton/);
+    for (const want of [
+      { sel: "triceps_brachii_long_head_left", tier: 1 },
+      { sel: "triceps_brachii_long_head_left", tier: 0 },
+      { sel: "triceps_brachii_left", tier: 0 },
+      { sel: null, tier: 0 },
+    ]) {
+      await page.keyboard.press("Escape");
+      await expect.poll(async () => ({ sel: (await state(page)).sel, tier: (await state(page)).tier })).toEqual(want);
+    }
+    expect(errors).toEqual([]);
+  });
+
+  test("M10: the Tab cursor across layers; X hides its structure, Shift+X shows all", async ({ page }) => {
+    test.setTimeout(420_000);
+    const errors = await open(page, "&layers=b:on,c:off,l:on,m:on");
+    for (const l of ["ligaments", "muscles"])
+      await expect(page.locator(`[data-testid=layers-report] [data-layer=${l}]`)).toHaveAttribute("data-nodes", /^[1-9]\d*$/, { timeout: 120_000 });
+    await page.locator("body").focus();
+    await tabTo(page, /^3D skeleton/);
+    // The first stops are bones (layer order: bones, cartilage, ligaments, muscles).
+    await page.keyboard.press("Tab");
+    const first = (await state(page)).cursor!;
+    await page.keyboard.press("Tab");
+    const second = (await state(page)).cursor!;
+    expect(SOFT.has(first) || SOFT.has(second)).toBe(false);
+    await page.keyboard.press("Shift+Tab");
+    expect((await state(page)).cursor).toBe(first);
+    // X hides the cursor's bone (nothing selected stays so), and the next Tab goes on to the following stop.
+    await page.keyboard.press("x");
+    await expect(page).toHaveURL(new RegExp(`hid=${first}(&|$)`));
+    expect((await state(page)).sel).toBeNull();
+    await expect(page.getByTestId("announcer")).toHaveText(/, hidden\. 1 hidden\.$/);
+    await page.keyboard.press("Tab");
+    expect((await state(page)).cursor).toBe(second);
+    // Leave the view, come back, Shift+Tab: the last stop is a muscle, as one stop, never one of its parts.
+    await page.keyboard.press("Escape");
+    await page.keyboard.press("Shift+Tab");
+    await page.keyboard.press("Tab");
+    await expect.poll(async () => (await focused(page))?.tag).toBe("canvas");
+    await page.keyboard.press("Shift+Tab");
+    const last = (await state(page)).cursor!;
+    expect(SOFT.get(last)?.layer).toBe("muscles");
+    expect(SOFT.get(last)?.parent ?? null).toBeNull();
+    // X on it hides it (a muscle with parts: all its parts); Shift+X shows everything again.
+    await page.keyboard.press("x");
+    const hid = () => (new URL(page.url()).searchParams.get("hid") ?? "").split(",").filter(Boolean);
+    const want = (SOFT.get(last)?.parts ?? [last]).filter((p) => SOFT.get(p)?.meshAvailable);
+    await expect.poll(hid).toEqual(expect.arrayContaining([first, ...want]));
+    await page.keyboard.press("Shift+X");
+    await expect(page).not.toHaveURL(/hid=/);
+    await expect(page.getByTestId("announcer")).toHaveText("All hidden structures shown.");
     expect(errors).toEqual([]);
   });
 });

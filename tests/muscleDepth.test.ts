@@ -5,7 +5,7 @@ import { validateMuscleDepth } from "../src/content/muscleDepthRules";
 import { peeledAt, peeledMuscleCount, registerSoftIds, resetSoftIds } from "../src/content/softRegistry";
 import { trimSoftIds, type RawSoftId } from "../src/layers/softIds";
 import { FULL_VIEW, shownIn, viewOf } from "../src/scene/isolation";
-import { depthAnnouncement } from "../src/ui/LayersPanel";
+import { depthAnnouncement } from "../src/content/announce";
 import { DEFAULT_LAYERS } from "../src/state/url";
 
 // M7 session V, step 7 (plan decisions 9 and 10): muscle depth.
@@ -95,8 +95,9 @@ describe("peeling in the view", () => {
     expect(n1).toBeGreaterThan(50);
     expect(n2).toBeGreaterThan(n1);
     expect(peeledAt(1).has("deltoid_acromial_part_left")).toBe(true);
-    expect(depthAnnouncement(1, 41)).toBe("Superficial muscles hidden. 41 muscles hidden");
-    expect(depthAnnouncement(2, 150)).toBe("Superficial and intermediate muscles hidden: deep muscles only. 150 muscles hidden");
-    expect(depthAnnouncement(0, 0)).toBe("All muscles shown");
+    expect(depthAnnouncement(1, 41)).toBe("Superficial muscles hidden: 41 muscles.");
+    expect(depthAnnouncement(2, 150)).toBe("Superficial and intermediate muscles hidden, deep muscles only: 150 muscles.");
+    expect(depthAnnouncement(0, 0)).toBe("All muscles shown.");
+    expect(depthAnnouncement(1, null)).toBe("Superficial muscles hidden.");
   });
 });

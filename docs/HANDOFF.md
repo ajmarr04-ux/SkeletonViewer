@@ -1,20 +1,21 @@
-# Handoff — written 2026-11-21 at the end of M9-AJ
+# Handoff — written 2026-11-24 at the end of M10 session AQ
 
 ## Next session
-**M9 → M10 handover and the M10 plan** (CLAUDE.md "Milestone handover"). Trigger: the user asks to begin M10 planning.
-Done when: `m9` frozen in `deploy/pages.json` at the merge commit of M9's PR (from `git log origin/main`), `current` set to 10; `/m9/` confirmed live (ask the user or check the latest Deploy run), "Hosted copy is live" ticked in `docs/PLAN-milestone-9.md` and the README M9 row marked live and frozen; `docs/PLAN-milestone-10.md` written from `SPEC-musculoskeletal.md` §11 M10 ("Polish and measurement") with a Sessions table per `docs/WORKFLOW.md`.
+**AR**: M10 wrap-up and programme close (plan step 8, decision 9). Full e2e through `verifier` (or in the background); main chunk against M9 (decision 6) and against M5 `71f04d0` with the agreed method (spec §9, ≤ +150 kB); `perf-load` against M9; `git diff public/models/` empty; PR to `main`, merge, deploy, confirm `/m10/`, README row; then freeze `m10` at the merge commit in `deploy/pages.json` and set `"current": null`. Update `STATUS.md` §6 (bundle growth over M5) and §8 (the freeze) with what AR measures and does.
+Trigger: "begin session AR". If the user wants the real-device gate after all, AO and AP run first ("begin session AO").
 
 ## State
-- Last commit: M9-AJ wrap-up on `claude/keen-clarke-32a10a`; PR to `main` opened in AJ (see the plan's AJ notes for its number and merge state).
-- `npm run check`: pass (Vitest 528). E2E: full suite 153/156 with the 3 failures fixed in AJ (1 stale assertion, 2 timing), those specs 15/15; `interaction.spec.ts` 1/1.
-- Main chunk (eager JS) M8 460.8 → M9 468.1 kB gzip -9 (+7.3, budget +10).
+- The user skipped AO and AP (measurement and the PC/iPhone gate) and went straight to AQ.
+- AQ done: `STATUS.md` rewritten for the whole build (eight sections, as decision 8 asks). Unmeasured real-device figures are marked as such; the prefetch fallback was never built. `STATUS-M10.md` stays as the forward look; its intro now points to `STATUS.md`, and its "21 movements" was corrected to 24. Notes under step 7 of `docs/PLAN-milestone-10.md`; the sessions table marks AO/AP skipped and AQ done.
+- No code, content or assets changed. `npm run check`: see the session's final message.
 - Open fan-out work: none.
 
 ## Waiting on the user
-- Confirm `/m9/` is live after the deploy (the container can't reach github.io).
-- Still open, any time: QUESTIONS 132–138, `assets/build/REPORT-patches.md`, the real-device muscles-layer load time (M7), the per-browser `?bench` table (M5 step 12), the content review of `content/QUESTIONS.md`.
+- Whether to run AO/AP before AR, or close M10 with the gate unmeasured.
+- QUESTIONS 139 (AL's colours and the region pause).
+- Optional: a VoiceOver pass on the iPhone.
+- Still open, any time: QUESTIONS 132–138 and `assets/build/REPORT-patches.md`; the per-browser `?bench` table (M5 step 12).
 
 ## Things the next session must know
-- perf-load can't separate M8 and M9 on the muscles layer here (single runs range 7–12.6 s in both; the wait before the file request is native/SwiftShader time). M10's performance pass should measure it on a real device.
-- Count modulepreloaded chunks when measuring the main chunk: M9's `index.html` preloads `names` and `softRegistry` as well as `index`, meshoptimizer and the runtime.
-- M10's questions start at **139**.
+- The full e2e run is about 23 specs and 160 tests; the keyboard journey alone takes about 4 minutes (limit 7). Run Playwright one at a time (port 4173).
+- M10's next question is **140**.

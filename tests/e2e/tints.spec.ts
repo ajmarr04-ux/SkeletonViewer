@@ -109,3 +109,30 @@ test("ant=1 round trip: a link opens at the muscle's tier 2 with its antagonists
   await expect(panel(page)).toHaveAttribute("data-id", LONG, { timeout: 120_000 });
   await expect(page).not.toHaveURL(/ant=1/);
 });
+
+// M10 session AL (plan decision 3): the tints are Okabe–Ito colours like the
+// regions (an origin patch on an upper-limb bone would be yellow on yellow), so
+// colour-by-region pauses while any tint or patch is drawn, and the legend says so.
+test("colour-by-region pauses while a muscle's tints are shown, and comes back after", async ({ page }) => {
+  test.setTimeout(180_000);
+  await ready(page, "layers=b:on,m:on&color=region");
+  await expect(debug(page)).toHaveAttribute("data-colour", "region");
+  await page.evaluate((id) => window.__viewer!.select(id), LONG);
+  await expect(panel(page)).toHaveAttribute("data-id", LONG);
+  // Tier 0: no tints, so the regions stay (the muscle sits beside region-coloured bones).
+  await expect(debug(page)).toHaveAttribute("data-colour", "region");
+  await expect(page.getByTestId("legend-paused")).toHaveCount(0);
+
+  await panel(page).getByTestId("show-related").click();
+  await expect(debug(page)).toHaveAttribute("data-patches-origin", "triceps_brachii_long_head_left__origin", { timeout: 60_000 });
+  await expect(debug(page)).toHaveAttribute("data-colour", "bone");
+  await expect(page.getByTestId("legend-paused")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Colour key: regions" }).getByRole("button")).toHaveCount(0);
+  await expect(page.getByTestId("colour-toggle")).toHaveAttribute("aria-pressed", "true");
+
+  await page.evaluate(() => window.__viewer!.back());
+  await expect(page).not.toHaveURL(/tier=/);
+  await expect(debug(page)).toHaveAttribute("data-colour", "region");
+  await expect(page.getByTestId("legend-paused")).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Colour key: regions" }).getByRole("button")).toHaveCount(8);
+});

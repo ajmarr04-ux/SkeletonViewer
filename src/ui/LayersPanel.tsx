@@ -1,10 +1,10 @@
 // The Layers panel (musculoskeletal spec §6.1, M7 plan step 3): two presets,
 // then On / Ghost / Off for each layer, with a progress line while a layer's
 // files load and Retry if they fail. Lives in the main chunk (it is small);
-// the layer files and their code load only when a layer is turned on.
+// the layer files and their code load only when a layer is turned on. Its
+// changes are announced from the store (`src/ui/Announcer.tsx`), not here.
 
 import { useId } from "react";
-import { peeledMuscleCount, softTableLoaded } from "../content/softRegistry";
 import { applyLayerPreset, presetOf, setLayerMode, setMuscleDepth, type LayerPreset } from "../state/selection";
 import { useViewer, type LayerLoad } from "../state/store";
 import { LAYERS, type Layer, type LayerMode, type MuscleDepth, type TissueLayer } from "../state/url";
@@ -21,7 +21,6 @@ const DEPTH_STOPS = ["All", "Hide superficial", "Hide superficial + intermediate
 export function LayersPanel() {
   const layers = useViewer((s) => s.layers);
   const debugView = useViewer((s) => s.debugLayersView);
-  const say = useViewer((s) => s.say);
   const preset = presetOf(layers);
   return (
     <div className="layers-panel" data-testid="layers-panel">
@@ -39,10 +38,7 @@ export function LayersPanel() {
             aria-pressed={preset === p.key}
             data-testid={`layers-preset-${p.key}`}
             disabled={debugView}
-            onClick={() => {
-              applyLayerPreset(p.key);
-              say(p.key === "skeleton" ? "Skeleton: bones only" : "Full musculoskeletal: every layer on");
-            }}
+            onClick={() => applyLayerPreset(p.key)}
           >
             {p.label}
           </button>
@@ -57,7 +53,6 @@ export function LayersPanel() {
 
 function LayerRow({ layer, mode, disabled }: { layer: Layer; mode: LayerMode; disabled: boolean }) {
   const name = useId();
-  const say = useViewer((s) => s.say);
   const load = useViewer((s) => (layer === "bones" ? undefined : s.layerLoad[layer as TissueLayer]));
   return (
     <fieldset className="layer-row" data-layer={layer} data-mode={mode} data-status={load?.status ?? ""} data-lod={load?.lod ?? ""} data-shown-low={load?.shownAt.low?.toFixed(0) ?? ""}>
@@ -72,10 +67,7 @@ function LayerRow({ layer, mode, disabled }: { layer: Layer; mode: LayerMode; di
               checked={mode === m}
               disabled={disabled}
               data-testid={`layer-${layer}-${m}`}
-              onChange={() => {
-                setLayerMode(layer, m);
-                say(`${LAYER_LABELS[layer]}: ${MODE_LABELS[m].toLowerCase()}`);
-              }}
+              onChange={() => setLayerMode(layer, m)}
             />
             {MODE_LABELS[m]}
           </label>
@@ -122,7 +114,6 @@ function DepthControl() {
   const name = useId();
   const depth = useViewer((s) => s.muscleDepth);
   const off = useViewer((s) => s.layers.muscles === "off" || s.debugLayersView);
-  const say = useViewer((s) => s.say);
   return (
     <fieldset className="layer-depth" disabled={off} data-testid="muscle-depth">
       <legend>Depth</legend>
@@ -134,11 +125,7 @@ function DepthControl() {
             value={i}
             checked={i === depth}
             data-testid={`muscle-depth-${i}`}
-            onChange={() => {
-              const stop = i as MuscleDepth;
-              setMuscleDepth(stop);
-              say(depthAnnouncement(stop, softTableLoaded() ? peeledMuscleCount(stop) : null));
-            }}
+            onChange={() => setMuscleDepth(i as MuscleDepth)}
           />
           {label}
         </label>
@@ -146,11 +133,4 @@ function DepthControl() {
       {off && <p className="muted">Turn the muscles on to peel them by depth.</p>}
     </fieldset>
   );
-}
-
-/** "Superficial muscles hidden: 41 muscles." (plan step 7). */
-export function depthAnnouncement(stop: MuscleDepth, count: number | null): string {
-  if (stop === 0) return "All muscles shown";
-  const what = stop === 1 ? "Superficial muscles hidden" : "Superficial and intermediate muscles hidden: deep muscles only";
-  return count === null ? what : `${what}. ${count} ${count === 1 ? "muscle" : "muscles"} hidden`;
 }

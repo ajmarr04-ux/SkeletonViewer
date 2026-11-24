@@ -14,7 +14,7 @@ import { attachedBoneOf, attachedKey, groupLayer, isGroupKey } from "../content/
 import { looksLikeSoftGroup } from "../content/softTree";
 import { loadSoftTree } from "../content/softTreeLoader";
 import { loadSoftContent } from "../content/softContentLoader";
-import { displayName } from "../content/names";
+import { ALL_SHOWN_ANNOUNCEMENT, hiddenAnnouncement } from "../content/announce";
 import { hideTargets, isSoftId, softEntry, softLayerOf } from "../content/softRegistry";
 import { loadSoftIds } from "../content/loadSoftIds";
 import { hasSoftTier2, softTiersLoaded } from "../content/softRelations";
@@ -272,18 +272,28 @@ export const expandRegion = (): void => {
  * structure back, selected. The URL keeps the first 100 hidden IDs.
  */
 export function hideSelected(): void {
+  const id = useViewer.getState().sel;
+  if (id !== null) hideStructure(id);
+}
+
+/**
+ * Hide one structure (M10 plan decision 5: `X` on the Tab cursor). The
+ * selection itself is hidden as `hideSelected` says; anything else is hidden
+ * with the selection kept, as one new history entry too (Back un-hides it).
+ */
+export function hideStructure(id: string): void {
   const st = useViewer.getState();
-  const id = st.sel;
-  if (id === null || !isDrawn(id)) return;
+  if (!isDrawn(id)) return;
   const hidden = new Set(st.hidden);
   for (const t of hideTargets(id)) hidden.add(t);
   const all = [...hidden];
+  const selected = st.sel === id;
   st.setHidden(all);
-  st.setIsolation(FULL_SKELETON);
-  const url = urlWith({ sel: null, tier: 0, grp: null, hid: all.slice(0, HIDDEN_URL_CAP) });
+  if (selected) st.setIsolation(FULL_SKELETON);
+  const url = selected ? urlWith({ sel: null, tier: 0, grp: null, hid: all.slice(0, HIDDEN_URL_CAP) }) : urlWith({ hid: all.slice(0, HIDDEN_URL_CAP) });
   window.history.pushState({ ...window.history.state, skvDepth: depthNow() + 1 }, "", url);
   if (all.length > HIDDEN_URL_CAP) st.showToast(`Only the first ${HIDDEN_URL_CAP} hidden structures are kept in the link`);
-  st.say(`${displayName(id)} hidden. ${all.length} hidden.`);
+  st.say(hiddenAnnouncement(id, all.length));
 }
 
 /** Show every hidden structure again (the toolbar chip): one `replace`, not a history step. */
@@ -292,7 +302,7 @@ export function showAllHidden(): void {
   if (st.hidden.size === 0) return;
   st.setHidden([]);
   window.history.replaceState(window.history.state, "", urlWith({ hid: [] }));
-  st.say("All hidden structures shown.");
+  st.say(ALL_SHOWN_ANNOUNCEMENT);
 }
 /** The other side of a pair, keeping the tier (plan decision 8). */
 export const switchSide = (id: string): void => {
@@ -442,10 +452,13 @@ export async function selectSoftFromUrl(id: string, hasCam: boolean): Promise<vo
     return;
   }
   const layer = softLayerOf(id)!;
+  // Part of opening the page: not announced (M10 plan decision 4).
+  st.hush();
   showLayerOf(id);
   if (isDrawn(id)) await whenLayerShown(layer);
   const now = useViewer.getState();
   if (now.sel !== null) return; // the user selected something meanwhile
+  now.hush();
   // The link's tier and `ant=1` (M9: soft structures have tiers now; the sets appear when the content chunk loads).
   const q = new URLSearchParams(window.location.search);
   const t = Number(q.get("tier"));
@@ -473,6 +486,7 @@ export async function softGroupFromUrl(key: string, hasCam: boolean): Promise<vo
     return;
   }
   if (st.sel !== null || st.grp !== null) return; // the user chose something meanwhile
+  st.hush(); // part of opening the page: not announced
   st.setIsolation({ sel: null, tier: 0, grp: key });
   showLayerForGroup(key);
   const layer = groupLayer(key);

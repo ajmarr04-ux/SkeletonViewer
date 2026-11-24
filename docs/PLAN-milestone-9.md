@@ -24,7 +24,7 @@ Out of scope here (M10): labels for the new kinds beyond what the existing layou
 | AG | Origin/insertion highlighting with the patches, antagonist toggle and tints, legend chips (step 3) | none | decisions 6–8 | tints tested; patch/content agreement report; e2e triceps tier 1 tints scapula and ulna | **Done.** See "Session AG notes" |
 | AH | Info panel sections per kind with links; bone panel Origins/Insertions links; "Show attached muscles" (step 4) | none | decisions 9–10 | every kind's panel tested; `grp=attached:<bone>` round-trips | **Done.** See "Session AH notes" |
 | AI | Sidebar roots for the three layers, soft groups, and search with synonyms and group synonyms (step 5) | `content-writer` by region for synonyms, if the list is long (decision 12) | decisions 11–12 | tree and search e2e for the new kinds; chunk sizes recorded | **Done.** See "Session AI notes" |
-| AJ | Wrap-up: the spec's journey test, full e2e, no-regression, perf-load, hosted copy (step 6) | `verifier` × 1 for the full Playwright run | all of the above | exit criteria ticked; `/m9/` live | **Done** (deploy pending, see "Session AJ notes") |
+| AJ | Wrap-up: the spec's journey test, full e2e, no-regression, perf-load, hosted copy (step 6) | `verifier` × 1 for the full Playwright run | all of the above | exit criteria ticked; `/m9/` live | **Done.** See "Session AJ notes" |
 
 Triggers: "begin session AE" to "begin session AJ". Every session follows `docs/WORKFLOW.md`: read `docs/HANDOFF.md` and this file, do the one serial task, end with `npx tsc --noEmit`, `npx vitest run`, `npm run check` and the e2e specs it touched (the full suite in AJ, through `verifier`), then commit, push to the session branch, write `docs/HANDOFF.md` and stop. A PR to `main` at the end of AJ (or earlier if the user wants intermediate deploys).
 
@@ -41,7 +41,7 @@ Triggers: "begin session AE" to "begin session AJ". Every session follows `docs/
 - [x] Info panel sections per kind; sidebar roots; search and group synonyms.
 - [x] Playwright: full skeleton → turn on muscles → click triceps → click long head → Show attachments (scapula + ulna tinted) → Show functional group → Back ×4 → full view.
 - [x] No regression: with every new layer off, the main chunk grows by at most 10 kB gzipped over M8 (decision 13), no soft-tissue chunk is requested, and the full e2e suite passes.
-- [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
+- [x] **Hosted copy is live and linked below** (extra requirement for every milestone).
 
 ---
 
@@ -157,6 +157,7 @@ Triggers: "begin session AE" to "begin session AJ". Every session follows `docs/
 - **Lazy chunks, M8 → M9** (gzip -9): muscles content 86.0 → 127.1, ligaments 31.2 → 41.8, cartilage 5.8 → 8.5, bone content 32.3 → 42.1 kB; new: soft search 36.8, soft tree 12.1 kB; soft table 11.0, `LayerScenes` 2.6 → 3.0 kB; manifests unchanged. Patch files (models) 0.79 MB low, 1.29 MB high, loaded at the first muscle tier 1.
 - **`perf-load`**, M8 and M9 run on the same machine (Fast 4G, 4× CPU, SwiftShader, medians of 3). Skeleton and full detail match: desktop 3.37/3.39 s (M8) against 3.29/3.48 s (M9), full detail 6.58/6.59 against 6.57/6.70; phone 3.31/3.39 against 4.13/3.43, full detail 6.57/6.63 against 7.36/6.69. **The muscles layer can't be told apart on this runner.** Plain runs: M8 7.87/8.69 s desktop, 9.03/8.90 phone; M9 10.94/10.33 desktop, 11.18/11.14 phone. With `PERF_SETTLE=5000`: M8 9.08 desktop, 9.03 phone; M9 **8.06** desktop, 11.42 phone. Single runs range from 7.1 to 12.6 s in both builds. The `.glb` download itself takes about 1.9 s in both. The variable part is the wait before the file is requested, about 3.3 s unthrottled in both, and a CPU profile of that window is almost entirely native ("(program)") time: the software renderer, not our JavaScript. The 3 s / 5 s layer budget is missed by M7, M8 and M9 alike here, as recorded since M7. This is left to M10's performance pass, and the real-device check (`?debug`) stays open.
 - **Ground rules:** `git diff public/models/` empty; no content changed in AJ; no new QUESTIONS.
+- **Merged and deployed:** [#21](https://github.com/ajmarr04-ux/SkeletonViewer/pull/21) merged as **`ef6ee75`**; Deploy run 24 succeeded (2026-11-21 04:47 UTC).
 
 ## Step 1: Nested selection (session AE)
 - `resolveClick`, the reducer's part level and `parentOf`, history steps, `levelOf`; breadcrumb with the muscle → part crumbs; tree rows and links select directly. Picking returns the part's ID (the mesh is the part's), and the solid view colours all of a muscle's parts as focus when the muscle is selected (the outline covers every part, spec §8).
@@ -183,4 +184,4 @@ Triggers: "begin session AE" to "begin session AJ". Every session follows `docs/
 
 ## Hosted copy
 
-Not yet deployed. When live: https://ajmarr04-ux.github.io/SkeletonViewer/m9/
+Live: https://ajmarr04-ux.github.io/SkeletonViewer/m9/ (#21 merged as `ef6ee75`; Deploy run 24 succeeded on 2026-11-21). `m9` is frozen at `ef6ee75` in the M10 handover.

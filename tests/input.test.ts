@@ -142,6 +142,16 @@ describe("keyAction", () => {
     for (const key of ["-", "_"]) expect(k(key, key === "_")).toEqual({ kind: "dolly", factor: 1 / DOLLY_STEP });
   });
 
+  it("X hides, Shift + X shows all; R and E step to tiers 1 and 2 (M10 AN)", () => {
+    expect(k("x")).toEqual({ kind: "hide" });
+    expect(k("X", true)).toEqual({ kind: "showAll" });
+    expect(k("r")).toEqual({ kind: "tier", tier: 1 });
+    expect(k("R", true)).toEqual({ kind: "tier", tier: 1 });
+    expect(k("e")).toEqual({ kind: "tier", tier: 2 });
+    expect(k("E", true)).toEqual({ kind: "tier", tier: 2 });
+    expect(k("r", false, { ctrlKey: true })).toBeNull();
+  });
+
   it("H resets and F frames, either case", () => {
     expect(k("h")).toEqual({ kind: "reset" });
     expect(k("H", true)).toEqual({ kind: "reset" });

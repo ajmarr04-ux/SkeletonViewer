@@ -278,6 +278,7 @@ export function Toolbar() {
         type="button"
         className={inMore ? "menu-item more-item" : "tool hidden-chip"}
         data-testid="show-all-hidden"
+        aria-keyshortcuts="Shift+X"
         aria-label={`${hiddenCount} hidden · Show all`}
         title="Show every hidden structure again"
         onClick={() => {

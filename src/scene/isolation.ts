@@ -10,6 +10,7 @@ import { relations } from "../content/relations";
 import { reverseRelated, softRelated, softRoles } from "../content/softRelations";
 import type { MuscleRoles, Role } from "../content/softRoles";
 import type { TintRole } from "./tints";
+import type { ColourMode } from "./regionColours";
 import type { Tier } from "../state/isolation";
 import { DEFAULT_LAYERS, LAYERS, type GhostMode, type Layer, type LayerModes, type MuscleDepth } from "../state/url";
 import { peeledAt, softEntry, softLayerOf } from "../content/softRegistry";
@@ -309,6 +310,18 @@ export function viewOf(
   const tinted = withTints(base, st.sel, st.tier, st.antagonists ?? false, hasMesh, st.layers, softRoles, usePatchBatch.getState().failed);
   const iso = withJoint(tinted, st.joint, hasMesh);
   return sceneView(iso, st.layers, withPeeled(st.hidden, peel(st.muscleDepth ?? 0)));
+}
+
+/**
+ * The colour mode the bones are drawn in. Colour-by-region pauses (the bones go
+ * back to ivory) while any origin, insertion or antagonist tint or patch is
+ * drawn: the tints are Okabe–Ito colours like the regions, and an origin patch
+ * on an upper-limb bone (yellow on yellow), an antagonist beside the pectoral
+ * girdle or an insertion on a lower-limb bone would not stay apart (M10 plan
+ * decision 3, session AL; tests/colourVision.test.ts).
+ */
+export function drawnColourMode(mode: ColourMode, view: Pick<SceneView, "tints" | "patches">): ColourMode {
+  return mode === "region" && (view.tints.size > 0 || view.patches.size > 0) ? "bone" : mode;
 }
 
 /** Hidden structures plus the muscles peeled by the depth control (cached for the same two sets). */

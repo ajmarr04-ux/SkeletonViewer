@@ -1,6 +1,6 @@
 // Origin, insertion and antagonist tints (musculoskeletal spec §5.2–5.3, §6.3;
 // M9 plan decision 8). Pure, so the colour-vision test
-// (tests/layerColours.test.ts) covers them. Okabe–Ito colours, like the regions.
+// (tests/colourVision.test.ts) covers them. Okabe–Ito colours, like the regions.
 
 export type TintRole = "origin" | "insertion" | "antagonist";
 export const TINT_ROLES: readonly TintRole[] = ["origin", "insertion", "antagonist"];

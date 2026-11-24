@@ -22,7 +22,7 @@ import { BenchPanel } from "../ui/BenchPanel";
 import { benchLayersState } from "./bench";
 import { Toolbar } from "../ui/Toolbar";
 import { LOD_SETTING_KEY, lodPlan, lodsToLoad, parseLodSetting, summariseObjects, withoutLodParam, type Lod } from "./lod";
-import { createBoneMaterial, createGhostMaterial } from "./material";
+import { createBoneMaterial, createGhostMaterial, SCENE_BACKGROUND } from "./material";
 import { Explode } from "./Explode";
 import { Isolation, type IsolationStats, type SkeletonScene } from "./Isolation";
 import { createOutline, disposeOutline, OUTLINE } from "./outline";
@@ -195,7 +195,7 @@ export function Viewer() {
         gl={{ antialias: true, preserveDrawingBuffer: false }}
         dpr={[1, 2]}
       >
-        <color attach="background" args={["#1d2126"]} />
+        <color attach="background" args={[SCENE_BACKGROUND]} />
         <Lighting />
         {shown && <primitive object={shown.skeleton.mesh} />}
         {shown && <primitive object={shown.outlines.selected.mesh} />}
