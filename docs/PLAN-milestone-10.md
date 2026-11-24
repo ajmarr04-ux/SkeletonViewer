@@ -42,7 +42,7 @@ No fan-out is planned: every session changes shared code or one shared document,
 
 ## Exit criteria (from the musculoskeletal spec §11, M10)
 
-- [ ] Labels, legend chips and colours pass the existing colour-vision check.
+- [x] Labels, legend chips and colours pass the existing colour-vision check. (AL: `tests/colourVision.test.ts`.)
 - [x] Keyboard and screen-reader announcements cover the new kinds, layers and the part level. (Announcements: AM; keyboard: AN.)
 - [ ] Performance budgets met (or misses documented with the fallback taken).
 - [x] `STATUS.md` updated (new sections for layers; §6 and §7 tables extended).

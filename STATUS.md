@@ -509,12 +509,13 @@ With every layer off, the build loads no slower than M6, requests no layer file 
 
 | Build | Main chunk |
 | --- | --- |
+| M5 (`71f04d0`, measured in M10 AR) | 451.0 kB (one `index` file; meshoptimizer not yet split out) |
 | M6 | 458.4 kB |
 | M8 | 460.8 kB |
 | M9 | 468.1 kB |
-| M10 after AN | 470.4 kB (+2.3 over M9; M10's budget is +5) |
+| M10 (AR, final) | 470.1 kB: +2.1 over M9 (M10's budget +5), **+19.1 over M5** (spec budget +150) |
 
-M5's "450 kB gzipped" was measured another way, so growth over M5 (spec budget ≤ +150 kB) is roughly +20 kB but not yet measured with the agreed method (planned for AR, against `71f04d0`). Lazy chunks (gzipped): bone content 42.1 kB, muscles content 127.1, ligaments 41.8, cartilage 8.5, bone search 9.1, soft search 36.8, soft tree 12.1, soft ID table 11.0, `LayerScenes` 3.0. Manifests are not shipped to the app except through `?debug`.
+Growth over M5 was measured in AR with the agreed method: M5, M9 and M10 built side by side from the same `node_modules`, every script `index.html` loads eagerly counted with `gzip -9` (one concatenated stream gives the same figures to 0.3 kB). **+19.1 kB against the spec's +150 kB**: the musculoskeletal programme added its content, search data, trees and layer code as lazy chunks, as spec §9 asks. All JavaScript in `dist/assets`, lazy chunks included: M5 518.2 kB, M9 925.5 kB, M10 927.6 kB. Lazy chunks (gzipped): bone content 42.1 kB, muscles content 127.1, ligaments 41.8, cartilage 8.5, bone search 9.1, soft search 36.8, soft tree 12.1, soft ID table 11.0, `LayerScenes` 3.0. Manifests are not shipped to the app except through `?debug`.
 
 **Not measured:** Firefox, Edge, Safari on the Mac and Chrome on Android (the browser table in `docs/PLAN-milestone-5.md`, step 12, is empty); FPS with labels and colour-by-region on a real phone; everything in the M10 budget table that needs a real device (layer load, soft click → highlight, the muscle tier 2 bench). Combinations of layers beyond "all solid" and "muscles ghosted" have not been benched.
 
@@ -619,7 +620,6 @@ M5's "450 kB gzipped" was measured another way, so growth over M5 (spec budget �
 
 **Performance and the build**
 - Real-device layer load, FPS at a muscle tier with antagonists, and soft click → highlight are unmeasured (AO and AP skipped). The container can't measure layer load meaningfully because of its software GPU.
-- Bundle growth against M5 hasn't been measured with the agreed method.
 - The main chunk is about 470 kB gzipped; Vite warns about chunks over 500 kB raw. Everything soft-tissue except the layer registry and announcements is in lazy chunks.
 - The Vite config triggers "configLoader: native" warnings (extensionless imports, a JSON import without attributes). Harmless today.
 - `THREE.Clock` deprecation warning, and `KHR_parallel_shader_compile` unsupported (SwiftShader only).
