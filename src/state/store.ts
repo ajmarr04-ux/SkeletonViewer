@@ -96,6 +96,13 @@ export type ViewerState = {
   announce: { text: string; seq: number } | null;
   say: (text: string) => void;
   /**
+   * Grows by one when the changes made in the same task are part of opening the
+   * page (a soft `sel=` or `grp=` from the link, applied once its table loads):
+   * the live region says nothing for them (M10 plan decision 4).
+   */
+  hushed: number;
+  hush: () => void;
+  /**
    * The keyboard cursor in the 3D view (plan step 4): the object Tab has reached
    * and where its centre is on screen (client px), or null.
    */
@@ -199,6 +206,8 @@ export const useViewer = create<ViewerState>()((set) => ({
   hovered: null,
   announce: null,
   say: (text) => set((s) => ({ announce: { text, seq: (s.announce?.seq ?? 0) + 1 } })),
+  hushed: 0,
+  hush: () => set((s) => ({ hushed: s.hushed + 1 })),
   keyCursor: null,
   setKeyCursor: (keyCursor) =>
     set((s) => (s.keyCursor === keyCursor || (s.keyCursor && keyCursor && s.keyCursor.id === keyCursor.id && s.keyCursor.x === keyCursor.x && s.keyCursor.y === keyCursor.y) ? s : { keyCursor })),

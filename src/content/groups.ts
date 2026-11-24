@@ -199,16 +199,12 @@ export function groupCounts(key: string): { shown: number; total: number } {
 /**
  * What a screen reader hears when a group is isolated (plan decision 5):
  * "Molars, upper and lower: 12 shown, 12 of 16 have a 3D model." With `back`
- * (returning from one of its members) it starts "Back to".
+ * (returning from one of its members) it starts "Back to". An attached-muscles
+ * group is worded by `groupIsolationAnnouncement` (`src/content/announce.ts`).
  */
 export function groupAnnouncement(key: string, back = false): string {
   const g = groupOf(key);
   if (!g) return "Full skeleton";
-  if (g.attached) {
-    const n = g.members.length - 1;
-    const what = g.attached.loading ? "loading the muscles" : n === 0 ? "no muscles attach here" : `${n} ${n === 1 ? "muscle or part" : "muscles and parts"}`;
-    return `${back ? "Back to " : ""}${g.name}: ${what}.`;
-  }
   const { shown, total } = groupCounts(key);
   const missing = shown < total ? `, ${shown} of ${total} have a 3D model` : "";
   return `${back ? "Back to " : ""}${g.name}: ${shown} shown${missing}.`;

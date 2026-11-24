@@ -5,7 +5,8 @@ import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import ids from "../content/ids.json";
 import { compileAllSoftFromDisk } from "../scripts/lib/content-files";
-import { attachedBoneOf, attachedKey, groupAncestors, groupAnnouncement, groupOf, isGroupKey, ancestorsOf } from "../src/content/groups";
+import { attachedBoneOf, attachedKey, groupAncestors, groupOf, isGroupKey, ancestorsOf } from "../src/content/groups";
+import { groupIsolationAnnouncement } from "../src/content/announce";
 import { registerSoftIds, resetSoftIds, softEntry } from "../src/content/softRegistry";
 import { attachedTo, registerSoftTiers, resetSoftTiers } from "../src/content/softRelations";
 import { softSections, structureLabel, type MuscleSections, type JoinSections } from "../src/content/softPanel";
@@ -172,7 +173,7 @@ describe('"Show attached muscles": grp=attached:<bone>', () => {
     expect(g.attached).toMatchObject({ bone: "femur_left", loading: true });
     expect(g.name).toBe("Muscles attached to Femur (left)");
     expect(g.trail.slice(-2)).toEqual(["Femur", "Attached muscles"]);
-    expect(groupAnnouncement("attached:femur_left")).toBe("Muscles attached to Femur (left): loading the muscles.");
+    expect(groupIsolationAnnouncement("attached:femur_left")).toBe("Femur, left: attached muscles loading.");
     expect(groupView("attached:femur_left", "ghost", hasMesh).solid).toEqual(new Set(["femur_left"]));
   });
 
@@ -194,14 +195,20 @@ describe('"Show attached muscles": grp=attached:<bone>', () => {
     // A listed muscle with parts is drawn as its parts.
     const withParts = g.members.find((id) => !hasMesh(id) && (softEntry(id)?.parts?.length ?? 0) > 0);
     if (withParts) for (const p of softEntry(withParts)!.parts!.filter(hasMesh)) expect(solid.has(p), p).toBe(true);
-    expect(groupAnnouncement("attached:femur_left")).toBe(`Muscles attached to Femur (left): ${g.members.length - 1} muscles and parts.`);
+    // Counted by kind (M10 AM): a part listed on its own counts as a part.
+    const parts = g.members.filter((id) => softEntry(id)?.kind === "muscle_part").length;
+    const muscles = g.members.length - 1 - parts;
+    expect(groupIsolationAnnouncement("attached:femur_left")).toBe(
+      `Femur, left: attached muscles shown, ${muscles} muscles${parts ? ` and ${parts} part${parts === 1 ? "" : "s"}` : ""}.`,
+    );
+    expect(groupIsolationAnnouncement("attached:femur_left", true)).toMatch(/^Back to Femur, left: attached muscles shown/);
     expect(groupAncestors("attached:femur_left")).toEqual(ancestorsOf("femur_left"));
   });
 
   it("a bone with no muscles: the bone alone", () => {
     const g = groupOf("attached:tooth_11")!;
     expect(g.members).toEqual(["tooth_11"]);
-    expect(groupAnnouncement("attached:tooth_11")).toBe(`${g.name}: no muscles attach here.`);
+    expect(groupIsolationAnnouncement("attached:tooth_11")).toMatch(/^Upper right central incisor: no muscles attach here\.$/);
   });
 
   it("the reducer treats it as a group: a level, Back to the full skeleton; a member from it is a new entry", () => {

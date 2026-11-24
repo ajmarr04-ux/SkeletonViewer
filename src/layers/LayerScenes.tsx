@@ -230,9 +230,7 @@ function TissueLayerScene({
         useLayerBatches.setState({ [layer]: batches });
         const now = useViewer.getState();
         const prev = now.layerLoad[layer];
-        const first = !prev?.lod;
         now.setLayerLoad(layer, { status: "ready", lod, fetching: null, shownAt: { ...prev?.shownAt, [lod]: performance.now() } });
-        if (first) now.say(`${LAYER_NAMES[layer]} loaded`);
         if (debug) {
           const manifest = await loadManifest(layer);
           const actual = new Map<string, Bounds>();

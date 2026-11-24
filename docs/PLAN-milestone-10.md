@@ -24,7 +24,7 @@ Out of scope: content review and the open content questions (spec §13 of `SPEC 
 | (planning) | M9 → M10 handover and this plan (step 0) | none | M9 plan, spec §11 | `m9` frozen, `current` 10, plan written | **Done.** See step 0 |
 | AK | Labels for every kind: kind-aware priorities, one label per unselected muscle, focus layer wins ties (step 1) | none | decisions 1–2 | layout tests per kind; e2e labels with muscles on, at muscle tier 1 and at part level | **Done.** See step 1 |
 | AL | Colour-vision pass over every colour the layers add, legend chips and label contrast (step 2) | none | decision 3 | one colour test covering every pair that can be on screen together; legend and label contrast tested; any colour change recorded | **Done.** See step 2 |
-| AM | Screen-reader announcements for the new kinds, layers, depth, Hide and the part level (step 3) | none | decision 4 | every row of decision 4's table tested as a pure function and in e2e through the live region | Not started |
+| AM | Screen-reader announcements for the new kinds, layers, depth, Hide and the part level (step 3) | none | decision 4 | every row of decision 4's table tested as a pure function and in e2e through the live region | **Done.** See step 3 |
 | AN | Keyboard pass for the new kinds: the spec's journey by keys only, Tab cursor across layers and parts, axe on every new state (step 4) | none | decision 5 | `keyboard.spec.ts` journey passes; gaps fixed | Not started |
 | AO | Performance measurement in the container and the tools for the user's run; **ends with the user gate** (step 5) | none | decisions 6–7 | budget table filled for everything the container can measure; bench links ready; deploy of `main` for the user's run | Not started |
 | AP | The user's PC and iPhone results recorded; each miss fixed or its fallback taken (step 6) | none | the user's numbers | §9 table complete; misses documented | Not started (waits on the user) |
@@ -43,7 +43,7 @@ No fan-out is planned: every session changes shared code or one shared document,
 ## Exit criteria (from the musculoskeletal spec §11, M10)
 
 - [ ] Labels, legend chips and colours pass the existing colour-vision check.
-- [ ] Keyboard and screen-reader announcements cover the new kinds, layers and the part level.
+- [ ] Keyboard and screen-reader announcements cover the new kinds, layers and the part level. (Announcements: AM, done; keyboard: AN.)
 - [ ] Performance budgets met (or misses documented with the fallback taken).
 - [ ] `STATUS.md` updated (new sections for layers; §6 and §7 tables extended).
 - [ ] No regression: with every new layer off, the main chunk grows by at most 5 kB gzipped over M9 (decision 6), no soft-tissue chunk is requested, and the full e2e suite passes.
@@ -139,6 +139,33 @@ No fan-out is planned: every session changes shared code or one shared document,
 ## Step 3: Announcements (session AM)
 - Pure wording functions (decision 4), wired to the store's layer, depth, hidden, selection and antagonist changes; folded messages for combined actions.
 - Tests: Vitest per row of the table; e2e reading the live region for each action, including a selection that turns a layer on.
+
+### Session AM notes (2026-11-24)
+- **One composer, from the store.** `src/ui/Announcer.tsx` subscribes to the store, collects every change made in one task (a selection that turns its layer on is two `set`s) and, in a microtask, hands the before/after snapshot to the pure `composeAnnouncement` (`src/content/announce.ts`). Order in the one message: an explicit `say` (Hide, the Tab cursor, toasts) **or** the isolation change, then antagonists, then layers, then depth, then the layers' files. The Layers panel and `LayerScenes` no longer call `say`: the panel, a preset, a selection, a soft group, "Show attached muscles" and Back/Forward all say the same. Joint highlighting keeps its own effect (it never comes with an isolation change).
+- **No announcement on page load** (as before): the composer starts from the state `initSelectionFromUrl` set, and "X loaded." is said only for a layer the user turned on since (`awaiting`), so `?layers=m:on&sel=…` is silent. A failed load is always said.
+- **The final table** (all pure functions in `src/content/announce.ts`, tested in `tests/announce.test.ts`; e2e `tests/e2e/announce.spec.ts` records every text the live region is given):
+
+  | Action | Announcement |
+  | --- | --- |
+  | Layer set On / Ghost / Off | "Muscles on." / "Muscles ghosted." / "Muscles off."; the first time: "Muscles on, loading.", then "Muscles loaded." once the low LOD shows; "Muscles failed to load. Retry available."; Retry: "Muscles loading again." |
+  | Several layers at once | a preset: "Full musculoskeletal: all layers on." (+ " Loading cartilage and muscles." for the ones still to come) / "Skeleton: bones only."; otherwise each change in panel order ("Bones ghosted. Muscles on.") |
+  | Depth stop | "Superficial muscles hidden: 41 muscles." / "Superficial and intermediate muscles hidden, deep muscles only: 150 muscles." / "All muscles shown." (the Full preset's reset of the depth is not said separately) |
+  | Hide / Show all | "Biceps brachii, left, hidden. 3 hidden." / "All hidden structures shown." |
+  | Muscle → part | "Long head of triceps brachii, left, selected. Part of triceps brachii." (any part selected at tier 0) |
+  | Back from a part | "Triceps brachii, left, selected."; back from a higher tier, as for bones: "Triceps brachii, left, isolated." |
+  | Muscle tier 1 | "Triceps brachii, left: attachments shown, 2 bones and 3 parts." |
+  | Muscle tier 2 | "Triceps brachii, left: functional group shown, 6 muscles." |
+  | Antagonists | "Antagonists shown: 4 muscles." / "Antagonists hidden." / "Antagonists shown: none in the layers showing." |
+  | Ligament / cartilage tiers | "Anterior cruciate ligament, left: related structures shown, 2 bones." / "…: joint shown, 4 bones, 5 ligaments and 2 menisci." |
+  | Show attached muscles | "Femur, left: attached muscles shown, 20 muscles and 5 parts." (loading: "Femur, left: attached muscles loading."; none: "…: no muscles attach here."; from a member: "Back to Femur, left: …") |
+  | A bone's tier with soft layers on | tier 1: M5's wording + " Also 23 muscles and 4 ligaments."; tier 2: "Femur, left: region shown, 8 bones and 40 muscles." |
+  | A selection that turns a layer on | the selection, then the layer: "Triceps brachii, left, selected. Isolated. Muscles on, loading." (risk 3) |
+
+- **Counting by kind** (`countByKind`): bones and teeth are "bones"; a soft structure counts as its kind (muscle, part, ligament, cartilage, disc, meniscus: "cartilages", "menisci"). Parts count as **parts only for the focus's own muscle** (a muscle's heads, a part's siblings); any other part counts once, as its muscle, so a functional group is "6 muscles", not their heads. The focus itself is not counted at a soft tier; a bone's own mesh is (M5's "8 bones" includes it).
+- **Departures from the starting table:** the tier counts are by kind for every soft kind (not "N structures", M9's wording); a part's message names its muscle whenever a part is selected, not only from its muscle; the attached-muscles group is worded like a tier ("…: attached muscles shown, …") with parts counted apart, instead of "23 attached muscles"; Hide's name is spoken ("Femur, left, hidden.") rather than displayed ("Femur (left) hidden.").
+- **Page-load hush:** a soft `sel=` or `grp=` in the link is applied after its table loads, so it used to be announced ("Triceps brachii, left, selected. Isolated."). `selectSoftFromUrl` and `softGroupFromUrl` now call the store's `hush()` before their changes; the composer says nothing for a hushed batch and doesn't await its layer's "loaded".
+- Main chunk: **470.0 kB** (`gzip -9`, `index` + modulepreloads), +1.9 kB over M9 (budget +5). The wording moved out of `LayersPanel`, `selection.ts` and `LayerScenes` into `announce.ts`, which stays in the main chunk (decision 6: announcement code is small); the counts use the soft table and tiers already registered by the lazy chunks.
+- **Bug fixed on the way:** going from a bone to its own "Show attached muscles" said "Back to …", because the bone is a member of its group. The bone no longer counts as a member stepped back from.
 
 ## Step 4: Keyboard (session AN)
 - The journey by keys; `tabCursor` across layers and parts; axe on every new state; fixes.
