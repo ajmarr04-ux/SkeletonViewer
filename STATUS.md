@@ -501,6 +501,15 @@ Three soft roots beside the bone tree, loaded lazily (`virtual:skeleton-soft-tre
 | Desktop 1280 × 800 | 3.48 s / 6.68 s | 3.25 s / 6.50 s | 7.38 s | 3 s |
 | Phone profile | 3.42 s / 6.54 s | 3.19 s / 6.43 s | 7.77 s | 5 s |
 
+**M10 (AR) against M9, same container, same day** (2026-11-24; medians of 3):
+
+| Profile | M9 (`ef6ee75`): skeleton / full detail / muscles on | M10: skeleton / full detail / muscles on |
+| --- | --- | --- |
+| Desktop 1280 × 800 | 4.16 s / 7.49 s / 10.84 s | 4.47 s / 7.80 s / 9.01 s |
+| Phone profile | 4.26 s / 7.68 s / 12.38 s | 4.46 s / 7.79 s / 10.24 s |
+
+Single skeleton runs are bimodal in both builds (1.9 s or about 4.5 s), depending on how long SwiftShader's shader compilation blocks the main thread before the first frame. The low file arrives at about 1.75 s every time, so the bone figures match M9 within noise.
+
 With every layer off, the build loads no slower than M6, requests no layer file or layer chunk, and its bone files are byte-identical to M5's. The muscles layer misses its budget **in the container**: its 1.6 MB low file shows 7–12.6 s after the click across M7–M9 runs (the download alone is about 1.9 s unthrottled, 8.5 s at Fast 4G), because SwiftShader takes hundreds of milliseconds of main-thread time per frame and the streamed file is read between frames. A real GPU doesn't do that. **The real-device figure is unmeasured**: with `?debug`, the layer line in the overlay reads "low shown N s after turned on", and nobody has reported it yet. The user's `?debug` skeleton load on `/m7/`: 360 ms (low) and 483 ms (high) on the PC, 176 ms (low) on the iPhone. The user reported that `/m5/` "loads great on smartphone and pc".
 
 **Label layout** (container, SwiftShader, 4× CPU): M5 bones only, median 2.4 ms, max 12 ms (median 1.1 ms at tier 2). M10 every layer on, median 7.6 ms, max 27.8 ms (13 layouts); triceps at tier 2, median 2.7 ms, max 3.3 ms. Layouts run at most every 100 ms while the camera moves, so no candidate pre-filter was added. Phone figure *unmeasured*.

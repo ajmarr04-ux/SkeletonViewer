@@ -29,7 +29,7 @@ Out of scope: content review and the open content questions (spec §13 of `SPEC 
 | AO | Performance measurement in the container and the tools for the user's run; **ends with the user gate** (step 5) | none | decisions 6–7 | budget table filled for everything the container can measure; bench links ready; deploy of `main` for the user's run | **Skipped** for now (user, 2026-11-24) |
 | AP | The user's PC and iPhone results recorded; each miss fixed or its fallback taken (step 6) | none | the user's numbers | §9 table complete; misses documented | **Skipped** with AO |
 | AQ | `STATUS.md` brought up to date for M6–M10 (step 7) | none | decision 8 | every section true of the build; §6 and §7 tables extended | **Done.** See "Session AQ notes" |
-| AR | Wrap-up: full e2e, no-regression, main chunk vs M9 and M5, perf-load, hosted copy, programme close (step 8) | `verifier` × 1 for the full Playwright run | all of the above | exit criteria ticked; `/m10/` live; decision 9 done | Not started |
+| AR | Wrap-up: full e2e, no-regression, main chunk vs M9 and M5, perf-load, hosted copy, programme close (step 8) | `verifier` × 1 for the full Playwright run | all of the above | exit criteria ticked; `/m10/` live; decision 9 done | **In progress.** See "Session AR notes" |
 
 Triggers: "begin session AK" to "begin session AR". Every session follows `docs/WORKFLOW.md`: read `docs/HANDOFF.md` and this file, do the one serial task, end with `npx tsc --noEmit`, `npx vitest run`, `npm run check` and the e2e specs it touched (the full suite in AR, through `verifier`), then commit, push to the session branch, write `docs/HANDOFF.md` and stop.
 
@@ -44,9 +44,9 @@ No fan-out is planned: every session changes shared code or one shared document,
 
 - [x] Labels, legend chips and colours pass the existing colour-vision check. (AL: `tests/colourVision.test.ts`.)
 - [x] Keyboard and screen-reader announcements cover the new kinds, layers and the part level. (Announcements: AM; keyboard: AN.)
-- [ ] Performance budgets met (or misses documented with the fallback taken).
+- [ ] Performance budgets met (or misses documented with the fallback taken). *Not closed:* AO and AP (the real-device gate) were skipped at the user's request; the container misses are documented in `STATUS.md` §6, the real-device figures are marked unmeasured, and the prefetch fallback was not built.
 - [x] `STATUS.md` updated (new sections for layers; §6 and §7 tables extended).
-- [ ] No regression: with every new layer off, the main chunk grows by at most 5 kB gzipped over M9 (decision 6), no soft-tissue chunk is requested, and the full e2e suite passes.
+- [x] No regression: with every new layer off, the main chunk grows by at most 5 kB gzipped over M9 (decision 6), no soft-tissue chunk is requested, and the full e2e suite passes.
 - [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
 
 ---
@@ -205,7 +205,7 @@ No fan-out is planned: every session changes shared code or one shared document,
 | FPS orbiting, muscle tier 2 with antagonists | 60 / ≥ 30 | | | | |
 | Click → highlight (muscle, part, ligament) | < 50 ms / < 100 ms | | | | |
 | Draw calls, everything on + muscle tier 2 | < 20 | | | | |
-| JS growth over M5 (gzipped) | ≤ 150 kB | | | | |
+| JS growth over M5 (gzipped) | ≤ 150 kB | +19.1 kB (AR) | n/a | n/a | Yes |
 
 ## Step 7: `STATUS.md` (session AQ)
 - Decision 8.
@@ -217,6 +217,13 @@ No fan-out is planned: every session changes shared code or one shared document,
 
 ## Step 8: Wrap-up (session AR)
 - Full e2e through `verifier`; main chunk vs M9 (decision 6) and vs M5 (spec §9); `perf-load` vs M9; `git diff public/models/` empty; PR to `main`, merge, deploy, confirm `/m10/`, README row; decision 9.
+
+### Session AR notes (2026-11-24)
+- **Full e2e** through `verifier`: **166/170 passed, 1 flaky**, 51.7 min, twice the usual time because the three builds below and `npm run check` ran beside it. The 3 failures were load-related and pass on their own on a quiet machine: `nested.spec.ts` (the triceps hover tooltip never appeared) **3/3** in 1.6 min; `keyboard.spec.ts` (two timeouts inside `page.evaluate`, plus the flaky whole-session test) **5/5** in 10.2 min. No test or code changed.
+- **`npm run check`:** passes (561 unit tests, `check-models`, `validate-content`, the attachment check). `git diff public/models/` against M9 and `main` is empty.
+- **Main chunk** (decision 6 and spec §9). M5 `71f04d0`, M9 `ef6ee75` and M10 built side by side in worktrees from the same `node_modules` (package-lock unchanged since M5), every script `index.html` loads eagerly, `gzip -9`: M5 **451.0 kB** (one `index`; meshoptimizer wasn't split out then), M9 **468.0**, M10 **470.1** (`index` 298.2 + meshoptimizer 168.2 + `names` 2.7 + runtime 0.5 + `softRegistry` 0.5). That is **+2.1 kB over M9** (budget +5) and **+19.1 kB over M5** (budget +150). One concatenated stream gives the same figures to 0.3 kB. All JS in `dist/assets`, lazy included: M5 518.2, M9 925.5, M10 927.6 kB. With every layer off, no soft chunk is requested (`layers.spec.ts`, in the full run).
+- **`perf-load`**, M9 and M10 run one after the other on the same quiet machine (Fast 4G, 4× CPU, SwiftShader, medians of 3). Desktop: skeleton 4.16 s (M9) against 4.47 s (M10), full detail 7.49 against 7.80, muscles on 10.84 against **9.01**. Phone: 4.26 against 4.46, 7.68 against 7.79, 12.38 against **10.24**. Single skeleton runs are bimodal in both builds (M10 1.90 to 4.89 s): the difference is the main thread blocked before the first frame (0.7 s against 3.0 to 3.6 s, SwiftShader's shader compilation), while the low file arrives at 1.74 to 1.78 s in every run of both. So the skeleton and full detail figures are within noise. The muscles layer is 1.8 to 2.1 s faster in M10 because the layer chunks arrive in about 0.17 s rather than 0.85 s. The 3 s / 5 s layer budget is still missed in the container, as it has been since M7.
+- **Ground rules:** no content, code or models changed in AR; no new QUESTIONS (the next is still 140).
 
 ## Hosted copy
 
