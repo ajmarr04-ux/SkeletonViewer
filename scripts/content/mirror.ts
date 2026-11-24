@@ -6,7 +6,8 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { mirrorFile } from "../../src/content/frontmatter";
 import { oppositeOf } from "../../src/content/placeholder";
-import { SOFT_LAYERS, bonesDir, makeOpposite, readContentFiles, readIds, readSoftFiles, readSoftIds, softDir } from "../lib/content-files";
+import { LAZY_LAYERS } from "../../src/systems/registry";
+import { bonesDir, makeOpposite, readContentFiles, readIds, readSoftFiles, readSoftIds, softDir } from "../lib/content-files";
 
 let written = 0;
 let unchanged = 0;
@@ -33,7 +34,7 @@ mirrorAll(
 const softIds = readSoftIds();
 const opposite = makeOpposite(softIds);
 const softFiles = readSoftFiles();
-for (const layer of SOFT_LAYERS)
+for (const layer of LAZY_LAYERS)
   mirrorAll(
     softIds.filter((e) => e.layer === layer && e.side === "left").map((e) => e.id),
     softFiles[layer],

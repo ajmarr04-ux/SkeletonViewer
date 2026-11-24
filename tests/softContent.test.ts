@@ -8,7 +8,7 @@ import { derive, type DeriveMuscle } from "../src/content/derive";
 import { mirrorFile } from "../src/content/frontmatter";
 import { compileSoftLayer } from "../src/content/softCompile";
 import { validateSoftContent, type SoftContentInput, type SoftIdEntry } from "../src/content/softValidate";
-import type { SoftLayer } from "../src/content/softSchema";
+import type { LazyLayerId as SoftLayer } from "../src/systems/registry";
 
 // --- Fixture: a two-headed flexor, a helper flexor, an extensor, a ligament, a meniscus ---
 const L = (id: string, kind: string, layer: SoftLayer, extra: Partial<SoftIdEntry> = {}): SoftIdEntry => ({

@@ -1,6 +1,9 @@
 // Pure checks used by scripts/check-models.ts (and unit-tested in tests/).
 // No I/O here: callers pass in plain data read from the .glb, ids.json and
-// the Blender manifest.
+// the Blender manifest. File names and budgets come from the registry's descriptors.
+
+import { isOverlayId, layerDescriptor, LAZY_LAYERS, OVERLAYS, type LayerId, type LazyLayerId, type OverlayId } from "../../src/systems/registry";
+import type { Lod } from "../../src/systems/types";
 
 export type Vec3 = [number, number, number];
 export type Bounds = { min: Vec3; max: Vec3 };
@@ -9,54 +12,38 @@ export type IdEntry = { id: string; meshAvailable: boolean };
 
 export type LodBudget = { maxBytes: number; targetTris: number; triTolerance: number };
 
-/** Budgets from spec §5 / plan step 4. */
-export const LOD_BUDGETS: Record<"high" | "low", LodBudget> = {
-  high: { maxBytes: 15 * 1024 * 1024, targetTris: 500_000, triTolerance: 0.15 },
-  low: { maxBytes: 6 * 1024 * 1024, targetTris: 150_000, triTolerance: 0.15 },
-};
-
-/** Soft-tissue layer files (M6 plan decision 8). */
-export const SOFT_LAYERS = ["muscles", "ligaments", "cartilage", "attachments"] as const;
-export type SoftLayer = (typeof SOFT_LAYERS)[number];
-
+/** Every model's triangle count may be this far from its target (spec §5 / plan step 4). */
+export const TRI_TOLERANCE = 0.15;
 const MiB = 1024 * 1024;
-export const LAYER_BUDGETS: Record<SoftLayer, Record<"high" | "low", LodBudget>> = {
-  muscles: {
-    high: { maxBytes: 10 * MiB, targetTris: 800_000, triTolerance: 0.15 },
-    low: { maxBytes: 4 * MiB, targetTris: 230_000, triTolerance: 0.15 },
-  },
-  ligaments: {
-    high: { maxBytes: 2.5 * MiB, targetTris: 120_000, triTolerance: 0.15 },
-    low: { maxBytes: 1 * MiB, targetTris: 40_000, triTolerance: 0.15 },
-  },
-  cartilage: {
-    high: { maxBytes: 2 * MiB, targetTris: 80_000, triTolerance: 0.15 },
-    low: { maxBytes: 1 * MiB, targetTris: 30_000, triTolerance: 0.15 },
-  },
-  attachments: {
-    high: { maxBytes: 3 * MiB, targetTris: 150_000, triTolerance: 0.15 },
-    low: { maxBytes: 1 * MiB, targetTris: 50_000, triTolerance: 0.15 },
-  },
-};
+
+/** The lazy layers' and overlays' model files (M6 plan decision 8), in registry order. */
+export type LayerFile = LazyLayerId | OverlayId;
+export const LAYER_FILES: readonly LayerFile[] = [...LAZY_LAYERS, ...OVERLAYS.map((o) => o.id)];
+
+const modelOf = (name: LayerId | OverlayId) => (isOverlayId(name) ? OVERLAYS.find((o) => o.id === name)! : layerDescriptor(name).models);
+/** A layer's or overlay's file stem in public/models (`<stem>-<lod>.glb`). */
+export const fileStem = (name: LayerId | OverlayId): string => modelOf(name).file;
+
+/** A layer's or overlay's budget for one LOD, from its descriptor (`budgets`). */
+export function lodBudget(name: LayerId | OverlayId, lod: Lod): LodBudget {
+  const b = modelOf(name).budgets[lod];
+  return { maxBytes: b.maxMiB * MiB, targetTris: b.targetTris, triTolerance: TRI_TOLERANCE };
+}
 
 /**
  * A layer's budget with the triangle target capped at the source total:
  * a layer with less geometry than its target keeps all of it (decision 8).
  */
-export function layerBudget(layer: SoftLayer, lod: "high" | "low", sourceTris: number): LodBudget {
-  const b = LAYER_BUDGETS[layer][lod];
+export function layerBudget(layer: LayerFile, lod: Lod, sourceTris: number): LodBudget {
+  const b = lodBudget(layer, lod);
   return { ...b, targetTris: Math.min(b.targetTris, sourceTris) };
 }
 
 export type SoftIdEntry = IdEntry & { layer: string };
 
-/** Node names expected in a soft-tissue layer file. */
-export function expectedLayerNodeNames(
-  layer: SoftLayer,
-  softIds: SoftIdEntry[],
-  attachmentIds: string[],
-): string[] {
-  if (layer === "attachments") return [...attachmentIds];
+/** Node names expected in a layer file: the layer's structures with a mesh, or an overlay's nodes. */
+export function expectedLayerNodeNames(layer: LayerFile, softIds: SoftIdEntry[], overlayNodes: string[]): string[] {
+  if (isOverlayId(layer)) return [...overlayNodes];
   return softIds.filter((e) => e.layer === layer && e.meshAvailable).map((e) => e.id);
 }
 

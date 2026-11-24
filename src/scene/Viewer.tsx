@@ -37,12 +37,12 @@ import { Legend } from "../ui/Legend";
 import { Toast } from "../ui/Toast";
 import { ScreenshotService } from "./ScreenshotService";
 import { probeDevice, readStoredSetting } from "./webgl";
-import type { SoftLayer } from "./debugLayers";
+import type { LayerFile } from "./debugLayers";
 
 // M6 debug layer view (`?debug&layers=…`): lazy chunks, never fetched without the parameter.
 const DebugLayersScene = lazy(() => import("./DebugLayers").then((m) => ({ default: m.DebugLayersScene })));
 const DebugLayersPanel = lazy(() => import("./DebugLayers").then((m) => ({ default: m.DebugLayersPanel })));
-const debugLayersFrom = (search: string): Promise<SoftLayer[] | null> =>
+const debugLayersFrom = (search: string): Promise<LayerFile[] | null> =>
   import("./debugLayers").then((m) => m.parseDebugLayers(search));
 // M7 soft-tissue layers: one lazy chunk, fetched the first time a layer is turned on (plan decision 3).
 const LayerScenes = lazy(() => import("../layers/LayerScenes").then((m) => ({ default: m.LayerScenes })));
@@ -68,7 +68,7 @@ export function Viewer() {
   const debug = hasFlag(window.location.search, "debug");
   const bench = hasFlag(window.location.search, "bench");
   const [probe] = useState(probeDevice);
-  const [layers, setLayers] = useState<SoftLayer[] | null>(null);
+  const [layers, setLayers] = useState<LayerFile[] | null>(null);
   useEffect(() => {
     if (debug && useViewer.getState().debugLayersView) {
       void debugLayersFrom(window.location.search).then(setLayers);

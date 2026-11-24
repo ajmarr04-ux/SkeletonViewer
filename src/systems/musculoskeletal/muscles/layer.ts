@@ -14,6 +14,7 @@ export const muscles = defineLayer({
     eager: false,
     chunking: "single",
     debugManifest: () => import("../../../../assets/build/manifest-muscles.json"),
+    budgets: { high: { maxMiB: 10, targetTris: 800_000 }, low: { maxMiB: 4, targetTris: 230_000 } },
   },
   contentChunk: "virtual:skeleton-soft-content-muscles",
   defaultSetting: "off",
@@ -29,6 +30,7 @@ export const muscles = defineLayer({
       colour: { debug: "#e0a33a" },
       when: "selected-tier",
       debugManifest: () => import("../../../../assets/build/manifest-attachments.json"),
+      budgets: { high: { maxMiB: 3, targetTris: 150_000 }, low: { maxMiB: 1, targetTris: 50_000 } },
     },
   ],
   kinds: [

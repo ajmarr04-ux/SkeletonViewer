@@ -4,13 +4,13 @@ import softIds from "../content/soft-ids.json";
 import softMapping from "../assets/mapping/soft-to-id.json";
 import {
   BOUNDS_TOLERANCE_M,
-  LAYER_BUDGETS,
-  LOD_BUDGETS,
-  SOFT_LAYERS,
+  LAYER_FILES,
   expectedLayerNodeNames,
+  fileStem,
   layerBudget,
+  lodBudget,
   type SoftIdEntry,
-  type SoftLayer,
+  type LayerFile,
   boundsDelta,
   checkSize,
   checkTriangles,
@@ -43,7 +43,13 @@ describe("compareNames", () => {
   });
 });
 
+const LOD_BUDGETS = { high: lodBudget("bones", "high"), low: lodBudget("bones", "low") };
+
 describe("budgets", () => {
+  it("reads the skeleton's budgets from the bones descriptor (15 and 6 MiB; 500k and 150k triangles)", () => {
+    expect(LOD_BUDGETS.high).toEqual({ maxBytes: 15 * 1024 * 1024, targetTris: 500_000, triTolerance: 0.15 });
+    expect(LOD_BUDGETS.low).toEqual({ maxBytes: 6 * 1024 * 1024, targetTris: 150_000, triTolerance: 0.15 });
+  });
   it("rejects files at or over the size budget", () => {
     expect(checkSize("high", 2_600_000, LOD_BUDGETS.high)).toEqual([]);
     expect(checkSize("low", LOD_BUDGETS.low.maxBytes, LOD_BUDGETS.low)).toHaveLength(1);
@@ -101,18 +107,24 @@ describe("soft-tissue layers (M6)", () => {
   it("matches the real ID lists", () => {
     const real = softIds as SoftIdEntry[];
     const att = Object.keys(softMapping.attachments);
-    const n = (l: SoftLayer) => expectedLayerNodeNames(l, real, att).length;
+    const n = (l: LayerFile) => expectedLayerNodeNames(l, real, att).length;
     expect([n("muscles"), n("ligaments"), n("cartilage"), n("attachments")]).toEqual([477, 300, 61, 697]); // muscles include the linea alba (QUESTIONS 40)
   });
   it("caps the triangle target at the source total", () => {
     expect(layerBudget("ligaments", "high", 1_000_000).targetTris).toBe(120_000);
     expect(layerBudget("ligaments", "high", 90_000).targetTris).toBe(90_000);
-    expect(layerBudget("ligaments", "high", 90_000).maxBytes).toBe(LAYER_BUDGETS.ligaments.high.maxBytes);
+    expect(layerBudget("ligaments", "high", 90_000).maxBytes).toBe(2.5 * 1024 * 1024);
+  });
+  it("lists M6's four layer files, from the registry", () => {
+    expect([...LAYER_FILES].sort()).toEqual(["attachments", "cartilage", "ligaments", "muscles"]);
+    expect(LAYER_FILES.map(fileStem)).toEqual(LAYER_FILES);
+    expect(fileStem("bones")).toBe("skeleton");
   });
   it("has a budget for every layer and LOD", () => {
-    for (const l of SOFT_LAYERS) {
-      expect(LAYER_BUDGETS[l].high.targetTris).toBeGreaterThan(LAYER_BUDGETS[l].low.targetTris);
-      expect(checkSize(`${l}-high`, LAYER_BUDGETS[l].high.maxBytes, LAYER_BUDGETS[l].high)).toHaveLength(1);
+    for (const l of LAYER_FILES) {
+      const high = lodBudget(l, "high");
+      expect(high.targetTris).toBeGreaterThan(lodBudget(l, "low").targetTris);
+      expect(checkSize(`${l}-high`, high.maxBytes, high)).toHaveLength(1);
     }
   });
 });

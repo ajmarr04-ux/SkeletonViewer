@@ -9,12 +9,14 @@ import { splitFrontMatter } from "../../src/content/frontmatter";
 import { oppositeOf } from "../../src/content/placeholder";
 import type { Patch } from "../../src/content/softRoles";
 import { compileSoftLayer, withSoftTiers, type SoftCompileDeps, type SoftLayerContent } from "../../src/content/softCompile";
-import { LAYER_FOLDERS, type SoftLayer } from "../../src/content/softSchema";
 import type { SoftIdEntry } from "../../src/content/softValidate";
 import type { IdEntry } from "../../src/content/validate";
+import { EAGER_LAYER, LAZY_LAYERS, NESTED_LAYER, type LazyLayerId } from "../../src/systems/registry";
+import { contentFolder } from "../../src/systems/registry.content";
 
 export const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
-export const bonesDir = join(root, "content/bones");
+/** The eager layer's content folder (content/bones). */
+export const bonesDir = join(root, "content", contentFolder(EAGER_LAYER));
 
 export const readJson = (rel: string): unknown => JSON.parse(readFileSync(join(root, rel), "utf8"));
 export const readIds = (): IdEntry[] => readJson("content/ids.json") as IdEntry[];
@@ -44,14 +46,13 @@ export function glbNodeNames(file: string): string[] {
 
 // --- Soft-tissue content (M8 plan decision 1) ---
 
-export const softDir = (layer: SoftLayer): string => join(root, "content", LAYER_FOLDERS[layer]);
-export const SOFT_LAYERS = Object.keys(LAYER_FOLDERS) as SoftLayer[];
+export const softDir = (layer: LazyLayerId): string => join(root, "content", contentFolder(layer));
 export const readSoftIds = (): SoftIdEntry[] => readJson("content/soft-ids.json") as SoftIdEntry[];
 
 /** content/<layer folder>/<name>.md, by layer and name. */
-export function readSoftFiles(): Record<SoftLayer, Map<string, string>> {
-  const out = {} as Record<SoftLayer, Map<string, string>>;
-  for (const layer of SOFT_LAYERS) {
+export function readSoftFiles(): Record<LazyLayerId, Map<string, string>> {
+  const out = {} as Record<LazyLayerId, Map<string, string>>;
+  for (const layer of LAZY_LAYERS) {
     const m = new Map<string, string>();
     const dir = softDir(layer);
     if (existsSync(dir)) for (const f of readdirSync(dir).sort()) if (f.endsWith(".md")) m.set(f.slice(0, -3), readFileSync(join(dir, f), "utf8"));
@@ -110,7 +111,7 @@ function softDeps(): SoftCompileDeps {
 }
 
 /** One layer's compiled soft-tissue content, read from disk (`npm run content`, the scripts and tests). No tier sets. */
-export function compileSoftFromDisk(layer: SoftLayer, files = readSoftFiles()[layer]): SoftLayerContent {
+export function compileSoftFromDisk(layer: LazyLayerId, files = readSoftFiles()[layer]): SoftLayerContent {
   return compileSoftLayer(layer, files, softDeps());
 }
 
@@ -129,15 +130,15 @@ export function readPatches(): Record<string, Patch> {
 }
 
 /** Every layer compiled, with the tier sets and the muscles' roles (M9 plan decisions 4, 6, 7): what the lazy chunks ship. */
-export function compileAllSoftFromDisk(files = readSoftFiles()): Record<SoftLayer, SoftLayerContent> {
+export function compileAllSoftFromDisk(files = readSoftFiles()): Record<LazyLayerId, SoftLayerContent> {
   const deps = softDeps();
-  const layers = Object.fromEntries(SOFT_LAYERS.map((l) => [l, compileSoftLayer(l, files[l], deps)])) as Record<SoftLayer, SoftLayerContent>;
+  const layers = Object.fromEntries(LAZY_LAYERS.map((l) => [l, compileSoftLayer(l, files[l], deps)])) as Record<LazyLayerId, SoftLayerContent>;
   return withSoftTiers(layers, { ...deps, patches: readPatches(), jointNames: readJointNames() });
 }
 
-/** Each bone's derived Origins and Insertions for the panel (M8 plan decision 13, M9 decision 9), from the muscles layer's content. */
+/** Each bone's derived Origins and Insertions for the panel (M8 plan decision 13, M9 decision 9), from the muscles layer's content (the nested layer). */
 export function readBoneAttached(): Record<string, BoneAttachedRows> {
-  const muscles = compileSoftFromDisk("muscles");
+  const muscles = compileSoftFromDisk(NESTED_LAYER);
   const soft = new Map(readSoftIds().map((e) => [e.id, e]));
   return boneAttachedRows(muscles.derived?.attached ?? {}, (id) => {
     const e = soft.get(id);

@@ -8,12 +8,13 @@ describe("parseDebugLayers", () => {
     expect(parseDebugLayers("?layers=all")).toBeNull();
     expect(parseDebugLayers("?debug=0&layers=all")).toBeNull();
   });
-  it("reads all, codes and names, in file order", () => {
-    const all = ["muscles", "ligaments", "cartilage", "attachments"];
+  // Registry order since M11 AV (M6 listed the files outermost first: muscles, ligaments, cartilage, attachments).
+  it("reads all, codes and names, in registry order (layers, then overlays)", () => {
+    const all = ["cartilage", "ligaments", "muscles", "attachments"];
     expect(parseDebugLayers("?debug&layers=all")).toEqual(all);
     expect(parseDebugLayers("?layers=all&debug=1")).toEqual(all);
     expect(parseDebugLayers("?debug&layers=")).toEqual(all);
-    expect(parseDebugLayers("?debug&layers=c,m")).toEqual(["muscles", "cartilage"]);
+    expect(parseDebugLayers("?debug&layers=m,c")).toEqual(["cartilage", "muscles"]);
     expect(parseDebugLayers("?debug&layers=ligaments,a")).toEqual(["ligaments", "attachments"]);
   });
   it("ignores bones and unknown codes", () => {
@@ -67,10 +68,10 @@ describe("layerReport", () => {
 
 describe("modelVersions (cache-busting the layer files)", async () => {
   const { modelVersions } = await import("../scripts/lib/model-versions-plugin");
-  const { SOFT_LAYERS } = await import("../scripts/lib/model-checks");
+  const { LAYER_FILES } = await import("../scripts/lib/model-checks");
   it("has a content hash for every layer file and LOD", () => {
     const v = modelVersions();
-    for (const layer of SOFT_LAYERS) {
+    for (const layer of LAYER_FILES) {
       for (const lod of ["low", "high"]) expect(v[`${layer}-${lod}`], `${layer}-${lod}`).toMatch(/^[0-9a-f]{10}$/);
     }
     expect(new Set(Object.values(v)).size).toBe(Object.keys(v).length);

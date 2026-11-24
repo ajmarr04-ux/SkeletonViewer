@@ -1,17 +1,19 @@
 // Vite plugin: `virtual:skeleton-soft-ids`, the soft-tissue ID table
-// (content/soft-ids.json, M6) with each muscle's depth (content/muscle-depth.json) resolved, trimmed to the fields the viewer uses in M7
+// (content/soft-ids.json, M6) with each muscle's depth (the depth layer's
+// `depthFile`, content/muscle-depth.json) resolved, trimmed to the fields the viewer uses in M7
 // (plan decision 15). Only the lazy layer chunk imports it, so the default
 // load never fetches it.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Plugin } from "vite";
 import { trimSoftIds, type RawSoftId } from "../../src/layers/softIds";
+import { DEPTH_FILE } from "../../src/systems/registry.content";
 import { root } from "./content-files";
 
 const ID = "virtual:skeleton-soft-ids";
 const RESOLVED = "\0" + ID;
 const file = join(root, "content/soft-ids.json");
-const depthFile = join(root, "content/muscle-depth.json");
+const depthFile = join(root, DEPTH_FILE);
 
 export function readSoftIds(): RawSoftId[] {
   return JSON.parse(readFileSync(file, "utf8")) as RawSoftId[];

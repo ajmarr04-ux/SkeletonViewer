@@ -8,16 +8,18 @@ import { fileURLToPath } from "node:url";
 import { NodeIO, getBounds, type Node } from "@gltf-transform/core";
 import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
 import { MeshoptDecoder } from "meshoptimizer";
+import { EAGER_LAYER } from "../src/systems/registry";
 import {
-  LOD_BUDGETS,
-  SOFT_LAYERS,
+  LAYER_FILES,
   checkSize,
   checkTriangles,
   compareBounds,
   compareNames,
   expectedLayerNodeNames,
   expectedNodeNames,
+  fileStem,
   layerBudget,
+  lodBudget,
   type Bounds,
   type IdEntry,
   type LodBudget,
@@ -100,11 +102,15 @@ async function checkFile(stem: string, expected: string[], manifest: Manifest, b
   }
 }
 
-await checkFile("skeleton", expectedNodeNames(ids), readJson<Manifest>("assets/build/manifest.json"), LOD_BUDGETS);
-for (const layer of SOFT_LAYERS) {
+// The eager layer (the skeleton), then every lazy layer and overlay, from the registry.
+await checkFile(fileStem(EAGER_LAYER), expectedNodeNames(ids), readJson<Manifest>("assets/build/manifest.json"), {
+  high: lodBudget(EAGER_LAYER, "high"),
+  low: lodBudget(EAGER_LAYER, "low"),
+});
+for (const layer of LAYER_FILES) {
   const manifest = readJson<Manifest>(`assets/build/manifest-${layer}.json`);
   const src = manifest.sourceTris ?? Infinity;
-  await checkFile(layer, expectedLayerNodeNames(layer, softIds, attachmentIds), manifest, {
+  await checkFile(fileStem(layer), expectedLayerNodeNames(layer, softIds, attachmentIds), manifest, {
     high: layerBudget(layer, "high", src),
     low: layerBudget(layer, "low", src),
   });

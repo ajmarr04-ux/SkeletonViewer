@@ -10,8 +10,9 @@ import { validateContent } from "../src/content/validate";
 import type { DepthEntry } from "../src/content/muscleDepth";
 import { validateMuscleDepth } from "../src/content/muscleDepthRules";
 import { checkNoJointLists, validateSoftContent } from "../src/content/softValidate";
+import { LAZY_LAYERS, layerDescriptor } from "../src/systems/registry";
+import { DEPTH_FILE } from "../src/systems/registry.content";
 import {
-  SOFT_LAYERS,
   glbNodeNames,
   makeOpposite,
   readBoneLandmarks,
@@ -56,7 +57,7 @@ const report = validateContent(
 );
 
 // Muscle depth (spec §6.2 and §10; M7 plan decision 9).
-report.errors.push(...validateMuscleDepth(readJson("content/muscle-depth.json"), readJson("content/soft-ids.json") as DepthEntry[]));
+report.errors.push(...validateMuscleDepth(readJson(DEPTH_FILE), readJson("content/soft-ids.json") as DepthEntry[]));
 
 // Soft-tissue content (musculoskeletal spec §10; M8 plan).
 const softIds = readSoftIds();
@@ -67,7 +68,10 @@ const soft = validateSoftContent(
     boneLandmarks: readBoneLandmarks(boneFiles),
     files: readSoftFiles(),
     meshes: Object.fromEntries(
-      SOFT_LAYERS.flatMap((l) => (["high", "low"] as const).map((lod) => [`${l}-${lod}`, glbNodeNames(join(root, `public/models/${l}-${lod}.glb`))])),
+      // Keyed by layer ID and LOD; read from the layer's model file.
+      LAZY_LAYERS.flatMap((l) =>
+        (["high", "low"] as const).map((lod) => [`${l}-${lod}`, glbNodeNames(join(root, `public/models/${layerDescriptor(l).models.file}-${lod}.glb`))]),
+      ),
     ),
     articulations: readJson("content/articulations.json") as { joint: string }[],
     joints: readJson("content/joints.json"),

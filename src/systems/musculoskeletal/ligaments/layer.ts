@@ -14,6 +14,7 @@ export const ligaments = defineLayer({
     eager: false,
     chunking: "single",
     debugManifest: () => import("../../../../assets/build/manifest-ligaments.json"),
+    budgets: { high: { maxMiB: 2.5, targetTris: 120_000 }, low: { maxMiB: 1, targetTris: 40_000 } },
   },
   contentChunk: "virtual:skeleton-soft-content-ligaments",
   defaultSetting: "off",

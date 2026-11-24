@@ -9,7 +9,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "meshoptimizer";
 import { create } from "zustand";
 import type { Bounds } from "../../scripts/lib/model-checks";
-import { DEBUG_LAYER_COLOURS, layerReport, loadLayerManifest, type LayerManifest, type LayerReport, type SoftLayer } from "./debugLayers";
+import { DEBUG_LAYER_COLOURS, layerReport, loadLayerManifest, type LayerManifest, type LayerReport, type LayerFile } from "./debugLayers";
 import type { Lod } from "./lod";
 import { layerUrl } from "../layers/urls";
 import { OVERLAYS } from "../systems/registry";
@@ -18,7 +18,7 @@ const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 
 type Loaded = { group: Group; report: LayerReport };
 
-async function loadLayer(layer: SoftLayer, lod: Lod, material: MeshStandardMaterial): Promise<Loaded> {
+async function loadLayer(layer: LayerFile, lod: Lod, material: MeshStandardMaterial): Promise<Loaded> {
   const [gltf, manifest] = await Promise.all([loader.loadAsync(layerUrl(layer, lod)), loadLayerManifest(layer)]);
   const scene = gltf.scene;
   scene.name = `layer-${layer}-${lod}`;
@@ -62,17 +62,17 @@ function disposeGroup(g: Group): void {
   });
 }
 
-type Status = { reports: Partial<Record<SoftLayer, LayerReport>>; error: string | null; done: boolean };
+type Status = { reports: Partial<Record<LayerFile, LayerReport>>; error: string | null; done: boolean };
 const useLayerStatus = create<Status>(() => ({ reports: {}, error: null, done: false }));
 
 /**
  * In the Canvas: once the bones show `lod`, load the same LOD of every layer
  * asked for and swap it in (so low, then high, as for the bones).
  */
-export function DebugLayersScene({ layers, lod }: { layers: SoftLayer[]; lod: Lod | null }) {
+export function DebugLayersScene({ layers, lod }: { layers: LayerFile[]; lod: Lod | null }) {
   const [materials] = useState(() => {
-    const out = {} as Record<SoftLayer, MeshStandardMaterial>;
-    for (const [layer, colour] of Object.entries(DEBUG_LAYER_COLOURS) as [SoftLayer, string][]) {
+    const out = {} as Record<LayerFile, MeshStandardMaterial>;
+    for (const [layer, colour] of Object.entries(DEBUG_LAYER_COLOURS) as [LayerFile, string][]) {
       out[layer] = new MeshStandardMaterial({
         name: `debug-${layer}`,
         color: colour,
@@ -127,7 +127,7 @@ export function DebugLayersScene({ layers, lod }: { layers: SoftLayer[]; lod: Lo
 }
 
 /** In the debug overlay: one line per layer. data-* attributes are read by `layers-debug.spec.ts`. */
-export function DebugLayersPanel({ layers, lod }: { layers: SoftLayer[]; lod: Lod | null }) {
+export function DebugLayersPanel({ layers, lod }: { layers: LayerFile[]; lod: Lod | null }) {
   const { reports, error, done } = useLayerStatus();
   const current = layers.map((l) => reports[l]).filter((r): r is LayerReport => !!r && r.lod === lod);
   const complete = done && current.length === layers.length;

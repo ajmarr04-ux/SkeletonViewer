@@ -24,6 +24,8 @@ export type EagerLayerId = Extract<Registered, { models: { eager: true } }>["id"
 /** The layer with a depth control (the muscles). */
 export type DepthLayerId = Extract<Registered, { depth: object }>["id"];
 export type SystemId = (typeof SYSTEMS)[number]["id"];
+/** Extra geometry files drawn for a layer's structures (the attachment patches). */
+export type OverlayId = Extract<Registered, { overlays: readonly unknown[] }>["overlays"][number]["id"];
 
 type RegisteredKind = Registered["kinds"][number];
 /** Every kind. */
@@ -60,9 +62,10 @@ export const depthStops = (): readonly string[] => layerDescriptor(DEPTH_LAYER).
 export const DEFAULT_MODES: Readonly<Record<LayerId, LayerMode>> = Object.fromEntries(REGISTRY.map((l) => [l.id, l.defaultSetting])) as Record<LayerId, LayerMode>;
 
 /** Every overlay, with the layer it belongs to. */
-export const OVERLAYS: readonly (OverlaySpec & { layer: LayerId })[] = REGISTRY.flatMap((l) =>
-  ((l as LayerDescriptor).overlays ?? []).map((o) => ({ ...o, layer: l.id })),
+export const OVERLAYS: readonly (OverlaySpec & { id: OverlayId; layer: LayerId })[] = REGISTRY.flatMap((l) =>
+  ((l as LayerDescriptor).overlays ?? []).map((o) => ({ ...o, id: o.id as OverlayId, layer: l.id })),
 );
+export const isOverlayId = (x: string): x is OverlayId => OVERLAYS.some((o) => o.id === x);
 
 /** The layer each kind belongs to. */
 const KIND_LAYER = new Map<string, LayerId>(REGISTRY.flatMap((l) => l.kinds.map((k) => [k.id, l.id] as const)));

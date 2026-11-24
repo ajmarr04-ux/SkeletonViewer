@@ -4,15 +4,11 @@
 // layer off.
 
 import { useEffect, useSyncExternalStore } from "react";
+// One `import()` per lazy layer's `contentChunk`, generated from the registry (scripts/lib/content-plugin.ts).
+import importers from "virtual:skeleton-layer-importers";
 import type { LazyLayerId } from "../systems/registry";
 import type { SoftLayerContent } from "./softCompile";
 import { registerSoftTiers } from "./softRelations";
-
-const importers: Record<LazyLayerId, () => Promise<{ default: SoftLayerContent }>> = {
-  muscles: () => import("virtual:skeleton-soft-content-muscles"),
-  ligaments: () => import("virtual:skeleton-soft-content-ligaments"),
-  cartilage: () => import("virtual:skeleton-soft-content-cartilage"),
-};
 
 const loaded: Partial<Record<LazyLayerId, SoftLayerContent>> = {};
 const pending: Partial<Record<LazyLayerId, Promise<SoftLayerContent>>> = {};

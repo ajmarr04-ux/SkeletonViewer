@@ -14,6 +14,7 @@ export const cartilage = defineLayer({
     eager: false,
     chunking: "single",
     debugManifest: () => import("../../../../assets/build/manifest-cartilage.json"),
+    budgets: { high: { maxMiB: 2, targetTris: 80_000 }, low: { maxMiB: 1, targetTris: 30_000 } },
   },
   contentChunk: "virtual:skeleton-soft-content-cartilage",
   defaultSetting: "off",

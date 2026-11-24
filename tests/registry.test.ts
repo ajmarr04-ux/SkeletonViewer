@@ -3,6 +3,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { formatLayers, parseLayers, type LayerModes } from "../src/state/url";
+import { CONTENT_REGISTRY, DEPTH_FILE, bodyWordsOf, schemaForKind } from "../src/systems/registry.content";
 import {
   DEBUG_CODES,
   DEFAULT_MODES,
@@ -85,5 +86,24 @@ describe("registry", () => {
       checked++;
     }
     expect(checked).toBeGreaterThan(5);
+  });
+
+  // Session AV (decision 2): the authoring halves cover exactly the registry's layers and kinds.
+  it("registry.content.ts has one content half per layer, with a schema and summary length per kind", () => {
+    expect(Object.keys(CONTENT_REGISTRY).sort()).toEqual([...LAYER_IDS].sort());
+    for (const l of REGISTRY) {
+      const c = CONTENT_REGISTRY[l.id];
+      expect(Object.keys(c.kinds).sort(), l.id).toEqual(l.kinds.map((k) => k.id).sort());
+      for (const k of l.kinds) {
+        expect(schemaForKind(k.id), k.id).not.toBeNull();
+        const w = bodyWordsOf(k.id)!;
+        expect(w.min, k.id).toBeLessThan(w.max);
+      }
+      // Only the depth layer has a depth table.
+      expect("depthFile" in c, l.id).toBe(l.id === DEPTH_LAYER);
+    }
+    expect(new Set(Object.values(CONTENT_REGISTRY).map((c) => c.folder)).size).toBe(LAYER_IDS.length);
+    expect(DEPTH_FILE).toMatch(/^content\/.+\.json$/);
+    expect(schemaForKind("nothing")).toBeNull();
   });
 });

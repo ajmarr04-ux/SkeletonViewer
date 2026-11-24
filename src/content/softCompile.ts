@@ -10,7 +10,9 @@ import { derive, type DeriveMuscle } from "./derive";
 import { splitFrontMatter } from "./frontmatter";
 import { buildMuscleRoles, type MuscleRoles, type Patch } from "./softRoles";
 import { buildSoftTiers, type SoftTierData } from "./softTiers";
-import { LAYER_FOLDERS, schemaForKind, type SoftFm, type SoftLayer } from "./softSchema";
+import type { LazyLayerId } from "../systems/registry";
+import { contentFolder, schemaForKind } from "../systems/registry.content";
+import type { SoftFm } from "./softSchema";
 
 export type SoftCompiledEntry = {
   latin: string;
@@ -47,12 +49,12 @@ export type SoftCompileDeps = {
 };
 
 /** Compile one layer. Throws on the first file that doesn't parse (validate-content lists every problem). */
-export function compileSoftLayer(layer: SoftLayer, files: Map<string, string>, deps: SoftCompileDeps): SoftLayerContent {
+export function compileSoftLayer(layer: LazyLayerId, files: Map<string, string>, deps: SoftCompileDeps): SoftLayerContent {
   const entries: Record<string, SoftCompiledEntry> = {};
   for (const [name, text] of [...files].sort(([a], [b]) => a.localeCompare(b))) {
-    const where = `content/${LAYER_FOLDERS[layer]}/${name}.md`;
+    const where = `content/${contentFolder(layer)}/${name}.md`;
     const kind = deps.kindOf(name);
-    const schema = kind ? schemaForKind(kind) : null;
+    const schema = kind ? schemaForKind<SoftFm>(kind) : null;
     if (!schema) throw new Error(`${where}: not in content/soft-ids.json`);
     const { data, body } = splitFrontMatter(text);
     const res = schema.safeParse(data);
@@ -99,9 +101,9 @@ function deriveAll(entries: Record<string, SoftCompiledEntry>, deps: SoftCompile
  * ligament's tier 2 names cartilage (and the other way round).
  */
 export function withSoftTiers(
-  layers: Record<SoftLayer, SoftLayerContent>,
+  layers: Record<LazyLayerId, SoftLayerContent>,
   deps: Pick<SoftCompileDeps, "pairJoints" | "functionalJoints"> & { patches?: Record<string, Patch>; jointNames?: Record<string, string> },
-): Record<SoftLayer, SoftLayerContent> {
+): Record<LazyLayerId, SoftLayerContent> {
   const fm: Record<string, SoftFm> = {};
   for (const c of Object.values(layers)) for (const [id, e] of Object.entries(c.entries)) fm[id] = e.fm;
   const tiers = buildSoftTiers({ fm, synergists: layers.muscles.derived?.synergists ?? {}, pairJoints: deps.pairJoints, functionalJoints: deps.functionalJoints });

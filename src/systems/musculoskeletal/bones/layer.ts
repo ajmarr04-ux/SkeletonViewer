@@ -8,7 +8,12 @@ export const bones = defineLayer({
   label: "Bones",
   ghostOrder: 0,
   colour: { material: "#d8cdb8", keyLabel: "Bone" },
-  models: { file: "skeleton", eager: true, chunking: "single" },
+  models: {
+    file: "skeleton",
+    eager: true,
+    chunking: "single",
+    budgets: { high: { maxMiB: 15, targetTris: 500_000 }, low: { maxMiB: 6, targetTris: 150_000 } },
+  },
   defaultSetting: "on",
   // Below every other layer for the labels' focus; teeth are counted as bones.
   kinds: [

@@ -18,6 +18,9 @@ export type ColourSpec = {
   debug?: string;
 };
 
+/** A model file's budget for one LOD (spec §5; M6 plan decision 8), checked by `npm run check-models`: size cap and triangle target (±15 %). */
+export type ModelBudget = { maxMiB: number; targetTris: number };
+
 /** A layer's model files (spec §6.3). */
 export type ModelSpec = {
   /** File stem: `public/models/<file>-<lod>.glb`. */
@@ -28,6 +31,7 @@ export type ModelSpec = {
   chunking: "single";
   /** The build manifest, a chunk of its own fetched only by `?debug` (bounds check). */
   debugManifest?: () => Promise<unknown>;
+  budgets: Readonly<Record<Lod, ModelBudget>>;
 };
 
 /** An optional peel control (muscles today): stops 0 (all) to `stops.length - 1`. */
@@ -49,6 +53,7 @@ export type OverlaySpec = {
   /** Wanted while a structure of this layer is selected at tier 1 or 2. */
   when: "selected-tier";
   debugManifest?: () => Promise<unknown>;
+  budgets: Readonly<Record<Lod, ModelBudget>>;
 };
 
 /** How the sidebar root is built (M12 defines and fills it). */
