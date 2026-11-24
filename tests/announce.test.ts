@@ -20,6 +20,7 @@ import {
   layerLoadAnnouncement,
   layerModeAnnouncement,
   layersAnnouncement,
+  systemModeAnnouncement,
   type AnnounceDeps,
   type AnnounceState,
 } from "../src/content/announce";
@@ -89,6 +90,20 @@ describe("layers (decision 4, row 1–2)", () => {
     expect(layersAnnouncement(DEFAULT_MODES, modes({ bones: "ghost", muscles: "on" }))).toBe("Bones ghosted. Muscles on.");
     // One layer changed into a preset's state is that layer's message, not the preset's.
     expect(layersAnnouncement(MUSCLES_ON, DEFAULT_MODES)).toBe("Muscles off.");
+  });
+  it("M11: a system's group control is one message, even when it lands on a preset", () => {
+    const ALL_GHOST = modes({ bones: "ghost", muscles: "ghost", ligaments: "ghost", cartilage: "ghost" });
+    const ALL_OFF = modes({ bones: "off" });
+    expect(layersAnnouncement(DEFAULT_MODES, ALL_ON, [], "musculoskeletal")).toBe("Musculoskeletal: all on.");
+    expect(layersAnnouncement(DEFAULT_MODES, ALL_ON, ["muscles", "ligaments", "cartilage"], "musculoskeletal")).toBe(
+      "Musculoskeletal: all on. Loading cartilage, ligaments and muscles.",
+    );
+    expect(layersAnnouncement(ALL_ON, ALL_GHOST, [], "musculoskeletal")).toBe("Musculoskeletal: all ghosted.");
+    expect(layersAnnouncement(DEFAULT_MODES, ALL_OFF, [], "musculoskeletal")).toBe("Musculoskeletal: all off.");
+    // Without the group control the same change is the preset's message.
+    expect(layersAnnouncement(DEFAULT_MODES, ALL_ON)).toBe("Full musculoskeletal: all layers on.");
+    expect(systemModeAnnouncement("musculoskeletal", "mixed")).toBe("Musculoskeletal: mixed.");
+    expect(systemModeAnnouncement("musculoskeletal", "ghost")).toBe("Musculoskeletal: all ghosted.");
   });
 });
 
@@ -230,6 +245,8 @@ describe("one message per action (risk 3)", () => {
     expect(compose({ ...on, depth: 1 }, { ...on, depth: 0 })).toBe("All muscles shown.");
     const full = { ...on, depth: 0 as const, layers: ALL_ON, load: { ...on.load, ligaments: { shown: true, status: "ready" as const, attempt: 0 }, cartilage: { shown: true, status: "ready" as const, attempt: 0 } } };
     expect(compose({ ...on, depth: 1 }, full)).toBe("Full musculoskeletal: all layers on.");
+    // The group control keeps the depth: the group, then nothing about depth.
+    expect(compose({ ...on, depth: 1 }, { ...full, depth: 1, layersVia: "musculoskeletal" })).toBe("Musculoskeletal: all on.");
   });
   it("Show attached muscles turns the muscles on: the group, then the layer", () => {
     const now = { ...base, grp: "attached:femur_left", layers: MUSCLES_ON };

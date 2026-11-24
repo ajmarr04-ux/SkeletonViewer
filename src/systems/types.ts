@@ -103,16 +103,22 @@ export type LayerDescriptor = {
 };
 
 export type PresetDescriptor = {
+  /** Stable: the button's test ID is `layers-preset-<id>`. */
   id: string;
   label: string;
-  /** Mode per layer of the system; layers not named are Off. */
+  /** Announced as "<label>: <summary>." ("Skeleton: bones only."). */
+  summary: string;
+  /** Mode per layer; layers not named are Off. */
   modes: Readonly<Record<string, LayerMode>>;
+  /** The depth layer's stop the preset sets; the depth is kept when absent. */
+  depth?: number;
 };
 
 export type SystemDescriptor = {
   id: string;
+  /** The Layers panel's group header ("Musculoskeletal"). */
   label: string;
-  /** Layer presets (session AW moves them here). */
+  /** Layer presets, shown above the groups. */
   presets?: readonly PresetDescriptor[];
 };
 

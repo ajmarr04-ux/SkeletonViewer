@@ -13,7 +13,7 @@ function snapshot(s: ViewerState): AnnounceState {
     const x = s.layerLoad[l];
     if (x) load[l] = { shown: x.lod !== null, status: x.status, attempt: x.attempt };
   }
-  return { sel: s.sel, tier: s.tier, grp: s.grp, antagonists: s.antagonists, layers: s.layers, depth: s.muscleDepth, load };
+  return { sel: s.sel, tier: s.tier, grp: s.grp, antagonists: s.antagonists, layers: s.layers, layersVia: s.layersVia, depth: s.muscleDepth, load };
 }
 
 const DEPS: AnnounceDeps = {

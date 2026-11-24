@@ -118,6 +118,50 @@ test("the bones layer can be ghosted and turned off", async ({ page }) => {
   await expect.poll(async () => Number(await debug.getAttribute("data-draw-calls"))).toBe(0);
 });
 
+test("M11: layers grouped under a collapsible system header with a group On / Ghost / Off control", async ({ page }) => {
+  await page.goto("./?lod=low&debug");
+  await bonesShown(page);
+  await openPanel(page);
+  const group = page.locator(".layer-system[data-system=musculoskeletal]");
+  const toggle = page.getByTestId("system-musculoskeletal-toggle");
+  await expect(toggle).toHaveText(/Musculoskeletal/);
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  // The default (bones on, the others off) is mixed: no group option checked, described as such.
+  await expect(group).toHaveAttribute("data-mode", "mixed");
+  for (const m of ["on", "ghost", "off"]) await expect(page.getByTestId(`system-musculoskeletal-${m}`)).not.toBeChecked();
+  await expect(page.getByTestId("system-musculoskeletal-modes")).toHaveAccessibleDescription("Musculoskeletal: mixed.");
+  // Group Off: every layer off, one announcement, the URL replaced (no new history entry).
+  const entries = await page.evaluate(() => window.history.length);
+  await page.getByTestId("system-musculoskeletal-off").check();
+  for (const l of ["bones", ...TISSUE]) await expect(page.getByTestId(`layer-${l}-off`)).toBeChecked();
+  await expect(group).toHaveAttribute("data-mode", "off");
+  await expect(page.getByTestId("announcer")).toHaveText("Musculoskeletal: all off.");
+  await expect(page).toHaveURL(/layers=b%3Aoff|layers=b:off/);
+  expect(await page.evaluate(() => window.history.length)).toBe(entries);
+  // A preset brings the mixed state back with the preset's own wording.
+  await page.getByTestId("layers-preset-skeleton").click();
+  await expect(page.getByTestId("announcer")).toHaveText("Skeleton: bones only.");
+  await expect(group).toHaveAttribute("data-mode", "mixed");
+  // Collapse: the rows are hidden, the group control stays; kept in localStorage across a reload.
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(page.locator(".layer-row[data-layer=muscles]")).toBeHidden();
+  expect(await page.evaluate(() => localStorage.getItem("skeleton-viewer:systems"))).toBe('{"musculoskeletal":false}');
+  await page.reload();
+  await bonesShown(page);
+  await openPanel(page);
+  await expect(page.getByTestId("system-musculoskeletal-toggle")).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByTestId("system-musculoskeletal-ghost")).toBeVisible();
+  await page.getByTestId("system-musculoskeletal-toggle").click();
+  await expect(page.locator(".layer-row[data-layer=muscles]")).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("skeleton-viewer:systems"))).toBeNull();
+  // Group On: the group's message (not the Full preset's), and the Full preset shows pressed.
+  await page.getByTestId("system-musculoskeletal-on").check();
+  await expect(page.getByTestId("announcer")).toHaveText(/^Musculoskeletal: all on\./);
+  await expect(page.getByTestId("layers-preset-full")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("system-musculoskeletal-on")).toBeChecked();
+});
+
 test("M6's debug format keeps the debug view and disables the panel", async ({ page }) => {
   await page.goto("./?lod=low&debug&layers=c");
   await bonesShown(page);

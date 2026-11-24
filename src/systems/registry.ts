@@ -7,7 +7,7 @@ import { cartilage } from "./musculoskeletal/cartilage/layer";
 import { ligaments } from "./musculoskeletal/ligaments/layer";
 import { muscles } from "./musculoskeletal/muscles/layer";
 import { musculoskeletal } from "./musculoskeletal/system";
-import type { KindDescriptor, LayerDescriptor, LayerMode, OverlaySpec, SystemDescriptor } from "./types";
+import type { KindDescriptor, LayerDescriptor, LayerMode, OverlaySpec, PresetDescriptor, SystemDescriptor } from "./types";
 
 /** Systems, in Layers-panel order. */
 export const SYSTEMS = [musculoskeletal] as const satisfies readonly SystemDescriptor[];
@@ -121,3 +121,37 @@ export function debugFacts(name: string): { manifest?: () => Promise<unknown>; c
 
 /** M6's debug-view codes (`layers=m,l,c,a`): each layer's URL code and each overlay's debug code → its name. */
 export const DEBUG_CODES: ReadonlyMap<string, string> = new Map([...REGISTRY.map((l) => [l.code, l.id] as const), ...OVERLAYS.map((o) => [o.debugCode, o.id] as const)]);
+
+// ---------------------------------------------------------------------------
+// Systems and presets (the Layers panel's groups; M11 plan decision 5)
+
+/** The layers of a system, in registry order. */
+export const layersOfSystem = (system: SystemId): readonly LayerId[] => REGISTRY.filter((l) => l.system === system).map((l) => l.id);
+export const systemDescriptor = (system: SystemId): SystemDescriptor => SYSTEMS.find((s) => s.id === system)!;
+
+/** The system's layers all in one mode, or "mixed" when they differ. */
+export function systemMode(system: SystemId, modes: Readonly<Record<LayerId, LayerMode>>): LayerMode | "mixed" {
+  const [first, ...rest] = layersOfSystem(system).map((l) => modes[l]);
+  return first !== undefined && rest.every((m) => m === first) ? first : "mixed";
+}
+
+type RegisteredPreset = (typeof SYSTEMS)[number]["presets"][number];
+export type PresetId = RegisteredPreset["id"];
+/** Every system's presets, in order (the buttons above the groups). */
+export const PRESETS: readonly (PresetDescriptor & { id: PresetId })[] = SYSTEMS.flatMap((s) => s.presets);
+
+/** The modes a preset sets: the layers it names, every other layer Off. */
+export function presetModes(id: PresetId): Record<LayerId, LayerMode> {
+  const p = PRESETS.find((x) => x.id === id)!;
+  return Object.fromEntries(LAYER_IDS.map((l) => [l, p.modes[l] ?? "off"])) as Record<LayerId, LayerMode>;
+}
+export const presetDescriptor = (id: PresetId): PresetDescriptor => PRESETS.find((x) => x.id === id)!;
+
+/** The first preset the layers match, if any. */
+export function presetOf(modes: Readonly<Record<LayerId, LayerMode>>): PresetId | null {
+  for (const p of PRESETS) {
+    const want = presetModes(p.id);
+    if (LAYER_IDS.every((l) => modes[l] === want[l])) return p.id;
+  }
+  return null;
+}

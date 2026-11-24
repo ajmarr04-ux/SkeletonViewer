@@ -23,7 +23,7 @@ import { FULL_SKELETON, isolationStep, resolveClick, type HistoryStep, type Isol
 import { COLOUR_MODE_KEY, type ColourMode } from "../scene/regionColours";
 import { LAYERS_KEY, storedFlag, useViewer } from "./store";
 import { DEFAULT_LAYER_SETTING, formatLayers, isDefaultLayers, isUserLayersValue, HIDDEN_URL_CAP, parseHidden, parseLayers, parseUrlState, serialiseUrlState, type GhostMode, type Layer, type LayerMode, type LayerSetting, type MuscleDepth, type UrlState } from "./url";
-import { EAGER_LAYER, isLazyLayer, LAYER_IDS, LAZY_LAYERS, NESTED_LAYER, type LazyLayerId } from "../systems/registry";
+import { EAGER_LAYER, isLazyLayer, LAZY_LAYERS, layersOfSystem, NESTED_LAYER, presetDescriptor, presetModes, type LazyLayerId, type PresetId, type SystemId } from "../systems/registry";
 
 type IdEntry = { id: string; meshAvailable: boolean };
 const ENTRIES = ids as IdEntry[];
@@ -343,15 +343,16 @@ function storedLayers(): LayerSetting | null {
 /**
  * Change the layers (M7 plan decision 1): store, localStorage and the URL
  * (`layers=b:on,…`, no new history entry). Ignored while M6's debug layer
- * view is on (plan decision 2).
+ * view is on (plan decision 2). `via`: the system whose group control made
+ * the change (announced as one group change, M11 plan decision 5).
  */
-export function setLayerSetting(next: LayerSetting): void {
+export function setLayerSetting(next: LayerSetting, via: SystemId | null = null): void {
   const st = useViewer.getState();
   if (st.debugLayersView) return;
   storeLayers(next);
   const prev = currentLayers();
   if (formatLayers(prev) === formatLayers(next)) return;
-  st.setLayerSetting(next.layers, next.depth);
+  st.setLayerSetting(next.layers, next.depth, via);
   // Explode is bones only and off while a soft-tissue layer shows (plan decision 14).
   if (LAZY_LAYERS.some((l) => next.layers[l] !== "off")) st.setExplode(0);
   window.history.replaceState(window.history.state, "", urlWith({ layers: next }));
@@ -366,19 +367,22 @@ export function setMuscleDepth(depth: MuscleDepth): void {
   setLayerSetting({ ...currentLayers(), depth });
 }
 
-/** The two presets above the toggles (spec §6.1). */
-export type LayerPreset = "skeleton" | "full";
-export function applyLayerPreset(preset: LayerPreset): void {
+/**
+ * A system's group control (M11 plan decision 5): every layer of the system
+ * in one mode, as one change (one URL update, one announcement). The depth is kept.
+ */
+export function setSystemMode(system: SystemId, mode: LayerMode): void {
   const cur = currentLayers();
-  if (preset === "skeleton") setLayerSetting({ ...cur, layers: { ...DEFAULT_LAYER_SETTING.layers } });
-  else setLayerSetting({ layers: Object.fromEntries(LAYER_IDS.map((l) => [l, "on"])) as LayerSetting["layers"], depth: 0 });
+  const layers = { ...cur.layers };
+  for (const l of layersOfSystem(system)) layers[l] = mode;
+  setLayerSetting({ ...cur, layers }, system);
 }
 
-/** Which preset the layers match, if any. */
-export function presetOf(layers: LayerSetting["layers"]): LayerPreset | null {
-  if (LAYER_IDS.every((l) => layers[l] === DEFAULT_LAYER_SETTING.layers[l])) return "skeleton";
-  if (LAYER_IDS.every((l) => layers[l] === "on")) return "full";
-  return null;
+/** A preset above the groups (spec §6.1; from the registry since M11). */
+export function applyLayerPreset(preset: PresetId): void {
+  const cur = currentLayers();
+  const depth = presetDescriptor(preset).depth;
+  setLayerSetting({ layers: presetModes(preset), depth: depth === undefined ? cur.depth : (depth as MuscleDepth) });
 }
 
 /**

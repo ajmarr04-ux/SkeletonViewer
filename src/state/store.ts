@@ -4,7 +4,7 @@ import type { Lod, LodSetting } from "../scene/lod";
 import { NO_PANEL, type PanelInset, type Preset } from "../camera/math";
 import type { Tier } from "./isolation";
 import { DEFAULT_LAYER_SETTING, type CameraState, type GhostMode, type Layer, type LayerMode, type LayerModes, type MuscleDepth } from "./url";
-import { LAZY_LAYERS, type LazyLayerId } from "../systems/registry";
+import { LAZY_LAYERS, type LazyLayerId, type SystemId } from "../systems/registry";
 import type { ColourMode } from "../scene/regionColours";
 import type { PlacedLabel } from "../scene/labels";
 
@@ -39,6 +39,8 @@ export const GHOST_OPACITY_KEY = "skeleton-viewer:ghost-opacity";
 
 /** Layers and muscle depth (M7 plan decision 1): localStorage as well as the URL. */
 export const LAYERS_KEY = "skeleton-viewer:layers";
+/** Which system groups of the Layers panel are expanded (M11 plan decision 5): JSON `{ "<system>": false }`, collapsed ones only. */
+export const SYSTEMS_KEY = "skeleton-viewer:systems";
 
 /** Loading state of one soft-tissue layer (M7 plan decision 3), for its row in the Layers panel. */
 export type LayerLoad = {
@@ -159,7 +161,12 @@ export type ViewerState = {
   muscleDepth: MuscleDepth;
   /** `performance.now()` when each soft-tissue layer was first turned on (or the start, for a link). */
   layerOnAt: Partial<Record<LazyLayerId, number>>;
-  setLayerSetting: (layers: LayerModes, depth: MuscleDepth) => void;
+  /**
+   * The system whose group control made the last layer change (M11 plan
+   * decision 5), so it is announced as one group change; null for any other change.
+   */
+  layersVia: SystemId | null;
+  setLayerSetting: (layers: LayerModes, depth: MuscleDepth, via?: SystemId | null) => void;
   /**
    * True when the URL asks for M6's debug layer view (`?debug&layers=all`):
    * the real layers then stay at their default and the Layers panel is disabled (plan decision 2).
@@ -257,7 +264,8 @@ export const useViewer = create<ViewerState>()((set) => ({
   layers: DEFAULT_LAYER_SETTING.layers,
   muscleDepth: 0,
   layerOnAt: {},
-  setLayerSetting: (layers, muscleDepth) =>
+  layersVia: null,
+  setLayerSetting: (layers, muscleDepth, via = null) =>
     set((s) => {
       if (sameLayers(s.layers, layers) && s.muscleDepth === muscleDepth) return s;
       // The first time each lazy layer is turned on, for the `?debug` load time (M7 step 9).
@@ -265,7 +273,7 @@ export const useViewer = create<ViewerState>()((set) => ({
       for (const l of LAZY_LAYERS) {
         if (layers[l] !== "off" && layerOnAt[l] === undefined) layerOnAt = { ...layerOnAt, [l]: performance.now() };
       }
-      return { layers: { ...layers }, muscleDepth, layerOnAt };
+      return { layers: { ...layers }, muscleDepth, layerOnAt, layersVia: via };
     }),
   debugLayersView: false,
   setDebugLayersView: (debugLayersView) => set({ debugLayersView }),

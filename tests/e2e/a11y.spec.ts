@@ -269,6 +269,12 @@ test.describe("axe: M10 session AN (plan decision 5)", () => {
     await expect(page.locator(".layer-row[data-layer=muscles]")).toHaveAttribute("data-status", "ready", { timeout: 120_000 });
     await page.getByTestId("muscle-depth-1").check();
     await axe(page, "Layers panel, depth control in use");
+    // M11 (plan decision 5): the system group, mixed (expanded, above) and collapsed.
+    await expect(page.locator(".layer-system[data-system=musculoskeletal]")).toHaveAttribute("data-mode", "mixed");
+    await page.getByTestId("system-musculoskeletal-toggle").click();
+    await expect(page.getByTestId("system-musculoskeletal-toggle")).toHaveAttribute("aria-expanded", "false");
+    await axe(page, "Layers panel, system group collapsed");
+    await page.getByTestId("system-musculoskeletal-toggle").click();
     await page.keyboard.press("Escape");
 
     // A muscle at tier 2 with its antagonists: tints and their legend chips.

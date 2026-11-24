@@ -9,7 +9,7 @@ import ids from "../../content/ids.json";
 import { isolationView, withTints } from "../scene/isolation";
 import type { Tier } from "../state/isolation";
 import { type Layer, type LayerMode, type LayerModes, type MuscleDepth } from "../state/url";
-import { COUNT_ORDER, countKind, isLazyLayer, kindNoun, LAYER_IDS, LAZY_LAYERS, layerLabel, type KindId, type LazyLayerId } from "../systems/registry";
+import { COUNT_ORDER, countKind, isLazyLayer, kindNoun, LAYER_IDS, LAZY_LAYERS, layerLabel, presetDescriptor, presetOf, systemDescriptor, systemMode, type KindId, type LazyLayerId, type SystemId } from "../systems/registry";
 import { groupAnnouncement, groupOf } from "./groups";
 import { displayName } from "./names";
 import { announcement as boneAnnouncement } from "./placeholder";
@@ -83,26 +83,30 @@ function listLayers(layers: readonly Layer[]): string {
   return names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 }
 
-/** The layers equal one of the panel's presets (spec §6.1). */
-export function presetOfModes(modes: LayerModes): "skeleton" | "full" | null {
-  if (LAYER_IDS.every((l) => modes[l] === (l === "bones" ? "on" : "off"))) return "skeleton";
-  if (LAYER_IDS.every((l) => modes[l] === "on")) return "full";
-  return null;
+/** "Musculoskeletal: all on." / "… all ghosted." / "… all off."; "Musculoskeletal: mixed." when its layers differ (the group control's state, M11 plan decision 5). */
+export function systemModeAnnouncement(system: SystemId, mode: LayerMode | "mixed"): string {
+  return `${systemDescriptor(system).label}: ${mode === "mixed" ? "mixed" : `all ${MODE_WORDS[mode]}`}.`;
 }
 
 /**
- * A change of layer modes. One layer: its own message. Several at once that
- * land on a preset: "Full musculoskeletal: all layers on." / "Skeleton: bones
- * only."; otherwise each change in panel order. `loading` lists the layers
- * whose files are still to come.
+ * A change of layer modes. One layer: its own message. A system's group
+ * control (`via`): "Musculoskeletal: all on." Several at once that land on a
+ * preset: "Full musculoskeletal: all layers on." / "Skeleton: bones only."
+ * (`PresetDescriptor.summary`); otherwise each change in panel order.
+ * `loading` lists the layers whose files are still to come.
  */
-export function layersAnnouncement(before: LayerModes, now: LayerModes, loading: readonly LazyLayerId[] = []): string | null {
+export function layersAnnouncement(before: LayerModes, now: LayerModes, loading: readonly LazyLayerId[] = [], via: SystemId | null = null): string | null {
   const changed = LAYER_IDS.filter((l) => before[l] !== now[l]);
   if (changed.length === 0) return null;
-  const preset = changed.length > 1 ? presetOfModes(now) : null;
   const waiting = changed.filter((l): l is LazyLayerId => isLazyLayer(l) && now[l] !== "off" && loading.includes(l));
-  if (preset === "skeleton") return "Skeleton: bones only.";
-  if (preset === "full") return `Full musculoskeletal: all layers on.${waiting.length ? ` Loading ${listLayers(waiting)}.` : ""}`;
+  const loadingSuffix = waiting.length ? ` Loading ${listLayers(waiting)}.` : "";
+  const group = via === null ? "mixed" : systemMode(via, now);
+  if (via !== null && group !== "mixed") return `${systemModeAnnouncement(via, group)}${loadingSuffix}`;
+  const preset = changed.length > 1 ? presetOf(now) : null;
+  if (preset !== null) {
+    const p = presetDescriptor(preset);
+    return `${p.label}: ${p.summary}.${loadingSuffix}`;
+  }
   return changed.map((l) => layerModeAnnouncement(l, now[l], waiting.includes(l as LazyLayerId))).join(" ");
 }
 
@@ -255,6 +259,8 @@ export function antagonistCount(sel: string | null, tier: Tier, modes: LayerMode
 export type AnnounceState = Isolated & {
   antagonists: boolean;
   layers: LayerModes;
+  /** The system whose group control made the layer change, if any (store `layersVia`). */
+  layersVia?: SystemId | null;
   depth: MuscleDepth;
   /** Per tissue layer: is a LOD on screen yet, and is its load failing. */
   load: Partial<Record<LazyLayerId, { shown: boolean; status: "loading" | "ready" | "error"; attempt: number }>>;
@@ -297,14 +303,16 @@ export function composeAnnouncement(
   else if (iso) out.push(deps.isolation(now, before));
   if (now.antagonists !== before.antagonists && (now.antagonists || !iso)) out.push(antagonistAnnouncement(now.antagonists, now.antagonists ? deps.antagonists(now) : 0));
   const loading = LAZY_LAYERS.filter((l) => !now.load[l]?.shown);
-  const layers = layersAnnouncement(before.layers, now.layers, loading);
+  const layers = layersAnnouncement(before.layers, now.layers, loading, now.layersVia ?? null);
   if (layers !== null) out.push(layers);
   for (const t of LAZY_LAYERS) {
     if (before.layers[t] === "off" && now.layers[t] !== "off" && loading.includes(t)) awaiting.add(t);
     if (now.layers[t] === "off") awaiting.delete(t);
   }
-  const fullPreset = layers !== null && presetOfModes(now.layers) === "full" && now.depth === 0;
-  if (now.depth !== before.depth && !fullPreset) out.push(depthAnnouncement(now.depth, now.depth === 0 ? 0 : deps.peeled(now.depth)));
+  // A preset that sets the depth says the preset only.
+  const preset = presetOf(now.layers);
+  const presetDepth = layers !== null && preset !== null && presetDescriptor(preset).depth === now.depth;
+  if (now.depth !== before.depth && !presetDepth) out.push(depthAnnouncement(now.depth, now.depth === 0 ? 0 : deps.peeled(now.depth)));
   for (const t of LAZY_LAYERS) {
     const a = before.load[t];
     const b = now.load[t];
