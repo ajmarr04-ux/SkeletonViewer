@@ -653,4 +653,4 @@ Growth over M5 was measured in AR with the agreed method: M5, M9 and M10 built s
 - **Search scope.** Names, Latin names, common names, synonyms, group synonym sets and FDI numbers; not the summary text. Bone words now also match muscles ("femur" finds the femoris muscles).
 - **Layers are literal tables.** Each layer and kind is named in about 40 places (`STATUS-M10.md` §3 lists them). Fine for four layers; a fifth wants a per-layer descriptor first.
 - **Deploy.** The site deploys only from `main` through `.github/workflows/deploy.yml`. A second Pages workflow would overwrite it.
-- **Frozen milestones.** `deploy/pages.json` freezes `m1`–`m9` and has `"current": 10`, so `/m10/` and the live site build from `main`. Session AR freezes `m10` at M10's merge commit and sets `"current": null` to close the programme (M10 decision 9).
+- **Frozen milestones.** `deploy/pages.json` freezes `m1`–`m10` (`m10` at `317b445`, the merge of #23) and has `"current": null`: the programme is closed (M10 decision 9). The live site keeps following `main`; `/m1/` to `/m10/` stay fixed.
