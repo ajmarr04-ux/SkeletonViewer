@@ -5,6 +5,8 @@
 // ligament or fascia) or `unmatched` (a muscle the source doesn't have; its
 // question must be answered). Pure, so Vitest can run it on fixtures.
 
+import { layerOfKind, NESTED_LAYER } from "../../src/systems/registry";
+
 export type MigrationRow = {
   rule: "name" | "variant" | "unmatched";
   indirect?: boolean;
@@ -45,7 +47,7 @@ export function checkMigration(
     s.add(member);
   };
   for (const e of soft) {
-    if (e.kind !== "muscle" && e.kind !== "muscle_part") continue;
+    if (layerOfKind(e.kind) !== NESTED_LAYER) continue;
     add(e.id, e.id);
     if (e.parent) add(e.parent, e.id);
     for (const m of e.alsoServes ?? []) add(m, e.id);

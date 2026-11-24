@@ -101,10 +101,11 @@ const need = (a: string, b: string) => (STRONG.has(`${a}/${b}`) || STRONG.has(`$
 
 describe("colour vision: every colour that can be on screen at once (M10 decision 3)", () => {
   it("the table and its exemptions are what the plan lists", () => {
-    // Four layer colours with the bone, the tendon shade, the focus/hover/outline marks, three tints, seven region colours, ghosts.
-    expect(Object.keys(SOLID)).toHaveLength(5);
+    // The layer colours with the bone, the tendon shade, the focus/hover/outline marks, three tints, seven region colours, ghosts
+    // (four layers in M10: 5 solids, 12 ghosts; counted from the registry so tests/fixture.test.ts can re-run this table with a fifth).
+    expect(Object.keys(SOLID)).toHaveLength(LAZY_LAYERS.length + 2);
     expect(Object.keys(REGION)).toHaveLength(7);
-    expect(Object.keys(GHOST)).toHaveLength(12);
+    expect(Object.keys(GHOST)).toHaveLength(3 * (LAZY_LAYERS.length + 1));
     // Every pair a solid structure takes part in with another solid, a tint or a region colour is checked.
     for (const [a, b] of pairs) if (a !== "bone" && ((solid(a) && (solid(b) || tint(b) || region(b))) || (solid(b) && (tint(a) || region(a))))) expect(exemptWhy(a, b), `${a}/${b}`).toBeUndefined();
     // Every pair with the selection outline is checked, except with the accent it surrounds and the hover outline.

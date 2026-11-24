@@ -29,7 +29,7 @@ Session kinds: **design** = strong model (schemas, architecture); **routine** = 
 | AU | routine | Kind tables in the runtime moved onto `KindDescriptor`s (step 3) | none | AT's types | step 3's list deleted; goldens unchanged | **Done.** See step 3 |
 | AV | routine | Build-side and content-side tables (TS scripts, virtual modules, loaders, schemas, model checks) driven by the registry (step 4) | none | decision 2 | step 4's list deleted; `check-models` and `validate-content` output unchanged | **Done.** See step 4 |
 | AW | design | Layers panel grouped by system with a group control; presets from the registry (step 5) | none | decision 5 | panel, keyboard and a11y e2e pass (changes listed); announcements tested | **Done.** See step 5 |
-| AX | design | Registry isolation test and the fixture layer (step 6) | none | decisions 7–8 | isolation test green with only the allowlisted later-milestone files; fixture proves the M11 surfaces | |
+| AX | design | Registry isolation test and the fixture layer (step 6) | none | decisions 7–8 | isolation test green with only the allowlisted later-milestone files; fixture proves the M11 surfaces | **Done.** See step 6 |
 | AY | routine | Wrap-up: goldens, bench and main-chunk parity, perf-load, full e2e in the background, `/m11/` (step 7) | none | everything above | exit criteria ticked; `/m11/` live | |
 
 Triggers: "begin session AS" to "begin session AY". Every session follows `docs/WORKFLOW_NEW.md` §7: read `docs/HANDOFF.md` and this file, do the one serial task, end with `npm run check` (which runs `tsc`, Vitest including the goldens, `check-models`, `validate-content`) and the e2e specs it touched, commit, push to the session branch, tick the row, write `docs/HANDOFF.md`, stop.
@@ -232,7 +232,34 @@ Decision 5.
 
 ## Step 6 (AX): isolation test and fixture layer
 
-Decisions 7 and 8. *Notes added when the session runs*, with the final allowlist.
+Decisions 7 and 8.
+
+**Done** (2026-11-24). Goldens unchanged; `npm run check` green (41 files, 606 tests); e2e below. `git diff public/models/ content/` empty.
+
+**What exists now.**
+- `tests/registryIsolation.test.ts` (4 tests). Scans every `.ts`/`.tsx`/`.py`/`.sh` under `src/` and `scripts/` except `src/systems/**` for the registry's system, layer, kind and overlay IDs. TypeScript is **parsed** (rolldown's `parseAst`; the installed TypeScript 7 has no JS API), so only string literals, literal types and plain template literals count, never comments; Python and shell by a regular expression, `#` lines skipped. It also flags a layer ID used as a **property name**: an object key or type member (`{ muscles: … }`) and a member access on a mode map (`s.layers.muscles`, `modes.bones`). The other tests: the allowlist only shrinks (each entry names M12–M19 and a reason, and its file must still name an ID), and each "other vocabulary" entry is still used.
+- `tests/registry-allowlist.json`: `files` (file → milestone, reason) and `otherVocabulary` (a literal that is another vocabulary sharing the word, per file: the colour mode `"bone"` in 7 files, the bone material's name, and the frozen migration record's `bones` field). Final M11 list, 24 files:
+  - **M12** (17): `src/content/{announce,derive,groups,names,panel,placeholder,schema,softCompile,softPanel,softRoles,softTiers,softTree,softValidate,validate}.ts`, `src/ui/InfoPanel.tsx`, `scripts/content/patch-check.ts`, `scripts/lib/soft-tree-data.ts`.
+  - **M14** (1): `scripts/perf-load.ts` (times turning the muscles on, by name).
+  - **M15** (6): `scripts/blender/{build_skeleton,build_soft_tissue,pipeline_lib}.py`, `scripts/mapping/{classify_soft_tissue,generate_ids,generate_soft_ids}.py`.
+  - Not needed after all: `search.ts`, `scripts/lib/search-data.ts`, `relations.ts`, `softRelations.ts`, `build-models.sh` (no literal left in them).
+- **Trimmed in AX:** `Labels.tsx` (`EAGER_LAYER`), `attachment-check.ts` and `attachment-match.ts` (`NESTED_LAYER`, `layerOfKind`), `migrate-attachments.ts` (`compileSoftFromDisk(NESTED_LAYER)`), and **`Viewer.tsx`**, which decided whether to load the lazy layer chunk from `s.layers.cartilage || …ligaments || …muscles`: a table the quoted-literal scan couldn't see, found when the fixture layer never loaded. Now `LAZY_LAYERS.some(…)`; the property-name rule above was added so the test catches that form. `patch-check.ts` was tried and left (M12): the kind check narrows the front matter type for the code below it.
+- **The registry's list moved to `src/systems/registered.ts`** (`SYSTEMS`, `REGISTRY`); `registry.ts` imports and re-exports them and keeps every lookup. This is the one module the fixture swaps, so every lookup follows. (The plan said to alias `registry.ts` itself; aliasing the list means the test registry doesn't duplicate the lookups.)
+- **The fixture**, `tests/fixtures/systems/`:
+  - `demo/system.ts` (system `demo`, "Demo", no presets), `demo/widgets/layer.ts` (layer `widgets`, code `w`, ghost order 4, kinds `gear`/`spring`/`lever` with priorities 7–9, no `contentChunk`, `debugManifest` = the generated manifest), `demo/widgets/content.ts` (a minimal schema per kind, `idsFile`).
+  - `demo/widgets/generate.ts` (`npx tsx …/generate.ts`, deterministic, `@gltf-transform/core`): `models/widgets-{low,high}.glb` (12 boxes of 6 cm, one named node each, in front of the chest), `models/manifest.json` (bounds per ID and LOD), `ids.json` (12 entries).
+  - `registry.ts` (the real list + demo), `registry.content.ts` (`FIXTURE_CONTENT`), `vite.ts` (the fixture build's three differences: the `registered` redirect, the soft-ids plugin's registry, the `.glb` files served and emitted at `models/`).
+- **Generic changes the fixture needed** (each is how a real new layer would work too): `LayerContent.idsFile` (the three soft layers name `content/soft-ids.json`); `softIdsPlugin(registry)` reads the ID files the registry names (`idFiles`, `readLayerIds`; the real output is unchanged, checked by `fixture.test.ts`); `loadSoftContent` gives a layer without a `contentChunk` empty content (the placeholder panel) instead of throwing (`virtual:skeleton-layer-importers` typed `Partial`).
+- `vite.config.ts`: `--mode fixture` loads `tests/fixtures/systems/vite.ts` and builds into `dist-fixture/` (git-ignored). `playwright.config.ts`: two projects and two servers, `app` (4173, every spec but the fixture's) and `fixture` (4175). The fixture build takes about 5 s.
+- `tests/fixture.test.ts` (12 tests, plus the colour-vision table re-run): `vi.mock` swaps `registered.ts` for the test registry, then: the list is the real one plus the demo; the Layers panel's groups (`layersOfSystem`, `systemMode`); `layers=` parse and format with `w` (an M10 URL leaves it Off and re-formats with `,w:off` appended); defaults and presets; announcements ("Widgets on, loading.", "Demo: all ghosted.", "2 gears and 1 lever", count and label order); colours and ghost order; `LAYER_FILES`, M6's debug codes and colours; the content registry; the ID table (real entries byte-equal, then the 12); the `.glb` nodes against the manifest. **It also re-runs the whole M10 colour-vision table** (`await import("./colourVision.test")` inside a `describe`) with the fifth layer: the table's sizes are now counted from `LAZY_LAYERS` (`colourVision.test.ts`, two lines). That run rejected the first fixture colours (deuteranopia clashes with region colours, legend contrast), so `#dd2200` was chosen by a search over the same rules: ΔE2000 ≥ 9.9 from everything it meets in all three visions.
+- `tests/e2e/fixture.spec.ts` (2 tests): no widget file at start; the Demo group and its control; the widgets row On → `layers=b:on,c:off,l:off,m:off,w:on`, the group shows On, "Widgets on"; the debug report shows 12 nodes and bounds OK; `pick` and a real click select `widget_lever_3`, which goes in `sel=`; no page errors. Then `layers=b:on,w:ghost` restores Ghost and the next change writes `…,w:ghost`.
+
+**Judgement calls.**
+- *Property names:* any object key or type member named after a layer counts, but member accesses only on a mode map; plain field names like `row.bones` or a perf result's `muscles` would otherwise drown the signal. Kind IDs as property names aren't checked (`viewer.bone(id)`, the debug API).
+- *Other vocabularies* are listed per literal and file, not allowlisted with a milestone: no milestone removes the colour mode `"bone"` (it is in the goldens' URL state).
+- *Fixture colour:* the plan's colour-vision check meant "add the layer and the table still passes"; the table's own counts had to follow the registry for that to be possible. The fixture's colour is a choice, not a rule change.
+
+**e2e:** see the handoff (layers, layers-debug, smoke, announce, keyboard, fixture).
 
 ## Step 7 (AY): wrap-up
 

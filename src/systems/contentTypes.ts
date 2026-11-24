@@ -17,6 +17,8 @@ export type LayerContent = {
   folder: string;
   /** One entry per kind of the layer's descriptor (checked by tests/registry.test.ts). */
   kinds: Readonly<Record<string, KindContent>>;
+  /** A lazy layer's generated ID table (`[{ id, name, kind, layer, side, meshAvailable, … }]`, relative to the repository root); entries of other layers in the same file are left to those layers. */
+  idsFile?: string;
   /** The layer's depth table (`content/…`), for the layer whose descriptor has `depth`. */
   depthFile?: string;
 };

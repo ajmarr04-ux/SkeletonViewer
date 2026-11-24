@@ -38,6 +38,7 @@ import { Toast } from "../ui/Toast";
 import { ScreenshotService } from "./ScreenshotService";
 import { probeDevice, readStoredSetting } from "./webgl";
 import type { LayerFile } from "./debugLayers";
+import { LAZY_LAYERS } from "../systems/registry";
 
 // M6 debug layer view (`?debug&layers=…`): lazy chunks, never fetched without the parameter.
 const DebugLayersScene = lazy(() => import("./DebugLayers").then((m) => ({ default: m.DebugLayersScene })));
@@ -85,7 +86,7 @@ export function Viewer() {
   const [ghostMaterial] = useState(() => createGhostMaterial(useViewer.getState().ghostOpacity));
   const [isoStats, setIsoStats] = useState<IsolationStats | null>(null);
   // Sticky: once any soft-tissue layer has been on, its chunk stays mounted (turned-off layers keep their batches, hidden).
-  const anyTissue = useViewer((s) => s.layers.cartilage !== "off" || s.layers.ligaments !== "off" || s.layers.muscles !== "off");
+  const anyTissue = useViewer((s) => LAZY_LAYERS.some((l) => s.layers[l] !== "off"));
   const [tissueWanted, setTissueWanted] = useState(anyTissue);
   useEffect(() => {
     if (anyTissue) setTissueWanted(true);

@@ -12,13 +12,16 @@ import { registerSoftTiers } from "./softRelations";
 
 const loaded: Partial<Record<LazyLayerId, SoftLayerContent>> = {};
 const pending: Partial<Record<LazyLayerId, Promise<SoftLayerContent>>> = {};
+const NO_CONTENT: SoftLayerContent = { entries: {}, derived: null };
 const listeners = new Set<() => void>();
 let version = 0;
 
 export function loadSoftContent(layer: LazyLayerId): Promise<SoftLayerContent> {
   const done = loaded[layer];
   if (done) return Promise.resolve(done);
-  pending[layer] ??= importers[layer]().then((m) => {
+  // A layer without a `contentChunk` (the fixture layer, M11 plan decision 8) has no content: the placeholder panel.
+  const importer = importers[layer] ?? (() => Promise.resolve({ default: NO_CONTENT }));
+  pending[layer] ??= importer().then((m) => {
     loaded[layer] = m.default;
     registerSoftTiers(layer, m.default.tiers, m.default.roles, m.default.derived?.attached);
     version++;

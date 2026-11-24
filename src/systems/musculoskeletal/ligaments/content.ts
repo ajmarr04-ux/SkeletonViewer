@@ -21,5 +21,6 @@ export type LigamentFm = z.infer<typeof ligamentSchema>;
 
 export const ligamentsContent = defineLayerContent({
   folder: "ligaments",
+  idsFile: "content/soft-ids.json",
   kinds: { ligament: { schema: ligamentSchema, bodyWords: { min: 40, max: 80 } } },
 });

@@ -1,19 +1,11 @@
 // The registry (SPEC-platform §3.2, M11): every system and layer, in order.
-// This is the only place outside the descriptor folders where layer names are
-// listed; everything else asks the registry. Main chunk: data only.
+// The list itself is `registered.ts`; this module holds the lookups everything
+// else asks instead of naming a layer or kind. Main chunk: data only.
 
-import { bones } from "./musculoskeletal/bones/layer";
-import { cartilage } from "./musculoskeletal/cartilage/layer";
-import { ligaments } from "./musculoskeletal/ligaments/layer";
-import { muscles } from "./musculoskeletal/muscles/layer";
-import { musculoskeletal } from "./musculoskeletal/system";
+import { REGISTRY, SYSTEMS } from "./registered";
 import type { KindDescriptor, LayerDescriptor, LayerMode, OverlaySpec, PresetDescriptor, SystemDescriptor } from "./types";
 
-/** Systems, in Layers-panel order. */
-export const SYSTEMS = [musculoskeletal] as const satisfies readonly SystemDescriptor[];
-
-/** Layers, in Layers-panel and URL order. */
-export const REGISTRY = [bones, cartilage, ligaments, muscles] as const satisfies readonly LayerDescriptor[];
+export { REGISTRY, SYSTEMS };
 
 type Registered = (typeof REGISTRY)[number];
 export type LayerId = Registered["id"];

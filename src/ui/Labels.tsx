@@ -59,7 +59,7 @@ export function LabelProbe({ skeleton }: { skeleton: BatchedSkeleton | null }) {
   // M7 (plan decision 14): every layer's solid batch gives candidates, bones first.
   const sources = useMemo<Source[] | null>(() => {
     if (!skeleton) return null;
-    const out: Source[] = [{ layer: "bones", batch: skeleton, spheres: localSpheres(skeleton) }];
+    const out: Source[] = [{ layer: EAGER_LAYER, batch: skeleton, spheres: localSpheres(skeleton) }];
     for (const layer of LAZY_LAYERS) {
       const b = tissue[layer];
       if (b) out.push({ layer, batch: b.solid, spheres: localSpheres(b.solid) });

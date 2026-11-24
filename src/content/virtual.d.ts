@@ -28,8 +28,8 @@ declare module "virtual:skeleton-soft-content-*" {
   export default content;
 }
 declare module "virtual:skeleton-layer-importers" {
-  /** Layer → its content chunk's `import()`, generated from the registry (scripts/lib/content-plugin.ts, M11 AV). */
-  const importers: Record<import("../systems/registry").LazyLayerId, () => Promise<{ default: import("./softCompile").SoftLayerContent }>>;
+  /** Layer → its content chunk's `import()`, generated from the registry (scripts/lib/content-plugin.ts, M11 AV); none for a layer without a `contentChunk`. */
+  const importers: Partial<Record<import("../systems/registry").LazyLayerId, () => Promise<{ default: import("./softCompile").SoftLayerContent }>>>;
   export default importers;
 }
 declare module "virtual:skeleton-soft-tree" {

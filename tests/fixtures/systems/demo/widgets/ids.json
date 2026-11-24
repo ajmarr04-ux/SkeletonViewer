@@ -1,0 +1,98 @@
+[
+ {
+  "id": "widget_gear_1",
+  "name": "Gear 1",
+  "kind": "gear",
+  "layer": "widgets",
+  "side": "midline",
+  "meshAvailable": true
+ },
+ {
+  "id": "widget_gear_2",
+  "name": "Gear 2",
+  "kind": "gear",
+  "layer": "widgets",
+  "side": "midline",
+  "meshAvailable": true
+ },
+ {
+  "id": "widget_gear_3",
+  "name": "Gear 3",
+  "kind": "gear",
+  "layer": "widgets",
+  "side": "midline",
+  "meshAvailable": true
+ },
+ {
+  "id": "widget_gear_4",
+  "name": "Gear 4",
+  "kind": "gear",
+  "layer": "widgets",
+  "side": "midline",
+  "meshAvailable": true
+ },
+ {
+  "id": "widget_spring_1",
+  "name": "Spring 1",
+  "kind": "spring",
+  "layer": "widgets",
+  "side": "midline",
+  "meshAvailable": true
+ },
+ {
+  "id": "widget_spring_2",
+  "name": "Spring 2",
+  "kind": "spring",
+  "layer": "widgets",
+  "side": "midline",
+  "meshAvailable": true
+ },
+ {
+  "id": "widget_spring_3",
+  "name": "Spring 3",
+  "kind": "spring",
+  "layer": "widgets",
+  "side": "midline",
+  "meshAvailable": true
+ },
+ {
+  "id": "widget_spring_4",
+  "name": "Spring 4",
+  "kind": "spring",
+  "layer": "widgets",
+  "side": "midline",
+  "meshAvailable": true
+ },
+ {
+  "id": "widget_lever_1",
+  "name": "Lever 1",
+  "kind": "lever",
+  "layer": "widgets",
+  "side": "midline",
+  "meshAvailable": true
+ },
+ {
+  "id": "widget_lever_2",
+  "name": "Lever 2",
+  "kind": "lever",
+  "layer": "widgets",
+  "side": "midline",
+  "meshAvailable": true
+ },
+ {
+  "id": "widget_lever_3",
+  "name": "Lever 3",
+  "kind": "lever",
+  "layer": "widgets",
+  "side": "midline",
+  "meshAvailable": true
+ },
+ {
+  "id": "widget_lever_4",
+  "name": "Lever 4",
+  "kind": "lever",
+  "layer": "widgets",
+  "side": "midline",
+  "meshAvailable": true
+ }
+]

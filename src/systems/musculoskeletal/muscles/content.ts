@@ -56,6 +56,7 @@ export type MusclePartFm = z.infer<typeof musclePartSchema>;
 
 export const musclesContent = defineLayerContent({
   folder: "muscles",
+  idsFile: "content/soft-ids.json",
   kinds: {
     // Summary lengths in words (M8 plan decision 5).
     muscle: { schema: muscleSchema, bodyWords: { min: 40, max: 80 } },

@@ -27,6 +27,7 @@ export type CartilageFm = z.infer<typeof cartilageSchema>;
 const words = { min: 40, max: 80 } as const;
 export const cartilageContent = defineLayerContent({
   folder: "cartilage",
+  idsFile: "content/soft-ids.json",
   kinds: {
     cartilage: { schema: cartilageSchema, bodyWords: words },
     disc: { schema: cartilageSchema, bodyWords: words },
