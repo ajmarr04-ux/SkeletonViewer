@@ -4,7 +4,7 @@ import { hasMesh, layerOfId } from "../state/selection";
 import { useViewer } from "../state/store";
 import type { BatchedSkeleton } from "./batchSkeleton";
 import { Color } from "three";
-import { applyBaseColours, applyLayerView, boneAccent, isPickableIn, PLAIN, viewOf, visibleCount, type BaseTint, type SceneView } from "./isolation";
+import { applyBaseColours, applyLayerView, boneAccent, drawnColourMode, isPickableIn, PLAIN, viewOf, visibleCount, type BaseTint, type SceneView } from "./isolation";
 import { subscribeSoftTiers } from "../content/softRelations";
 import { useLayerBatches, usePatchBatch, type LayerBatches, type PatchBatch } from "./layerRegistry";
 import { TISSUE_LAYERS, type TissueLayer } from "../state/url";
@@ -139,11 +139,12 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
       const st = useViewer.getState();
       view = viewOf(st, hasMesh);
       const focusChanged = view.focus !== focus;
-      const base = baseTintFor(st.colourMode);
-      if (st.colourMode !== colour) {
-        // Colour-by-region on or off: every instance gets its new base colour, then the accent goes back on.
+      const mode = drawnColourMode(st.colourMode, view);
+      const base = baseTintFor(mode);
+      if (mode !== colour) {
+        // Colour-by-region on or off (or paused for the tints): every instance gets its new base colour, then the accent goes back on.
         applyBaseColours(scene.skeleton, base);
-        colour = st.colourMode;
+        colour = mode;
       }
       const previous = [...focusIds, ...joint, ...tinted];
       applyLayerView("bones", scene.skeleton, scene.ghost, view, previous, base, boneAccent(), boneTint());

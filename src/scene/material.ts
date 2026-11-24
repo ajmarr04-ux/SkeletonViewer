@@ -8,6 +8,9 @@ import { Color, MeshStandardMaterial } from "three";
  */
 export const AO_FLOOR = 0.4;
 
+/** The scene's background (sRGB): ghosts are seen over it (tests/colourVision.test.ts). */
+export const SCENE_BACKGROUND = "#1d2126";
+
 /** Ivory bone colour (sRGB). */
 export const BONE_COLOUR = "#d8cdb8";
 

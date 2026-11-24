@@ -56,7 +56,13 @@ export function Legend() {
   if (!regions && keyItems.length === 0) return null;
   return (
     <section className="legend" aria-label={regions ? "Colour key: regions" : "Colour key"} data-testid="legend">
-      {regions && (
+      {regions && tintRoles.length > 0 && (
+        // Colour-by-region pauses while tints are drawn (drawnColourMode, M10 session AL): say so rather than key colours not on screen.
+        <p className="legend-note" data-testid="legend-paused">
+          Region colours paused while origins, insertions or antagonists are shown.
+        </p>
+      )}
+      {regions && tintRoles.length === 0 && (
         <>
           <h2 className="legend-title">Regions</h2>
           <ul>

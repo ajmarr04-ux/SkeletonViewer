@@ -23,7 +23,7 @@ Out of scope: content review and the open content questions (spec §13 of `SPEC 
 | --- | --- | --- | --- | --- | --- |
 | (planning) | M9 → M10 handover and this plan (step 0) | none | M9 plan, spec §11 | `m9` frozen, `current` 10, plan written | **Done.** See step 0 |
 | AK | Labels for every kind: kind-aware priorities, one label per unselected muscle, focus layer wins ties (step 1) | none | decisions 1–2 | layout tests per kind; e2e labels with muscles on, at muscle tier 1 and at part level | **Done.** See step 1 |
-| AL | Colour-vision pass over every colour the layers add, legend chips and label contrast (step 2) | none | decision 3 | one colour test covering every pair that can be on screen together; legend and label contrast tested; any colour change recorded | Not started |
+| AL | Colour-vision pass over every colour the layers add, legend chips and label contrast (step 2) | none | decision 3 | one colour test covering every pair that can be on screen together; legend and label contrast tested; any colour change recorded | **Done.** See step 2 |
 | AM | Screen-reader announcements for the new kinds, layers, depth, Hide and the part level (step 3) | none | decision 4 | every row of decision 4's table tested as a pure function and in e2e through the live region | Not started |
 | AN | Keyboard pass for the new kinds: the spec's journey by keys only, Tab cursor across layers and parts, axe on every new state (step 4) | none | decision 5 | `keyboard.spec.ts` journey passes; gaps fixed | Not started |
 | AO | Performance measurement in the container and the tools for the user's run; **ends with the user gate** (step 5) | none | decisions 6–7 | budget table filled for everything the container can measure; bench links ready; deploy of `main` for the user's run | Not started |
@@ -116,6 +116,25 @@ No fan-out is planned: every session changes shared code or one shared document,
 ## Step 2: Colours (session AL)
 - The full colour table and pair rules (decision 3); legend chip contrast; label box contrast over muscle.
 - Tests: `tests/layerColours.test.ts` extended (or `tests/colourVision.test.ts`), legend e2e with axe's colour-contrast rule on the chips.
+
+**Session AL notes (done).**
+- **One table, one test:** `tests/colourVision.test.ts` replaces `tests/layerColours.test.ts`. The table: bone ivory (also the teeth), the four layer colours and the tendon shade, the accent, selection outline and hover outline, the three tints, the seven region colours, the scene background (now `SCENE_BACKGROUND` in `src/scene/material.ts`) and twelve ghost colours (bone and the three layers at the lowest, default and highest ghost opacity, composited over the background). 300+ pairs checked at ΔE2000 ≥ 8 under normal vision, deuteranopia and protanopia, ≥ 20 for M9's nine neighbour pairs. `EXEMPT` lists the pairs that never meet or are tested elsewhere, each with its reason (two regions and region/teeth: M5; region/tint: never on screen together, see below; accent/bone and accent/regions: the outline carries the selection, M3; accent/outline: drawn together on purpose; hover/accent and hover/outline: never on one structure; ghost/ghost and ghost/background: ghosts are faint context, named in the Layers panel; accent/ghost and accent/background: outlined). A guard test fails if a solid colour's pair with another solid, a tint or a region, or any pair with the selection outline, is ever exempted.
+- **Legend and labels:** every swatch the legend can show (bone, three layers, three tints, seven regions) ≥ 3:1 against the legend background composited over the scene (read from `styles.css`, so the test follows the stylesheet); legend text and the new note ≥ 4.5:1; label text ≥ 4.5:1 against both label boxes (plain and focus) composited over every solid, tint, region, the accent, the hover colour, the background and pure white. Only dark styles exist, so no light-theme variant. Label boxes already passed everywhere (worst case over white).
+- **Failures found and fixed by changing the colour (decision 3), each by the smallest step (ΔE2000 from the old colour) that passes every pair:**
+
+  | Colour | Was | Now | Why |
+  | --- | --- | --- | --- |
+  | Muscles | `#a8483f` | `#b44d43` | legend swatch 2.75:1 against the legend (needs 3:1) |
+  | Tendon / aponeurosis | `#c98a7c` | `#c18274` | 6.1 from the thorax region colour under protanopia (intercostal and rib attachments sit on it) |
+  | Ligaments | `#d9dde3` | `#cccccc` | 5.4 from the hover outline `#f1f3f4` (all three visions) |
+  | Cartilage | `#a9bccb` | `#c5dfee` | 4.5 from the pectoral girdle's region colour under deuteranopia (glenoid labrum, AC and SC discs); then 7.8 from the antagonist tint over a 50 % cartilage ghost (protanopia), fixed by the same change |
+
+- **Region colours vs the tints:** origin yellow on an upper-limb bone's region yellow was ΔE 3.4 (a patch on the humerus), antagonist purple beside the pectoral girdle 5.8, insertion blue on a lower-limb bone 10.7 (under the ≥ 20 aim). Both palettes are Okabe–Ito, so no recolouring could separate seven regions from three tints under CVD. Instead **colour-by-region pauses while any tint or patch is drawn** (`drawnColourMode` in `src/scene/isolation.ts`, used by `Isolation.tsx`): the bones go back to ivory, the legend replaces the region buttons with "Region colours paused while origins, insertions or antagonists are shown." (`legend-paused`), the toggle stays pressed and the regions come back when the tints go. `?debug`'s `data-colour` reports the colour drawn. Unit test in `colourVision.test.ts`, e2e in `tints.spec.ts`.
+- **Correction to this plan:** the "tritanopia included" in the colours summary above (and "M9's tritanopia" in decision 3) was wrong: M9's test, like M5's, checked normal vision, deuteranopia and protanopia only (`CVD_MATRICES` has no tritanopia). AL kept the spec's rule (§6.3: deuteranopia and protanopia) and added no tritanopia check (QUESTIONS 139).
+- Not in the table: `?debug&layers=all`'s debug colours (`DEBUG_LAYER_COLOURS`, a debug tool, M6).
+- Screenshot test (`polish.spec.ts`) checks pixels by brightness, not by layer colour, so it needed no change; the legend chip tests (`tints.spec.ts`, `interaction.spec.ts`) check names. `STATUS.md` gets the colour changes in AQ.
+- Tests: `npx vitest run` 532 pass; `npm run check` passes; e2e `tints` (5, one new), `polish`, `interaction`, `a11y`, `layers`, `labels-layers` (51 tests) pass.
+- Main chunk: **468.5 kB** (`gzip -9`, `index` + modulepreloads), +0.4 kB over M9 (budget +5).
 
 ## Step 3: Announcements (session AM)
 - Pure wording functions (decision 4), wired to the store's layer, depth, hidden, selection and antagonist changes; folded messages for combined actions.
