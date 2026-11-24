@@ -24,7 +24,7 @@ Session kinds: **design** = strong model (schemas, architecture); **routine** = 
 | Session | Kind | Serial task (one sentence) | Fan-out | Inputs | Done when | Status |
 | --- | --- | --- | --- | --- | --- | --- |
 | (planning) | design | M10 → M11 handover and this plan (step 0) | none | `SPEC-platform.md` | `current` 11, plan written | **Done.** See step 0 |
-| AS | design | Record the four golden snapshots and the M10 performance baseline, before any refactor (step 1) | none | decisions 1, 6 | `tests/golden/*.json` committed; `tests/golden.test.ts` passes in `npm run check`; baseline table filled | |
+| AS | design | Record the four golden snapshots and the M10 performance baseline, before any refactor (step 1) | none | decisions 1, 6 | `tests/golden/*.json` committed; `tests/golden.test.ts` passes in `npm run check`; baseline table filled | **Done.** See step 1 |
 | AT | design | Descriptor types, `src/systems/registry.ts` and the four layer descriptors; layer-identity tables (codes, defaults, labels, colours, ghost order, depth) moved onto them (step 2) | none | decisions 2–4 | the tables in step 2's list are deleted; goldens unchanged; `check` green | |
 | AU | routine | Kind tables in the runtime moved onto `KindDescriptor`s (step 3) | none | AT's types | step 3's list deleted; goldens unchanged | |
 | AV | routine | Build-side and content-side tables (TS scripts, virtual modules, loaders, schemas, model checks) driven by the registry (step 4) | none | decision 2 | step 4's list deleted; `check-models` and `validate-content` output unchanged | |
@@ -44,7 +44,7 @@ Triggers: "begin session AS" to "begin session AY". Every session follows `docs/
 
 ## Exit criteria (from `SPEC-platform.md` §11, M11)
 
-- [ ] Golden snapshots recorded (§2.2), before any refactor.
+- [x] Golden snapshots recorded (§2.2), before any refactor. *(AS, `58d1e72`)*
 - [ ] `LayerDescriptor` / `KindDescriptor` types; descriptors for bones, cartilage, ligaments, muscles; `registry.ts`.
 - [ ] Every literal table listed in STATUS §3 replaced by registry lookups, including bones. *(Runtime and TS scripts; the per-kind tier, panel, tree and derive code is M12's and the Python build tables are M15's, both allowlisted by decision 7.)*
 - [ ] URL codes from the registry; old URLs verified against `golden/urls.json`.
@@ -108,7 +108,34 @@ Triggers: "begin session AS" to "begin session AY". Every session follows `docs/
 
 ## Step 1 (AS): golden snapshots and baseline
 
-*Notes added when the session runs.*
+**Done** (2026-11-24). Goldens committed as `58d1e72`, before any change under `src/` (none was needed: no file in `src/` changed in AS).
+
+**How they are made.** `tests/golden/harness.ts` runs the app's own functions and loaders, the same virtual modules the browser loads (Vitest resolves them through `vite.config.ts`): `loadContent`, `loadSoftIds`, `loadSoftContent` for every layer, `loadSearch` / `loadSoftSearch`. `tests/golden.test.ts` compares inside `npm run check` (one key per line, sorted; on failure up to 20 keys with both values). `npm run golden` compares alone; `npm run golden -- --write` records and refuses existing files; `--write --force` overwrites (only for a difference the user approved). When a later milestone moves a function, change the harness's import, never the snapshot.
+
+| File | Keys | What each holds |
+| --- | --- | --- |
+| `tiers.json` (1.5 MB) | 1,138 IDs | `t1`, `t2` from `relatedAt` with all four layers On, in the app's order; bones and teeth also `bonesOnly.t1/t2`; muscles and parts with roles also `ant` (the antagonists `withTints` adds at tier 2 with `ant=1`). 21 IDs have an empty tier 1. |
+| `panels.json` (1.5 MB) | 1,138 IDs | Mirrors `InfoPanel.tsx`: title, the line under it, Part of, pair, badges, common name, `written`, the sections in render order with their links (`id \| label \| detail`) and short texts (functions, actions, innervation, joint, landmarks), the breadcrumb `trail` (and `parentCrumb` for soft). Summary and clinical HTML as 12-character SHA-1 hashes. |
+| `search.json` | 60 queries | Top 10 of the sidebar's merge (bone then soft searcher, asked for 30 as `Sidebar.tsx` does): `id \| label \| match \| group \| drawn`. Scores not recorded (M14 changes ranking and reviews the differences anyway). |
+| `urls.json` | 40 URLs | Each opened as a fresh page (`vi.resetModules`, stubbed `window` with empty `localStorage`) through `initSelectionFromUrl` itself, lazy chunks resolved, each layer turned on reported as on screen (as `LayerScenes` would). Records the store (`sel`, `tier`, `grp`, `antagonists`, `ghostMode`, `colourMode`, `layers`, `muscleDepth`, `debugLayersView`, `hidden`, the URL's `cam`, any toast), the **address** afterwards, and **`serialised`** = `serialiseUrlState` of that state on an empty URL (pins `formatLayers`). A page that writes its address after it was recorded fails the build. |
+
+**Decision 6's "extract the pure part" was not needed:** the load path runs in Vitest as is, so the URL golden covers the real code, async soft `sel=` / `grp=` included.
+
+**M10 behaviours the URL golden records as they are** (not bugs to fix in M11; listed so nobody "fixes" them by accident): `ant=1` at tier 1 stays in the address (the state drops it); `sel=` with `grp=` keeps `grp=` in the address; an unparseable `layers=` (`b:on,x:on,m:sideways`) gives the default layers and is left in the address; full layer names (`muscles:ghost`) stay as typed in the address and serialise to codes; a depth suffix on a layer without depth (`l:on:2`) is ignored; legacy `m:on:3` → depth 2 with the address unchanged; unknown bone `sel=` is removed from the address, an unknown soft one too (after the table loads); `grp=muscles.nowhere` is removed.
+
+**Performance baseline** (this container, 2026-11-24, `58d1e72` = M10's code; SwiftShader, so FPS only compares with AY's run here):
+
+| Measure | Figure | Method |
+| --- | --- | --- |
+| `?bench`, bones only | median **2.4** FPS, 5th pct 1.7; **1** draw call; **499,981** triangles; high LOD | `npm run bench-container` (new, `scripts/bench-container.ts`: serves `dist/`, 1280 × 800, 3 runs, medians) |
+| `?bench`, all four layers on | median **0.7** FPS, 5th pct 0.6; **4** draw calls; **1,499,634** triangles; high LOD | same |
+| `perf-load`, desktop | skeleton **3.87 s**, full detail **7.10 s**, muscles on → low shown **8.60 s** | `npm run perf-load`, medians of 3 |
+| `perf-load`, phone profile | skeleton **3.72 s**, full detail **7.10 s**, muscles **9.22 s** | same |
+| Main chunk | **470.1 kB** (index 298.3 + meshoptimizer 168.2 + names 2.7 + softRegistry 0.5 + runtime 0.5) | `gzip -9` of `index` + every modulepreload in `dist/index.html` |
+
+The main chunk equals AR's 470.1 kB, so decision 1's budget (≤ 500.1 kB) stands. `perf-load` prints FAIL for the muscles layer as in every run since M7 (SwiftShader main-thread time; STATUS §6); the bone figures sit between AR's M9 and M10 runs.
+
+**New files:** `tests/golden/{harness.ts,tiers,panels,urls,search}.json`, `tests/golden.test.ts`, `scripts/golden.ts`, `scripts/bench-container.ts`; npm scripts `golden`, `bench-container`. For decision 7: `tests/golden/**` is allowed without listing; `scripts/bench-container.ts` and `scripts/golden.ts` contain no layer or kind literal except the bench link's `layers=` codes (`b:on,c:on,…`), which are URL codes, not quoted IDs.
 
 ## Step 2 (AT): descriptors, registry, layer-identity tables
 
