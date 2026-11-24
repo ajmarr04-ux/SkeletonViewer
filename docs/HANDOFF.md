@@ -7,7 +7,7 @@ Done when: step 4's list is deleted; `npm run check-models`, `validate-content` 
 ## State
 - Last commit: AU (code and plan notes, then this handoff)
 - `npm run check`: pass (39 files, 575 tests incl. goldens and `tests/registry.test.ts`)
-- e2e run in AU: announce, labels-layers, nested, layers, layers-debug, tints, smoke, interaction, keyboard, attached, tiers, soft-sidebar: 68 of 69 pass; `keyboard.spec.ts:232` (M9 journey by keys) hit its 420 s timeout in the full run (SwiftShader about 1 FPS), re-run alone pending
+- e2e run in AU: announce, labels-layers, nested, layers, layers-debug, tints, smoke, interaction, keyboard, attached, tiers, soft-sidebar: 68 of 69 pass; `keyboard.spec.ts:232` (M9 journey by keys) hit its 420 s timeout in the full run (SwiftShader about 1 FPS); re-run alone it passes (4.2 min), so a timing flake under load, not a regression. AY's full run may need a longer timeout for it
 - Open fan-out work: none
 
 ## Waiting on the user
