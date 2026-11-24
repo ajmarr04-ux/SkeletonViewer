@@ -28,7 +28,7 @@ Session kinds: **design** = strong model (schemas, architecture); **routine** = 
 | AT | design | Descriptor types, `src/systems/registry.ts` and the four layer descriptors; layer-identity tables (codes, defaults, labels, colours, ghost order, depth) moved onto them (step 2) | none | decisions 2–4 | the tables in step 2's list are deleted; goldens unchanged; `check` green |**Done.** See step 2 |
 | AU | routine | Kind tables in the runtime moved onto `KindDescriptor`s (step 3) | none | AT's types | step 3's list deleted; goldens unchanged | **Done.** See step 3 |
 | AV | routine | Build-side and content-side tables (TS scripts, virtual modules, loaders, schemas, model checks) driven by the registry (step 4) | none | decision 2 | step 4's list deleted; `check-models` and `validate-content` output unchanged | **Done.** See step 4 |
-| AW | design | Layers panel grouped by system with a group control; presets from the registry (step 5) | none | decision 5 | panel, keyboard and a11y e2e pass (changes listed); announcements tested | |
+| AW | design | Layers panel grouped by system with a group control; presets from the registry (step 5) | none | decision 5 | panel, keyboard and a11y e2e pass (changes listed); announcements tested | **Done.** See step 5 |
 | AX | design | Registry isolation test and the fixture layer (step 6) | none | decisions 7–8 | isolation test green with only the allowlisted later-milestone files; fixture proves the M11 surfaces | |
 | AY | routine | Wrap-up: goldens, bench and main-chunk parity, perf-load, full e2e in the background, `/m11/` (step 7) | none | everything above | exit criteria ticked; `/m11/` live | |
 
@@ -206,7 +206,29 @@ Tables to delete and replace (from `STATUS-M10.md` §3): `LAYERS`, `TISSUE_LAYER
 
 ## Step 5 (AW): grouped Layers panel
 
-Decision 5. *Notes added when the session runs*, with the screenshot for the user's checkpoint.
+Decision 5.
+
+**Done** (2026-11-24). Goldens unchanged; `npm run check` green (39 files, 584 tests); e2e below. `git diff public/models/ content/` empty.
+
+**User checkpoint (before AX):** the panel expanded, `docs/screenshots/m11-aw-layers-expanded.png`, and collapsed, `docs/screenshots/m11-aw-layers-collapsed.png` (default layers, so the group shows "Mixed").
+
+**What exists now.**
+- `PresetDescriptor` (`id`, `label`, `summary`, `modes`, optional `depth`) on `SystemDescriptor.presets`; the musculoskeletal system holds "Skeleton" (`bones` on, summary "bones only") and "Full musculoskeletal" (all on, `depth: 0`, "all layers on"). Registry: `layersOfSystem`, `systemDescriptor`, `systemMode` (one mode or `"mixed"`), `PRESETS`, `PresetId`, `presetModes`, `presetDescriptor`, `presetOf`.
+- Deleted: `LayerPreset`, `presetOf` and the two hard-coded branches of `applyLayerPreset` (`selection.ts`); `presetOfModes` with its `l === "bones"` and the two preset strings (`announce.ts`; the wording is now `"<label>: <summary>."`); the `PRESETS` table in `LayersPanel.tsx`.
+- `setSystemMode(system, mode)` (`selection.ts`): every layer of the system in one `setLayerSetting` call, depth kept. `setLayerSetting(next, via)` passes the system to the store's new `layersVia`, which the Announcer snapshots; `layersAnnouncement(…, via)` then says `systemModeAnnouncement` ("Musculoskeletal: all on." / "all ghosted." / "all off."), with the presets' " Loading …." suffix while files come. Without `via` the M10 rules are unchanged (one layer: its message; several landing on a preset: the preset's).
+- `LayersPanel.tsx`: presets (same test IDs and position), then one `<section class="layer-system">` per system: a disclosure button (`system-<id>-toggle`, `aria-expanded`, chevron) and the group control (`fieldset`, legend "All musculoskeletal layers", radios `system-<id>-on|ghost|off`, described by "Musculoskeletal: mixed." / "…: all on.", a visible "Mixed" when the layers differ), then the layer rows, kept in the page with `hidden` when collapsed. Expanded state: `localStorage` `skeleton-viewer:systems` (`SYSTEMS_KEY`), JSON of the collapsed systems only, removed when all are expanded; pure helpers in `src/ui/systemGroups.ts`.
+
+**Judgement calls.**
+- *"One history step"*: layer changes have never pushed history (M7 decision 1, `replaceState`), so the group control is one state change and one URL replacement, like a preset; the e2e test checks `history.length` doesn't grow. Pushing an entry only for the group control would make it the one layer change Back undoes.
+- *Mixed* is the control's state and description, not a live-region message: saying "Musculoskeletal: mixed." after every single-row change would change M10's announcements.
+- *Tab stops while mixed:* with no radio checked Chrome gave each of the three radios a Tab stop (seen in the first e2e run); the 2nd and 3rd get `tabIndex=-1` while mixed, so the group is one stop as decision 5 says; arrows still move inside it.
+- Presets stay above the groups (they may span systems later) and don't collapse with them.
+
+**Tests changed, and why** (decision 5's list, nothing else): `tests/e2e/layers.spec.ts` + 1 test (header, mixed state and its description, group Off: one announcement and no history entry, preset back, collapse kept across a reload, group On: the group's message while the Full preset shows pressed); `keyboard.spec.ts` (the M7 test asserts it passes exactly the disclosure button and one group stop, each with a ring, before the muscles' row); `a11y.spec.ts` (axe on the collapsed group; the expanded one is covered by the existing two scans). Unit: `tests/layers.test.ts` (presets' IDs, wording, modes and depth; each layer in one system; `systemMode`; the storage helpers) imports `presetOf` from the registry now; `tests/announce.test.ts` (group messages with and without loading, the same change without `via` stays the preset's, depth kept by the group).
+
+**e2e:** layers, keyboard, a11y, announce: the first run 38 of 40, the two failures in the new checks (the Tab stops above; and my expectation "Skeleton: bones only." after group Off, where only the bones change, so M10's one-layer rule rightly says "Bones on."). Fixed and re-run: `layers.spec.ts:121`, all of `keyboard.spec.ts`, `a11y.spec.ts:261`: 7 of 7.
+
+**Main chunk:** 472.4 kB gzip -9 (index 298.6 + meshoptimizer 167.6 + names 2.7 + registry 2.6 + softRegistry 0.5 + runtime 0.5); +0.9 on AV, budget 500.1.
 
 ## Step 6 (AX): isolation test and fixture layer
 

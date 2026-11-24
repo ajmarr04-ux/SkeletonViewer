@@ -138,9 +138,9 @@ test("M11: layers grouped under a collapsible system header with a group On / Gh
   await expect(page.getByTestId("announcer")).toHaveText("Musculoskeletal: all off.");
   await expect(page).toHaveURL(/layers=b%3Aoff|layers=b:off/);
   expect(await page.evaluate(() => window.history.length)).toBe(entries);
-  // A preset brings the mixed state back with the preset's own wording.
+  // A preset brings the mixed state back; only the bones changed, so (as in M10) that layer's own message.
   await page.getByTestId("layers-preset-skeleton").click();
-  await expect(page.getByTestId("announcer")).toHaveText("Skeleton: bones only.");
+  await expect(page.getByTestId("announcer")).toHaveText("Bones on.");
   await expect(group).toHaveAttribute("data-mode", "mixed");
   // Collapse: the rows are hidden, the group control stays; kept in localStorage across a reload.
   await toggle.click();

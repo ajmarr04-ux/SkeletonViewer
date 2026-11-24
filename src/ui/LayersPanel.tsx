@@ -103,6 +103,8 @@ function SystemGroup({ system, label, layers, expanded, onToggle, disabled }: { 
                 name={name}
                 value={m}
                 checked={mode === m}
+                // Mixed: no option checked, and browsers would make each radio a Tab stop; keep one.
+                tabIndex={mode === "mixed" && m !== MODES[0] ? -1 : undefined}
                 disabled={disabled}
                 data-testid={`system-${system}-${m}`}
                 onChange={() => setSystemMode(system, m)}
