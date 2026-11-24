@@ -27,7 +27,8 @@
     "prebuild": "npm run validate-content && npm run content",
     "content": "tsx scripts/build-content.ts",
     "search-index": "tsx scripts/build-search-index.ts",
-    "perf-load": "tsx scripts/perf-load.ts"
+    "perf-load": "tsx scripts/perf-load.ts",
+    "golden": "tsx scripts/golden.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
