@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { labelPriority, layoutLabels, leaderEnd, LABEL, type LabelCandidate, type PlacedLabel } from "../src/scene/labels";
+import { focusLayerOf, labelKey, labelOrder, labelPriority, layoutLabels, leaderEnd, LABEL, type LabelCandidate, type PlacedLabel } from "../src/scene/labels";
 
 const AREA = { left: 0, top: 0, right: 800, bottom: 600 };
 
@@ -84,5 +84,64 @@ describe("label layout", () => {
     expect(labelPriority("b", "a", t1, t2)).toBe(1);
     expect(labelPriority("c", "a", t1, t2)).toBe(2);
     expect(labelPriority("d", "a", t1, t2)).toBe(3);
+  });
+});
+
+describe("labels for every kind (M10 plan decisions 1 and 2)", () => {
+  /** M5's sort, as it was before the focus-layer tie-break. */
+  const m5Order = (cs: readonly LabelCandidate[]) =>
+    [...cs].sort((a, b) => a.priority - b.priority || b.sizePx - a.sizePx || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)).map((c) => c.id);
+
+  it("keeps M5's order with every layer off (no focus layer, or every candidate a bone)", () => {
+    for (const seed of [1, 2, 3, 4, 5, 6, 7]) {
+      const cs = crowd(234, seed);
+      expect(labelOrder(cs).map((c) => c.id)).toEqual(m5Order(cs));
+      const bones = cs.map((c) => ({ ...c, layer: "bones" }));
+      expect(labelOrder(bones, "bones").map((c) => c.id)).toEqual(m5Order(bones));
+      // And the layout itself is the same as without the option.
+      expect(layoutLabels(bones, AREA, { minSizePx: 0, focusLayer: "bones" })).toEqual(layoutLabels(cs, AREA, { minSizePx: 0 }));
+    }
+  });
+
+  it("places the focus layer first among candidates of equal size (within 10 %)", () => {
+    const c = (id: string, sizePx: number, layer: string, priority = 3): LabelCandidate => ({ id, text: id, x: 400, y: 300, sizePx, priority, layer });
+    const cs = [c("bone_a", 100, "bones"), c("muscle_b", 95, "muscles"), c("bone_c", 80, "bones"), c("muscle_d", 79, "muscles"), c("lig_e", 79.5, "ligaments")];
+    expect(labelOrder(cs, "muscles").map((x) => x.id)).toEqual(["muscle_b", "bone_a", "muscle_d", "bone_c", "lig_e"]);
+    expect(labelOrder(cs, "bones").map((x) => x.id)).toEqual(["bone_a", "muscle_b", "bone_c", "lig_e", "muscle_d"]);
+    // Not equal (≥ 10 % apart): size wins whatever the layer.
+    expect(labelOrder([c("bone", 100, "bones"), c("muscle", 89, "muscles")], "muscles").map((x) => x.id)).toEqual(["bone", "muscle"]);
+    // Priority always comes before the layer.
+    expect(labelOrder([c("muscle", 100, "muscles", 3), c("bone", 100, "bones", 1)], "muscles").map((x) => x.id)).toEqual(["bone", "muscle"]);
+    // In the same spot, the focus layer's label takes it.
+    const placed = layoutLabels([c("bone_x", 50, "bones"), c("muscle_y", 48, "muscles")], AREA, { focusLayer: "muscles" });
+    expect(placed[0]!.id).toBe("muscle_y");
+  });
+
+  it("labels a part as its muscle, except the selected part's muscle at the part level", () => {
+    const parent: Record<string, string> = { triceps_long_left: "triceps_left", triceps_lateral_left: "triceps_left", biceps_long_left: "biceps_left" };
+    const parentOf = (id: string) => parent[id] ?? null;
+    expect(labelKey("triceps_long_left", parentOf, null)).toBe("triceps_left");
+    expect(labelKey("triceps_lateral_left", parentOf, null)).toBe("triceps_left");
+    expect(labelKey("femur_left", parentOf, null)).toBe("femur_left");
+    expect(labelKey("deltoid_left", parentOf, null)).toBe("deltoid_left");
+    // Part level (a triceps part selected): the triceps' parts are labelled one by one; other muscles still as one.
+    expect(labelKey("triceps_long_left", parentOf, "triceps_left")).toBe("triceps_long_left");
+    expect(labelKey("biceps_long_left", parentOf, "triceps_left")).toBe("biceps_left");
+  });
+
+  it("ranks a muscle's attachments and a part's siblings by the kind-aware sets", () => {
+    // Triceps at tier 1: its bones (from relatedAt) rank 1; its parts are grouped into it (the focus).
+    const t1 = new Set(["scapula_left", "humerus_left", "ulna_left"]);
+    expect(labelPriority("triceps_left", "triceps_left", t1, t1)).toBe(0);
+    expect(labelPriority("ulna_left", "triceps_left", t1, t1)).toBe(1);
+    expect(labelPriority("radius_left", "triceps_left", t1, t1)).toBe(3);
+  });
+
+  it("takes the selection's layer as the focus layer, else the topmost layer on", () => {
+    const modes = { bones: "on", cartilage: "off", ligaments: "on", muscles: "ghost" } as const;
+    expect(focusLayerOf("cartilage", modes)).toBe("cartilage");
+    expect(focusLayerOf(null, modes)).toBe("ligaments");
+    expect(focusLayerOf(null, { ...modes, muscles: "on" })).toBe("muscles");
+    expect(focusLayerOf(null, { bones: "on", cartilage: "off", ligaments: "off", muscles: "off" })).toBe("bones");
   });
 });

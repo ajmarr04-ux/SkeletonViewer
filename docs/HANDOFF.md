@@ -1,20 +1,20 @@
-# Handoff — written 2026-11-23 at the end of the M10 planning session
+# Handoff — written 2026-11-24 at the end of M10 session AK
 
 ## Next session
-**AK**: labels for every kind: kind-aware priorities, one label per unselected muscle, focus layer wins ties (plan step 1, decisions 1–2). Trigger: "begin session AK".
-Done when: layout tests per kind (`tests/labels.test.ts`, M5 layout unchanged with every layer off); e2e: muscles on → one triceps label; triceps tier 1 → scapula and ulna labelled; part level → long head labelled, triceps not; label layout time with every layer on recorded.
+**AL**: colour-vision pass over every colour the layers add, legend chips and label contrast (plan step 2, decision 3).
+Done when: one colour test covers every pair that can be on screen together (exempt pairs listed with reasons); legend chip contrast ≥ 3:1 and label box contrast ≥ 4.5:1 over muscle tested; any colour change recorded in the session notes, with the screenshot/legend/tint tests updated in the same commit. Trigger: "begin session AL".
 
 ## State
-- M9 → M10 handover done: `m9` frozen at `ef6ee75` in `deploy/pages.json`, `current` 10; README M9 row frozen, M10 row "In progress"; `docs/PLAN-milestone-10.md` written (sessions AK–AR, decisions 1–9, budget table).
-- `origin/main` (`ef6ee75`) merged into the session branch.
-- `npm run check`: pass (no code changed).
-- Open fan-out work: none (none planned for M10).
+- AK done: labels for every kind (`labelOrder`, `labelKey`, `focusLayerOf` in `src/scene/labels.ts`; `src/ui/Labels.tsx` groups parts per muscle and ranks with `relatedAt`). Notes under step 1 of `docs/PLAN-milestone-10.md`.
+- `npm run check`: pass. Vitest pass. E2E: `labels-layers.spec.ts` (5 tests) and the label/nested/tiers/layers tests of `polish`, `nested`, `tiers`, `layers` specs (26) pass.
+- Main chunk 468.4 kB (+0.3 over M9; budget +5).
+- Open fan-out work: none.
 
 ## Waiting on the user
-- Plan decisions 1–9 in `docs/PLAN-milestone-10.md` (build as written unless changed); especially 7 (the AO gate deploys unfinished M10 to `/m10/` for the PC/iPhone bench; alternative in risk 4) and 9 (close the programme: freeze `m10`, `"current": null`).
-- Still open, any time: a glance at `/m9/`; QUESTIONS 132–138 and `assets/build/REPORT-patches.md`; the per-browser `?bench` table (M5 step 12).
+- Nothing blocks AL. Still open, any time: a glance at `/m9/`; QUESTIONS 132–138 and `assets/build/REPORT-patches.md`; the per-browser `?bench` table (M5 step 12).
 
 ## Things the next session must know
-- `src/ui/Labels.tsx` ranks with the bones' `relations.visibleAt`; use `relatedAt` (`src/scene/isolation.ts`) with the layer modes.
-- Main-chunk budget for M10: +5 kB over M9's 468.1 kB (`index` + every modulepreloaded chunk, `gzip -9`).
-- M10's questions start at **139**.
+- Colours live in `src/layers/colours.ts`, `src/scene/tints.ts`, `src/scene/regionColours.ts`, `src/scene/material.ts`; existing checks in `tests/layerColours.test.ts` and the region tests.
+- If a pair fails, change the colour, not the threshold (decision 3).
+- Label layout with every layer on: median 7.6 ms at 4× CPU (bench in `labels-layers.spec.ts`); AO's gate gives the phone figure.
+- M10's questions start at **139** (none added in AK).

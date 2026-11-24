@@ -22,7 +22,7 @@ Out of scope: content review and the open content questions (spec §13 of `SPEC 
 | Session | Serial task (one sentence) | Fan-out step | Inputs | Done when | Status |
 | --- | --- | --- | --- | --- | --- |
 | (planning) | M9 → M10 handover and this plan (step 0) | none | M9 plan, spec §11 | `m9` frozen, `current` 10, plan written | **Done.** See step 0 |
-| AK | Labels for every kind: kind-aware priorities, one label per unselected muscle, focus layer wins ties (step 1) | none | decisions 1–2 | layout tests per kind; e2e labels with muscles on, at muscle tier 1 and at part level | Not started |
+| AK | Labels for every kind: kind-aware priorities, one label per unselected muscle, focus layer wins ties (step 1) | none | decisions 1–2 | layout tests per kind; e2e labels with muscles on, at muscle tier 1 and at part level | **Done.** See step 1 |
 | AL | Colour-vision pass over every colour the layers add, legend chips and label contrast (step 2) | none | decision 3 | one colour test covering every pair that can be on screen together; legend and label contrast tested; any colour change recorded | Not started |
 | AM | Screen-reader announcements for the new kinds, layers, depth, Hide and the part level (step 3) | none | decision 4 | every row of decision 4's table tested as a pure function and in e2e through the live region | Not started |
 | AN | Keyboard pass for the new kinds: the spec's journey by keys only, Tab cursor across layers and parts, axe on every new state (step 4) | none | decision 5 | `keyboard.spec.ts` journey passes; gaps fixed | Not started |
@@ -104,6 +104,14 @@ No fan-out is planned: every session changes shared code or one shared document,
 ## Step 1: Labels (session AK)
 - `labelPriority` with kind-aware tiers; muscle grouping of parts (union spheres per muscle from the soft table's `parts`); focus-layer tie-break in `layoutLabels`; label layout time with every layer on.
 - Tests: `tests/labels.test.ts` (tie-break, grouping, priorities per kind, M5 equality with layers off); e2e in `polish.spec.ts` or a new `labels-layers.spec.ts`: muscles on → one triceps label; triceps tier 1 → scapula and ulna labelled; part level → the long head labelled, the triceps not.
+
+**Session AK notes (done).**
+- `src/scene/labels.ts`: `labelOrder` (M5's sort, then the focus-layer tie-break: the sorted list is cut into runs of one priority whose radii are within `EQUAL_SIZE` = 10 % of the run's largest, and inside a run the focus layer goes first; runs are cut from the sorted list so the order is deterministic, which a 10 % comparator inside `sort` wouldn't be); `labelKey` (a part labels as its muscle, except the selected part's muscle at the part level); `focusLayerOf` (the selection's layer, else the topmost layer On). `layoutLabels` takes `focusLayer`; candidates carry `layer`.
+- `src/ui/Labels.tsx`: tier sets from `relatedAt(sel, tier, st.layers)` instead of `relations.visibleAt`; parts grouped per muscle into one candidate at the union of their world bounding spheres (`Sphere.union`), named by the muscle, with the best priority of the muscle and its parts; at the part level the muscle's parts are separate and the siblings are added to tier 1. Re-lays out when the soft tier sets arrive (`subscribeSoftTiers`). Before this, a selected muscle with parts had **no** focus label (the focus ID has no mesh), and a soft focus's related structures had no priority.
+- Group isolation (`grp=`) left as M5: every drawn structure is a member, so priority 1 for all members orders exactly as priority 3 for all with the isolated size threshold of 0; no change made.
+- M5 equality: tested on seven 234-candidate fixtures (`labelOrder` = the old sort; `layoutLabels` with `focusLayer: "bones"` equals the old layout), and the M5 label e2e tests (`polish.spec.ts`) pass unchanged.
+- **Label layout cost with every layer on** (`?bench&layers=b:on,c:on,l:on,m:on`, labels on, 4× CPU, SwiftShader, `tests/e2e/labels-layers.spec.ts`): full view **median 7.6 ms, max 27.8 ms** (13 layouts); triceps at tier 2 **median 2.7 ms, max 3.3 ms** (11). M5 bones only: 2.4 / 12 ms. Under the 16 ms median bar; layouts run at most every 100 ms while moving, so no candidate pre-filter was added (risk 1). The phone figure comes with AO's gate.
+- Main chunk: **468.4 kB** (`gzip -9`, `index` + modulepreloads), +0.3 kB over M9 (budget +5).
 
 ## Step 2: Colours (session AL)
 - The full colour table and pair rules (decision 3); legend chip contrast; label box contrast over muscle.

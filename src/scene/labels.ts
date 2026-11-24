@@ -16,6 +16,8 @@ export type LabelCandidate = {
   sizePx: number;
   /** 0 = the focus, 1 = tier 1, 2 = tier 2, 3 = everything else. Lower is placed first. */
   priority: number;
+  /** The layer the object is drawn in (M10): breaks ties of equal size in favour of the focus layer. */
+  layer?: string;
 };
 
 /** A label that was placed: its box (client px) and its anchor. */
@@ -57,11 +59,49 @@ export type LayoutOptions = {
   measure?: (text: string) => number;
   /** Screen areas labels must stay off (toolbar, panels, legend). Anchors inside them are dropped. */
   obstacles?: readonly Rect[];
+  /**
+   * The focus layer (M10 plan decision 2): among candidates of the same
+   * priority and equal size on screen (radii within `EQUAL_SIZE`), those in
+   * this layer are placed first. Unset, or every candidate in one layer, gives
+   * M5's order exactly.
+   */
+  focusLayer?: string | null;
 };
+
+/** Two on-screen radii count as equal size when the smaller is within 10 % of the larger (M10 plan decision 2). */
+export const EQUAL_SIZE = 0.1;
+
+const byPrioritySize = (a: LabelCandidate, b: LabelCandidate): number =>
+  a.priority - b.priority || b.sizePx - a.sizePx || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+
+/**
+ * M5's order (priority, then size, biggest first, then ID), then the focus
+ * layer's tie-break: the sorted list is cut into runs of one priority whose
+ * sizes are all within `EQUAL_SIZE` of the run's first (largest); inside a run,
+ * the focus layer's candidates move to the front, each side keeping its order.
+ * Runs are cut from the sorted list, so the order is deterministic.
+ */
+export function labelOrder(candidates: readonly LabelCandidate[], focusLayer: string | null = null): LabelCandidate[] {
+  const sorted = [...candidates].sort(byPrioritySize);
+  if (focusLayer === null) return sorted;
+  const out: LabelCandidate[] = [];
+  for (let i = 0; i < sorted.length; ) {
+    const head = sorted[i]!;
+    let j = i + 1;
+    while (j < sorted.length && sorted[j]!.priority === head.priority && isEqualSize(sorted[j]!.sizePx, head.sizePx)) j++;
+    const run = sorted.slice(i, j);
+    out.push(...run.filter((c) => c.layer === focusLayer), ...run.filter((c) => c.layer !== focusLayer));
+    i = j;
+  }
+  return out;
+}
+
+const isEqualSize = (small: number, large: number): boolean => (large === small ? true : Number.isFinite(large) ? large - small < EQUAL_SIZE * large : false);
 
 /**
  * Greedy no-overlap layout. Candidates are sorted by priority, then by size on
- * screen (biggest first), then by ID (stable). Each tries six spots around its
+ * screen (biggest first), then by ID (stable), with the focus layer first among
+ * equal sizes (`labelOrder`). Each tries six spots around its
  * anchor (above right, above left, below right, below left, above, below) and
  * takes the first that stays inside `area`, off every obstacle and clear of
  * every label already placed; if none fits it is dropped. The focus (priority
@@ -72,11 +112,13 @@ export function layoutLabels(candidates: readonly LabelCandidate[], area: Rect, 
   const minSize = opts.minSizePx ?? LABEL.minSizePx;
   const measure = opts.measure ?? estimateTextWidth;
   const obstacles = opts.obstacles ?? [];
-  const order = candidates
-    .filter((c) => Number.isFinite(c.x) && Number.isFinite(c.y) && pointIn(c.x, c.y, area))
-    .filter((c) => c.priority < 3 || c.sizePx >= minSize)
-    .filter((c) => c.priority === 0 || !obstacles.some((o) => pointIn(c.x, c.y, o)))
-    .sort((a, b) => a.priority - b.priority || b.sizePx - a.sizePx || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  const order = labelOrder(
+    candidates
+      .filter((c) => Number.isFinite(c.x) && Number.isFinite(c.y) && pointIn(c.x, c.y, area))
+      .filter((c) => c.priority < 3 || c.sizePx >= minSize)
+      .filter((c) => c.priority === 0 || !obstacles.some((o) => pointIn(c.x, c.y, o))),
+    opts.focusLayer ?? null,
+  );
   const placed: PlacedLabel[] = [];
   const boxes: Rect[] = [...obstacles];
   const h = LABEL.height;
@@ -123,4 +165,26 @@ export function labelPriority(id: string, focus: string | null, tier1: ReadonlyS
   if (tier1.has(id)) return 1;
   if (tier2.has(id)) return 2;
   return 3;
+}
+
+/**
+ * The ID an object is labelled under (M10 plan decision 1): a part of a muscle
+ * is labelled as its muscle (one label per muscle, at the union of its parts),
+ * except at the part level, where the parts of the selected part's muscle are
+ * labelled one by one. Everything else is labelled as itself.
+ */
+export function labelKey(id: string, parentOf: (id: string) => string | null, partLevelMuscle: string | null): string {
+  const parent = parentOf(id);
+  return parent === null || parent === partLevelMuscle ? id : parent;
+}
+
+/**
+ * The focus layer (M10 plan decision 2): the selected structure's layer; with
+ * nothing selected (or its layer unknown), the topmost layer that is On, in the
+ * order muscles, ligaments, cartilage, bones.
+ */
+export function focusLayerOf(selLayer: string | null, modes: Readonly<Record<"bones" | "cartilage" | "ligaments" | "muscles", string>>): string {
+  if (selLayer !== null) return selLayer;
+  for (const l of ["muscles", "ligaments", "cartilage", "bones"] as const) if (modes[l] === "on") return l;
+  return "bones";
 }
