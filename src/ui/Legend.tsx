@@ -1,19 +1,17 @@
 import { useSoftTiersVersion } from "../content/softRelations";
-import { LAYER_COLOURS } from "../layers/colours";
 import { viewOf } from "../scene/isolation";
 import { usePatchBatch } from "../scene/layerRegistry";
-import { BONE_COLOUR } from "../scene/material";
 import { REGIONS, regionColour } from "../scene/regionColours";
 import { TINT_COLOURS, TINT_NAMES, TINT_ROLES, type TintRole } from "../scene/tints";
 import { hasMesh, isMuscleKind, isolateGroup } from "../state/selection";
 import { useViewer, type ViewerState } from "../state/store";
-import { LAYERS, type Layer } from "../state/url";
+import { type Layer } from "../state/url";
+import { LAYER_IDS, layerDescriptor } from "../systems/registry";
 
-const LAYER_KEY: Record<Layer, { name: string; colour: string }> = {
-  bones: { name: "Bone", colour: BONE_COLOUR },
-  cartilage: { name: "Cartilage", colour: LAYER_COLOURS.cartilage },
-  ligaments: { name: "Ligaments", colour: LAYER_COLOURS.ligaments },
-  muscles: { name: "Muscles", colour: LAYER_COLOURS.muscles },
+/** A layer's colour-key entry: its descriptor's colour, named by `keyLabel` or its label. */
+const layerKey = (l: Layer): { name: string; colour: string } => {
+  const d = layerDescriptor(l);
+  return { name: d.colour.keyLabel ?? d.label, colour: d.colour.material };
 };
 
 let cache: { key: unknown[]; out: string } | null = null;
@@ -46,11 +44,11 @@ export function Legend() {
   const version = useSoftTiersVersion();
   const failed = usePatchBatch((p) => p.failed);
   const tints = useViewer((s) => tintsInUse(s, version, failed));
-  const layers = useViewer((s) => LAYERS.filter((l) => s.layers[l] !== "off").join(","));
+  const layers = useViewer((s) => LAYER_IDS.filter((l) => s.layers[l] !== "off").join(","));
   const shownLayers = (layers ? layers.split(",") : []) as Layer[];
   const tintRoles = (tints ? tints.split(",") : []) as TintRole[];
   const keyItems = [
-    ...(shownLayers.length > 1 ? shownLayers.map((l) => ({ key: `layer-${l}`, ...LAYER_KEY[l] })) : []),
+    ...(shownLayers.length > 1 ? shownLayers.map((l) => ({ key: `layer-${l}`, ...layerKey(l) })) : []),
     ...tintRoles.map((r) => ({ key: `tint-${r}`, name: TINT_NAMES[r], colour: TINT_COLOURS[r] })),
   ];
   if (!regions && keyItems.length === 0) return null;

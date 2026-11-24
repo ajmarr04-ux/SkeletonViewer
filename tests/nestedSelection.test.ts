@@ -9,7 +9,7 @@ import { trimSoftIds, type RawSoftId } from "../src/layers/softIds";
 import { MAX_PARTS } from "../src/scene/layerRegistry";
 import { isolationView, sceneView, shownIn } from "../src/scene/isolation";
 import { FULL_SKELETON, isolationStep, levelOf, resolveClick, type Isolation, type IsolationAction, type ParentOf } from "../src/state/isolation";
-import { DEFAULT_LAYERS } from "../src/state/url";
+import { DEFAULT_MODES } from "../src/systems/registry";
 
 const RAW = JSON.parse(readFileSync("content/soft-ids.json", "utf8")) as RawSoftId[];
 
@@ -104,7 +104,7 @@ describe("views, panel and announcements with the real table", () => {
     expect(v.focus).toBe("triceps_brachii_left");
     expect([...v.focusIds].sort()).toEqual(heads);
     expect([...v.solid!].sort()).toEqual(heads);
-    const scene = sceneView(v, { ...DEFAULT_LAYERS, muscles: "on" });
+    const scene = sceneView(v, { ...DEFAULT_MODES, muscles: "on" });
     for (const h of heads) expect(shownIn(scene, "muscles", h)).toBe("solid");
   });
 

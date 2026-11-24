@@ -12,7 +12,8 @@ import type { MuscleRoles, Role } from "../content/softRoles";
 import type { TintRole } from "./tints";
 import type { ColourMode } from "./regionColours";
 import type { Tier } from "../state/isolation";
-import { DEFAULT_LAYERS, LAYERS, type GhostMode, type Layer, type LayerModes, type MuscleDepth } from "../state/url";
+import { type GhostMode, type Layer, type LayerModes, type MuscleDepth } from "../state/url";
+import { DEFAULT_MODES, EAGER_LAYER, LAYER_IDS, LAZY_LAYERS } from "../systems/registry";
 import { peeledAt, softEntry, softLayerOf } from "../content/softRegistry";
 import type { BatchedSkeleton } from "./batchSkeleton";
 import { usePatchBatch } from "./layerRegistry";
@@ -52,8 +53,8 @@ const softParts: PartsOf = (id) => softEntry(id)?.parts ?? [];
 const softParent = (id: string): string | null => softEntry(id)?.parent ?? null;
 
 const BONES = new Set((idsJson as { id: string }[]).map((e) => e.id));
-/** The layer a structure is drawn in: bones (and teeth), its soft-tissue layer once the table is loaded, else null. */
-const layerOfAny = (id: string): Layer | null => (BONES.has(id) ? "bones" : softLayerOf(id));
+/** The layer a structure is drawn in: the eager layer for bones (and teeth), its soft-tissue layer once the table is loaded, else null. */
+const layerOfAny = (id: string): Layer | null => (BONES.has(id) ? EAGER_LAYER : softLayerOf(id));
 
 /**
  * What a selection adds at a tier (not itself), following the layers that are
@@ -64,15 +65,14 @@ const layerOfAny = (id: string): Layer | null => (BONES.has(id) ? "bones" : soft
  * cartilage on it. A soft structure: its tier sets (`softTiers.ts`). With only
  * the bones layer on, a bone's additions are exactly M8's.
  */
-export function relatedAt(id: string, tier: Tier, modes: LayerModes = DEFAULT_LAYERS): string[] {
+export function relatedAt(id: string, tier: Tier, modes: LayerModes = DEFAULT_MODES): string[] {
   if (tier === 0) return [];
   const showing = (x: string) => isShowing(x, modes);
   if (!BONES.has(id)) return softRelated(id, tier).filter(showing);
   const bones = relations.visibleAt(id, tier).filter((x) => x !== id);
-  const soft = TISSUE.some((l) => modes[l] !== "off") ? (tier === 1 ? [id] : [id, ...bones]).flatMap((b) => reverseRelated(b)) : [];
+  const soft = LAZY_LAYERS.some((l) => modes[l] !== "off") ? (tier === 1 ? [id] : [id, ...bones]).flatMap((b) => reverseRelated(b)) : [];
   return [...new Set([...bones, ...soft])].filter(showing);
 }
-const TISSUE = LAYERS.filter((l) => l !== "bones");
 
 /**
  * The view for a selection (spec §6). Tier 0 isolates the selection alone
@@ -90,7 +90,7 @@ export function isolationView(
   grp: string | null = null,
   partsOf: PartsOf = softParts,
   parentOf: (id: string) => string | null = softParent,
-  modes: LayerModes = DEFAULT_LAYERS,
+  modes: LayerModes = DEFAULT_MODES,
 ): IsolationView {
   if (sel === null) return grp === null ? FULL_VIEW : groupView(grp, ghostMode, hasMesh, partsOf);
   // A muscle with parts is drawn as its parts (spec §5.1 rule 1); a selected part keeps its siblings solid,
@@ -149,7 +149,7 @@ export function withTints(
   tier: Tier,
   ant: boolean,
   hasMesh: (id: string) => boolean,
-  modes: LayerModes = DEFAULT_LAYERS,
+  modes: LayerModes = DEFAULT_MODES,
   rolesOf: (id: string) => MuscleRoles | undefined = softRoles,
   patchesFailed = false,
 ): IsolationView {
@@ -243,7 +243,7 @@ const NO_PATCHES: ReadonlyMap<string, Role> = new Map();
  */
 export function sceneView(iso: IsolationView, modes: LayerModes, hidden: ReadonlySet<string> = NO_IDS): SceneView {
   const layers = {} as Record<Layer, LayerShow>;
-  for (const layer of LAYERS) {
+  for (const layer of LAYER_IDS) {
     const mode = modes[layer];
     if (iso.solid === null) {
       layers[layer] = mode === "on" ? { solid: null, rest: "hidden" } : { solid: NO_IDS, rest: mode === "ghost" ? "ghost" : "hidden" };
@@ -370,7 +370,7 @@ export function applyIsolationView(
 ): void {
   accentTint ??= makeAccentTint();
   const previous = previousFocus === null ? previousJoint : [previousFocus, ...previousJoint];
-  applyLayerView("bones", solid, ghost, sceneView(view, DEFAULT_LAYERS), previous, base, accentTint);
+  applyLayerView(EAGER_LAYER, solid, ghost, sceneView(view, DEFAULT_MODES), previous, base, accentTint);
 }
 
 /** The bones' accent instance colour (pale blue on ivory). */

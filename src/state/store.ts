@@ -3,7 +3,8 @@ import type { BenchResult, LayoutTimes } from "../scene/bench";
 import type { Lod, LodSetting } from "../scene/lod";
 import { NO_PANEL, type PanelInset, type Preset } from "../camera/math";
 import type { Tier } from "./isolation";
-import { DEFAULT_LAYER_SETTING, type CameraState, type GhostMode, type Layer, type LayerMode, type LayerModes, type MuscleDepth, type TissueLayer } from "./url";
+import { DEFAULT_LAYER_SETTING, type CameraState, type GhostMode, type Layer, type LayerMode, type LayerModes, type MuscleDepth } from "./url";
+import { LAZY_LAYERS, type LazyLayerId } from "../systems/registry";
 import type { ColourMode } from "../scene/regionColours";
 import type { PlacedLabel } from "../scene/labels";
 
@@ -157,7 +158,7 @@ export type ViewerState = {
   /** Muscle depth control (spec §6.2), 0 = all. */
   muscleDepth: MuscleDepth;
   /** `performance.now()` when each soft-tissue layer was first turned on (or the start, for a link). */
-  layerOnAt: Partial<Record<TissueLayer, number>>;
+  layerOnAt: Partial<Record<LazyLayerId, number>>;
   setLayerSetting: (layers: LayerModes, depth: MuscleDepth) => void;
   /**
    * True when the URL asks for M6's debug layer view (`?debug&layers=all`):
@@ -166,8 +167,8 @@ export type ViewerState = {
   debugLayersView: boolean;
   setDebugLayersView: (on: boolean) => void;
   /** Loading state of each soft-tissue layer once it has been turned on. */
-  layerLoad: Partial<Record<TissueLayer, LayerLoad>>;
-  setLayerLoad: (layer: TissueLayer, load: Partial<LayerLoad>) => void;
+  layerLoad: Partial<Record<LazyLayerId, LayerLoad>>;
+  setLayerLoad: (layer: LazyLayerId, load: Partial<LayerLoad>) => void;
   /** Structures hidden one by one (spec §5.5, `hid=`). */
   hidden: ReadonlySet<string>;
   setHidden: (ids: Iterable<string>) => void;
@@ -259,9 +260,9 @@ export const useViewer = create<ViewerState>()((set) => ({
   setLayerSetting: (layers, muscleDepth) =>
     set((s) => {
       if (sameLayers(s.layers, layers) && s.muscleDepth === muscleDepth) return s;
-      // The first time each soft-tissue layer is turned on, for the `?debug` load time (M7 step 9).
+      // The first time each lazy layer is turned on, for the `?debug` load time (M7 step 9).
       let layerOnAt = s.layerOnAt;
-      for (const l of ["cartilage", "ligaments", "muscles"] as const) {
+      for (const l of LAZY_LAYERS) {
         if (layers[l] !== "off" && layerOnAt[l] === undefined) layerOnAt = { ...layerOnAt, [l]: performance.now() };
       }
       return { layers: { ...layers }, muscleDepth, layerOnAt };

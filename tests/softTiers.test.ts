@@ -11,7 +11,8 @@ import { hasSoftTier2, registerSoftTiers, resetSoftTiers, reverseRelated, softRe
 import { jointScope } from "../src/content/softTiers";
 import { trimSoftIds, type RawSoftId } from "../src/layers/softIds";
 import { isolationView, relatedAt, sceneView, shownIn } from "../src/scene/isolation";
-import { DEFAULT_LAYERS, LAYERS, type LayerMode, type LayerModes } from "../src/state/url";
+import { type LayerMode, type LayerModes } from "../src/state/url";
+import { DEFAULT_MODES, LAYER_IDS } from "../src/systems/registry";
 
 const RAW = JSON.parse(readFileSync("content/soft-ids.json", "utf8")) as RawSoftId[];
 const BONES = ids as { id: string; meshAvailable: boolean }[];
@@ -20,7 +21,7 @@ const hasMesh = (id: string) => BONE_MESH.has(id) || softEntry(id)?.mesh === tru
 const SOFT = compileAllSoftFromDisk();
 const TIERS = { ...SOFT.muscles.tiers!.tiers, ...SOFT.ligaments.tiers!.tiers, ...SOFT.cartilage.tiers!.tiers };
 
-const modes = (m: Partial<LayerModes>): LayerModes => ({ ...DEFAULT_LAYERS, ...m });
+const modes = (m: Partial<LayerModes>): LayerModes => ({ ...DEFAULT_MODES, ...m });
 const ALL_ON = modes({ muscles: "on", ligaments: "on", cartilage: "on" });
 /** M8's solid set for a bone (relations.visibleAt), as `isolationView` drew it before M9. */
 const m8Solid = (id: string, tier: 0 | 1 | 2) => new Set(relations.visibleAt(id, tier).filter(hasMesh));
@@ -44,12 +45,12 @@ describe("bones-only equivalence (risk 1: written first)", () => {
   };
   it("before any soft content is loaded", () => {
     resetSoftTiers();
-    check(DEFAULT_LAYERS);
+    check(DEFAULT_MODES);
     check(ALL_ON); // nothing registered: no layer adds anything yet
   });
   it("with every layer's content loaded and only the bones layer on", () => {
     for (const l of ["muscles", "ligaments", "cartilage"] as const) registerSoftTiers(l, SOFT[l].tiers);
-    check(DEFAULT_LAYERS);
+    check(DEFAULT_MODES);
     check(modes({ muscles: "off", ligaments: "off", cartilage: "off" }));
   });
   it("the default modes of isolationView are M8's (bones only)", () => {
@@ -171,7 +172,7 @@ describe("layer filter (plan decision 3)", () => {
     expect(solidOf("triceps_brachii_long_head_left", 1, modes({}))!.has("triceps_brachii_long_head_left")).toBe(true);
   });
   it("a bone's tier 1 gains its muscles with the muscles layer on (decision 3, bone half), none with it off", () => {
-    const off = solidOf("scapula_left", 1, DEFAULT_LAYERS)!;
+    const off = solidOf("scapula_left", 1, DEFAULT_MODES)!;
     expect(off).toEqual(m8Solid("scapula_left", 1));
     const on = solidOf("scapula_left", 1, modes({ muscles: "on" }))!;
     expect(on.has("triceps_brachii_long_head_left")).toBe(true);
@@ -195,6 +196,6 @@ describe("layer filter (plan decision 3)", () => {
   });
   it("tiers are reported loaded per structure", () => {
     expect(softTiersLoaded("triceps_brachii_left")).toBe(true);
-    expect(LAYERS).toContain("muscles");
+    expect(LAYER_IDS).toContain("muscles");
   });
 });

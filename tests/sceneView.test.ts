@@ -20,14 +20,15 @@ import {
   type IsolationView,
 } from "../src/scene/isolation";
 import { relations } from "../src/content/relations";
-import { DEFAULT_LAYERS, LAYERS, type LayerModes } from "../src/state/url";
+import { type LayerModes } from "../src/state/url";
+import { DEFAULT_MODES, LAYER_IDS } from "../src/systems/registry";
 
 // M7 session U, step 4 (plan decisions 6 and 8): the layer-aware view.
 
 const boneIds = (ids as { id: string; meshAvailable: boolean }[]).filter((e) => e.meshAvailable).map((e) => e.id);
 const hasBone = (id: string) => boneIds.includes(id);
 const iso = (sel: string | null, tier: 0 | 1 | 2 = 0, ghost: "ghost" | "hide" = "ghost") => isolationView(sel, tier, ghost, hasBone);
-const modes = (m: Partial<LayerModes>): LayerModes => ({ ...DEFAULT_LAYERS, ...m });
+const modes = (m: Partial<LayerModes>): LayerModes => ({ ...DEFAULT_MODES, ...m });
 
 describe("equivalence with M6 (bones layer on, nothing hidden)", () => {
   const sample = ["femur_left", "stapes_right", "tooth_11", "c1_atlas", "sternum", "tooth_18"].filter((id) => (ids as { id: string }[]).some((e) => e.id === id));
@@ -35,7 +36,7 @@ describe("equivalence with M6 (bones layer on, nothing hidden)", () => {
     const cases: IsolationView[] = [FULL_VIEW];
     for (const sel of sample) for (const tier of [0, 1, 2] as const) for (const g of ["ghost", "hide"] as const) cases.push(iso(sel, tier, g));
     for (const v of cases) {
-      const s = sceneView(v, DEFAULT_LAYERS);
+      const s = sceneView(v, DEFAULT_MODES);
       for (const id of boneIds) {
         const m6 = v.solid === null || v.solid.has(id) ? "solid" : v.ghosts ? "ghost" : "hidden";
         expect(shownIn(s, "bones", id), `${v.focus} ${id}`).toBe(m6);
@@ -80,14 +81,14 @@ describe("layer modes and isolation (plan decision 6)", () => {
     expect(shownIn(v, "bones", "tibia_left")).toBe("hidden"); // related, but hidden
     expect(shownIn(v, "bones", "humerus_left")).toBe("hidden"); // would be a ghost
     expect(shownIn(v, "muscles", "biceps_brachii_left")).toBe("hidden");
-    const joint = sceneView(withJoint(iso("femur_left", 1), { a: "femur_left", b: "tibia_left" }, hasBone), DEFAULT_LAYERS, hidden);
+    const joint = sceneView(withJoint(iso("femur_left", 1), { a: "femur_left", b: "tibia_left" }, hasBone), DEFAULT_MODES, hidden);
     expect(shownIn(joint, "bones", "tibia_left")).toBe("solid");
-    const plain = sceneView(FULL_VIEW, DEFAULT_LAYERS, hidden);
+    const plain = sceneView(FULL_VIEW, DEFAULT_MODES, hidden);
     expect(shownIn(plain, "bones", "femur_left")).toBe("hidden");
     expect(isPickableIn(plain, "bones", "femur_left")).toBe(false);
   });
   it("has an empty tints map for M9", () => {
-    expect(sceneView(FULL_VIEW, DEFAULT_LAYERS).tints.size).toBe(0);
+    expect(sceneView(FULL_VIEW, DEFAULT_MODES).tints.size).toBe(0);
   });
   it("viewOf reads the store's fields", () => {
     const v = viewOf(
@@ -95,7 +96,7 @@ describe("layer modes and isolation (plan decision 6)", () => {
       hasBone,
     );
     expect(v.focus).toBe("femur_left");
-    expect(LAYERS.every((l) => v.layers[l] !== undefined)).toBe(true);
+    expect(LAYER_IDS.every((l) => v.layers[l] !== undefined)).toBe(true);
     expect(shownIn(v, "bones", "femur_right")).toBe("hidden");
   });
 });
@@ -122,7 +123,7 @@ describe("applyLayerView", () => {
     expect(ghost.mesh.getVisibleAt(2)).toBe(false); // hidden: neither batch
     expect(solid.mesh.getColorAt(0, new Color()).b).toBe(1);
     // Layer Off, nothing isolated: both batches off.
-    const off = applyLayerView("muscles", solid, ghost, sceneView(FULL_VIEW, DEFAULT_LAYERS), ["biceps_brachii_left"], () => white, accent);
+    const off = applyLayerView("muscles", solid, ghost, sceneView(FULL_VIEW, DEFAULT_MODES), ["biceps_brachii_left"], () => white, accent);
     expect(off).toEqual({ solid: 0, ghost: 0 });
     expect(solid.mesh.visible).toBe(false);
     expect(ghost.mesh.visible).toBe(false);

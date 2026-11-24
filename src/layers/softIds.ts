@@ -1,7 +1,7 @@
 // The soft-tissue ID table as the viewer uses it (M7 plan decisions 12, 15).
 // Pure: no three.js or React, so Vitest covers it directly.
 
-import type { TissueLayer } from "../state/url";
+import type { LazyLayerId } from "../systems/registry";
 import { depthOf, type Depth } from "../content/muscleDepth";
 
 export type SoftKind = "muscle" | "muscle_part" | "ligament" | "cartilage" | "disc" | "meniscus";
@@ -12,7 +12,7 @@ export type RawSoftId = {
   id: string;
   name: string;
   kind: SoftKind;
-  layer: TissueLayer;
+  layer: LazyLayerId;
   side: "left" | "right" | "midline";
   meshAvailable: boolean;
   parent?: string | null;
@@ -26,7 +26,7 @@ export type SoftId = {
   id: string;
   name: string;
   kind: SoftKind;
-  layer: TissueLayer;
+  layer: LazyLayerId;
   side: "left" | "right" | "midline";
   /** False for the 58 parent muscles and the structures the source lacks. */
   mesh: boolean;
@@ -55,6 +55,6 @@ export function isTendinous(e: SoftId | undefined): boolean {
 }
 
 /** The IDs with a mesh in one layer's files, in table order. */
-export function meshIdsOf(table: readonly SoftId[], layer: TissueLayer): string[] {
+export function meshIdsOf(table: readonly SoftId[], layer: LazyLayerId): string[] {
   return table.filter((e) => e.layer === layer && e.mesh).map((e) => e.id);
 }

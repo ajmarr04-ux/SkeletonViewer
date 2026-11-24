@@ -9,7 +9,7 @@ import { Color, type MeshStandardMaterial } from "three";
 import { create } from "zustand";
 import type { Bounds } from "../../scripts/lib/model-checks";
 import { allInstanceBounds, batchLayer, disposeBatchedSkeleton, ensureBoundsTrees } from "../scene/batchSkeleton";
-import { layerReport, type LayerManifest, type LayerReport } from "../scene/debugLayers";
+import { layerReport, loadLayerManifest, type LayerReport } from "../scene/debugLayers";
 import { disposeParts } from "../scene/loadSkeleton";
 import { lodsToLoad, type Lod } from "../scene/lod";
 import { accentTint, createBoneMaterial, createGhostMaterial, tintFor } from "../scene/material";
@@ -18,8 +18,8 @@ import { TINT_COLOURS, TINT_ROLES, type TintRole } from "../scene/tints";
 import { layerOfId } from "../state/selection";
 import { createOutline, disposeOutline, OUTLINE } from "../scene/outline";
 import { useViewer } from "../state/store";
-import { TISSUE_LAYERS, type TissueLayer } from "../state/url";
-import { LAYER_COLOURS, TENDON_COLOUR } from "./colours";
+import { hasNestedParts, LAZY_LAYERS, layerColour, layerDescriptor, OVERLAYS, type LazyLayerId } from "../systems/registry";
+import { TENDON_COLOUR } from "./colours";
 import { loadSoftContent } from "../content/softContentLoader";
 import { loadLayerParts } from "./loadLayer";
 import { isTendinous, type SoftId } from "./softIds";
@@ -29,51 +29,33 @@ export { SOFT_IDS };
 const BY_ID = new Map(SOFT_IDS.map((e) => [e.id, e]));
 export const softIdOf = (id: string): SoftId | undefined => BY_ID.get(id);
 
-export const LAYER_NAMES: Record<TissueLayer, string> = { cartilage: "Cartilage", ligaments: "Ligaments", muscles: "Muscles" };
-
-/**
- * Ghosts draw after every solid (they are transparent) and in a fixed order
- * (plan decision 7): the bones' ghost first (renderOrder 0), then cartilage,
- * ligaments and muscles, the outermost last.
- */
-const GHOST_ORDER: Record<TissueLayer, number> = { cartilage: 1, ligaments: 2, muscles: 3 };
-
 /** `?debug`: one bounds report per layer (the overlay line). */
-export const useLayerReports = create<Partial<Record<TissueLayer, LayerReport>>>(() => ({}));
+export const useLayerReports = create<Partial<Record<LazyLayerId, LayerReport>>>(() => ({}));
 
-/** Each manifest is its own chunk, fetched only in `?debug`. */
-function loadManifest(layer: TissueLayer): Promise<LayerManifest> {
-  const m =
-    layer === "muscles"
-      ? import("../../assets/build/manifest-muscles.json")
-      : layer === "ligaments"
-        ? import("../../assets/build/manifest-ligaments.json")
-        : import("../../assets/build/manifest-cartilage.json");
-  return m.then((x) => x.default as unknown as LayerManifest);
-}
-
-type Materials = Record<TissueLayer, { solid: MeshStandardMaterial; ghost: MeshStandardMaterial }>;
+type LayerMaterials = { solid: MeshStandardMaterial; ghost: MeshStandardMaterial };
+type Materials = Partial<Record<LazyLayerId, LayerMaterials>>;
 
 function createMaterials(opacity: number): Materials {
   const out = {} as Materials;
-  for (const layer of TISSUE_LAYERS) {
+  for (const layer of LAZY_LAYERS) {
     out[layer] = {
-      solid: createBoneMaterial(LAYER_COLOURS[layer], `layer-${layer}`),
-      ghost: createGhostMaterial(opacity, LAYER_COLOURS[layer], `ghost-${layer}`),
+      solid: createBoneMaterial(layerColour(layer), `layer-${layer}`),
+      ghost: createGhostMaterial(opacity, layerColour(layer), `ghost-${layer}`),
     };
   }
   return out;
 }
 
-/** Instance colour of a structure in its layer: white, or the tendon tint for tendons and aponeuroses. */
-const TENDON_TINT = tintFor(TENDON_COLOUR, LAYER_COLOURS.muscles);
+/** Instance colour of a structure in its layer: white, or the tendon tint (a lighter muscle colour) for tendons and aponeuroses. */
+const TENDON_TINTS = Object.fromEntries(LAZY_LAYERS.map((l) => [l, tintFor(TENDON_COLOUR, layerColour(l))])) as Record<LazyLayerId, Color>;
 const WHITE = new Color(1, 1, 1);
-const ACCENTS = Object.fromEntries(TISSUE_LAYERS.map((l) => [l, accentTint(LAYER_COLOURS[l])])) as Record<TissueLayer, Color>;
+const ACCENTS = Object.fromEntries(LAZY_LAYERS.map((l) => [l, accentTint(layerColour(l))])) as Record<LazyLayerId, Color>;
 const TINTS = Object.fromEntries(
-  TISSUE_LAYERS.map((l) => [l, Object.fromEntries(TINT_ROLES.map((r) => [r, tintFor(TINT_COLOURS[r], LAYER_COLOURS[l])])) as Record<TintRole, Color>]),
-) as Record<TissueLayer, Record<TintRole, Color>>;
+  LAZY_LAYERS.map((l) => [l, Object.fromEntries(TINT_ROLES.map((r) => [r, tintFor(TINT_COLOURS[r], layerColour(l))])) as Record<TintRole, Color>]),
+) as Record<LazyLayerId, Record<TintRole, Color>>;
 export function layerBaseTint(id: string): Color {
-  return isTendinous(softIdOf(id)) ? TENDON_TINT : WHITE;
+  const e = softIdOf(id);
+  return e && isTendinous(e) ? TENDON_TINTS[e.layer] : WHITE;
 }
 
 /**
@@ -84,13 +66,13 @@ export function layerBaseTint(id: string): Color {
 export function LayerScenes({ lods, ready, debug }: { lods: Lod[]; ready: boolean; debug: boolean }) {
   const [materials] = useState(() => createMaterials(useViewer.getState().ghostOpacity));
   // A layer is loaded the first time it is not Off, and kept (hidden) after that.
-  const [wanted, setWanted] = useState<TissueLayer[]>([]);
+  const [wanted, setWanted] = useState<LazyLayerId[]>([]);
   useEffect(() => {
     const update = () => {
       const layers = useViewer.getState().layers;
       setWanted((w) => {
-        const add = TISSUE_LAYERS.filter((l) => layers[l] !== "off" && !w.includes(l));
-        return add.length ? TISSUE_LAYERS.filter((l) => w.includes(l) || add.includes(l)) : w;
+        const add = LAZY_LAYERS.filter((l) => layers[l] !== "off" && !w.includes(l));
+        return add.length ? LAZY_LAYERS.filter((l) => w.includes(l) || add.includes(l)) : w;
       });
     };
     update();
@@ -108,15 +90,17 @@ export function LayerScenes({ lods, ready, debug }: { lods: Lod[]; ready: boolea
   return (
     <>
       {wanted.map((layer) => (
-        <TissueLayerScene key={layer} layer={layer} lods={lods} ready={ready} debug={debug} materials={materials[layer]} />
+        <TissueLayerScene key={layer} layer={layer} lods={lods} ready={ready} debug={debug} materials={materials[layer]!} />
       ))}
       <PatchScene lods={lods} ready={ready} />
     </>
   );
 }
 
-/** A muscle or part at tier 1 or 2: the patches are wanted (M9 plan decision 6). */
-const wantsPatches = (s: { sel: string | null; tier: number }): boolean => s.tier > 0 && s.sel !== null && layerOfId(s.sel) === "muscles";
+/** The attachment patches' layer (the muscles): the one whose descriptor has the overlay. */
+const PATCHES = OVERLAYS.find((o) => o.when === "selected-tier")!;
+/** A structure of the patches' layer (a muscle or part) at tier 1 or 2: the patches are wanted (M9 plan decision 6). */
+const wantsPatches = (s: { sel: string | null; tier: number }): boolean => s.tier > 0 && s.sel !== null && layerOfId(s.sel) === PATCHES.layer;
 
 /**
  * The attachment patches (M9 plan decision 6): `attachments-<lod>.glb`, the
@@ -143,7 +127,7 @@ function PatchScene({ lods, ready }: { lods: Lod[]; ready: boolean }) {
     if (!wanted || !ready || shown?.lod === lod) return;
     let cancelled = false;
     void (async () => {
-      const parts = await loadLayerParts("attachments", lod, () => {});
+      const parts = await loadLayerParts(PATCHES.file, lod, () => {});
       if (cancelled) {
         disposeParts(parts);
         return;
@@ -181,11 +165,11 @@ function TissueLayerScene({
   debug,
   materials,
 }: {
-  layer: TissueLayer;
+  layer: LazyLayerId;
   lods: Lod[];
   ready: boolean;
   debug: boolean;
-  materials: Materials[TissueLayer];
+  materials: LayerMaterials;
 }) {
   const [shown, setShown] = useState<LayerBatches | null>(null);
   const shownRef = useRef<LayerBatches | null>(null);
@@ -204,7 +188,7 @@ function TissueLayerScene({
     (async () => {
       for (const lod of queue) {
         st.setLayerLoad(layer, { status: "loading", fetching: lod, received: 0, total: 0, error: null });
-        const parts = await loadLayerParts(layer, lod, (received, total) => {
+        const parts = await loadLayerParts(layerDescriptor(layer).models.file, lod, (received, total) => {
           if (!cancelled) useViewer.getState().setLayerLoad(layer, { received, total });
         });
         if (cancelled) {
@@ -214,17 +198,18 @@ function TissueLayerScene({
         const solid = batchLayer(parts, materials.solid, { name: `layer-${layer}`, instanceColours: true });
         solid.boneIds.forEach((id, i) => solid.mesh.setColorAt(i, layerBaseTint(id)));
         const ghost = batchLayer(parts, materials.ghost, { name: `ghost-${layer}` });
-        ghost.mesh.renderOrder = GHOST_ORDER[layer];
+        // Ghosts draw after every solid (they are transparent), in the descriptors' order (plan decision 7): the outermost last.
+        ghost.mesh.renderOrder = layerDescriptor(layer).ghostOrder;
         ghost.mesh.visible = false;
         disposeParts(parts);
         const outlines = {
           selected: createOutline(solid, OUTLINE.selected.colour, OUTLINE.selected.widthPx, `outline-selected-${layer}`),
           hover: createOutline(solid, OUTLINE.hover.colour, OUTLINE.hover.widthPx, `outline-hover-${layer}`),
         };
-        const moreSelected = Array.from({ length: layer === "muscles" ? MAX_PARTS - 1 : 0 }, (_, i) =>
+        const moreSelected = Array.from({ length: hasNestedParts(layer) ? MAX_PARTS - 1 : 0 }, (_, i) =>
           createOutline(solid, OUTLINE.selected.colour, OUTLINE.selected.widthPx, `outline-selected-${layer}-${i + 2}`),
         );
-        const batches: LayerBatches = { lod, solid, ghost, outlines, moreSelected, base: layerBaseTint, accent: ACCENTS[layer], tint: TINTS[layer] };
+        const batches: LayerBatches = { lod, solid, ghost, outlines, moreSelected, base: layerBaseTint, accent: ACCENTS[layer]!, tint: TINTS[layer]! };
         setShown(batches);
         // Isolation (main chunk) applies the view to the new batches as soon as they are registered.
         useLayerBatches.setState({ [layer]: batches });
@@ -232,7 +217,7 @@ function TissueLayerScene({
         const prev = now.layerLoad[layer];
         now.setLayerLoad(layer, { status: "ready", lod, fetching: null, shownAt: { ...prev?.shownAt, [lod]: performance.now() } });
         if (debug) {
-          const manifest = await loadManifest(layer);
+          const manifest = await loadLayerManifest(layer);
           const actual = new Map<string, Bounds>();
           for (const [id, b] of allInstanceBounds(solid)) actual.set(id, { min: b.min.toArray(), max: b.max.toArray() });
           if (!cancelled) useLayerReports.setState({ [layer]: layerReport(layer, lod, actual, solid.triangles, manifest) });
@@ -289,7 +274,7 @@ export function LayersDebugPanel() {
   const reports = useLayerReports();
   const onAt = useViewer((s) => s.layerOnAt);
   const load = useViewer((s) => s.layerLoad);
-  const layers = TISSUE_LAYERS.filter((l) => reports[l]);
+  const layers = LAZY_LAYERS.filter((l) => reports[l]);
   if (layers.length === 0) return null;
   return (
     <div className="debug-layers" data-testid="layers-report">
@@ -315,7 +300,7 @@ export function LayersDebugPanel() {
               data-low-shown-ms={lowMs !== null ? lowMs.toFixed(0) : ""}
             >
               <dt>
-                <span className="swatch" style={{ background: LAYER_COLOURS[layer] }} aria-hidden="true" /> {layer}
+                <span className="swatch" style={{ background: layerColour(layer) }} aria-hidden="true" /> {layer}
               </dt>
               <dd className={ok ? undefined : "error"}>
                 {`${r.lod}: ${r.nodes} nodes, ${r.triangles.toLocaleString("en")} tris, ` +

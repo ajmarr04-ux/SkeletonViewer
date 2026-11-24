@@ -3,7 +3,6 @@
 import { partsFromGlb } from "../scene/loadSkeleton";
 import type { BonePart } from "../scene/batchSkeleton";
 import type { Lod } from "../scene/lod";
-import type { TissueLayer } from "../state/url";
 import { layerBytes, layerUrl } from "./urls";
 
 export type Progress = (received: number, total: number) => void;
@@ -38,9 +37,9 @@ export async function fetchWithProgress(url: string, expected: number, onProgres
   return out.buffer;
 }
 
-/** One layer at one LOD: a part per named node, geometry plus world matrix (nothing moves). */
-export async function loadLayerParts(layer: TissueLayer | "attachments", lod: Lod, onProgress: Progress): Promise<BonePart[]> {
-  const url = layerUrl(layer, lod);
-  const data = await fetchWithProgress(url, layerBytes(layer, lod), onProgress);
-  return partsFromGlb(data, `${layer}-${lod}.glb`, url.replace(/[^/]*$/, ""));
+/** One layer file (`ModelSpec.file` or an overlay's) at one LOD: a part per named node, geometry plus world matrix (nothing moves). */
+export async function loadLayerParts(file: string, lod: Lod, onProgress: Progress): Promise<BonePart[]> {
+  const url = layerUrl(file, lod);
+  const data = await fetchWithProgress(url, layerBytes(file, lod), onProgress);
+  return partsFromGlb(data, `${file}-${lod}.glb`, url.replace(/[^/]*$/, ""));
 }

@@ -3,18 +3,11 @@
 
 import type { Bounds } from "../../scripts/lib/model-checks";
 import { BOUNDS_TOLERANCE_M, compareBounds, SOFT_LAYERS, type SoftLayer } from "../../scripts/lib/model-checks";
+import { DEBUG_CODES, debugFacts } from "../systems/registry";
 import type { Lod } from "./lod";
 
 export { SOFT_LAYERS, type SoftLayer };
 
-/** One-letter codes for `layers=m,l,c,a`. `b` (bones) is accepted and ignored: bones always load. */
-const CODES: Record<string, SoftLayer | "bones"> = {
-  m: "muscles",
-  l: "ligaments",
-  c: "cartilage",
-  a: "attachments",
-  b: "bones",
-};
 
 /**
  * The soft-tissue layers a debug URL asks for, in file order, or null when the
@@ -32,22 +25,22 @@ export function parseDebugLayers(search: string): SoftLayer[] | null {
   const value = raw.trim().toLowerCase();
   if (value.includes(":")) return null;
   if (value === "" || value === "all") return [...SOFT_LAYERS];
-  const wanted = new Set<SoftLayer>();
+  const wanted = new Set<string>();
   for (const piece of value.split(",")) {
     const key = piece.trim();
-    const layer = CODES[key] ?? ((SOFT_LAYERS as readonly string[]).includes(key) ? (key as SoftLayer) : undefined);
-    if (layer && layer !== "bones") wanted.add(layer);
+    // One-letter codes from the registry (`m,l,c,a`) or full names. The eager layer's code (`b`) is accepted and ignored: it always loads.
+    wanted.add(DEBUG_CODES.get(key) ?? key);
   }
   return SOFT_LAYERS.filter((l) => wanted.has(l));
 }
 
-/** Flat debug colours (musculoskeletal spec §6.3); patches in amber so they read against bone. */
-export const DEBUG_LAYER_COLOURS: Record<SoftLayer, string> = {
-  muscles: "#a8524c",
-  ligaments: "#e4e0d6",
-  cartilage: "#9fb2c2",
-  attachments: "#e0a33a",
-};
+/** Flat debug colours (musculoskeletal spec §6.3), from the descriptors. */
+export const DEBUG_LAYER_COLOURS = Object.fromEntries(SOFT_LAYERS.map((l) => [l, debugFacts(l)!.colour!])) as Record<SoftLayer, string>;
+
+/** A layer's or overlay's build manifest: its own chunk, fetched only in `?debug`. */
+export function loadLayerManifest(layer: SoftLayer): Promise<LayerManifest> {
+  return debugFacts(layer)!.manifest!().then((x) => (x as { default: unknown }).default as LayerManifest);
+}
 
 export type LayerManifest = {
   objects: Record<string, { lods: Record<Lod, { bboxMin: Bounds["min"]; bboxMax: Bounds["max"] }> }>;

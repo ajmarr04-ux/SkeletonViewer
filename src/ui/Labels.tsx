@@ -10,7 +10,8 @@ import { recordLabelLayout } from "../scene/bench";
 import { focusLayerOf, LABEL, labelKey, labelPriority, layoutLabels, leaderEnd, type LabelCandidate, type PlacedLabel, type Rect } from "../scene/labels";
 import { hasMesh } from "../state/selection";
 import { useLayerBatches } from "../scene/layerRegistry";
-import { TISSUE_LAYERS, type Layer } from "../state/url";
+import { type Layer } from "../state/url";
+import { LAZY_LAYERS } from "../systems/registry";
 import { useViewer } from "../state/store";
 
 /** Re-layout at most this often while the camera moves (plan decision 7). */
@@ -59,7 +60,7 @@ export function LabelProbe({ skeleton }: { skeleton: BatchedSkeleton | null }) {
   const sources = useMemo<Source[] | null>(() => {
     if (!skeleton) return null;
     const out: Source[] = [{ layer: "bones", batch: skeleton, spheres: localSpheres(skeleton) }];
-    for (const layer of TISSUE_LAYERS) {
+    for (const layer of LAZY_LAYERS) {
       const b = tissue[layer];
       if (b) out.push({ layer, batch: b.solid, spheres: localSpheres(b.solid) });
     }

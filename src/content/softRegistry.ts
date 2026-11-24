@@ -6,7 +6,7 @@
 // its table is loaded.
 
 import type { SoftId } from "../layers/softIds";
-import type { Layer, TissueLayer } from "../state/url";
+import type { LazyLayerId } from "../systems/registry";
 import { peeled } from "./muscleDepth";
 
 let table: Map<string, SoftId> | null = null;
@@ -32,10 +32,8 @@ export const isSoftId = (id: string): boolean => table?.has(id) ?? false;
 export const softEntries = (): readonly SoftId[] => order;
 export const softTableLoaded = (): boolean => table !== null;
 
-export const LAYER_LABELS: Record<Layer, string> = { bones: "Bones", cartilage: "Cartilage", ligaments: "Ligaments", muscles: "Muscles" };
-
 /** The layer a soft-tissue structure is drawn in, or null for an unknown ID. */
-export const softLayerOf = (id: string): TissueLayer | null => softEntry(id)?.layer ?? null;
+export const softLayerOf = (id: string): LazyLayerId | null => softEntry(id)?.layer ?? null;
 
 /** "Biceps brachii (left)"; midline structures have no side. */
 export function softDisplayName(e: SoftId): string {

@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { LAYER_COLOURS, TENDON_COLOUR } from "../src/layers/colours";
+import { TENDON_COLOUR } from "../src/layers/colours";
+import { LAZY_LAYERS, layerColour } from "../src/systems/registry";
 import { drawnColourMode } from "../src/scene/isolation";
 import { ACCENT_COLOUR, BONE_COLOUR, SCENE_BACKGROUND, SELECTION_OUTLINE_COLOUR } from "../src/scene/material";
 import { OUTLINE } from "../src/scene/outline";
@@ -24,13 +25,14 @@ const over = (fg: string, alpha: number, bg: string): string => {
   return hex(f.map((x, i) => x * alpha + b[i]! * (1 - alpha)) as Rgb);
 };
 
+/** The lazy layers' colours, from the registry (M11; the full colour model is M14's). */
+const LAYER_COLOURS: Record<string, string> = Object.fromEntries(LAZY_LAYERS.map((l) => [l, layerColour(l)]));
+
 /** Solid structures: the bone ivory (also the teeth) and the layers' colours. */
 const SOLID: Record<string, string> = {
   bone: BONE_COLOUR,
-  muscles: LAYER_COLOURS.muscles,
+  ...LAYER_COLOURS,
   tendon: TENDON_COLOUR,
-  ligaments: LAYER_COLOURS.ligaments,
-  cartilage: LAYER_COLOURS.cartilage,
 };
 const TINTS: Record<string, string> = { ...TINT_COLOURS };
 const REGION: Record<string, string> = Object.fromEntries(REGIONS.filter((r) => r.region !== "teeth").map((r) => [`region:${r.region}`, regionColour(r.region)]));

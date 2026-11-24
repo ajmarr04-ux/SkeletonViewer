@@ -9,7 +9,7 @@ import ids from "../../content/ids.json";
 import { groupTrail } from "./labels";
 import { displayName } from "./names";
 import type { HierarchyNode } from "./schema";
-import type { TissueLayer } from "../state/url";
+import type { LazyLayerId } from "../systems/registry";
 import { attachedTo } from "./softRelations";
 import { softEntry } from "./softRegistry";
 import { SOFT_ROOTS, isSoftNode, nodeMembers, type SoftTreeData, type SoftTreeNode } from "./softTree";
@@ -32,7 +32,7 @@ export type Group = {
    */
   attached?: { bone: string; origins: readonly string[]; insertions: readonly string[]; loading: boolean };
   /** A soft-tissue group (M9 plan decision 11): the layer its members are drawn in. */
-  layer?: TissueLayer;
+  layer?: LazyLayerId;
 };
 
 type IdEntry = { id: string; name: string; group: string[]; kind: string; meshAvailable: boolean };
@@ -132,7 +132,7 @@ let softVersion = 0;
 export function registerSoftTree(data: SoftTreeData): void {
   if (softTreeData) return;
   softTreeData = data;
-  const walk = (n: SoftTreeNode, layer: TissueLayer, parent: string | null, trail: string[]) => {
+  const walk = (n: SoftTreeNode, layer: LazyLayerId, parent: string | null, trail: string[]) => {
     const here = [...trail, n.label];
     SOFT_GROUPS.set(n.key, { key: n.key, label: n.label, name: n.name, trail: here, members: nodeMembers(n), parent, layer });
     for (const c of n.children) {
@@ -147,7 +147,7 @@ export function registerSoftTree(data: SoftTreeData): void {
       }
     }
   };
-  data.roots.forEach((r) => walk(r, r.key as TissueLayer, null, []));
+  data.roots.forEach((r) => walk(r, r.key as LazyLayerId, null, []));
   for (const s of data.sets) SOFT_GROUPS.set(s.key, { key: s.key, label: s.label, name: s.label, trail: [SOFT_ROOTS[0].label, s.label], members: s.members, parent: SOFT_ROOTS[0].key, layer: "muscles" });
   softVersion++;
   softListeners.forEach((l) => l());
@@ -168,7 +168,7 @@ export function resetSoftTree(): void {
   SOFT_DRAWN.clear();
 }
 /** The layer a group's members are drawn in, if they need one turned on: a soft group's, or the muscles for an attached group. */
-export function groupLayer(key: string): TissueLayer | null {
+export function groupLayer(key: string): LazyLayerId | null {
   if (attachedBoneOf(key) !== null) return "muscles";
   return SOFT_GROUPS.get(key)?.layer ?? null;
 }

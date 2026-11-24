@@ -22,26 +22,8 @@ import { useLayerBatches } from "../scene/layerRegistry";
 import { FULL_SKELETON, isolationStep, resolveClick, type HistoryStep, type Isolation, type IsolationAction, type ParentOf } from "./isolation";
 import { COLOUR_MODE_KEY, type ColourMode } from "../scene/regionColours";
 import { LAYERS_KEY, storedFlag, useViewer } from "./store";
-import {
-  DEFAULT_LAYER_SETTING,
-  formatLayers,
-  isDefaultLayers,
-  isUserLayersValue,
-  LAYERS,
-  HIDDEN_URL_CAP,
-  TISSUE_LAYERS,
-  parseHidden,
-  parseLayers,
-  parseUrlState,
-  serialiseUrlState,
-  type GhostMode,
-  type Layer,
-  type LayerMode,
-  type LayerSetting,
-  type MuscleDepth,
-  type TissueLayer,
-  type UrlState,
-} from "./url";
+import { DEFAULT_LAYER_SETTING, formatLayers, isDefaultLayers, isUserLayersValue, HIDDEN_URL_CAP, parseHidden, parseLayers, parseUrlState, serialiseUrlState, type GhostMode, type Layer, type LayerMode, type LayerSetting, type MuscleDepth, type UrlState } from "./url";
+import { EAGER_LAYER, isLazyLayer, LAYER_IDS, LAZY_LAYERS, type LazyLayerId } from "../systems/registry";
 
 type IdEntry = { id: string; meshAvailable: boolean };
 const ENTRIES = ids as IdEntry[];
@@ -53,7 +35,7 @@ export const isKnownId = (id: string): boolean => KNOWN.has(id) || isSoftId(id);
 /** False for the four wisdom teeth, the parent muscles and the structures the source lacks. */
 export const hasMesh = (id: string): boolean => WITH_MESH.has(id) || softEntry(id)?.mesh === true;
 /** The layer an object is drawn in: bones (and teeth), or its soft-tissue layer; null if unknown. */
-export const layerOfId = (id: string): Layer | null => (KNOWN.has(id) ? "bones" : softLayerOf(id));
+export const layerOfId = (id: string): Layer | null => (KNOWN.has(id) ? EAGER_LAYER : softLayerOf(id));
 /** A muscle part's muscle (spec §5.1), else null. */
 export const parentOf: ParentOf = (id) => softEntry(id)?.parent ?? null;
 /** The structures drawn for a selection: itself if it has a mesh, else its parts that do (a muscle with parts). */
@@ -119,7 +101,7 @@ export const clickObject = (id: string): void => selectObject(resolveClick(id, u
 /** A soft-tissue structure is selected with its layer showing: an Off layer is turned On (plan decision 12). */
 function showLayerOf(id: string): void {
   const layer = layerOfId(id);
-  if (layer && layer !== "bones" && useViewer.getState().layers[layer] === "off") setLayerMode(layer, "on");
+  if (layer && isLazyLayer(layer) && useViewer.getState().layers[layer] === "off") setLayerMode(layer, "on");
 }
 export const goBack = (): void => dispatchIsolation({ type: "back" });
 /**
@@ -176,7 +158,7 @@ function showLayerForGroup(grp: string | null): void {
 }
 
 /** Resolves once a layer's batch is on screen. */
-function whenLayerShown(layer: TissueLayer): Promise<void> {
+function whenLayerShown(layer: LazyLayerId): Promise<void> {
   return new Promise<void>((resolve) => {
     if (useLayerBatches.getState()[layer]) return resolve();
     const off = useLayerBatches.subscribe((b) => {
@@ -187,7 +169,7 @@ function whenLayerShown(layer: TissueLayer): Promise<void> {
   });
 }
 
-async function frameWhenLayerShown(layer: TissueLayer, key: string): Promise<void> {
+async function frameWhenLayerShown(layer: LazyLayerId, key: string): Promise<void> {
   await whenLayerShown(layer);
   if (useViewer.getState().grp === key) frameSoon();
 }
@@ -220,7 +202,7 @@ export async function selectAndFrame(id: string): Promise<void> {
     } else dispatchIsolation({ type: "select", id });
   }
   if (!isDrawn(id)) return;
-  if (layer !== null && layer !== "bones") await whenLayerShown(layer);
+  if (layer !== null && isLazyLayer(layer)) await whenLayerShown(layer);
   if (useViewer.getState().sel === id) frameSoon();
 }
 /** Why "Show related" / "Expand" wait for a soft structure's content chunk (M9 plan decision 4). */
@@ -371,7 +353,7 @@ export function setLayerSetting(next: LayerSetting): void {
   if (formatLayers(prev) === formatLayers(next)) return;
   st.setLayerSetting(next.layers, next.depth);
   // Explode is bones only and off while a soft-tissue layer shows (plan decision 14).
-  if (TISSUE_LAYERS.some((l) => next.layers[l] !== "off")) st.setExplode(0);
+  if (LAZY_LAYERS.some((l) => next.layers[l] !== "off")) st.setExplode(0);
   window.history.replaceState(window.history.state, "", urlWith({ layers: next }));
 }
 
@@ -389,13 +371,13 @@ export type LayerPreset = "skeleton" | "full";
 export function applyLayerPreset(preset: LayerPreset): void {
   const cur = currentLayers();
   if (preset === "skeleton") setLayerSetting({ ...cur, layers: { ...DEFAULT_LAYER_SETTING.layers } });
-  else setLayerSetting({ layers: Object.fromEntries(LAYERS.map((l) => [l, "on"])) as LayerSetting["layers"], depth: 0 });
+  else setLayerSetting({ layers: Object.fromEntries(LAYER_IDS.map((l) => [l, "on"])) as LayerSetting["layers"], depth: 0 });
 }
 
 /** Which preset the layers match, if any. */
 export function presetOf(layers: LayerSetting["layers"]): LayerPreset | null {
-  if (LAYERS.every((l) => layers[l] === DEFAULT_LAYER_SETTING.layers[l])) return "skeleton";
-  if (LAYERS.every((l) => layers[l] === "on")) return "full";
+  if (LAYER_IDS.every((l) => layers[l] === DEFAULT_LAYER_SETTING.layers[l])) return "skeleton";
+  if (LAYER_IDS.every((l) => layers[l] === "on")) return "full";
   return null;
 }
 

@@ -50,7 +50,7 @@ export async function buildTiers(): Promise<Golden> {
   await loadEverything();
   const { relatedAt } = await import("../../src/scene/isolation");
   const { softRoles } = await import("../../src/content/softRelations");
-  const { DEFAULT_LAYERS } = await import("../../src/state/url");
+  const { DEFAULT_MODES: DEFAULT_LAYERS } = await import("../../src/systems/registry");
   const allOn = { bones: "on", cartilage: "on", ligaments: "on", muscles: "on" } as const;
   const { bones, soft } = await allIds();
   const out: Golden = {};

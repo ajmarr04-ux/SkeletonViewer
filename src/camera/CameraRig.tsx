@@ -22,7 +22,8 @@ import { clickObject, drawnIds, expandRegion, goBack, hasMesh, hideSelected, hid
 import { isolationView, isPickableIn, viewOf } from "../scene/isolation";
 import { useLayerBatches } from "../scene/layerRegistry";
 import { softEntries } from "../content/softRegistry";
-import { LAYERS, TISSUE_LAYERS, type Layer } from "../state/url";
+import { type Layer } from "../state/url";
+import { EAGER_LAYER, LAYER_IDS, LAZY_LAYERS } from "../systems/registry";
 
 /** Everything that covers the canvas for framing: the info panel, the breadcrumb and the sidebar. */
 function framingInset() {
@@ -194,7 +195,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
   const tissue = useLayerBatches();
   const layerGeoms = useMemo(
     () =>
-      TISSUE_LAYERS.flatMap((layer) => {
+      LAZY_LAYERS.flatMap((layer) => {
         const b = tissue[layer];
         return b ? [{ layer: layer as Layer, batch: b.solid, geometry: skeletonGeometry(b.solid) }] : [];
       }),
@@ -571,9 +572,9 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       const st = useViewer.getState();
       const view = viewOf(st, hasMesh);
       const present = live.current.geometry?.boneBoxes;
-      const bones = (ids as { id: string }[]).map((e) => e.id).filter((id) => hasMesh(id) && present?.has(id) && isPickableIn(view, "bones", id));
+      const bones = (ids as { id: string }[]).map((e) => e.id).filter((id) => hasMesh(id) && present?.has(id) && isPickableIn(view, EAGER_LAYER, id));
       const soft = live.current.layerGeoms.length ? softEntries().filter((e) => e.mesh && solidHere(view, e.layer, e.id)) : [];
-      const rank = (l: Layer) => LAYERS.indexOf(l);
+      const rank = (l: Layer) => LAYER_IDS.indexOf(l);
       const ordered = soft.map((e, i) => ({ e, i })).sort((a, b) => rank(a.e.layer) - rank(b.e.layer) || a.i - b.i);
       return cursorStops([...bones, ...ordered.map((x) => x.e.id)], st.sel, parentOf);
     };

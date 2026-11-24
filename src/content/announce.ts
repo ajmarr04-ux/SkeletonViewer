@@ -9,12 +9,13 @@ import ids from "../../content/ids.json";
 import type { SoftKind } from "../layers/softIds";
 import { isolationView, withTints } from "../scene/isolation";
 import type { Tier } from "../state/isolation";
-import { LAYERS, type Layer, type LayerMode, type LayerModes, type MuscleDepth, type TissueLayer } from "../state/url";
+import { type Layer, type LayerMode, type LayerModes, type MuscleDepth } from "../state/url";
+import { isLazyLayer, LAYER_IDS, LAZY_LAYERS, layerLabel, type LazyLayerId } from "../systems/registry";
 import { groupAnnouncement, groupOf } from "./groups";
 import { displayName } from "./names";
 import { announcement as boneAnnouncement } from "./placeholder";
 import { relations } from "./relations";
-import { LAYER_LABELS, softEntry } from "./softRegistry";
+import { softEntry } from "./softRegistry";
 
 // ---------------------------------------------------------------------------
 // Names and counts
@@ -79,12 +80,12 @@ export function countByKind(idsIn: Iterable<string>, ownMuscle: string | null = 
 // ---------------------------------------------------------------------------
 // Layers, presets, depth, loading
 
-const lower = (l: Layer): string => LAYER_LABELS[l].toLowerCase();
+const lower = (l: Layer): string => layerLabel(l).toLowerCase();
 const MODE_WORDS: Record<LayerMode, string> = { on: "on", ghost: "ghosted", off: "off" };
 
 /** "Muscles on." / "Muscles ghosted." / "Muscles off."; "Muscles on, loading." while its files load. */
 export function layerModeAnnouncement(layer: Layer, mode: LayerMode, loading = false): string {
-  return `${LAYER_LABELS[layer]} ${MODE_WORDS[mode]}${loading && mode !== "off" ? ", loading" : ""}.`;
+  return `${layerLabel(layer)} ${MODE_WORDS[mode]}${loading && mode !== "off" ? ", loading" : ""}.`;
 }
 
 /** "muscles, ligaments and cartilage". */
@@ -95,8 +96,8 @@ function listLayers(layers: readonly Layer[]): string {
 
 /** The layers equal one of the panel's presets (spec §6.1). */
 export function presetOfModes(modes: LayerModes): "skeleton" | "full" | null {
-  if (LAYERS.every((l) => modes[l] === (l === "bones" ? "on" : "off"))) return "skeleton";
-  if (LAYERS.every((l) => modes[l] === "on")) return "full";
+  if (LAYER_IDS.every((l) => modes[l] === (l === "bones" ? "on" : "off"))) return "skeleton";
+  if (LAYER_IDS.every((l) => modes[l] === "on")) return "full";
   return null;
 }
 
@@ -106,14 +107,14 @@ export function presetOfModes(modes: LayerModes): "skeleton" | "full" | null {
  * only."; otherwise each change in panel order. `loading` lists the layers
  * whose files are still to come.
  */
-export function layersAnnouncement(before: LayerModes, now: LayerModes, loading: readonly TissueLayer[] = []): string | null {
-  const changed = LAYERS.filter((l) => before[l] !== now[l]);
+export function layersAnnouncement(before: LayerModes, now: LayerModes, loading: readonly LazyLayerId[] = []): string | null {
+  const changed = LAYER_IDS.filter((l) => before[l] !== now[l]);
   if (changed.length === 0) return null;
   const preset = changed.length > 1 ? presetOfModes(now) : null;
-  const waiting = changed.filter((l): l is TissueLayer => l !== "bones" && now[l] !== "off" && loading.includes(l as TissueLayer));
+  const waiting = changed.filter((l): l is LazyLayerId => isLazyLayer(l) && now[l] !== "off" && loading.includes(l));
   if (preset === "skeleton") return "Skeleton: bones only.";
   if (preset === "full") return `Full musculoskeletal: all layers on.${waiting.length ? ` Loading ${listLayers(waiting)}.` : ""}`;
-  return changed.map((l) => layerModeAnnouncement(l, now[l], waiting.includes(l as TissueLayer))).join(" ");
+  return changed.map((l) => layerModeAnnouncement(l, now[l], waiting.includes(l as LazyLayerId))).join(" ");
 }
 
 /**
@@ -127,10 +128,10 @@ export function depthAnnouncement(stop: MuscleDepth, count: number | null): stri
 }
 
 /** A layer's files: "Muscles loaded." once the low LOD shows; "Muscles failed to load. Retry available."; "Muscles loading again." on Retry. */
-export function layerLoadAnnouncement(layer: TissueLayer, what: "loaded" | "failed" | "retry"): string {
-  if (what === "loaded") return `${LAYER_LABELS[layer]} loaded.`;
-  if (what === "failed") return `${LAYER_LABELS[layer]} failed to load. Retry available.`;
-  return `${LAYER_LABELS[layer]} loading again.`;
+export function layerLoadAnnouncement(layer: LazyLayerId, what: "loaded" | "failed" | "retry"): string {
+  if (what === "loaded") return `${layerLabel(layer)} loaded.`;
+  if (what === "failed") return `${layerLabel(layer)} failed to load. Retry available.`;
+  return `${layerLabel(layer)} loading again.`;
 }
 
 // ---------------------------------------------------------------------------
@@ -267,7 +268,7 @@ export type AnnounceState = Isolated & {
   layers: LayerModes;
   depth: MuscleDepth;
   /** Per tissue layer: is a LOD on screen yet, and is its load failing. */
-  load: Partial<Record<TissueLayer, { shown: boolean; status: "loading" | "ready" | "error"; attempt: number }>>;
+  load: Partial<Record<LazyLayerId, { shown: boolean; status: "loading" | "ready" | "error"; attempt: number }>>;
 };
 
 export type AnnounceDeps = {
@@ -296,7 +297,7 @@ export function composeAnnouncement(
   now: AnnounceState,
   said: string | null,
   deps: AnnounceDeps,
-  awaiting: Set<TissueLayer>,
+  awaiting: Set<LazyLayerId>,
   hushed = false,
 ): string | null {
   // Changes that are part of opening the page (a soft link applied late): nothing said, nothing awaited.
@@ -306,20 +307,16 @@ export function composeAnnouncement(
   if (said !== null) out.push(said);
   else if (iso) out.push(deps.isolation(now, before));
   if (now.antagonists !== before.antagonists && (now.antagonists || !iso)) out.push(antagonistAnnouncement(now.antagonists, now.antagonists ? deps.antagonists(now) : 0));
-  const loading = LAYERS.filter((l): l is TissueLayer => l !== "bones" && !now.load[l as TissueLayer]?.shown);
+  const loading = LAZY_LAYERS.filter((l) => !now.load[l]?.shown);
   const layers = layersAnnouncement(before.layers, now.layers, loading);
   if (layers !== null) out.push(layers);
-  for (const l of LAYERS) {
-    if (l === "bones") continue;
-    const t = l as TissueLayer;
+  for (const t of LAZY_LAYERS) {
     if (before.layers[t] === "off" && now.layers[t] !== "off" && loading.includes(t)) awaiting.add(t);
     if (now.layers[t] === "off") awaiting.delete(t);
   }
   const fullPreset = layers !== null && presetOfModes(now.layers) === "full" && now.depth === 0;
   if (now.depth !== before.depth && !fullPreset) out.push(depthAnnouncement(now.depth, now.depth === 0 ? 0 : deps.peeled(now.depth)));
-  for (const l of LAYERS) {
-    if (l === "bones") continue;
-    const t = l as TissueLayer;
+  for (const t of LAZY_LAYERS) {
     const a = before.load[t];
     const b = now.load[t];
     if (!b || now.layers[t] === "off") continue;

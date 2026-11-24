@@ -4,7 +4,7 @@
 
 import type { Color } from "three";
 import { create } from "zustand";
-import type { TissueLayer } from "../state/url";
+import type { LazyLayerId } from "../systems/registry";
 import type { BatchedSkeleton } from "./batchSkeleton";
 import type { Lod } from "./lod";
 import type { Outline } from "./outline";
@@ -43,4 +43,4 @@ export type PatchBatch = { lod: Lod; solid: BatchedSkeleton; tint: Record<"origi
 export const usePatchBatch = create<{ batch: PatchBatch | null; failed: boolean }>(() => ({ batch: null, failed: false }));
 
 /** The batches on screen per layer. Set by `LayerScenes`, read by `Isolation` and the camera rig. */
-export const useLayerBatches = create<Partial<Record<TissueLayer, LayerBatches>>>(() => ({}));
+export const useLayerBatches = create<Partial<Record<LazyLayerId, LayerBatches>>>(() => ({}));

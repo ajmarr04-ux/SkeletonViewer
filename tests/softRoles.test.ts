@@ -10,7 +10,8 @@ import { bothSynergistAndAntagonist, buildMuscleRoles, muscleModel, patchAgreeme
 import type { SoftFm } from "../src/content/softSchema";
 import { trimSoftIds, type RawSoftId } from "../src/layers/softIds";
 import { isolationView, sceneView, withTints } from "../src/scene/isolation";
-import { DEFAULT_LAYERS, type LayerModes } from "../src/state/url";
+import { type LayerModes } from "../src/state/url";
+import { DEFAULT_MODES } from "../src/systems/registry";
 
 const RAW = JSON.parse(readFileSync("content/soft-ids.json", "utf8")) as RawSoftId[];
 const BONES = ids as { id: string; meshAvailable: boolean }[];
@@ -23,7 +24,7 @@ for (const c of Object.values(SOFT)) for (const [id, e] of Object.entries(c.entr
 const PATCHES = readPatches();
 const DERIVED = SOFT.muscles.derived!;
 
-const modes = (m: Partial<LayerModes>): LayerModes => ({ ...DEFAULT_LAYERS, ...m });
+const modes = (m: Partial<LayerModes>): LayerModes => ({ ...DEFAULT_MODES, ...m });
 const MUSCLES_ON = modes({ muscles: "on" });
 
 /** The whole pipeline the store uses: isolation, tints, scene. */

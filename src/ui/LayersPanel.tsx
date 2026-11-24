@@ -7,16 +7,14 @@
 import { useId } from "react";
 import { applyLayerPreset, presetOf, setLayerMode, setMuscleDepth, type LayerPreset } from "../state/selection";
 import { useViewer, type LayerLoad } from "../state/store";
-import { LAYERS, type Layer, type LayerMode, type MuscleDepth, type TissueLayer } from "../state/url";
+import { type Layer, type LayerMode, type MuscleDepth } from "../state/url";
+import { DEPTH_LAYER, depthStops, isLazyLayer, LAYER_IDS, layerLabel, type LazyLayerId } from "../systems/registry";
 
-export const LAYER_LABELS: Record<Layer, string> = { bones: "Bones", cartilage: "Cartilage", ligaments: "Ligaments", muscles: "Muscles" };
 const MODE_LABELS: Record<LayerMode, string> = { on: "On", ghost: "Ghost", off: "Off" };
 const PRESETS: { key: LayerPreset; label: string }[] = [
   { key: "skeleton", label: "Skeleton" },
   { key: "full", label: "Full musculoskeletal" },
 ];
-/** Three stops, each one layer deeper (the user's choice in session V; the spec's fourth stop, "Deep only", was the same as the third). */
-const DEPTH_STOPS = ["All", "Hide superficial", "Hide superficial + intermediate"];
 
 export function LayersPanel() {
   const layers = useViewer((s) => s.layers);
@@ -44,7 +42,7 @@ export function LayersPanel() {
           </button>
         ))}
       </div>
-      {LAYERS.map((layer) => (
+      {LAYER_IDS.map((layer) => (
         <LayerRow key={layer} layer={layer} mode={layers[layer]} disabled={debugView} />
       ))}
     </div>
@@ -53,10 +51,10 @@ export function LayersPanel() {
 
 function LayerRow({ layer, mode, disabled }: { layer: Layer; mode: LayerMode; disabled: boolean }) {
   const name = useId();
-  const load = useViewer((s) => (layer === "bones" ? undefined : s.layerLoad[layer as TissueLayer]));
+  const load = useViewer((s) => (isLazyLayer(layer) ? s.layerLoad[layer] : undefined));
   return (
     <fieldset className="layer-row" data-layer={layer} data-mode={mode} data-status={load?.status ?? ""} data-lod={load?.lod ?? ""} data-shown-low={load?.shownAt.low?.toFixed(0) ?? ""}>
-      <legend>{LAYER_LABELS[layer]}</legend>
+      <legend>{layerLabel(layer)}</legend>
       <div className="layer-modes">
         {(Object.keys(MODE_LABELS) as LayerMode[]).map((m) => (
           <label key={m}>
@@ -73,18 +71,18 @@ function LayerRow({ layer, mode, disabled }: { layer: Layer; mode: LayerMode; di
           </label>
         ))}
       </div>
-      {layer !== "bones" && mode !== "off" && load && <LoadStatus layer={layer as TissueLayer} load={load} />}
-      {layer === "muscles" && <DepthControl />}
+      {isLazyLayer(layer) && mode !== "off" && load && <LoadStatus layer={layer} load={load} />}
+      {layer === DEPTH_LAYER && <DepthControl />}
     </fieldset>
   );
 }
 
-function LoadStatus({ layer, load }: { layer: TissueLayer; load: LayerLoad }) {
+function LoadStatus({ layer, load }: { layer: LazyLayerId; load: LayerLoad }) {
   const setLoad = useViewer((s) => s.setLayerLoad);
   if (load.status === "error") {
     return (
       <p className="layer-status error" role="alert">
-        Could not load {LAYER_LABELS[layer].toLowerCase()}: {load.error}{" "}
+        Could not load {layerLabel(layer).toLowerCase()}: {load.error}{" "}
         <button type="button" className="button" onClick={() => setLoad(layer, { status: "loading", error: null, attempt: load.attempt + 1 })}>
           Retry
         </button>
@@ -96,7 +94,7 @@ function LoadStatus({ layer, load }: { layer: TissueLayer; load: LayerLoad }) {
   const what = load.fetching === "low" ? "Loading" : "Loading full detail";
   return (
     <div className="layer-status" data-testid={`layer-${layer}-progress`}>
-      <progress max={100} value={pct ?? undefined} aria-label={`${what}: ${LAYER_LABELS[layer]}`} />
+      <progress max={100} value={pct ?? undefined} aria-label={`${what}: ${layerLabel(layer)}`} />
       <span className="muted">
         {what}
         {pct !== null ? ` ${pct}%` : "…"}
@@ -113,11 +111,11 @@ function LoadStatus({ layer, load }: { layer: TissueLayer; load: LayerLoad }) {
 function DepthControl() {
   const name = useId();
   const depth = useViewer((s) => s.muscleDepth);
-  const off = useViewer((s) => s.layers.muscles === "off" || s.debugLayersView);
+  const off = useViewer((s) => s.layers[DEPTH_LAYER] === "off" || s.debugLayersView);
   return (
     <fieldset className="layer-depth" disabled={off} data-testid="muscle-depth">
       <legend>Depth</legend>
-      {DEPTH_STOPS.map((label, i) => (
+      {depthStops().map((label, i) => (
         <label key={label}>
           <input
             type="radio"

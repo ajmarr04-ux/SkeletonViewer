@@ -28,13 +28,14 @@ import { registerSoftIds, resetSoftIds, softEntry } from "../src/content/softReg
 import { registerSoftTiers, resetSoftTiers } from "../src/content/softRelations";
 import { trimSoftIds, type RawSoftId } from "../src/layers/softIds";
 import { isolationView } from "../src/scene/isolation";
-import { DEFAULT_LAYERS, type LayerModes, type TissueLayer } from "../src/state/url";
+import { type LayerModes } from "../src/state/url";
+import { DEFAULT_MODES, type LazyLayerId } from "../src/systems/registry";
 
 const RAW = JSON.parse(readFileSync("content/soft-ids.json", "utf8")) as RawSoftId[];
 const BONE_MESH = new Set((ids as { id: string; meshAvailable: boolean }[]).filter((e) => e.meshAvailable).map((e) => e.id));
 const hasMesh = (id: string) => BONE_MESH.has(id) || softEntry(id)?.mesh === true;
 const SOFT = compileAllSoftFromDisk();
-const modes = (m: Partial<LayerModes>): LayerModes => ({ ...DEFAULT_LAYERS, ...m });
+const modes = (m: Partial<LayerModes>): LayerModes => ({ ...DEFAULT_MODES, ...m });
 const ALL_ON = modes({ muscles: "on", ligaments: "on", cartilage: "on" });
 const MUSCLES_ON = modes({ muscles: "on" });
 const iso = (sel: string | null, tier: 0 | 1 | 2 = 0, grp: string | null = null) => ({ sel, tier, grp });
@@ -71,8 +72,8 @@ describe("layers (decision 4, row 1–2)", () => {
     expect(layerModeAnnouncement("muscles", "ghost")).toBe("Muscles ghosted.");
     expect(layerModeAnnouncement("muscles", "off", true)).toBe("Muscles off.");
     expect(layerModeAnnouncement("ligaments", "on", true)).toBe("Ligaments on, loading.");
-    expect(layersAnnouncement(DEFAULT_LAYERS, MUSCLES_ON, ["muscles"])).toBe("Muscles on, loading.");
-    expect(layersAnnouncement(DEFAULT_LAYERS, DEFAULT_LAYERS)).toBeNull();
+    expect(layersAnnouncement(DEFAULT_MODES, MUSCLES_ON, ["muscles"])).toBe("Muscles on, loading.");
+    expect(layersAnnouncement(DEFAULT_MODES, DEFAULT_MODES)).toBeNull();
   });
   it("loaded, failed and Retry", () => {
     expect(layerLoadAnnouncement("muscles", "loaded")).toBe("Muscles loaded.");
@@ -80,14 +81,14 @@ describe("layers (decision 4, row 1–2)", () => {
     expect(layerLoadAnnouncement("cartilage", "retry")).toBe("Cartilage loading again.");
   });
   it("presets, and several changes that are no preset", () => {
-    expect(layersAnnouncement(DEFAULT_LAYERS, ALL_ON)).toBe("Full musculoskeletal: all layers on.");
-    expect(layersAnnouncement(DEFAULT_LAYERS, ALL_ON, ["muscles", "ligaments", "cartilage"])).toBe(
+    expect(layersAnnouncement(DEFAULT_MODES, ALL_ON)).toBe("Full musculoskeletal: all layers on.");
+    expect(layersAnnouncement(DEFAULT_MODES, ALL_ON, ["muscles", "ligaments", "cartilage"])).toBe(
       "Full musculoskeletal: all layers on. Loading cartilage, ligaments and muscles.",
     );
-    expect(layersAnnouncement(ALL_ON, DEFAULT_LAYERS)).toBe("Skeleton: bones only.");
-    expect(layersAnnouncement(DEFAULT_LAYERS, modes({ bones: "ghost", muscles: "on" }))).toBe("Bones ghosted. Muscles on.");
+    expect(layersAnnouncement(ALL_ON, DEFAULT_MODES)).toBe("Skeleton: bones only.");
+    expect(layersAnnouncement(DEFAULT_MODES, modes({ bones: "ghost", muscles: "on" }))).toBe("Bones ghosted. Muscles on.");
     // One layer changed into a preset's state is that layer's message, not the preset's.
-    expect(layersAnnouncement(MUSCLES_ON, DEFAULT_LAYERS)).toBe("Muscles off.");
+    expect(layersAnnouncement(MUSCLES_ON, DEFAULT_MODES)).toBe("Muscles off.");
   });
 });
 
@@ -147,8 +148,8 @@ describe("selections and tiers (rows 5–11)", () => {
     expect(say(iso("anterior_cruciate_ligament_left", 2), null, modes({ ligaments: "on" }))).not.toMatch(/menisc/);
   });
   it("a bone's tier with soft layers on: M5's wording plus the soft structures", () => {
-    expect(say(iso("femur_left", 1), null, DEFAULT_LAYERS)).toBe("Femur, left: related bones shown. Hip bone, patella, tibia.");
-    expect(say(iso("femur_left", 2), null, DEFAULT_LAYERS)).toBe("Femur, left: region shown, 8 bones.");
+    expect(say(iso("femur_left", 1), null, DEFAULT_MODES)).toBe("Femur, left: related bones shown. Hip bone, patella, tibia.");
+    expect(say(iso("femur_left", 2), null, DEFAULT_MODES)).toBe("Femur, left: region shown, 8 bones.");
     expect(say(iso("femur_left", 1), null, MUSCLES_ON)).toMatch(/^Femur, left: related bones shown\. Hip bone, patella, tibia\. Also \d+ muscles\.$/);
     expect(say(iso("femur_left", 2), null, MUSCLES_ON)).toMatch(/^Femur, left: region shown, 8 bones and \d+ muscles\.$/);
   });
@@ -170,13 +171,13 @@ describe("selections and tiers (rows 5–11)", () => {
 });
 
 describe("one message per action (risk 3)", () => {
-  const base: AnnounceState = { sel: null, tier: 0, grp: null, antagonists: false, layers: DEFAULT_LAYERS, depth: 0, load: {} };
+  const base: AnnounceState = { sel: null, tier: 0, grp: null, antagonists: false, layers: DEFAULT_MODES, depth: 0, load: {} };
   const deps: AnnounceDeps = {
     isolation: (now, prev) => say(now, prev, MUSCLES_ON),
     antagonists: () => 4,
     peeled: () => 41,
   };
-  const compose = (before: AnnounceState, now: AnnounceState, said: string | null = null, awaiting = new Set<TissueLayer>()) =>
+  const compose = (before: AnnounceState, now: AnnounceState, said: string | null = null, awaiting = new Set<LazyLayerId>()) =>
     composeAnnouncement(before, now, said, deps, awaiting);
 
   it("nothing changed: nothing said", () => {
@@ -189,7 +190,7 @@ describe("one message per action (risk 3)", () => {
     expect(compose(base, { ...now, load: loaded.load })).toBe("Biceps brachii, left, selected. Isolated. Muscles on.");
   });
   it("loaded is said once the low LOD shows, only after a change the user made", () => {
-    const awaiting = new Set<TissueLayer>();
+    const awaiting = new Set<LazyLayerId>();
     const on = { ...base, layers: MUSCLES_ON, load: { muscles: { shown: false, status: "loading" as const, attempt: 0 } } };
     expect(compose(base, on, null, awaiting)).toBe("Muscles on, loading.");
     const shown = { ...on, load: { muscles: { shown: true, status: "ready" as const, attempt: 0 } } };
@@ -198,7 +199,7 @@ describe("one message per action (risk 3)", () => {
     expect(compose(on, shown, null, new Set())).toBeNull();
   });
   it("a failed load, then Retry, then loaded", () => {
-    const awaiting = new Set<TissueLayer>(["muscles"]);
+    const awaiting = new Set<LazyLayerId>(["muscles"]);
     const on = { ...base, layers: MUSCLES_ON, load: { muscles: { shown: false, status: "loading" as const, attempt: 0 } } };
     const failed = { ...on, load: { muscles: { shown: false, status: "error" as const, attempt: 0 } } };
     expect(compose(on, failed, null, awaiting)).toBe("Muscles failed to load. Retry available.");
@@ -208,7 +209,7 @@ describe("one message per action (risk 3)", () => {
     expect(compose(retry, shown, null, awaiting)).toBe("Muscles loaded.");
   });
   it("hushed (a soft link applied as the page opens): nothing said, nothing awaited", () => {
-    const awaiting = new Set<TissueLayer>();
+    const awaiting = new Set<LazyLayerId>();
     const now = { ...base, sel: "biceps_brachii_left", layers: MUSCLES_ON };
     expect(composeAnnouncement(base, now, null, deps, awaiting, true)).toBeNull();
     expect(awaiting.size).toBe(0);
