@@ -7,7 +7,7 @@ Done when: step 7's list is complete and the hosted `/m11/` copy is live.
 ## State
 - Last commit: AX (isolation test, allowlist, fixture layer, plan step 6 notes, this handoff)
 - `npm run check`: pass (41 files, 606 tests incl. goldens)
-- e2e in AX: layers, layers-debug, smoke, announce, keyboard, fixture. **Result: see the line below** (the run was still going when this was first committed)
+- e2e in AX: layers, layers-debug, smoke, announce, keyboard, fixture: 47 of 48. The one failure was `keyboard.spec.ts:242` (M10's keys-only journey) hitting its 7-minute timeout during the batch; re-run alone it passes in 4.3 min. Watch it in AY's full run: if it times out again with both servers up, it needs a longer timeout or the fixture server started only for its project.
 - Main chunk: not re-measured in AX (the code change in the main chunk is one line in `Viewer.tsx` and the registry split); AY measures it.
 - Open fan-out work: none
 

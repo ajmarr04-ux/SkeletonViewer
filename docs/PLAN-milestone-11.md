@@ -259,7 +259,7 @@ Decisions 7 and 8.
 - *Other vocabularies* are listed per literal and file, not allowlisted with a milestone: no milestone removes the colour mode `"bone"` (it is in the goldens' URL state).
 - *Fixture colour:* the plan's colour-vision check meant "add the layer and the table still passes"; the table's own counts had to follow the registry for that to be possible. The fixture's colour is a choice, not a rule change.
 
-**e2e:** see the handoff (layers, layers-debug, smoke, announce, keyboard, fixture).
+**e2e:** layers, layers-debug, smoke, announce, keyboard, fixture: 47 of 48 in one batch (16.2 min). `keyboard.spec.ts:242` (the M10 keys-only journey, 7-minute timeout) timed out at an `expect.poll` mid-journey; alone it passes in 4.3 min. Load, not behaviour, as far as I can tell; AY's full run should confirm.
 
 ## Step 7 (AY): wrap-up
 
