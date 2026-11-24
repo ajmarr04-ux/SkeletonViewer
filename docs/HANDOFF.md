@@ -7,7 +7,7 @@ Done when: `layers.spec.ts`, `keyboard.spec.ts` and `a11y.spec.ts` pass with onl
 ## State
 - Last commit: AV (code, plan notes and this handoff)
 - `npm run check`: pass (39 files, 578 tests incl. goldens and `tests/registry.test.ts`)
-- e2e run in AV: layers-debug, soft-content, smoke, layers, attached (result added in a follow-up commit)
+- e2e run in AV: layers-debug, soft-content, smoke, layers, attached: 40 of 40 pass. The first run failed `layers-debug.spec.ts:58` on the order change (`data-layers` is now `cartilage,ligaments`); the expectation was updated and the spec re-run alone passes (7 of 7)
 - Open fan-out work: none
 
 ## Waiting on the user

@@ -66,7 +66,7 @@ test("layers=l,c loads only the ligament and cartilage files", async ({ page }) 
     }
   });
   const { panel } = await openLayers(page, "?lod=low&debug&layers=l,c");
-  await expect(panel).toHaveAttribute("data-layers", "ligaments,cartilage");
+  await expect(panel).toHaveAttribute("data-layers", "cartilage,ligaments"); // registry order since M11 AV
   await expect(panel.locator("[data-layer]")).toHaveCount(2);
   expect(files.sort()).toEqual(["cartilage-low", "ligaments-low"]);
 });
