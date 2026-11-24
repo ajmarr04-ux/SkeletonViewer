@@ -18,11 +18,11 @@ import { ensureBoundsTrees, instanceWorldBounds, type BatchedSkeleton } from "..
 import { nearestPickable, PROXY_RADIUS_PX, pickWithProxies, tinyObjects, type Proxy, type RealHit } from "../scene/pick";
 import ids from "../../content/ids.json";
 import { displayName } from "../content/names";
-import { clickObject, drawnIds, goBack, hasMesh, hideSelected, layerOfId, selectObject } from "../state/selection";
+import { clickObject, drawnIds, expandRegion, goBack, hasMesh, hideSelected, hideStructure, layerOfId, parentOf, selectObject, showAllHidden, showRelated } from "../state/selection";
 import { isolationView, isPickableIn, viewOf } from "../scene/isolation";
 import { useLayerBatches } from "../scene/layerRegistry";
 import { softEntries } from "../content/softRegistry";
-import { TISSUE_LAYERS, type Layer } from "../state/url";
+import { LAYERS, TISSUE_LAYERS, type Layer } from "../state/url";
 
 /** Everything that covers the canvas for framing: the info panel, the breadcrumb and the sidebar. */
 function framingInset() {
@@ -46,6 +46,7 @@ import {
   INITIAL_TAP_STATE,
   NO_WHEEL_MEMORY,
   classifyWheel,
+  cursorStops,
   keyAction,
   tabCursor,
   tapStep,
@@ -248,7 +249,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     el.setAttribute("role", "img");
     el.setAttribute(
       "aria-label",
-      "3D skeleton. Click a bone to select it, Escape to go back. Arrow keys orbit, Shift and arrows pan, plus and minus zoom, H resets the view, F frames the selection, X hides it. Tab moves through the visible structures and Enter selects one; Escape then Tab leaves the view.",
+      "3D skeleton. Click a bone to select it, Escape to go back. Arrow keys orbit, Shift and arrows pan, plus and minus zoom, H resets the view, F frames the selection, R and E show its related structures and its wider group, X hides it and Shift X shows everything hidden. Tab moves through the visible structures and Enter selects one (a muscle, then its parts); X hides the one Tab is on; Escape then Tab leaves the view.",
     );
     el.style.touchAction = "none";
 
@@ -520,34 +521,67 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
         case "frame":
           runCommand({ kind: "frame" });
           break;
-        case "hide":
-          hideSelected();
+        case "hide": {
+          // The Tab cursor's structure if there is one, else the selection (M10 plan decision 5).
+          const cur = cursorNow();
+          if (cur === null) {
+            hideSelected();
+            break;
+          }
+          const list = visibleIds();
+          resumeAfter = list[list.indexOf(cur) + 1] ?? null;
+          clearCursor();
+          hideStructure(cur);
+          break;
+        }
+        case "showAll":
+          showAllHidden();
+          break;
+        case "tier":
+          if (a.tier === 1 && useViewer.getState().tier === 0) showRelated();
+          else if (a.tier === 2 && useViewer.getState().tier === 1) expandRegion();
           break;
       }
     };
     // --- Tab through the visible objects (spec §10, plan decision 6) ---------------
     /** After Escape clears the cursor, the next Tab leaves the canvas instead of starting again. */
     let passThrough = false;
+    /** After `X` hid the cursor's structure, the stop the next Tab goes to. */
+    let resumeAfter: string | null = null;
+    /** The structure outlined for the cursor: itself, or a muscle's first solid part. */
+    let cursorHover: string | null = null;
     const cursorNow = () => useViewer.getState().keyCursor?.id ?? null;
     const clearCursor = () => {
       const st = useViewer.getState();
       if (!st.keyCursor) return;
-      if (st.hovered === st.keyCursor.id) st.setHovered(null);
+      if (st.hovered === cursorHover) st.setHovered(null);
+      cursorHover = null;
       st.setKeyCursor(null);
     };
-    /** Everything drawn solid, bones first (anatomical order), then each loaded layer in table order. */
+    /** Drawn solid in this view and loaded. */
+    const solidHere = (view: ReturnType<typeof viewOf>, layer: Layer, id: string) =>
+      isPickableIn(view, layer, id) && live.current.layerGeoms.some((g) => g.geometry.boneBoxes.has(id));
+    /**
+     * The Tab cursor's stops (M10 plan decision 5): every solid structure of
+     * the layers that show, in the panel's layer order (bones in anatomical
+     * order, the others in table order); a muscle is one stop until it is
+     * selected, then its parts are (`cursorStops`).
+     */
     const visibleIds = () => {
-      const view = viewOf(useViewer.getState(), hasMesh);
+      const st = useViewer.getState();
+      const view = viewOf(st, hasMesh);
       const present = live.current.geometry?.boneBoxes;
       const bones = (ids as { id: string }[]).map((e) => e.id).filter((id) => hasMesh(id) && present?.has(id) && isPickableIn(view, "bones", id));
-      const soft = live.current.layerGeoms.length
-        ? softEntries().filter((e) => e.mesh && isPickableIn(view, e.layer, e.id) && live.current.layerGeoms.some((g) => g.geometry.boneBoxes.has(e.id)))
-        : [];
-      return [...bones, ...soft.map((e) => e.id)];
+      const soft = live.current.layerGeoms.length ? softEntries().filter((e) => e.mesh && solidHere(view, e.layer, e.id)) : [];
+      const rank = (l: Layer) => LAYERS.indexOf(l);
+      const ordered = soft.map((e, i) => ({ e, i })).sort((a, b) => rank(a.e.layer) - rank(b.e.layer) || a.i - b.i);
+      return cursorStops([...bones, ...ordered.map((x) => x.e.id)], st.sel, parentOf);
     };
     /** Where a structure's box centre is on screen (client px), and whether it is in view. */
     const onScreen = (id: string) => {
-      const box = boxOf(id);
+      // A muscle stop: the box round its drawn parts.
+      const boxes = drawnIds(id).map((i) => boxOf(i)).filter((b): b is Box => b !== undefined);
+      const box = boxes.length > 0 ? unionBoxes(boxes) : undefined;
       if (!box) return null;
       camera.updateMatrixWorld();
       const p = v(boxCentre(box)).project(camera);
@@ -560,7 +594,10 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       const st = useViewer.getState();
       const at = onScreen(id);
       st.setKeyCursor({ id, x: at?.x ?? 0, y: at?.y ?? 0 });
-      st.setHovered(id);
+      // A muscle has no mesh of its own: its first solid part is outlined, as a pointer over it would.
+      const view = viewOf(st, hasMesh);
+      cursorHover = hasMesh(id) ? id : (drawnIds(id).find((p) => isPickableIn(view, layerOfId(p) ?? "muscles", p)) ?? null);
+      st.setHovered(cursorHover);
       const off = at && !at.inView ? " Off screen: press F to frame it." : "";
       st.say(`${spokenName(id)}. ${list.indexOf(id) + 1} of ${list.length}.${off}`);
     };
@@ -572,7 +609,9 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
           return false; // let focus leave the canvas
         }
         const list = visibleIds();
-        const next = tabCursor(list, cursorNow(), e.shiftKey);
+        const resume = resumeAfter !== null && cursorNow() === null && list.includes(resumeAfter) ? resumeAfter : null;
+        resumeAfter = null;
+        const next = resume ?? tabCursor(list, cursorNow(), e.shiftKey);
         if (next === null) {
           clearCursor();
           return false;
@@ -593,7 +632,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
         e.preventDefault();
         clearCursor();
         passThrough = true;
-        useViewer.getState().say("Left the bones. Tab moves on.");
+        useViewer.getState().say("Left the 3D view. Tab moves on.");
         return true;
       }
       if (e.key === "f" || e.key === "F") {

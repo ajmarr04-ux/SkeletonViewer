@@ -25,7 +25,7 @@ Out of scope: content review and the open content questions (spec §13 of `SPEC 
 | AK | Labels for every kind: kind-aware priorities, one label per unselected muscle, focus layer wins ties (step 1) | none | decisions 1–2 | layout tests per kind; e2e labels with muscles on, at muscle tier 1 and at part level | **Done.** See step 1 |
 | AL | Colour-vision pass over every colour the layers add, legend chips and label contrast (step 2) | none | decision 3 | one colour test covering every pair that can be on screen together; legend and label contrast tested; any colour change recorded | **Done.** See step 2 |
 | AM | Screen-reader announcements for the new kinds, layers, depth, Hide and the part level (step 3) | none | decision 4 | every row of decision 4's table tested as a pure function and in e2e through the live region | **Done.** See step 3 |
-| AN | Keyboard pass for the new kinds: the spec's journey by keys only, Tab cursor across layers and parts, axe on every new state (step 4) | none | decision 5 | `keyboard.spec.ts` journey passes; gaps fixed | Not started |
+| AN | Keyboard pass for the new kinds: the spec's journey by keys only, Tab cursor across layers and parts, axe on every new state (step 4) | none | decision 5 | `keyboard.spec.ts` journey passes; gaps fixed | **Done.** See step 4 |
 | AO | Performance measurement in the container and the tools for the user's run; **ends with the user gate** (step 5) | none | decisions 6–7 | budget table filled for everything the container can measure; bench links ready; deploy of `main` for the user's run | Not started |
 | AP | The user's PC and iPhone results recorded; each miss fixed or its fallback taken (step 6) | none | the user's numbers | §9 table complete; misses documented | Not started (waits on the user) |
 | AQ | `STATUS.md` brought up to date for M6–M10 (step 7) | none | decision 8 | every section true of the build; §6 and §7 tables extended | Not started |
@@ -43,7 +43,7 @@ No fan-out is planned: every session changes shared code or one shared document,
 ## Exit criteria (from the musculoskeletal spec §11, M10)
 
 - [ ] Labels, legend chips and colours pass the existing colour-vision check.
-- [ ] Keyboard and screen-reader announcements cover the new kinds, layers and the part level. (Announcements: AM, done; keyboard: AN.)
+- [x] Keyboard and screen-reader announcements cover the new kinds, layers and the part level. (Announcements: AM; keyboard: AN.)
 - [ ] Performance budgets met (or misses documented with the fallback taken).
 - [ ] `STATUS.md` updated (new sections for layers; §6 and §7 tables extended).
 - [ ] No regression: with every new layer off, the main chunk grows by at most 5 kB gzipped over M9 (decision 6), no soft-tissue chunk is requested, and the full e2e suite passes.
@@ -170,6 +170,21 @@ No fan-out is planned: every session changes shared code or one shared document,
 ## Step 4: Keyboard (session AN)
 - The journey by keys; `tabCursor` across layers and parts; axe on every new state; fixes.
 - Tests: `tests/e2e/keyboard.spec.ts` (+ the journey), `tests/input.test.ts` (`tabCursor`).
+
+### Session AN notes (2026-11-24)
+- **Gaps found and fixed:**
+  - **No keys for the tiers.** The journey's `R` and `E` didn't exist. Added to `keyAction` (`src/camera/input.ts`): `R` = tier 1 (Show related / Show attachments), `E` = tier 2 (Expand region / Show functional group), each only from the tier below and only when the panel's button would allow it (`showRelated` / `expandRegion`, so "Loading content…" and "Not part of a joint" still block). The panel buttons carry `aria-keyshortcuts`.
+  - **"Show all" had no key.** `Shift+X` now does what the chip does (the chip carries `aria-keyshortcuts="Shift+X"`).
+  - **`X` ignored the Tab cursor.** It hid only the selection. Now `X` hides the cursor's structure when there is one (`hideStructure` in `src/state/selection.ts`: one history entry, Back un-hides; the selection is kept unless it is the structure hidden), and the next Tab goes on to the stop after it.
+  - **The cursor stepped through every muscle part,** and Enter on a part then selected its muscle, so what was read ("Long head of triceps brachii") wasn't what Enter chose. Now `cursorStops` (pure, `input.ts`) makes a muscle one stop (spoken and selected as the muscle, the first solid part outlined, framed by the union of its parts) until that muscle or one of its parts is selected; then its parts are stops (the part level).
+  - **Layer order.** The soft stops came in table order across layers; now in the panel's order (bones, cartilage, ligaments, muscles), table order within a layer.
+  - The canvas description names the new keys; leaving the view says "Left the 3D view." (was "Left the bones.").
+- **The journey** (`keyboard.spec.ts`, "M10: the M9 journey by keys only"): Layers by Tab and arrows, muscles On, triceps by `/` search, Tab cursor through its heads to the long head, Enter, `R`, `E`, the antagonist toggle by Tab and Enter, Back ×4 by Escape. A second test walks the cursor across layers, hides a bone and a muscle by `X` from the cursor and shows them by `Shift+X`.
+- **axe** on the new states not yet covered (`a11y.spec.ts`, "M10 session AN"): the Layers panel while the muscles load (progress) and with the depth control in use, a muscle at tier 2 with antagonists (legend with tint chips), a meniscus's panel. Already covered before: muscle, part and ligament panels and the attached group (`attached.spec.ts`), the soft tree and soft search (`soft-sidebar.spec.ts`), the hidden chip.
+- **Not done (offered to the user):** a real VoiceOver pass on the iPhone, as an optional hand check.
+- Tests: Vitest 561 pass (`cursorStops`, the new keys); `npm run check` passes; e2e `keyboard` (5, two new) and `a11y` (two new tests) pass, and `joints`, `layers`, `select`, `sidebar`, `soft-sidebar`, `viewer`, `announce` were re-run for the cursor and `X` changes. The journey test takes about 4 minutes (muscles under SwiftShader), so its limit is 7.
+- Main chunk: **470.4 kB** (`gzip -9`), +2.3 kB over M9 (budget +5).
+- AM's e2e run (12 specs, 81 tests) passed after the session closed.
 
 ## Step 5: Measurement and the gate (session AO)
 - Triangle budget test on the manifests; draw-call e2e at muscle tier 2 with everything on; click → highlight timing for soft structures; the third bench link; container figures; PR to `main`, deploy, the user's checklist.

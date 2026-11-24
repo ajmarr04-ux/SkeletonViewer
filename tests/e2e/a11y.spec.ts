@@ -256,3 +256,38 @@ test.describe("axe: M7 session U", () => {
     expect(errors).toEqual([]);
   });
 });
+
+test.describe("axe: M10 session AN (plan decision 5)", () => {
+  test("Layers panel loading and with the depth control; a cartilage panel; the legend with tint chips", async ({ page }) => {
+    test.setTimeout(240_000);
+    const errors = await open(page);
+    await page.getByRole("button", { name: "Layers", exact: true }).click();
+    await expect(page.getByTestId("layers-panel")).toBeVisible();
+    await page.getByTestId("layer-muscles-on").check();
+    await expect(page.getByTestId("layer-muscles-progress")).toBeVisible({ timeout: 30_000 });
+    await axe(page, "Layers panel, muscles loading");
+    await expect(page.locator(".layer-row[data-layer=muscles]")).toHaveAttribute("data-status", "ready", { timeout: 120_000 });
+    await page.getByTestId("muscle-depth-1").check();
+    await axe(page, "Layers panel, depth control in use");
+    await page.keyboard.press("Escape");
+
+    // A muscle at tier 2 with its antagonists: tints and their legend chips.
+    await page.evaluate(() => window.__viewer!.select("triceps_brachii_left"));
+    await expect(page.getByTestId("info-panel")).toHaveAttribute("data-id", "triceps_brachii_left");
+    await expect(page.getByTestId("show-related")).toBeEnabled({ timeout: 60_000 });
+    await page.getByTestId("show-related").click();
+    await page.getByTestId("expand-region").click();
+    await page.getByTestId("show-antagonists").click();
+    await expect(page.getByTestId("legend-key")).toBeVisible();
+    await axe(page, "muscle tier 2 with antagonists, legend with tint chips");
+    expect(errors).toEqual([]);
+  });
+
+  test("a meniscus's panel", async ({ page }) => {
+    test.setTimeout(180_000);
+    const errors = await open(page, "&sel=medial_meniscus_left");
+    await expect(page.getByTestId("info-panel")).toHaveAttribute("data-id", "medial_meniscus_left", { timeout: 120_000 });
+    await axe(page, "meniscus panel");
+    expect(errors).toEqual([]);
+  });
+});

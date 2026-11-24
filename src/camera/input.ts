@@ -83,8 +83,12 @@ export type KeyAction =
   | { kind: "dolly"; factor: number }
   | { kind: "reset" }
   | { kind: "frame" }
-  /** Hide the selected structure (spec §5.5, M7 plan decision 13). */
-  | { kind: "hide" };
+  /** Hide the selected structure, or the Tab cursor's (spec §5.5, M7 plan decision 13; M10 decision 5). */
+  | { kind: "hide" }
+  /** Show every hidden structure: the toolbar's "Show all" chip (Shift + X, M10 decision 5). */
+  | { kind: "showAll" }
+  /** The next tier: R "Show related" / "Show attachments" (tier 1), E "Expand region" / "Show functional group" (tier 2) (M10 decision 5). */
+  | { kind: "tier"; tier: 1 | 2 };
 
 export type KeyInput = { key: string; shiftKey: boolean; ctrlKey?: boolean; metaKey?: boolean; altKey?: boolean };
 
@@ -95,7 +99,8 @@ export const DOLLY_STEP = 0.9;
 /**
  * The keyboard map (spec §6): arrows orbit by 5°, Shift + arrows pan by 2% of
  * the distance, + and - dolly by 10%, H resets, F frames and X hides the
- * selection (M7). Anything with
+ * selection (M7); Shift + X shows every hidden structure, R and E step to tier
+ * 1 and 2 (M10). Anything with
  * Ctrl, Alt or Meta held is left to the browser.
  */
 export function keyAction(e: KeyInput): KeyAction | null {
@@ -122,7 +127,13 @@ export function keyAction(e: KeyInput): KeyAction | null {
       return { kind: "frame" };
     case "x":
     case "X":
-      return { kind: "hide" };
+      return e.shiftKey ? { kind: "showAll" } : { kind: "hide" };
+    case "r":
+    case "R":
+      return { kind: "tier", tier: 1 };
+    case "e":
+    case "E":
+      return { kind: "tier", tier: 2 };
     default:
       return null;
   }
@@ -204,6 +215,27 @@ export function tapStep(s: TapState, e: PointerSample): TapResult {
  * the last. Null past either end: focus leaves the canvas, so it is never a
  * keyboard trap.
  */
+/**
+ * The stops of the Tab cursor (M10 plan decision 5), from the solid structures
+ * in walking order: a muscle's parts are one stop, the muscle, at the first
+ * part's place, as a click on a part selects its muscle first (spec §5.1);
+ * once that muscle or one of its parts is selected, its parts are stops of
+ * their own (the part level). Anything else is its own stop.
+ */
+export function cursorStops(solid: readonly string[], sel: string | null, parentOf: (id: string) => string | null): string[] {
+  const open = sel === null ? null : (parentOf(sel) ?? sel);
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const id of solid) {
+    const p = parentOf(id);
+    const stop = p !== null && p !== open ? p : id;
+    if (seen.has(stop)) continue;
+    seen.add(stop);
+    out.push(stop);
+  }
+  return out;
+}
+
 export function tabCursor(visibleIds: readonly string[], current: string | null, shift: boolean): string | null {
   if (visibleIds.length === 0) return null;
   const i = current === null ? -1 : visibleIds.indexOf(current);

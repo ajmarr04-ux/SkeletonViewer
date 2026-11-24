@@ -1,23 +1,21 @@
-# Handoff — written 2026-11-24 at the end of M10 session AM
+# Handoff — written 2026-11-24 at the end of M10 session AN
 
 ## Next session
-**AN**: keyboard pass for the new kinds (plan step 4, decision 5): the spec's M9 journey by keys only in `keyboard.spec.ts`, `tabCursor` across layers and parts, `X`/"Show all" from the cursor, axe on every new state; fix what can't be done.
-Done when: the journey passes in `keyboard.spec.ts`, `tabCursor` is tested across layers and the part level, and gaps are fixed. Trigger: "begin session AN".
+**AO**: performance measurement in the container and the tools for the user's run (plan step 5, decision 7). **It ends with the user gate**: AO's branch goes to `main` through a PR so `/m10/` has the build; the user runs the three bench links and `?debug&layers=b:on,c:on,l:on,m:on` on PC and iPhone and pastes the overlays.
+Done when: the budget table is filled for everything the container can measure (triangle budget Vitest test on the manifests, draw calls < 20 with every layer on + muscle tier 2 + antagonists + patches + outlines, click → highlight for a muscle, a part and a ligament, the network floor for layer load), the bench links are ready, and `main` is deployed for the user's run. Trigger: "begin session AO".
 
 ## State
-- AM done: every live-region message is built in `src/content/announce.ts` (pure, tested in `tests/announce.test.ts`) and composed per user action by `composeAnnouncement`, driven from the store in `src/ui/Announcer.tsx` (changes made in one task are folded after a microtask). The Layers panel and `LayerScenes` no longer call `say`. Final wording table and departures: step 3 notes in `docs/PLAN-milestone-10.md`.
-- New store field `hushed`/`hush()`: `selectSoftFromUrl` and `softGroupFromUrl` hush their changes so nothing is said on page load.
-- Fixed: going from a bone to its own "Show attached muscles" said "Back to …".
-- `npm run check`: pass. Vitest 557 pass. E2E: see the session's commit message for the run (`announce` (4, new), `layers`, `related`, `sidebar`, `panel`, `attached`, `joints`, `tiers`, `nested`, `soft-sidebar`, `keyboard`, `polish`).
-- Main chunk 470.0 kB (+1.9 over M9; budget +5).
+- AM done (its 81-test e2e run passed after it closed). AN done: `R`/`E` tier keys and `Shift+X` (Show all) in `keyAction`; `X` hides the Tab cursor's structure (`hideStructure`, `src/state/selection.ts`; the selection stays unless it is the one hidden; the next Tab continues after it); `cursorStops` (`src/camera/input.ts`) makes a muscle one stop until it or a part is selected, then its parts; soft stops in the panel's layer order. `aria-keyshortcuts` on the tier buttons and the chip. Notes under step 4 of `docs/PLAN-milestone-10.md`.
+- `npm run check`: pass. Vitest 561 pass. E2E: `keyboard`, `a11y` pass; `joints`, `layers`, `select`, `sidebar`, `soft-sidebar`, `viewer`, `announce` re-run: 75 pass.
+- Main chunk 470.4 kB (+2.3 over M9; budget +5).
 - Open fan-out work: none.
 
 ## Waiting on the user
-- QUESTIONS 139 (AL's colours and the region pause). Nothing blocks AN.
+- QUESTIONS 139 (AL's colours and the region pause). Nothing blocks AO until its own gate.
+- Optional: a VoiceOver pass on the iPhone (decision 5 offers it as a hand check, not a gate).
 - Still open, any time: a glance at `/m9/`; QUESTIONS 132–138 and `assets/build/REPORT-patches.md`; the per-browser `?bench` table (M5 step 12).
 
 ## Things the next session must know
-- An explicit `say()` in the same task as an isolation change replaces the isolation message (Hide relies on it); a layer change in that task is still folded in after it.
-- The joint/row highlight still sets the live region directly (its own effect in `Announcer.tsx`); in e2e, a pointer left over a panel row after a click can overwrite the last message. `tests/e2e/announce.spec.ts` records every text (`window.__said`) for that reason; reuse its `open`/`mark` helpers.
-- `STATUS.md` must list AL's colour changes and the region pause, and AM's announcement table (AQ, decision 8).
-- M10's next question is **140** (AM added none).
+- The keyboard journey takes about 4 minutes in the container (muscles load under SwiftShader); its limit is 7. Tests that load the muscles need generous timeouts.
+- `STATUS.md` (AQ) must list AL's colour changes and region pause, AM's announcement table, and AN's new keys (`R`, `E`, `Shift+X`, `X` on the cursor).
+- M10's next question is **140**.

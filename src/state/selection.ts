@@ -272,15 +272,25 @@ export const expandRegion = (): void => {
  * structure back, selected. The URL keeps the first 100 hidden IDs.
  */
 export function hideSelected(): void {
+  const id = useViewer.getState().sel;
+  if (id !== null) hideStructure(id);
+}
+
+/**
+ * Hide one structure (M10 plan decision 5: `X` on the Tab cursor). The
+ * selection itself is hidden as `hideSelected` says; anything else is hidden
+ * with the selection kept, as one new history entry too (Back un-hides it).
+ */
+export function hideStructure(id: string): void {
   const st = useViewer.getState();
-  const id = st.sel;
-  if (id === null || !isDrawn(id)) return;
+  if (!isDrawn(id)) return;
   const hidden = new Set(st.hidden);
   for (const t of hideTargets(id)) hidden.add(t);
   const all = [...hidden];
+  const selected = st.sel === id;
   st.setHidden(all);
-  st.setIsolation(FULL_SKELETON);
-  const url = urlWith({ sel: null, tier: 0, grp: null, hid: all.slice(0, HIDDEN_URL_CAP) });
+  if (selected) st.setIsolation(FULL_SKELETON);
+  const url = selected ? urlWith({ sel: null, tier: 0, grp: null, hid: all.slice(0, HIDDEN_URL_CAP) }) : urlWith({ hid: all.slice(0, HIDDEN_URL_CAP) });
   window.history.pushState({ ...window.history.state, skvDepth: depthNow() + 1 }, "", url);
   if (all.length > HIDDEN_URL_CAP) st.showToast(`Only the first ${HIDDEN_URL_CAP} hidden structures are kept in the link`);
   st.say(hiddenAnnouncement(id, all.length));

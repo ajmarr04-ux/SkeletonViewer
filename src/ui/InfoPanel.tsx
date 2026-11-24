@@ -457,6 +457,7 @@ function Body({ model }: { model: PanelModel }) {
           type="button"
           className="button"
           data-testid="show-related"
+          aria-keyshortcuts="R"
           disabled={tier !== 0}
           title={tier === 0 ? "Show the bones it articulates with" : "Related bones are shown"}
           onClick={showRelated}
@@ -467,6 +468,7 @@ function Body({ model }: { model: PanelModel }) {
           type="button"
           className="button"
           data-testid="expand-region"
+          aria-keyshortcuts="E"
           disabled={tier !== 1}
           title={tier === 1 ? "Show the surrounding region" : tier === 2 ? "The region is shown" : "Show related first"}
           onClick={expandRegion}
@@ -711,6 +713,7 @@ function SoftTierButtons({ id }: { id: string }) {
         type="button"
         className="button"
         data-testid="show-related"
+        aria-keyshortcuts="R"
         disabled={tier !== 0 || r1 !== null}
         title={r1 ?? (tier === 0 ? (muscle ? "Show the structures it attaches to" : "Show the structures it joins") : "Shown")}
         aria-describedby={reason ? "tier-reason" : undefined}
@@ -722,6 +725,7 @@ function SoftTierButtons({ id }: { id: string }) {
         type="button"
         className="button"
         data-testid="expand-region"
+        aria-keyshortcuts="E"
         disabled={tier !== 1 || r2 !== null}
         title={r2 ?? (tier === 1 ? (muscle ? "Show the muscles that work with it" : "Show the joint's other structures") : tier === 2 ? "Shown" : `${relatedLabel} first`)}
         aria-describedby={reason ? "tier-reason" : undefined}

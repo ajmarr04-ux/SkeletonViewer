@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { tabCursor } from "../src/camera/input";
+import { cursorStops, tabCursor } from "../src/camera/input";
 import { ancestorsOf, crumbGroups, GROUPS, groupAnnouncement, groupCounts, groupOf, isGroupKey } from "../src/content/groups";
 import { SOFT_ROOT_KEYS, TOP_KEYS, treeKey, typeAhead, visibleRows } from "../src/content/tree";
 import { groupView, isolationView } from "../src/scene/isolation";
@@ -7,6 +7,28 @@ import ids from "../content/ids.json";
 
 const meshed = new Set((ids as { id: string; meshAvailable: boolean }[]).filter((e) => e.meshAvailable).map((e) => e.id));
 const hasMesh = (id: string) => meshed.has(id);
+
+describe("cursorStops (M10 plan decision 5)", () => {
+  // A bone, a muscle with three parts, a muscle without parts, a ligament.
+  const PARENT: Record<string, string> = { tri_long: "tri", tri_lat: "tri", tri_med: "tri" };
+  const parentOf = (id: string) => PARENT[id] ?? null;
+  const solid = ["femur", "tri_long", "tri_lat", "tri_med", "deltoid", "acl"];
+  it("a muscle is one stop, at its first part's place", () => {
+    expect(cursorStops(solid, null, parentOf)).toEqual(["femur", "tri", "deltoid", "acl"]);
+    expect(cursorStops(solid, "femur", parentOf)).toEqual(["femur", "tri", "deltoid", "acl"]);
+  });
+  it("its parts are stops once the muscle or one of its parts is selected", () => {
+    expect(cursorStops(solid, "tri", parentOf)).toEqual(["femur", "tri_long", "tri_lat", "tri_med", "deltoid", "acl"]);
+    expect(cursorStops(solid, "tri_lat", parentOf)).toEqual(["femur", "tri_long", "tri_lat", "tri_med", "deltoid", "acl"]);
+  });
+  it("Tab walks the stops; a muscle stop leads into its parts after Enter selects it", () => {
+    const before = cursorStops(solid, null, parentOf);
+    expect(tabCursor(before, "femur", false)).toBe("tri");
+    const after = cursorStops(solid, "tri", parentOf);
+    expect(tabCursor(after, null, false)).toBe("femur");
+    expect(tabCursor(after, "femur", false)).toBe("tri_long");
+  });
+});
 
 describe("tabCursor (plan step 4)", () => {
   const list = ["a", "b", "c"];
