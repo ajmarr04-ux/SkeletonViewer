@@ -30,7 +30,7 @@ Session kinds: **design** = strong model (schemas, architecture); **routine** = 
 | AV | routine | Build-side and content-side tables (TS scripts, virtual modules, loaders, schemas, model checks) driven by the registry (step 4) | none | decision 2 | step 4's list deleted; `check-models` and `validate-content` output unchanged | **Done.** See step 4 |
 | AW | design | Layers panel grouped by system with a group control; presets from the registry (step 5) | none | decision 5 | panel, keyboard and a11y e2e pass (changes listed); announcements tested | **Done.** See step 5 |
 | AX | design | Registry isolation test and the fixture layer (step 6) | none | decisions 7–8 | isolation test green with only the allowlisted later-milestone files; fixture proves the M11 surfaces | **Done.** See step 6 |
-| AY | routine | Wrap-up: goldens, bench and main-chunk parity, perf-load, full e2e in the background, `/m11/` (step 7) | none | everything above | exit criteria ticked; `/m11/` live | |
+| AY | routine | Wrap-up: goldens, bench and main-chunk parity, perf-load, full e2e in the background, `/m11/` (step 7) | none | everything above | exit criteria ticked; `/m11/` live | **Done** except the live check. See step 7 |
 
 Triggers: "begin session AS" to "begin session AY". Every session follows `docs/WORKFLOW_NEW.md` §7: read `docs/HANDOFF.md` and this file, do the one serial task, end with `npm run check` (which runs `tsc`, Vitest including the goldens, `check-models`, `validate-content`) and the e2e specs it touched, commit, push to the session branch, tick the row, write `docs/HANDOFF.md`, stop.
 
@@ -45,13 +45,13 @@ Triggers: "begin session AS" to "begin session AY". Every session follows `docs/
 ## Exit criteria (from `SPEC-platform.md` §11, M11)
 
 - [x] Golden snapshots recorded (§2.2), before any refactor. *(AS, `58d1e72`)*
-- [ ] `LayerDescriptor` / `KindDescriptor` types; descriptors for bones, cartilage, ligaments, muscles; `registry.ts`.
-- [ ] Every literal table listed in STATUS §3 replaced by registry lookups, including bones. *(Runtime and TS scripts; the per-kind tier, panel, tree and derive code is M12's and the Python build tables are M15's, both allowlisted by decision 7.)*
-- [ ] URL codes from the registry; old URLs verified against `golden/urls.json`.
-- [ ] Layers panel grouped by system, from the registry.
-- [ ] Registry isolation test and fixture layer passing.
-- [ ] Golden snapshots unchanged; bench and main-chunk parity recorded.
-- [ ] No regression: every existing unit and e2e test passes, changed only where step 5 lists why (spec §2.1).
+- [x] `LayerDescriptor` / `KindDescriptor` types; descriptors for bones, cartilage, ligaments, muscles; `registry.ts`.
+- [x] Every literal table listed in STATUS §3 replaced by registry lookups, including bones. *(Runtime and TS scripts; the per-kind tier, panel, tree and derive code is M12's and the Python build tables are M15's, both allowlisted by decision 7.)*
+- [x] URL codes from the registry; old URLs verified against `golden/urls.json`.
+- [x] Layers panel grouped by system, from the registry.
+- [x] Registry isolation test and fixture layer passing.
+- [x] Golden snapshots unchanged; bench and main-chunk parity recorded.
+- [x] No regression: every existing unit and e2e test passes, changed only where step 5 lists why (spec §2.1).
 - [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
 
 ---
@@ -290,4 +290,4 @@ The head was benched twice: the first run (2.3 / 0.7) had one run with a 0.5 FPS
 
 **Docs:** `CLAUDE.md`'s key-file table gains `src/systems/`, the goldens, the isolation test and allowlist, the fixture and `bench-container`; `STATUS.md` §8's "Layers are literal tables" now points at the registry and the allowlist.
 
-**e2e:** *(filled in below when the run ends)*
+**e2e:** the full suite in one background run (`npx playwright test --trace off`, both projects, log in the session scratchpad): **173 of 173 passed** in 36.7 min, no retries. `keyboard.spec.ts:242`, which timed out in AX's batch, passed (the keyboard file took 12.2 min in all). Tests changed in M11 are only those listed in steps 2 (debug view order) and 5 (grouped panel), plus the new fixture spec.
