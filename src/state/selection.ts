@@ -481,9 +481,7 @@ export function onPopState(): void {
     });
     return;
   }
-  // A soft-tissue `sel=` is known at once (the ID index, M12 decision 7) but still
-  // goes through `selectSoftFromUrl`, which turns its layer on and waits for it.
-  const url = parseUrlState(window.location.search, isEagerId, isGroupKey);
+  const url = parseUrlState(window.location.search, isKnownId, isGroupKey);
   const st = useViewer.getState();
   // Colour-by-region isn't history: an older entry keeps today's colours, and its URL is brought up to date.
   const colour = st.colourMode === "region" ? "region" : null;

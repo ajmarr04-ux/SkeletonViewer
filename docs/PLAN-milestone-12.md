@@ -217,7 +217,7 @@ Decision 14. The allowlist ends with M14 (1) and M15 (6) entries only.
 - **Behaviour:** a soft `sel=` still goes through `selectSoftFromUrl` (it turns the layer on and waits for it): `initSelectionFromUrl` parses `sel` with `isEagerId`, so `urls.json` is unchanged. `selectLink` / `selectAndFrame` no longer wait for a table. The Announcer's depth count no longer checks for a loaded table.
 - **Tests changed (spec §2.1):** the seven unit tests that registered `trimSoftIds(soft-ids.json)` themselves (`announce`, `muscleDepth`, `nestedSelection`, `sceneView`, `softPanel`, `softRoles`, `softTiers`) now rely on the setup file; same expectations. The golden harness changed imports only: no `loadSoftIds`, and `freshModules()` re-imports `indexData` after each `vi.resetModules` (as the app's entry would). New `tests/idIndex.test.ts` (7). `perf-load.ts` no longer looks for a `softTable` chunk.
 - **For BC:** `indexRank` still takes entries; the index's eager-then-lazy order is `[...ids.json, ...lazyEntries()]`, file order (not ID-sorted), so keep `indexRank` for `anatomical`. Joint names for links: `indexNode(id)?.name`.
-- E2E: `nested`, `layers`, `select`, `tiers`, `fixture`: running at commit time; result in the follow-up commit.
+- E2E: `nested`, `layers`, `select`, `tiers`, `fixture`: 40 pass. The first run failed 3 `nested` tests: the `isEagerId` parse had also gone into `onPopState`, so Back to a muscle entry found no selection; `onPopState` parses with `isKnownId` again (soft IDs are known there, as before).
 - `npm run check`: pass (645 tests, the five goldens unchanged).
 
 | Approved golden difference | File | Why |

@@ -16,5 +16,5 @@ none
 - The index: `src/content/index.ts` (`isKnownId`, `hasMesh`, `layerOfId`, `lazyEntry`, `lazyEntries`, `isEagerId`, `indexNode` for joint names). It is handed over by `src/content/indexData.ts`, which `src/main.tsx` and `tests/setup.ts` import first. Scripts and Vite plugins never load it, so `index.ts` must not import a virtual module (or the registry at run time).
 - The golden harness's `freshModules()` re-imports `indexData` after `vi.resetModules`; any new harness builder that resets modules must use it.
 - `anatomical` order: keep `indexRank([...ids.json, ...lazyEntries()])` (the index is in file order, not ID-sorted).
-- A soft `sel=` still goes through `selectSoftFromUrl` (`initSelectionFromUrl` parses with `isEagerId`), which keeps `urls.json`.
+- A soft `sel=` still goes through `selectSoftFromUrl` (`initSelectionFromUrl` parses with `isEagerId`), which keeps `urls.json`; `onPopState` parses with `isKnownId` (Back to a muscle entry).
 - The app still runs on `relations.ts`, `softTiers.ts`, `softRelations.ts` until BC. Goldens: never `--write --force` without the user's approval. QUESTIONS: next is 140.
