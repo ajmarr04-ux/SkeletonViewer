@@ -268,4 +268,26 @@ Decisions 7 and 8.
 - Full e2e in the background with a log file (`docs/WORKFLOW_NEW.md` §3), then a grep for failures.
 - `/m11/`: PR to `main`, merge, Deploy run, then freeze `m11` in `deploy/pages.json` at the merge commit and set `current` to 12 at the start of M12 (`CLAUDE.md`, milestone handover).
 
-*Notes added when the session runs.*
+**Done** (2026-11-25). `npm run check` green (41 files, 606 tests); `npm run golden`: unchanged, **no approved differences** (the table below stays empty). `git diff 317b445 HEAD -- public/models/ content/` is empty: M11 added no anatomy.
+
+| Approved golden difference | File | Why |
+| --- | --- | --- |
+| none | | |
+
+**Parity table.** Both builds made in this container from the same `node_modules` (`317b445` in a scratch worktree), measured back to back. SwiftShader, so FPS only compares like with like.
+
+| Measure | M10 (`317b445`) | M11 head | AS baseline (`58d1e72`, previous container) |
+| --- | --- | --- | --- |
+| Triangles, bones only / all four layers (high) | 499,981 / 1,499,634 | 499,981 / 1,499,634 | same |
+| Draw calls, bones only / all four layers | 1 / 4 | 1 / 4 | same |
+| `?bench` bones only, median / 5th pct FPS | 2.5 / 2.3 | 2.5 / 2.2 (first run 2.3 / 2.1) | 2.4 / 1.7 |
+| `?bench` all four layers, median / 5th pct FPS | 0.8 / 0.6 | 0.8 / 0.6 (first run 0.7 / 0.6) | 0.7 / 0.6 |
+| `perf-load` desktop: skeleton / full detail / muscles | 3.76 / 7.14 / 8.80 s | 3.94 / 7.25 / 8.97 s | 3.87 / 7.10 / 8.60 s |
+| `perf-load` phone: skeleton / full detail / muscles | 3.73 / 7.02 / 8.92 s | 3.79 / 7.00 / 9.32 s | 3.72 / 7.10 / 9.22 s |
+| Main chunk, `gzip -9` of `index` + modulepreloads | **470.0 kB** | **472.3 kB** (index 298.5 + meshoptimizer 167.5 + registry 2.5 + names 2.6 + softRegistry 0.5 + runtime 0.4) | 470.1 kB |
+
+The head was benched twice: the first run (2.3 / 0.7) had one run with a 0.5 FPS 5th percentile, the second matched M10 exactly, so the gap was noise. `perf-load` differences are within run-to-run spread (the head's desktop runs went 2.0–4.3 s for the skeleton); the muscles layer FAILs its budget in both builds, as in every container run since M7 (STATUS §6). Main chunk **+2.3 kB** on M10, inside decision 1's budget (≤ 500.1 kB); the registry is its own 2.5 kB chunk with no zod.
+
+**Docs:** `CLAUDE.md`'s key-file table gains `src/systems/`, the goldens, the isolation test and allowlist, the fixture and `bench-container`; `STATUS.md` §8's "Layers are literal tables" now points at the registry and the allowlist.
+
+**e2e:** *(filled in below when the run ends)*

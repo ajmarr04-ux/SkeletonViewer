@@ -651,6 +651,6 @@ Growth over M5 was measured in AR with the agreed method: M5, M9 and M10 built s
 - **Explode direction.** Explode moves bones along the line between box centres, not along joint axes. It moves bones only.
 - **Label threshold.** Labels use a fixed 32 px size threshold with nothing isolated.
 - **Search scope.** Names, Latin names, common names, synonyms, group synonym sets and FDI numbers; not the summary text. Bone words now also match muscles ("femur" finds the femoris muscles).
-- **Layers are literal tables.** Each layer and kind is named in about 40 places (`STATUS-M10.md` §3 lists them). Fine for four layers; a fifth wants a per-layer descriptor first.
+- **Layers are registry entries (M11).** Layer identity, codes, defaults, presets, colours, ghost order, depth, model files and kinds come from the descriptors in `src/systems/` (§9). What still names a layer or kind directly is listed, file by file with the milestone that removes it, in `tests/registry-allowlist.json` (24 files: M12 17, M14 1, M15 6).
 - **Deploy.** The site deploys only from `main` through `.github/workflows/deploy.yml`. A second Pages workflow would overwrite it.
 - **Frozen milestones.** `deploy/pages.json` freezes `m1`–`m10` (`m10` at `317b445`, the merge of #23) and has `"current": null`: the programme is closed (M10 decision 9). The live site keeps following `main`; `/m1/` to `/m10/` stay fixed.
