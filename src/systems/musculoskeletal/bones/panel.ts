@@ -3,7 +3,7 @@
 // Attached muscles, Clinical note; the badges and breadcrumb from the group
 // paths in content/ids.json and the written `region` and `type`.
 
-import ids from "../../../../content/ids.json";
+import ids from "../../../../content/ids.json" with { type: "json" };
 import { groupTrail, regionLabel, TOOTH_TYPES } from "../../../content/labels";
 import type { PanelChrome, PanelContext, PanelSection } from "../../types";
 

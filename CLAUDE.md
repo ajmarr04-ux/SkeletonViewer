@@ -110,6 +110,7 @@ Status: **Milestone 12 (Relationship graph and descriptor-driven UI, `SPEC-platf
 - The cloud container is temporary, so **run `bash scripts/setup-blender.sh` first in every session**. It takes about a minute and is safe to re-run.
 - Blender runs as a Python module: `.cache/venv/bin/python -I scripts/blender/<script>.py <args>`. `bpy` 5.x needs Python 3.13. There's no `blender` binary, and download.blender.org is blocked by the network proxy.
 - In scripts, `import bpy` must come **before** `import bmesh` / `mathutils`.
+- A JSON import in any module the registry reaches (`src/systems/**` and what it imports) needs `with { type: "json" }`: Playwright loads `scripts/lib/model-checks.ts` → the registry natively, and one bare JSON import fails the whole e2e run at `--list` (found in M12 BJ: `bones/panel.ts`).
 - The source file runs to about 300 MB, and opening it takes about 5 seconds. It prints harmless warnings (a dependency cycle in the oesophagus, "scripts disabled").
 
 ---

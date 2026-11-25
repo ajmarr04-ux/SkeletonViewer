@@ -1,6 +1,6 @@
 # Skeleton Viewer: project status
 
-Written 2026-11-19 after Milestone 5; brought up to date for Milestones 6 to 10 on 2026-11-24 (M10 session AQ). This file is for whoever writes the next spec. It records what exists, how it works, what was measured, and where the build departs from the two specs.
+Written 2026-11-19 after Milestone 5; brought up to date for Milestones 6 to 10 on 2026-11-24 (M10 session AQ); relationships (§4, §5) updated for M12's graph on 2026-11-25 (session BJ). This file is for whoever writes the next spec. It records what exists, how it works, what was measured, and where the build departs from the two specs.
 
 There are two specs. `SPEC (2).md` is the bone spec (it calls itself `SPEC.md`, but the file was never renamed) and covers M1–M5. `SPEC-musculoskeletal.md` extends it with muscle, ligament and cartilage layers and covers M6–M10; it wins where the two conflict. `/m1/` to `/m9/` are live and frozen on GitHub Pages (`README.md` has the links), and the main site at https://ajmarr04-ux.github.io/SkeletonViewer/ follows `main`.
 
@@ -297,7 +297,7 @@ innervation: Radial nerve (C6–C8)
 reviewed: false
 ```
 
-The calcaneal tendon's parent is gastrocnemius, with `alsoServes: [soleus_left]` (QUESTIONS 37). **Synergists and antagonists are never written**: they are derived (`src/content/derive.ts`) from shared joint and movement (prime/assist) and from `movements.json`'s antagonist pairs, with `synergistOverrides` for exceptions.
+The calcaneal tendon's parent is gastrocnemius, with `alsoServes: [soleus_left]` (QUESTIONS 37). **Synergists and antagonists are never written**: they are derived (since M12, `synergist_of` / `antagonist_of` edges built by `src/systems/musculoskeletal/muscles/derive.ts`) from shared joint and movement (prime/assist) and from `movements.json`'s antagonist pairs, with `synergistOverrides` for exceptions.
 
 ### Ligament: `content/ligaments/<id>.md` (M8)
 
@@ -401,6 +401,23 @@ The frozen record of how each bone's old hand-written `muscleAttachments` string
 
 ---
 
+### How relationships work (M12: one graph)
+
+Every relationship is a typed **edge**, compiled at build time from the authoring files above (which M12 didn't change). Nothing in the app walks the content files for relationships any more.
+
+| Piece | Where |
+| --- | --- |
+| Edge types (13): `articulates_with`, `member_of_joint`, `part_of`, `originates_on`, `inserts_on`, `connects`, `attached_to`, `acts_on`, `region_neighbour`, `synergist_of`, `antagonist_of`, `adjacent_tooth`, `shares_joint_with` | `src/systems/musculoskeletal/edges.ts` (`SystemDescriptor.edgeTypes`, registry `EDGE_TYPES`); the generic types in `src/graph/edgeTypes.ts` name none of them |
+| Extracting edges from front matter and JSON | each kind's `KindContent.edges` (`src/systems/musculoskeletal/<layer>/content.ts`), the system's sources and joint nodes (`src/systems/musculoskeletal/content.ts`) |
+| Derived edges | `LayerContent.rules`: tooth neighbours (`bones/teeth.ts`), inherited attachments and synergists/antagonists (`muscles/derive.ts`, the M8 rule unchanged); system rule `shares_joint_with` |
+| Compiler and checks (endpoints known, types registered, no duplicates) | `src/graph/compile.ts`, run by `compileContentGraph` (`src/systems/registry.content.ts`); `validate-content` prints the counts (17,640 edges, 404 joint nodes) |
+| Shipping | the bones' edges come with the always-loaded ID index (`virtual:skeleton-graph`); each lazy layer's content chunk carries its own (`src/graph/ship.ts`, ID table + run-length rows in `codec.ts`), added to the runtime graph when the chunk loads |
+| Runtime graph and queries | `createGraph` (`src/graph/graph.ts`), `appGraph` (`src/content/appGraph.ts`), filtered by the layers that are On or Ghost |
+| Tier sets | `tierEngine` (`src/graph/query.ts`): each kind's `t1`, `t2` and `ant` rules are data (steps `self` / `follow` / `tier` / `filter`, an order, wording). `tests/golden/tiers.json` records all 1,138 IDs; it hasn't changed since M11 |
+| Panels, trees, announcements | also descriptors: `KindDescriptor.panel` → `src/panel/model.ts`; `LayerDescriptor.tree` → the builders in `src/tree/`; tier wording on the rules → `src/content/announce.ts` |
+
+`synergist_of`, `antagonist_of` and `adjacent_tooth` are **directed** (the M8 rule isn't symmetric, and the panel keeps the mesial neighbour first); `articulates_with` and `region_neighbour` are symmetric. The fixture system (`tests/fixtures/systems/demo/`) adds its own two edge types, tier rules, panel and tree without touching any other file.
+
 ## 5. Selection and isolation tiers
 
 | Concern | Where |
@@ -411,9 +428,8 @@ The frozen record of how each bone's old hand-written `muscleAttachments` string
 | URL format | `src/state/url.ts`: `sel`, `tier`, `grp`, `ghost`, `color`, `cam=px,py,pz,tx,ty,tz[,ox,oy]`, `lod`; `layers=b:on,c:off,l:off,m:ghost[:depth]`, `hid=`, `ant=1` |
 | Which structures are solid, ghosted or the focus (pure) | `src/scene/isolation.ts`: `isolationView`, `groupView`, `relatedAt`, `sceneView`, `viewOf`, `withJoint`, `withTints`, `drawnColourMode` |
 | Writing it to the GPU | `applyIsolationView` / `applyLayerView`, re-applied by `src/scene/Isolation.tsx` on every store change and after an LOD swap |
-| Bone tier sets | `src/content/relations.ts`: `tier1` (articulation partners; for teeth, adjacent teeth from FDI numbers), `regionOf`, `visibleAt` |
-| Soft tier sets | Built at compile time by `buildSoftTiers` (`src/content/softTiers.ts`), shipped in the lazy content chunks as `tiers` and `reverse`, registered by `softContentLoader.ts` |
-| Origins, insertions, antagonists | `src/content/softRoles.ts` (`MuscleRoles`: patches and whole-structure fallbacks per role) |
+| Tier sets, every kind (M12) | The tier engine over the relationship graph: `tiers()` in `src/content/appGraph.ts`, rules as data on each kind (`KindDescriptor.tiers` in `src/systems/musculoskeletal/<layer>/layer.ts`, `jointTiers.ts`); see §4 "How relationships work" |
+| Origins, insertions, antagonists | `rolesOf` (`src/content/appGraph.ts`) over the muscles kinds' `roles` (`src/systems/musculoskeletal/muscles/roles.ts`: patches and whole-structure fallbacks per role) |
 | Picking | `src/camera/CameraRig.tsx` (≤ 5 px and ≤ 500 ms is a click; double taps), `nearestPickable` across layers, `src/scene/pick.ts` proxies |
 | Outlines | `src/scene/outline.ts` (`setOutlineTarget`), `LayerBatches.moreSelected` for a muscle's parts |
 
@@ -439,8 +455,8 @@ How it behaves:
 - **The focus** gets the accent colour and the 3 px outline. At a muscle's tiers, the tints (§3) mark its origins, insertions and (optionally) antagonists; while any tint or patch is drawn, colour-by-region pauses and the bones go back to ivory (M10 AL).
 - **Groups and selection exclude each other.** Choosing a member of an isolated group pushes that member at tier 0.
 
-### Panels (M9)
-Kind-specific sections (`softSections`, `src/content/softPanel.ts`, rendered by `InfoPanel.tsx`): muscles and parts show Parts / Part of, Origin, Insertion (inherited from the muscle when `inherit`), Actions, Synergists, Antagonists, Innervation, Clinical note; ligaments show Joint and Connects; cartilage, discs and menisci show Joint and Attached to; all show Functions. Every structure named is a link. Bones keep M4's panel model plus the derived Origins/Insertions rows.
+### Panels (M9; descriptor-driven since M12)
+Sections are data on each kind (`KindDescriptor.panel`), turned into a model by `src/panel/model.ts` and rendered section by section by `InfoPanel.tsx` (render types `text`, `list`, `links`, `grouped-links`, `actions`, and one `custom` section, `attachments`): muscles and parts show Parts / Part of, Origin, Insertion (inherited from the muscle when `inherit`), Actions, Synergists, Antagonists, Innervation, Clinical note; ligaments show Joint and Connects; cartilage, discs and menisci show Joint and Attached to; all show Functions. Every structure named is a link. Bones keep M4's sections plus the derived Origins/Insertions rows.
 
 ### Sidebar and search (M9)
 Three soft roots beside the bone tree, loaded lazily (`virtual:skeleton-soft-tree`, 12 kB): Muscles by region → group → muscle → parts; Ligaments by joint; Cartilage by kind. Search merges two prebuilt minisearch indexes by score: bones (9 kB) and soft tissue (37 kB, fetched on the first keystroke).
