@@ -1,23 +1,19 @@
-# Handoff — written 2026-11-24 at the end of M11 session AX
+# Handoff — written 2026-11-25 at the end of M11 session AY
 
 ## Next session
-AY (wrap-up, plan step 7): goldens unchanged, the parity table (bench, perf-load, main chunk against `317b445`), the full e2e in the background with a log, exit criteria ticked, then the `/m11/` PR to `main`, merge, Deploy and the freeze.
-Done when: step 7's list is complete and the hosted `/m11/` copy is live.
+M12 planning (`SPEC-platform.md` §11, M12: relationship graph, tier rules as data, descriptor-driven panels, tree builders, announcement wording). Start with `CLAUDE.md`'s milestone handover: `m11` is already frozen at `a2709f6`, so only set `current` to 12, confirm `/m11/` is live (ask the user), tick "Hosted copy is live" in `docs/PLAN-milestone-11.md`, then write `docs/PLAN-milestone-12.md`.
 
 ## State
-- Last commit: AX (isolation test, allowlist, fixture layer, plan step 6 notes, this handoff)
-- `npm run check`: pass (41 files, 606 tests incl. goldens)
-- e2e in AX: layers, layers-debug, smoke, announce, keyboard, fixture: 47 of 48. The one failure was `keyboard.spec.ts:242` (M10's keys-only journey) hitting its 7-minute timeout during the batch; re-run alone it passes in 4.3 min. Watch it in AY's full run: if it times out again with both servers up, it needs a longer timeout or the fixture server started only for its project.
-- Main chunk: not re-measured in AX (the code change in the main chunk is one line in `Viewer.tsx` and the registry split); AY measures it.
+- M11 merged to `main` as `a2709f6` ([PR #25](https://github.com/ajmarr04-ux/SkeletonViewer/pull/25)); the freeze (`m11`, `"current": null`) goes in a follow-up PR from this branch.
+- `npm run check`: pass (41 files, 606 tests incl. goldens). Full e2e: 173 of 173 (36.7 min).
+- Parity against `317b445` (step 7's table): bench and perf-load the same within noise; main chunk 472.3 kB (+2.3; budget 500.1).
 - Open fan-out work: none
 
 ## Waiting on the user
-Nothing.
+- A glance at https://ajmarr04-ux.github.io/SkeletonViewer/m11/ (plan checkpoint "after AY").
 
 ## Things the next session must know
-- The registry's list is `src/systems/registered.ts`; `registry.ts` holds the lookups. `--mode fixture` swaps the list for `tests/fixtures/systems/registry.ts` (real layers + `widgets`), builds into `dist-fixture/`; Playwright runs two servers (app 4173, fixture 4175), so a full `npm run e2e` also builds the fixture (about 5 s).
-- `tests/registryIsolation.test.ts` fails on any registry ID in `src/` or `scripts/` outside `src/systems/**`, including layer IDs as object keys and as `….layers.<id>` accesses. `tests/registry-allowlist.json` only shrinks (24 files: M12 17, M14 1, M15 6), with an `otherVocabulary` list for words that aren't IDs (the colour mode `"bone"`).
-- The fixture re-runs `tests/colourVision.test.ts` with the fifth layer; that file's table sizes now count from `LAZY_LAYERS`.
-- Regenerate the fixture's files with `npx tsx tests/fixtures/systems/demo/widgets/generate.ts` (deterministic).
-- `CLAUDE.md`'s key-files table doesn't list `src/systems/` or the fixture yet: AY's STATUS/CLAUDE update.
-- Goldens: `npm run golden` compares; never `--write --force` without the user's approval.
+- The registry allowlist (`tests/registry-allowlist.json`) names 17 files for M12: that list is M12's work queue, and each file removed must leave the goldens unchanged.
+- Goldens: `npm run golden` compares; never `--write --force` without the user's approval. When M12 moves a function, change `tests/golden/harness.ts`'s import, never the snapshot.
+- `npm run bench-container [runs] [dist dir]` takes the dist dir **relative** to the working directory (it joins it onto cwd).
+- QUESTIONS: 1–139, the next is 140.
