@@ -14,6 +14,9 @@ import type { Lod } from "./lod";
 import { layerUrl } from "../layers/urls";
 import { OVERLAYS } from "../systems/registry";
 
+// M13: the body-region debug view rides in this chunk (see Viewer.tsx).
+export { debugRegionsView, disposeDebugRegions, parseDebugRegions } from "../regions/DebugRegions";
+
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 
 type Loaded = { group: Group; report: LayerReport };

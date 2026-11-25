@@ -1,0 +1,92 @@
+{
+  "$comment": "Body regions (M13; SPEC-platform §6.1; plan decisions 1-2). Authored: see content/regions/README.md. Each fine region's volume is one or more shapes, each fitted around named anchor structures (`fit`) or, with a `reason`, a literal `box`/`capsule`. `npm run regions:volumes` resolves them into assets/build/region-volumes.json. Pads in metres; glTF axes (+Y superior, +Z anterior, +X the patient's left).",
+  "threshold": 0.15,
+  "coarse": [
+    {"key": "head", "name": "Head"},
+    {"key": "neck", "name": "Neck"},
+    {"key": "thorax", "name": "Thorax"},
+    {"key": "abdomen", "name": "Abdomen"},
+    {"key": "pelvis_perineum", "name": "Pelvis and perineum"},
+    {"key": "back", "name": "Back"},
+    {"key": "upper_limb_{side}", "name": "Upper limb ({side})", "sides": true},
+    {"key": "lower_limb_{side}", "name": "Lower limb ({side})", "sides": true}
+  ],
+  "regions": [
+    {"key": "cranium", "name": "Cranium", "coarse": "head", "shapes": [
+      {"fit": ["frontal_bone", "parietal_bone_left", "parietal_bone_right", {"id": "occipital_bone", "span": [0.4, 1], "axis": "vertical"}], "orient": "world", "pad": {"superior": 0.012, "anterior": 0.012, "posterior": 0.012, "left": 0.012, "right": 0.012}},
+      {"fit": ["temporal_bone_left", "temporal_bone_right", "sphenoid_bone", "occipital_bone"], "orient": "world", "pad": {"left": 0.012, "right": 0.012, "posterior": 0.012, "anterior": -0.02}}
+    ]},
+    {"key": "face", "name": "Face", "coarse": "head", "shapes": [
+      {"fit": ["maxilla_left", "maxilla_right", "zygomatic_bone_left", "zygomatic_bone_right", "nasal_bone_left", "nasal_bone_right", "mandible"], "orient": "world", "pad": {"anterior": 0.015, "left": 0.015, "right": 0.015, "inferior": 0.005}}
+    ]},
+    {"key": "orbit", "name": "Orbit", "coarse": "head", "shapes": [
+      {"eachSide": true, "fit": ["lacrimal_bone_{side}", {"id": "zygomatic_bone_{side}", "span": [0.5, 1], "axis": "vertical"}], "orient": "world", "pad": {"posterior": 0.012, "superior": 0.004}}
+    ]},
+    {"key": "ear", "name": "Ear", "coarse": "head", "shapes": [
+      {"eachSide": true, "fit": ["malleus_{side}", "incus_{side}", "stapes_{side}"], "orient": "world", "pad": {"lateral": 0.035, "medial": 0.015, "superior": 0.025, "inferior": 0.02, "anterior": 0.015, "posterior": 0.02}}
+    ]},
+    {"key": "oral_cavity", "name": "Oral cavity", "coarse": "head", "shapes": [
+      {"fit": ["tooth_11", "tooth_12", "tooth_13", "tooth_14", "tooth_15", "tooth_16", "tooth_17", "tooth_21", "tooth_22", "tooth_23", "tooth_24", "tooth_25", "tooth_26", "tooth_27", "tooth_31", "tooth_32", "tooth_33", "tooth_34", "tooth_35", "tooth_36", "tooth_37", "tooth_41", "tooth_42", "tooth_43", "tooth_44", "tooth_45", "tooth_46", "tooth_47"], "orient": "world", "pad": {"left": 0.004, "right": 0.004, "anterior": 0.004, "posterior": 0.03, "inferior": 0.015, "superior": 0.004}}
+    ]},
+    {"key": "anterior_neck", "name": "Anterior neck", "coarse": "neck", "shapes": [
+      {"fit": ["hyoid_bone", {"id": "sternum", "span": [0.9, 1], "axis": "vertical"}, {"id": "clavicle_left", "span": [0, 0.25], "axis": "mediolateral"}, {"id": "clavicle_right", "span": [0, 0.25], "axis": "mediolateral"}], "orient": "world", "pad": {"superior": 0.005, "posterior": 0.03, "left": 0.02, "right": 0.02, "anterior": 0.01}}
+    ]},
+    {"key": "posterior_neck", "name": "Posterior neck", "coarse": "neck", "shapes": [
+      {"fit": ["vertebra_c1", "vertebra_c2", "vertebra_c3", "vertebra_c4", "vertebra_c5", "vertebra_c6", {"id": "vertebra_c7", "span": [0.4, 1], "axis": "vertical"}], "orient": "world", "pad": {"posterior": 0.05, "left": 0.03, "right": 0.03, "superior": 0.03}}
+    ]},
+    {"key": "thoracic_wall", "name": "Thoracic wall", "coarse": "thorax", "shapes": [
+      {"fit": ["rib_1_left", "rib_2_left", "rib_3_left", "rib_4_left", "rib_5_left", "rib_6_left", "rib_7_left", "rib_8_left", "rib_9_left", "rib_10_left", "rib_11_left", "rib_12_left", "rib_1_right", "rib_2_right", "rib_3_right", "rib_4_right", "rib_5_right", "rib_6_right", "rib_7_right", "rib_8_right", "rib_9_right", "rib_10_right", "rib_11_right", "rib_12_right", "sternum"], "orient": "world", "pad": {"anterior": 0.02, "left": 0.02, "right": 0.02}}
+    ]},
+    {"key": "abdominal_wall", "name": "Abdominal wall", "coarse": "abdomen", "shapes": [
+      {"fit": [{"id": "sternum", "span": [0, 0.1], "axis": "vertical"}, {"id": "rib_10_left", "span": [0, 0.5], "axis": "vertical"}, {"id": "rib_10_right", "span": [0, 0.5], "axis": "vertical"}, {"id": "hip_bone_left", "span": [0.3, 1], "axis": "vertical"}, {"id": "hip_bone_right", "span": [0.3, 1], "axis": "vertical"}], "orient": "world", "pad": {"anterior": 0.02, "left": 0.02, "right": 0.02, "posterior": -0.065}}
+    ]},
+    {"key": "posterior_abdominal_wall", "name": "Posterior abdominal wall", "coarse": "abdomen", "shapes": [
+      {"fit": ["vertebra_l1", "vertebra_l2", "vertebra_l3", "vertebra_l4", "vertebra_l5", {"id": "hip_bone_left", "span": [0.55, 1], "axis": "vertical"}, {"id": "hip_bone_right", "span": [0.55, 1], "axis": "vertical"}], "orient": "world", "pad": {"posterior": 0.012, "anterior": -0.02}}
+    ]},
+    {"key": "pelvis", "name": "Pelvis", "coarse": "pelvis_perineum", "shapes": [
+      {"fit": ["hip_bone_left", "hip_bone_right", "sacrum", "coccyx"], "orient": "world", "pad": {"left": -0.02, "right": -0.02, "anterior": 0.01, "posterior": 0.01}}
+    ]},
+    {"key": "perineum", "name": "Perineum", "coarse": "pelvis_perineum", "shapes": [
+      {"fit": [{"id": "hip_bone_left", "span": [0, 0.3], "axis": "vertical"}, {"id": "hip_bone_right", "span": [0, 0.3], "axis": "vertical"}, "coccyx"], "orient": "world", "pad": {"inferior": 0.03, "left": -0.03, "right": -0.03}}
+    ]},
+    {"key": "back_thoracic", "name": "Thoracic back", "coarse": "back", "shapes": [
+      {"fit": ["vertebra_t1", "vertebra_t2", "vertebra_t3", "vertebra_t4", "vertebra_t5", "vertebra_t6", "vertebra_t7", "vertebra_t8", "vertebra_t9", "vertebra_t10", "vertebra_t11", "vertebra_t12"], "orient": "world", "pad": {"posterior": 0.05, "left": 0.05, "right": 0.05, "anterior": -0.04}}
+    ]},
+    {"key": "back_lumbar", "name": "Lumbar back", "coarse": "back", "shapes": [
+      {"fit": ["vertebra_l1", "vertebra_l2", "vertebra_l3", "vertebra_l4", "vertebra_l5"], "orient": "world", "pad": {"posterior": 0.05, "left": 0.04, "right": 0.04, "anterior": -0.04}}
+    ]},
+    {"key": "back_sacral", "name": "Sacral back", "coarse": "back", "shapes": [
+      {"fit": ["sacrum", "coccyx"], "orient": "world", "pad": {"posterior": 0.03, "left": 0.02, "right": 0.02, "anterior": -0.04}}
+    ]},
+    {"key": "shoulder_{side}", "name": "Shoulder ({side})", "coarse": "upper_limb_{side}", "sides": true, "shapes": [
+      {"fit": ["scapula_{side}", {"id": "clavicle_{side}", "span": [0.4, 1], "axis": "mediolateral"}, {"id": "humerus_{side}", "span": [0.8, 1]}], "orient": "world", "pad": {"lateral": 0.035, "medial": 0.01, "superior": 0.03, "anterior": 0.03, "posterior": 0.03}}
+    ]},
+    {"key": "arm_{side}", "name": "Arm ({side})", "coarse": "upper_limb_{side}", "sides": true, "shapes": [
+      {"fit": ["humerus_{side}"], "span": [0.12, 0.85], "pad": {"long": 0, "cross": 0.035}}
+    ]},
+    {"key": "elbow_{side}", "name": "Elbow ({side})", "coarse": "upper_limb_{side}", "sides": true, "shapes": [
+      {"fit": [{"id": "humerus_{side}", "span": [0, 0.15]}, {"id": "radius_{side}", "span": [0.85, 1]}, {"id": "ulna_{side}", "span": [0.8, 1]}], "orient": "world", "pad": 0.025}
+    ]},
+    {"key": "forearm_{side}", "name": "Forearm ({side})", "coarse": "upper_limb_{side}", "sides": true, "shapes": [
+      {"fit": ["radius_{side}", "ulna_{side}"], "span": [0.08, 0.9], "pad": {"long": 0, "cross": 0.025}}
+    ]},
+    {"key": "wrist_hand_{side}", "name": "Wrist and hand ({side})", "coarse": "upper_limb_{side}", "sides": true, "shapes": [
+      {"fit": ["scaphoid_{side}", "lunate_{side}", "triquetrum_{side}", "pisiform_{side}", "trapezium_{side}", "trapezoid_{side}", "capitate_{side}", "hamate_{side}", "metacarpal_1_{side}", "metacarpal_2_{side}", "metacarpal_3_{side}", "metacarpal_4_{side}", "metacarpal_5_{side}", "proximal_phalanx_hand_1_{side}", "proximal_phalanx_hand_2_{side}", "proximal_phalanx_hand_3_{side}", "proximal_phalanx_hand_4_{side}", "proximal_phalanx_hand_5_{side}", "middle_phalanx_hand_2_{side}", "middle_phalanx_hand_3_{side}", "middle_phalanx_hand_4_{side}", "middle_phalanx_hand_5_{side}", "distal_phalanx_hand_1_{side}", "distal_phalanx_hand_2_{side}", "distal_phalanx_hand_3_{side}", "distal_phalanx_hand_4_{side}", "distal_phalanx_hand_5_{side}", {"id": "radius_{side}", "span": [0, 0.08]}, {"id": "ulna_{side}", "span": [0, 0.06]}], "pad": 0.015}
+    ]},
+    {"key": "hip_gluteal_{side}", "name": "Hip and gluteal region ({side})", "coarse": "lower_limb_{side}", "sides": true, "shapes": [
+      {"fit": [{"id": "hip_bone_{side}", "span": [0, 0.75], "axis": "vertical"}, {"id": "femur_{side}", "span": [0.82, 1]}], "orient": "world", "pad": {"lateral": 0.04, "posterior": 0.06, "anterior": 0.02, "medial": -0.03}}
+    ]},
+    {"key": "thigh_{side}", "name": "Thigh ({side})", "coarse": "lower_limb_{side}", "sides": true, "shapes": [
+      {"fit": ["femur_{side}"], "span": [0.1, 0.85], "pad": {"long": 0, "cross": 0.06}}
+    ]},
+    {"key": "knee_{side}", "name": "Knee ({side})", "coarse": "lower_limb_{side}", "sides": true, "shapes": [
+      {"fit": [{"id": "femur_{side}", "span": [0, 0.12]}, "patella_{side}", {"id": "tibia_{side}", "span": [0.85, 1]}, {"id": "fibula_{side}", "span": [0.88, 1]}], "orient": "world", "pad": 0.03}
+    ]},
+    {"key": "leg_{side}", "name": "Leg ({side})", "coarse": "lower_limb_{side}", "sides": true, "shapes": [
+      {"fit": ["tibia_{side}", "fibula_{side}"], "span": [0.1, 0.9], "pad": {"long": 0, "cross": 0.05}}
+    ]},
+    {"key": "ankle_foot_{side}", "name": "Ankle and foot ({side})", "coarse": "lower_limb_{side}", "sides": true, "shapes": [
+      {"fit": ["talus_{side}", "calcaneus_{side}", "navicular_{side}", "cuboid_{side}", "medial_cuneiform_{side}", "intermediate_cuneiform_{side}", "lateral_cuneiform_{side}", "metatarsal_1_{side}", "metatarsal_2_{side}", "metatarsal_3_{side}", "metatarsal_4_{side}", "metatarsal_5_{side}", "proximal_phalanx_foot_1_{side}", "proximal_phalanx_foot_2_{side}", "proximal_phalanx_foot_3_{side}", "proximal_phalanx_foot_4_{side}", "proximal_phalanx_foot_5_{side}", "middle_phalanx_foot_2_{side}", "middle_phalanx_foot_3_{side}", "middle_phalanx_foot_4_{side}", "middle_phalanx_foot_5_{side}", "distal_phalanx_foot_1_{side}", "distal_phalanx_foot_2_{side}", "distal_phalanx_foot_3_{side}", "distal_phalanx_foot_4_{side}", "distal_phalanx_foot_5_{side}", {"id": "tibia_{side}", "span": [0, 0.08]}, {"id": "fibula_{side}", "span": [0, 0.08]}], "orient": "world", "pad": 0.015}
+    ]}
+  ]
+}

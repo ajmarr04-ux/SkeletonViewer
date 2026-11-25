@@ -41,7 +41,7 @@ Session kinds: **design** = strong model; **routine** = Sonnet is fine. No subag
 | Session | Kind | Serial task (one sentence) | Fan-out | Inputs | Done when | Status |
 | --- | --- | --- | --- | --- | --- | --- |
 | (planning) | design | M12 → M13 handover and this plan (step 0) | none | `SPEC-platform.md` | `current` 13, plan written | **Done.** See step 0 |
-| BK | design | The region list and its volumes, resolved from anchor bones, plus the `?debug&regions` view (step 1) | none | decisions 1–3 | `content/regions/regions.json`, the resolver and the debug view committed; screenshots in the notes; **gate: the user approves the list** | |
+| BK | design | The region list and its volumes, resolved from anchor bones, plus the `?debug&regions` view (step 1) | none | decisions 1–3 | `content/regions/regions.json`, the resolver and the debug view committed; screenshots in the notes; **gate: the user approves the list** | **Done** (2026-11-25); waiting at the gate. See BK notes |
 | BL | design | Membership: vertex shares → `located_in` edges, overrides, checks, the regions golden, per-region triangle totals in the index (step 2) | none | decisions 4–6 | `npm run regions` writes the membership and `check` verifies it; the spec §10 region checks pass; `tests/golden/regions.json` committed; the five goldens unchanged; main chunk measured | |
 | BM | design | Region focus state: reducer, URL `reg=`, history and Back, combined with isolation, groups and tiers, `sceneView` hiding non-members (step 3) | none | decision 7 | unit tests for every transition; the five goldens unchanged; `select`, `related`, `nested`, `layers` e2e pass | |
 | BN | routine | The region UI: toolbar control, body map and list, camera framing, breadcrumb, announcements (step 4) | none | decision 8, BM | new `tests/e2e/regions.spec.ts` and the a11y pass for the picker; `polish`, `a11y` and `keyboard` e2e unchanged and passing | |
@@ -87,6 +87,21 @@ Triggers: "begin session BK" to "begin session BR". Every session follows `docs/
 ## Decisions made in this plan (say if any should change)
 
 1. **The region list** (spec §6.1, §12 default: the two-level list). BK starts from the spec's table and records the final list here. The proposed changes are listed below; the user decides at the BK gate.
+
+   **BK's list (10 coarse, 35 fine; awaiting the user's approval).** Limb regions are per side (`_left` / `_right`; one row shown):
+
+   | Coarse | Key | Fine regions (keys) |
+   | --- | --- | --- |
+   | Head | `head` | Cranium (`cranium`), Face (`face`), Orbit (`orbit`, two boxes), Ear (`ear`, two boxes), Oral cavity (`oral_cavity`) |
+   | Neck | `neck` | Anterior neck (`anterior_neck`), Posterior neck (`posterior_neck`) |
+   | Thorax | `thorax` | Thoracic wall (`thoracic_wall`) |
+   | Abdomen | `abdomen` | Abdominal wall (`abdominal_wall`), Posterior abdominal wall (`posterior_abdominal_wall`) |
+   | Pelvis and perineum | `pelvis_perineum` | Pelvis (`pelvis`), Perineum (`perineum`) |
+   | Back | `back` | Thoracic back (`back_thoracic`), Lumbar back (`back_lumbar`), Sacral back (`back_sacral`) |
+   | Upper limb (left / right) | `upper_limb_left` | Shoulder (`shoulder_left`), Arm (`arm_left`), Elbow (`elbow_left`), Forearm (`forearm_left`), Wrist and hand (`wrist_hand_left`) |
+   | Lower limb (left / right) | `lower_limb_left` | Hip and gluteal region (`hip_gluteal_left`), Thigh (`thigh_left`), Knee (`knee_left`), Leg (`leg_left`), Ankle and foot (`ankle_foot_left`) |
+
+   Departures from the spec's table: no mediastinum, pleural cavities, upper or lower abdomen (as proposed below); **no "Back: cervical"**, because its volume would be the posterior neck's (the cervical vertebrae and the muscles behind them), so the posterior neck stands for it; **"Posterior abdominal wall" added**, because the anterolateral wall's box can't also hold psoas, quadratus lumborum and iliacus without swallowing the lumbar back.
    - **Leave out, for now, regions that would hold no musculoskeletal structure.** These are the mediastinum, the pleural cavities, and the upper and lower abdomen as cavities. Spec §10 says "every region contains at least one structure", so these regions would fail the check. The organs spec adds them back, with their own volumes. The thorax keeps "thoracic wall", and the abdomen keeps "abdominal wall" plus a "posterior abdominal wall" (psoas, quadratus lumborum, iliacus) if the debug view shows that the wall volume misses those muscles.
    - **Sides.** Limb regions are per side, as the spec lists them. Head regions that come in pairs (orbit, ear) are **one region with a volume of two boxes**. A user who picks "Orbit" sees both orbits, which matches how the region is named.
    - **Keys** are snake_case, unique across structure IDs, joint nodes and group keys (checked). Coarse regions have keys like `upper_limb_left`, and fine regions keys like `forearm_left` or `orbit`. The key is the URL value (`reg=forearm_left`). In the graph, a region is a node `node: "region"`, as the joints are `node: "joint"`.
@@ -276,4 +291,12 @@ None yet.
 
 ## Session notes
 
-(Filled in by each session.)
+### BK (design, 2026-11-25): region list and volumes
+
+- **Files.** `content/regions/regions.json` (authored list, anchors, threshold 0.15) and `README.md`; `src/regions/volume.ts` (pure: PCA frame by Jacobi, `fitShape`, spans, pads, `inShape`/`inRegion`, `expandRegions`, `checkRegionsFile`, `resolveRegions`), `src/regions/stale.ts`, `src/regions/debug.ts`, `src/regions/DebugRegions.ts`; `scripts/regions/volumes.ts` (`npm run regions:volumes`, `-- --check` added to `npm run check` after `check-models`); `scripts/lib/glb-points.ts` (world vertices per named node, BL reuses it for every layer); `assets/build/region-volumes.json` (generated, 38 shapes). Tests: `tests/regionVolumes.test.ts` (14).
+- **The fit vocabulary grew beyond decision 2's `fit`/`pad`/`span`,** because plain boxes around whole bones overlapped far too much (the first pass put the thoracic spine in the shoulders and the coccyx in the thighs): an anchor can be `{id, span, axis}` (part of one bone along its long axis, or along `vertical` / `anteroposterior` / `mediolateral`, the last measured from the medial end on either side); `orient: "world"` boxes take per-face pads in anatomical words (`medial`/`lateral` by side), negative to trim; PCA shapes take `{long, cross}`; `eachSide` makes a paired midline region (orbit, ear). `shape: "capsule"` exists but nothing uses it. **No literal shapes**, so no QUESTIONS entries (the next is still 140).
+- **Checks in the resolver** (`checkRegionsFile`): snake_case keys, unique, not an existing structure / joint / articulation / hierarchy key; known coarse parents; `{side}` consistent; anchors are structures with a mesh; a reason on any literal shape; the threshold in (0, 1). Anchors may be on any layer (only the needed layer files are read; today all anchors are bones).
+- **Preview of membership** (a scratch probe, not committed; BL computes it for real): every structure with a mesh reaches 15 % somewhere; every fine region holds members on at least two layers (smallest: arm 1 bone + 17 muscles, thigh 1 + 21 + 3 ligaments). 118 structures are in four or more regions, mostly long trunk muscles and the bones at region borders. **Overlaps BL has to settle** (override or accept): ribs 2–7 fall about 50 % into the shoulder (the scapula lies on them); the femoral heads 21 % into the pelvis; rib 1 and the medial clavicle into the anterior neck; the thoracic vertebrae into the thoracic wall (correct: the thoracic cage); the digastric's posterior belly into the cranium's base box.
+- **Debug view:** `?debug&regions` (all), `?debug&regions=<fine or coarse key>`; wireframe + 7 % fill drawn over everything, a name sprite per region, a line in the debug overlay (`data-testid="debug-regions"`, `data-regions`). Screenshots (all four layers On): `docs/screenshots/m13/regions-{anterior,left,posterior}.png`, close-ups `regions-head-{anterior,left}.png` (`?debug&regions=head`).
+- **Main chunk: 486.3 kB** `gzip -9` (index + modulepreloads; +0.2 kB over M12's 486.1). Lesson for BN's lazy picker: a lazy chunk that imports `three` (or `react`) but not `meshoptimizer` makes rolldown split the shared vendor chunk differently, costing about 1 kB of main chunk (and `@react-three/drei` was not the cause). The region debug view therefore rides inside the existing `DebugLayers` chunk and is plain three.js; measure the picker's chunk the same way (`index` + every `modulepreload` in `dist/index.html`).
+- `npm run check`: pass (672 tests; goldens unchanged). No e2e touched (the debug view has no spec; the screenshots were its check).

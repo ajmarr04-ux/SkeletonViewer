@@ -1,3 +1,4 @@
+import type { Group } from "three";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { loadContent } from "../content/loader";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
@@ -74,6 +75,28 @@ export function Viewer() {
     if (debug && useViewer.getState().debugLayersView) {
       void debugLayersFrom(window.location.search).then(setLayers);
     }
+  }, [debug]);
+  // M13 debug body-region view (`?debug&regions[=key]`): in the debug layers' lazy chunk (the same
+  // vendor imports, so the main chunk's split is unchanged), fetched only with `?debug`.
+  const [debugRegions, setDebugRegions] = useState<{ group: Group; keys: string[]; total: number; which: string } | null>(null);
+  useEffect(() => {
+    // Only with `regions` too: `?debug` alone must fetch no debug chunk (`layers-debug.spec.ts`).
+    if (!debug || !new URLSearchParams(window.location.search).has("regions")) return;
+    let view: { group: Group } | null = null;
+    let dispose: ((g: Group) => void) | null = null;
+    let live = true;
+    void import("./DebugLayers").then((m) => {
+      const which = m.parseDebugRegions(window.location.search);
+      if (!live || !which) return;
+      dispose = m.disposeDebugRegions;
+      const v = m.debugRegionsView(which);
+      view = v;
+      setDebugRegions({ ...v, which });
+    });
+    return () => {
+      live = false;
+      if (view && dispose) dispose(view.group);
+    };
   }, [debug]);
   // Selection, tier and ghost mode from the URL, before the first render of the scene.
   useState(initSelectionFromUrl);
@@ -222,6 +245,7 @@ export function Viewer() {
             <DebugLayersScene layers={layers} lod={shown?.lod ?? null} />
           </Suspense>
         )}
+        {debugRegions && <primitive object={debugRegions.group} />}
         <StatsProbe onStats={setStats} />
       </Canvas>
       <Labels />
@@ -261,6 +285,12 @@ export function Viewer() {
           <Suspense fallback={null}>
             <DebugLayersPanel layers={layers} lod={shown?.lod ?? null} />
           </Suspense>
+        )}
+        {debugRegions && (
+          <p className="debug-regions" data-testid="debug-regions" data-regions={debugRegions.keys.join(",")}>
+            Body regions: {debugRegions.keys.length} of {debugRegions.total} drawn
+            {debugRegions.keys.length === 0 ? ` (unknown key "${debugRegions.which}")` : ""}
+          </p>
         )}
       </DebugOverlay>
       )}
