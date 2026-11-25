@@ -2,14 +2,16 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import ids from "../content/ids.json";
-import { readBoneAttached } from "../scripts/lib/content-files";
-import { boneAttachedRows, compileContent } from "../src/content/compile";
+import { readEagerContentEdges } from "../scripts/lib/content-files";
+import { compileContent } from "../src/content/compile";
 import { attachedLabel, landmarkName, linkLabel, panelModel, typeLabel } from "../src/content/panel";
-import { appGraph } from "../src/content/appGraph";
+import { appGraph, registerContentEdges } from "../src/content/appGraph";
 
 const dir = join(__dirname, "../content/bones");
 const files = new Map(readdirSync(dir).filter((f) => f.endsWith(".md")).map((f) => [f.slice(0, -3), readFileSync(join(dir, f), "utf8")]));
-const content = compileContent(files, readBoneAttached());
+const content = compileContent(files);
+// The bones' content chunk ships the attachment edges into them (M12 BD), as the loader registers them.
+registerContentEdges("bones-content", readEagerContentEdges());
 
 const fixture = (over: Record<string, string> = {}) => `---
 id: ${over.id ?? "sternum"}
@@ -33,13 +35,11 @@ The **sternum** is a flat bone.
 
 describe("content compiler", () => {
   it("compiles a file: fields, landmark names, the summary as HTML", () => {
-    const rows = { origins: [{ id: "pectoralis_major_left", name: "Pectoralis major", side: "left" as const }], insertions: [] };
-    const c = compileContent(new Map([["sternum", fixture()]]), { sternum: rows }).sternum!;
-    expect(c).toMatchObject({ latin: "Sternum", common: "Breastbone", type: "flat", functions: ["Protects the heart"], landmarks: ["Manubrium"], landmarkPositions: 0, attached: rows, clinical: null, reviewed: false });
+    const c = compileContent(new Map([["sternum", fixture()]])).sternum!;
+    expect(c).toMatchObject({ latin: "Sternum", common: "Breastbone", type: "flat", functions: ["Protects the heart"], landmarks: ["Manubrium"], landmarkPositions: 0, clinical: null, reviewed: false });
     expect(c.landmarkIds).toEqual(["manubrium"]);
     expect(landmarkName(c, "manubrium")).toBe("Manubrium");
     expect(landmarkName(c, "nothing")).toBeUndefined();
-    expect(compileContent(new Map([["sternum", fixture()]])).sternum!.attached).toEqual({ origins: [], insertions: [] });
     expect(c.summary).toBe("<p>The <strong>sternum</strong> is a flat bone.</p>");
   });
 
@@ -65,31 +65,29 @@ describe("content compiler", () => {
   });
 });
 
+// M12 BD: the rows are the graph's inverse `originates_on` / `inserts_on` edges (not a part's inherited ones),
+// sorted by name then side, which the compiled content carried as `attached` before (`boneAttachedRows`).
 describe("the bones' derived Origins and Insertions (M8 session AD, M9 session AH)", () => {
-  it("lists each muscle or part by name in its role, left before right, both roles in both lists", () => {
-    const info: Record<string, { name: string; side: "left" | "right" | "midline" }> = {
-      a_left: { name: "Alpha", side: "left" },
-      a_right: { name: "Alpha", side: "right" },
-      b: { name: "Beta", side: "midline" },
-      c_part: { name: "Head of gamma", side: "left" },
-    };
-    const rows = boneAttachedRows(
-      { bone: { origins: ["b", "a_right", "a_left"], insertions: ["c_part", "b"] }, other: { origins: [], insertions: [] } },
-      (id) => info[id]!,
-    );
-    expect(rows.bone!.origins.map((r) => r.id)).toEqual(["a_left", "a_right", "b"]);
-    expect(rows.bone!.insertions.map((r) => r.id)).toEqual(["b", "c_part"]);
-    expect(rows.other).toEqual({ origins: [], insertions: [] });
+  it("lists each muscle or part by name in its role, left before right", () => {
+    const m = panelModel("sternum", content)!;
+    const names = m.origins!.map((l) => l.label);
+    expect(names).toEqual([...names].sort((a, b) => a.replace(/ \((left|right)\)$/, "").localeCompare(b.replace(/ \((left|right)\)$/, "")) || 0));
+    const left = m.origins!.findIndex((l) => l.id === "pectoralis_major_sternocostal_head_left");
+    expect(m.origins![left + 1]!.id).toBe("pectoralis_major_sternocostal_head_right");
   });
 
   it("derives the real lists from the muscle files; a part that declares its own attachment is listed by the part", () => {
-    const femur = content.femur_left!.attached;
-    expect(femur.insertions.map((r) => r.id)).toContain("gluteus_maximus_left");
-    expect(femur.origins.map((r) => r.id)).toEqual(expect.arrayContaining(["vastus_lateralis_left", "biceps_femoris_short_head_left"]));
-    expect(femur.origins.every((r) => r.side === "left")).toBe(true);
-    expect(content.femur_right!.attached.origins.map((r) => r.id)).toEqual(femur.origins.map((r) => r.id.replace(/_left$/, "_right")));
-    expect(content.tooth_11!.attached).toEqual({ origins: [], insertions: [] });
-    expect(Object.values(content).filter((c) => c.attached.origins.length + c.attached.insertions.length > 0).length).toBeGreaterThan(150);
+    const femur = panelModel("femur_left", content)!;
+    expect(femur.insertions!.map((r) => r.id)).toContain("gluteus_maximus_left");
+    expect(femur.origins!.map((r) => r.id)).toEqual(expect.arrayContaining(["vastus_lateralis_left", "biceps_femoris_short_head_left"]));
+    expect(femur.origins!.every((r) => r.id.endsWith("_left"))).toBe(true);
+    expect(panelModel("femur_right", content)!.origins!.map((r) => r.id)).toEqual(femur.origins!.map((r) => r.id.replace(/_left$/, "_right")));
+    expect(panelModel("tooth_11", content)!.origins).toEqual([]);
+    const withMuscles = (ids as { id: string }[]).filter((e) => {
+      const m = panelModel(e.id, content)!;
+      return m.origins!.length + m.insertions!.length > 0;
+    });
+    expect(withMuscles.length).toBeGreaterThan(150);
   });
 
   it("labels: the side only when it differs from the bone's", () => {

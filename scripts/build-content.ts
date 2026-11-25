@@ -5,10 +5,10 @@ import { writeFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 import { compileContent } from "../src/content/compile";
 import { LAZY_LAYERS } from "../src/systems/registry";
-import { compileAllSoftFromDisk, readBoneAttached, readContentFiles } from "./lib/content-files";
+import { compileAllSoftFromDisk, readContentFiles, readEagerContentEdges } from "./lib/content-files";
 
-const compiled = compileContent(readContentFiles(), readBoneAttached());
-const json = JSON.stringify(compiled);
+const compiled = compileContent(readContentFiles());
+const json = JSON.stringify({ content: compiled, edges: readEagerContentEdges() });
 const kb = (n: number) => `${(n / 1024).toFixed(1)} KB`;
 console.log(`content: ${Object.keys(compiled).length} file(s), ${kb(json.length)} raw, ${kb(gzipSync(json).length)} gzipped`);
 const soft = compileAllSoftFromDisk();

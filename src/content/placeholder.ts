@@ -4,14 +4,14 @@
 // the real content files arrive in Milestone 4. Nothing is invented (spec §12).
 
 import ids from "../../content/ids.json";
-import type { EagerKind } from "../systems/registry";
-import { groupTrail, regionLabel, TOOTH_TYPES } from "./labels";
+import { panelModel as generic } from "../panel/model";
+import { kindDescriptor, type EagerKind } from "../systems/registry";
 
 export type Side = "left" | "right" | "midline";
 export type IdEntry = { id: string; name: string; kind: EagerKind; side: Side; group: string[]; meshAvailable: boolean };
 
 export const NOT_WRITTEN = "Not written yet";
-export const NO_MODEL_NOTE = "No 3D model: this tooth is absent from the source model.";
+export { NO_MODEL_NOTE } from "../systems/musculoskeletal/bones/panel";
 
 /** The text sections of the panel, in spec §7 order (after the name and badges). */
 export const SECTION_TITLES = ["Summary", "Functions", "Articulations", "Key landmarks", "Major muscle attachments", "Clinical note"] as const;
@@ -67,12 +67,11 @@ export function entryOf(id: string): IdEntry | undefined {
   return BY_ID.get(id);
 }
 
-/** The panel's content for one object, or null for an unknown ID. */
+/** The panel's content for one object before its file is loaded (the generic model with no content, M12 BD), or null for an unknown ID. */
 export function panelModel(id: string): PanelModel | null {
   const e = BY_ID.get(id);
   if (!e) return null;
-  const opposite = oppositeOf(id);
-  const last = e.group[e.group.length - 1] ?? "";
+  const m = generic(id, { content: () => null, opposite: oppositeOf })!;
   return {
     id,
     name: e.name,
@@ -80,21 +79,24 @@ export function panelModel(id: string): PanelModel | null {
     common: null,
     side: e.side,
     kind: e.kind,
-    badges: { region: regionLabel(e.group), type: e.kind === "tooth" ? (TOOTH_TYPES[last] ?? "Tooth") : "Bone", draft: true },
-    trail: [...groupTrail(e.group), e.name],
+    badges: { region: m.badges[0]!, type: m.badges[1]!, draft: m.draft },
+    trail: m.trail,
     meshAvailable: e.meshAvailable,
-    note: e.meshAvailable ? null : NO_MODEL_NOTE,
+    note: m.note ?? null,
     sections: SECTION_TITLES.map((title) => ({ title, text: NOT_WRITTEN })),
-    opposite,
-    pair: opposite === null ? null : e.side === "left" ? { left: id, right: opposite } : { left: opposite, right: id },
+    opposite: oppositeOf(id),
+    pair: m.pair,
   };
 }
+
+/** False for kinds whose name says the side already (teeth). */
+const sideInName = (e: IdEntry) => kindDescriptor(e.kind).sideInName !== false;
 
 type Isolated = { sel: string | null; tier: 0 | 1 | 2 };
 
 /** "Femur, left" (teeth name their side already). */
 function spoken(e: IdEntry): string {
-  const side = e.side === "midline" || e.kind === "tooth" ? "" : `, ${e.side}`;
+  const side = e.side === "midline" || !sideInName(e) ? "" : `, ${e.side}`;
   return `${e.name}${side}`;
 }
 
@@ -103,7 +105,7 @@ function listed(id: string, focusSide: Side): string {
   const e = BY_ID.get(id);
   if (!e) return id;
   const name = /^[A-Z][a-z]/.test(e.name) ? e.name[0]!.toLowerCase() + e.name.slice(1) : e.name;
-  return e.side === "midline" || e.kind === "tooth" || e.side === focusSide ? name : `${name} (${e.side})`;
+  return e.side === "midline" || !sideInName(e) || e.side === focusSide ? name : `${name} (${e.side})`;
 }
 
 /**

@@ -1,6 +1,8 @@
 declare module "virtual:skeleton-content" {
   const content: import("./compile").CompiledContent;
   export default content;
+  /** The edges between the eager layer and the lazy ones its panels read (M12 BD). */
+  export const edges: import("../graph/codec").EdgeWire;
 }
 declare module "virtual:skeleton-search" {
   const data: import("./search").SearchData;

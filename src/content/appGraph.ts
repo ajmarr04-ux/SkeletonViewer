@@ -30,6 +30,8 @@ const kindOf = (id: string): string | undefined => EAGER_KIND.get(id) ?? lazyEnt
 let graph: Graph | null = null;
 let engine: TierEngine | null = null;
 const loaded = new Set<string>();
+/** Edges a content chunk ships besides a layer's own (the eager layer's panel edges), kept so a reset graph gets them back. */
+const extra = new Map<string, EdgeWire>();
 const patches = new Map<string, Readonly<Record<string, Patch>>>();
 const patchIndexes = new Map<string, Map<RolesSpec, unknown>>();
 let rolesMemo = new Map<string, TintRoles | undefined>();
@@ -44,6 +46,7 @@ export function appGraph(): Graph {
     graph.subscribe(notify);
     loaded.add(EAGER_LAYER);
     graph.add(EAGER_LAYER, decodeEdges(eagerEdges()));
+    for (const [chunk, wire] of extra) graph.add(chunk, decodeEdges(wire));
   }
   return graph;
 }
@@ -65,6 +68,17 @@ export function registerLayerEdges(layer: string, content: { edges?: EdgeWire; p
   loaded.add(layer);
   if (content.patches) patches.set(layer, content.patches);
   g.add(layer, content.edges ? decodeEdges(content.edges) : []);
+}
+
+/**
+ * Called when the eager layer's content chunk loads: the edges between it and
+ * the lazy layers that its panels read (a bone's attached muscles, M12 BD).
+ * They don't mark any lazy layer loaded. Idempotent.
+ */
+export function registerContentEdges(chunk: string, wire: EdgeWire): void {
+  if (extra.has(chunk)) return;
+  extra.set(chunk, wire);
+  appGraph().add(chunk, decodeEdges(wire));
 }
 
 /** For tests: forget every lazy layer's edges and patches. */

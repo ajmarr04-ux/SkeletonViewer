@@ -55,7 +55,8 @@ export function createGraph(edgeTypes: readonly EdgeTypeDescriptor[] | EdgeTypes
   const forward: Adjacency = new Map();
   const backward: Adjacency = new Map();
   const all: Edge[] = [];
-  const seen = new Set<string>();
+  /** Every edge added, by key: the copy that went into the lists. */
+  const stored = new Map<string, Edge>();
   const chunks = new Set<string>();
   const listeners = new Set<() => void>();
   let version = 0;
@@ -76,18 +77,46 @@ export function createGraph(edgeTypes: readonly EdgeTypeDescriptor[] | EdgeTypes
     add(chunk, edges) {
       if (chunks.has(chunk)) return false;
       chunks.add(chunk);
+      // Each node's lists as this chunk writes them, edges seen before included (as their stored copy).
+      type Written = { adj: Adjacency; id: string; type: string; edges: Edge[] };
+      const byKey = new Map<string, Written>();
+      const note = (adj: Adjacency, id: string, type: string, key: string) => {
+        const k = `${adj === forward ? ">" : "<"}${id}\u0000${type}`;
+        let l = byKey.get(k);
+        if (!l) byKey.set(k, (l = { adj, id, type, edges: [] }));
+        l.edges.push(stored.get(key)!);
+      };
       for (const e of edges) {
         const k = edgeKey(e);
-        if (seen.has(k)) continue;
-        seen.add(k);
-        all.push(e);
-        push(forward, e.from, e.type, e);
-        push(backward, e.to, e.type, e);
+        const fresh = !stored.has(k);
+        if (fresh) {
+          stored.set(k, e);
+          all.push(e);
+          push(forward, e.from, e.type, e);
+          push(backward, e.to, e.type, e);
+        }
+        note(forward, e.from, e.type, k);
+        note(backward, e.to, e.type, k);
         // A symmetric edge reads the same from either end.
         if (types.isSymmetric(e.type)) {
-          push(forward, e.to, e.type, e);
-          push(backward, e.from, e.type, e);
+          if (fresh) {
+            push(forward, e.to, e.type, e);
+            push(backward, e.from, e.type, e);
+          }
+          note(forward, e.to, e.type, k);
+          note(backward, e.from, e.type, k);
         }
+      }
+      // Written order doesn't depend on which chunk came first: a chunk holding
+      // every edge a list already has (the edges' home chunk; another chunk's
+      // reverse-index copies are a subset of it) sets that list's order.
+      for (const l of byKey.values()) {
+        const list = l.adj.get(l.id)!;
+        const current = list.get(l.type)!;
+        const written = [...new Set(l.edges)];
+        if (written.length === current.length && written.every((e, i) => e === current[i])) continue;
+        const has = new Set(written);
+        if (current.every((e) => has.has(e))) list.set(l.type, written);
       }
       version++;
       listeners.forEach((l) => l());

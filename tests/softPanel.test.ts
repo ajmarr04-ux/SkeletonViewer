@@ -1,7 +1,7 @@
 // M9 session AH: the info panel's kind-specific sections (spec §7; plan
 // decision 9) and "Show attached muscles" (spec §5.4; plan decision 10), on the
 // real content.
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import ids from "../content/ids.json";
 import { compileAllSoftFromDisk } from "../scripts/lib/content-files";
 import { attachedBoneOf, attachedTo, attachedKey, groupAncestors, groupOf, isGroupKey, ancestorsOf } from "../src/content/groups";
@@ -20,6 +20,16 @@ const hasMesh = (id: string) => BONE_MESH.has(id) || softEntry(id)?.mesh === tru
 const SOFT = compileAllSoftFromDisk();
 const muscle = (id: string) => softSections(id, SOFT.muscles) as MuscleSections;
 const ids_ = (l: { id: string }[]) => l.map((x) => x.id);
+/** M12 BD: the sections read the graph, so the section tests register the chunks as the loader does (and forget them after). */
+function withChunks() {
+  beforeAll(() => {
+    for (const l of ["muscles", "ligaments", "cartilage"] as const) registerSoftContent(l, SOFT[l]);
+  });
+  afterAll(() => {
+    resetSoftContent();
+    resetAppGraph();
+  });
+}
 
 afterAll(() => {
   resetSoftContent();
@@ -27,6 +37,7 @@ afterAll(() => {
 });
 
 describe("muscle and part sections", () => {
+  withChunks();
   it("a muscle with parts: Parts, each part's origin named by the part, its insertion with the landmark, actions, innervation, clinical note", () => {
     const s = muscle("triceps_brachii_left");
     expect(s.kind).toBe("muscle");
@@ -113,6 +124,7 @@ describe("muscle and part sections", () => {
 });
 
 describe("ligament and cartilage sections", () => {
+  withChunks();
   it("a ligament: joint name, Connects links, functions, clinical note", () => {
     const s = softSections("anterior_cruciate_ligament_left", SOFT.ligaments) as JoinSections;
     expect(s).toMatchObject({ kind: "ligament", joint: "Knee joint (tibiofemoral)" });

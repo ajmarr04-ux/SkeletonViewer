@@ -74,6 +74,25 @@ describe("runtime graph", () => {
     expect(graph.neighbours("b1", "likes")).toEqual(["b2", "b4"]);
   });
 
+  it("keeps written order whichever chunk arrives first (a reverse-index copy before the home chunk)", () => {
+    const home = [e("b1", "likes", "b2"), e("b1", "likes", "g1"), e("b1", "likes", "g2")];
+    const reverse = [e("b1", "likes", "g1"), e("b1", "likes", "g2")]; // the gears' chunk: a subset, same order
+    for (const order of [
+      [home, reverse],
+      [reverse, home],
+    ]) {
+      const graph = createGraph(TYPES);
+      order.forEach((c, i) => graph.add(`c${i}`, c));
+      expect(graph.neighbours("b1", "likes")).toEqual(["b2", "g1", "g2"]);
+      expect(graph.edges()).toHaveLength(3);
+    }
+    // A chunk that doesn't hold the whole list only appends.
+    const graph = createGraph(TYPES);
+    graph.add("x", [e("b1", "likes", "g2")]);
+    graph.add("y", [e("b1", "likes", "b2")]);
+    expect(graph.neighbours("b1", "likes")).toEqual(["g2", "b2"]);
+  });
+
   it("tells listeners when a chunk arrives", () => {
     const { graph } = world({});
     let n = 0;

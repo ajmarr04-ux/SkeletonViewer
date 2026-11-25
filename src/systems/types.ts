@@ -76,18 +76,157 @@ export type RolesSpec = {
   roles(graph: Graph, id: string, index: unknown): Roles;
 };
 
+// --- Info panel (SPEC-platform §5.1; M12 plan decision 11) ---
+
+/** What every section has: its heading, the test ID the e2e specs select it by, and what it says when empty. */
+type SectionBase = {
+  title: string;
+  /** `data-testid` of the section (the e2e specs select by it). */
+  testId: string;
+  /** Shown when the section has nothing (its file is written). "Not written yet" covers an unwritten file. */
+  empty?: string;
+};
+
+/** How a links section orders its targets. */
+export type LinksOrder =
+  /** As the edges were written (an edge type's own order). */
+  | "written"
+  /** Sorted by ID. */
+  | "id"
+  /** Sorted by the label's name, then side, then ID (the bone's attached muscles). */
+  | "name";
+
+export type PanelSection = SectionBase &
+  (
+    | {
+        render: "text";
+        /** A field of the structure's content record. */
+        field: string;
+        /** `html`: compiled Markdown; `prose`: a paragraph; `line`: a short fact (an innervation). */
+        format: "html" | "prose" | "line";
+        /** While the field is empty, the parent's (a part's innervation), marked as inherited. */
+        inherit?: "parent";
+      }
+    | {
+        render: "list";
+        field: string;
+        /** Shown inline (the landmarks). */
+        inline?: boolean;
+        /** A count field shown with the list (the landmarks with a 3D position). */
+        count?: string;
+      }
+    | {
+        render: "links";
+        /** Edge type IDs (forward), inverse labels (backward) or symmetric types. */
+        edges: string | readonly string[];
+        order?: LinksOrder;
+        /** Leave out the targets of these step names (an antagonist that is also a synergist, M9 plan decision 7). */
+        exclude?: string;
+        /** Leave out edges whose meta has this key (a part's `also`). */
+        exceptMeta?: string;
+        /** Each link's detail: the name of the graph node in this meta key (an articulation's joint). */
+        detail?: { meta: string };
+        /** Hovering a link highlights the pair (the joint highlight). */
+        highlight?: "pair";
+        /** A second list under its own heading in the same section, whose targets leave the first (the neighbouring teeth). */
+        also?: { title: string; edges: string };
+        /** The target's name only, no link (a structure's joint, which isn't a structure). */
+        nameOnly?: true;
+        /** Left out of the panel while empty (a muscle without parts). */
+        omitEmpty?: true;
+        /** Empty ("Not written yet") while the structure's own file isn't written. */
+        needsContent?: true;
+      }
+    | {
+        render: "grouped-links";
+        /** One group per edge name, in this order. */
+        groups: readonly { edges: string; title: string; testId: string; role: string }[];
+        /** Leave out edges whose meta has this key (a part's inherited attachments). */
+        exceptMeta?: string;
+        order?: LinksOrder;
+        needsContent?: true;
+      }
+    | {
+        render: "actions-table";
+        /** The content field holding `{ joint, movement, role }` rows. */
+        field: string;
+        /** Role labels ("prime" → "prime mover"). */
+        roles: Readonly<Record<string, string>>;
+        /** A part's rows its own don't replace, from its parent (same joint and movement replace). */
+        inherit?: "parent";
+        /** A list field shown when there are no rows (spec §4.3). */
+        fallback?: string;
+      }
+    | {
+        /** The escape hatch (at most two uses; M12 plan decision 11): `component` names the view, `model` builds its data. */
+        render: "custom";
+        component: string;
+        model(ctx: PanelContext): unknown;
+      }
+  );
+
+/** What a kind's panel functions read: the structure, its content record, the layer's records and the graph. */
+export type PanelContext = {
+  id: string;
+  name: string;
+  kind: string;
+  layer: string;
+  side: "left" | "right" | "midline";
+  /** The structure's parent (a part's muscle), if any. */
+  parent: string | null;
+  partType: string | null;
+  /** The structure's content record (front matter plus compiled fields), or undefined while unwritten or unloaded. */
+  record: Readonly<Record<string, unknown>> | undefined;
+  /** Another structure's record from the same layer's content. */
+  recordOf(id: string): Readonly<Record<string, unknown>> | undefined;
+  /** A structure's (or graph node's) name. */
+  nameOf(id: string): string;
+  /** A link to a structure, labelled under this one (side only when it differs). */
+  link(id: string): { id: string; label: string };
+  /** A landmark's written name on a structure (from that structure's layer content), if loaded. */
+  landmarkName(structure: string, landmark: string): string | undefined;
+  /** A graph node's name (a joint), else the ID in words. */
+  nodeName(id: string): string;
+};
+
+/** Everything around the sections (spec §7): read from the kind instead of `if (kind === …)`. */
+export type PanelChrome = {
+  /** The line under the title when there is no Latin name. */
+  typeLine(ctx: PanelContext): string;
+  /** The classification badges, without the draft badge. */
+  badges(ctx: PanelContext): readonly string[];
+  /** The draft badge: always, or while the file says `reviewed: false` (or is unwritten). */
+  draft: "always" | "unreviewed";
+  /** The breadcrumb, and (kinds that can have a parent) which crumb names it, one level up, or null. */
+  trail(ctx: PanelContext): { trail: string[]; parentCrumb?: number | null };
+  /** Shown instead of the 3D view's Hide for a structure without a mesh (the wisdom teeth). */
+  noModelNote?: string;
+  /** The "Part of" line under the title. */
+  partOf?: true;
+  /** The common name: always (a placeholder while unwritten) or only when the file names one. */
+  common: "always" | "when-written";
+  /** While the file is unwritten: every section with its placeholder, or the first only. */
+  unwritten: "all-sections" | "first-section";
+};
+
 /** How the sidebar root is built (M12 defines and fills it). */
 export type TreeSpec = Record<string, never>;
 
 /** A kind's subtype (a muscle part's `partType`). */
 export type PartTypeSpec = {
   id: string;
+  /** In the type badge ("Muscle part: head"). */
+  label: string;
   /** Drawn in the layer's lighter tendon tint (spec §6.3). */
   tendinous?: boolean;
 };
 
 export type KindDescriptor = {
   id: string;
+  /** Its type badge ("Ligament", "Intervertebral disc"). */
+  label: string;
+  /** False where the name says the side already (teeth: "Upper right first molar"). */
+  sideInName?: false;
   /** For announcements ("3 parts"). Kinds with the same noun are counted together (a tooth counts as a bone). */
   noun: { one: string; many: string };
   /**
@@ -108,6 +247,10 @@ export type KindDescriptor = {
   partTypes?: readonly PartTypeSpec[];
   /** Origin and insertion tints (spec §5.3), from the graph and the layer's attachment patches. */
   roles?: RolesSpec;
+  /** The info panel's sections in render order (M12 plan decision 11). */
+  panel?: readonly PanelSection[];
+  /** Everything else in the panel. */
+  chrome?: PanelChrome;
 };
 
 export type LayerDescriptor = {

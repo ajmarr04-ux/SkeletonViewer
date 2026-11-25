@@ -5,6 +5,7 @@
 import { REGISTRY, SYSTEMS } from "./registered";
 import type { Graph } from "../graph/graph";
 import type { TierContext } from "../graph/query";
+import { edgeTypeIndex } from "../graph/edgeTypes";
 import type { EdgeTypeDescriptor } from "../graph/types";
 import type { KindDescriptor, LayerDescriptor, LayerMode, OverlaySpec, PresetDescriptor, RolesSpec, SystemDescriptor } from "./types";
 
@@ -171,6 +172,19 @@ export const DEBUG_CODES: ReadonlyMap<string, string> = new Map([...REGISTRY.map
 export const layersOfSystem = (system: SystemId): readonly LayerId[] => REGISTRY.filter((l) => l.system === system).map((l) => l.id);
 /** Every system's edge types, in system order (M12 plan decision 1). */
 export const EDGE_TYPES: readonly EdgeTypeDescriptor[] = SYSTEMS.flatMap((s): readonly EdgeTypeDescriptor[] => ("edgeTypes" in s ? s.edgeTypes : []));
+
+/** The edge type IDs a layer's panels read (its kinds' sections: links, groups, exclusions). */
+export function panelEdgeTypes(id: LayerId): ReadonlySet<string> {
+  const index = edgeTypeIndex(EDGE_TYPES);
+  const names = layerDescriptor(id).kinds.flatMap((k) =>
+    (k.panel ?? []).flatMap((s) => {
+      if (s.render === "links") return [...(typeof s.edges === "string" ? [s.edges] : s.edges), ...(s.also ? [s.also.edges] : []), ...(s.exclude ? [s.exclude] : [])];
+      if (s.render === "grouped-links") return s.groups.map((g) => g.edges);
+      return [];
+    }),
+  );
+  return new Set(names.map((n) => index.byLabel(n)!.type.id));
+}
 
 export const systemDescriptor = (system: SystemId): SystemDescriptor => SYSTEMS.find((s) => s.id === system)!;
 

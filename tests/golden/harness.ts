@@ -69,101 +69,86 @@ export async function buildTiers(): Promise<Golden> {
 // ---------------------------------------------------------------------------
 // panels.json
 
-type Link = { id: string; label: string };
+type Link = { id: string; label: string; detail?: string };
 /** A link as the panel shows it: "id | label" (with " | detail" where a row has one). */
 const link = (l: Link, detail?: string | null): string => (detail ? `${l.id} | ${l.label} | ${detail}` : `${l.id} | ${l.label}`);
 type Section = { title: string; links?: string[]; text?: (string | null)[]; html?: string | null };
+type SectionModel = import("../../src/panel/model").SectionModel;
+type AttachmentList = import("../../src/systems/musculoskeletal/muscles/panel").AttachmentList;
+
+/** One section as the golden records it, by render type (M12 BD: the generic panel model). */
+function recordSection(s: SectionModel): Section {
+  const { title } = s;
+  switch (s.render) {
+    case "text":
+      return s.format === "line" ? { title, text: s.value === null ? [] : [s.value + (s.inherited ? " (as the whole muscle)" : "")] } : { title, html: hash(s.value) };
+    case "list":
+      return { title, text: s.items ?? [], ...(s.count ? { links: [`positions: ${s.count}`] } : {}) };
+    case "links":
+      if (s.nameOnly) return { title, text: [s.links?.[0]?.label ?? null] };
+      return {
+        title,
+        links: (s.links ?? []).map((l) => link(l, l.detail)),
+        ...(s.also ? { text: [s.also.title, ...s.also.links.map((n) => link(n))] } : {}),
+      };
+    case "grouped-links":
+      return { title, ...(s.groups ? { text: s.groups.flatMap((g) => [g.title, ...g.links.map((l) => link(l))]) } : {}) };
+    case "actions-table": {
+      const act = (a: { joint: string; movement: string; role: string }) => `${a.joint} · ${a.movement} · ${a.role}`;
+      return {
+        title,
+        text: [
+          ...s.rows.map(act),
+          ...(s.inherited.length ? ["With the whole muscle", ...s.inherited.map(act)] : []),
+          ...(s.rows.length + s.inherited.length === 0 ? s.fallback : []),
+        ],
+      };
+    }
+    case "custom": {
+      // The one custom component (plan decision 11): an origin or insertion list.
+      const list = s.data as AttachmentList;
+      return {
+        title,
+        ...(list.inheritedFrom ? { text: [`As the whole muscle: ${link(list.inheritedFrom)}`] } : {}),
+        links: list.rows.map((r) => (r.link ? link(r.link, [r.landmark, r.part].filter(Boolean).join(" · ") || null) : `text | ${r.text}${r.part ? ` · ${r.part}` : ""}`)),
+      };
+    }
+  }
+}
 
 /**
  * For every ID, what the info panel shows (InfoPanel.tsx at M10): the title and
  * the line under it, Part of, the side pair, the badges, the common name, the
  * sections in order with their links (in order) and short texts, and the
  * breadcrumb trail. Prose (summary and clinical note HTML) is recorded as a
- * hash, so the file stays small but any change shows.
+ * hash, so the file stays small but any change shows. Since M12 BD it reads
+ * the generic panel model (`src/panel/model.ts`); a field the kind's chrome
+ * doesn't have is undefined and so left out, as the M10 golden did per kind.
  */
 export async function buildPanels(): Promise<Golden> {
   const { bones: boneContent, soft } = await loadEverything();
-  const { panelModel, landmarkName } = await import("../../src/content/panel");
-  const placeholder = await import("../../src/content/placeholder");
-  const { softPanelModel, softSections } = await import("../../src/content/softPanel");
-  const { softLayerOf } = await import("../../src/content/softRegistry");
+  const { panelModel, oppositeAcross } = await import("../../src/panel/model");
+  const { oppositeOf } = await import("../../src/content/placeholder");
+  const { softOpposite } = await import("../../src/content/softRegistry");
+  const { EAGER_LAYER } = await import("../../src/systems/registry");
   const { bones, soft: softIds } = await allIds();
+  const contents: Record<string, unknown> = { [EAGER_LAYER]: boneContent, ...soft };
+  const inputs = { content: (layer: string) => (contents[layer] ?? null) as Record<string, unknown> | null, opposite: oppositeAcross(oppositeOf, softOpposite) };
   const out: Golden = {};
-
-  for (const id of bones) {
-    const m = panelModel(id, boneContent)!;
-    const base = placeholder.panelModel(id)!;
-    const sections: Section[] = [
-      { title: "Summary", html: hash(m.summary) },
-      { title: "Functions", text: m.functions ?? [] },
-      {
-        title: "Articulations",
-        links: m.articulations.map((a) => link(a, a.name)),
-        ...(m.kind === "tooth" && m.neighbours.length > 0 ? { text: ["Neighbouring teeth", ...m.neighbours.map((n) => link(n))] } : {}),
-      },
-      { title: "Key landmarks", text: m.landmarks ?? [], ...(m.landmarkPositions ? { links: [`positions: ${m.landmarkPositions}`] } : {}) },
-      {
-        title: "Attached muscles",
-        ...(m.origins && m.insertions ? { text: ["Origins", ...m.origins.map((l) => link(l)), "Insertions", ...m.insertions.map((l) => link(l))] } : {}),
-      },
-      { title: "Clinical note", html: hash(m.clinical) },
-    ];
+  for (const id of [...bones, ...softIds]) {
+    const m = panelModel(id, inputs)!;
     out[id] = {
-      title: m.name,
-      subtitle: m.latin ?? (m.written ? "" : "Latin name not written yet"),
+      title: m.title,
+      subtitle: m.subtitle.text,
+      partOf: m.partOf === undefined ? undefined : m.partOf ? `${m.partOf.id} | ${m.partOf.name}` : null,
       common: m.common,
       written: m.written,
       pair: m.pair,
-      badges: [m.badges.region, m.badges.type, ...(m.badges.draft ? ["Draft — not yet reviewed"] : [])],
+      badges: [...m.badges, ...(m.draft ? ["Draft — not yet reviewed"] : [])],
       note: m.note,
-      sections,
-      trail: base.trail,
-    };
-  }
-
-  for (const id of softIds) {
-    const layer = softLayerOf(id)!;
-    const content = soft[layer];
-    const m = softPanelModel(id, content)!;
-    const s = softSections(id, content, (b, l) => landmarkName(boneContent[b], l));
-    const sections: Section[] = [{ title: "Summary", html: hash(m.summary) }];
-    if (s?.kind === "muscle") {
-      const rows = (list: typeof s.origin) => ({
-        ...(list.inheritedFrom ? { text: [`As the whole muscle: ${link(list.inheritedFrom)}`] } : {}),
-        links: list.rows.map((r) => (r.link ? link(r.link, [r.landmark, r.part].filter(Boolean).join(" · ") || null) : `text | ${r.text}${r.part ? ` · ${r.part}` : ""}`)),
-      });
-      const act = (a: { joint: string; movement: string; role: string }) => `${a.joint} · ${a.movement} · ${a.role}`;
-      if (s.parts.length > 0) sections.push({ title: "Parts", links: s.parts.map((l) => link(l)) });
-      sections.push({ title: "Origin", ...rows(s.origin) });
-      sections.push({ title: "Insertion", ...rows(s.insertion) });
-      sections.push({
-        title: "Actions",
-        text: [
-          ...s.actions.map(act),
-          ...(s.inheritedActions.length ? ["With the whole muscle", ...s.inheritedActions.map(act)] : []),
-          ...(s.actions.length + s.inheritedActions.length === 0 ? s.functions : []),
-        ],
-      });
-      sections.push({ title: "Synergists", links: s.synergists.map((l) => link(l)) });
-      sections.push({ title: "Antagonists", links: s.antagonists.map((l) => link(l)) });
-      sections.push({ title: "Innervation", text: s.innervation ? [s.innervation.text + (s.innervation.inheritedFrom ? " (as the whole muscle)" : "")] : [] });
-      sections.push({ title: "Clinical note", html: hash(s.clinical) });
-    } else if (s) {
-      sections.push({ title: "Joint", text: [s.joint] });
-      sections.push({ title: s.kind === "ligament" ? "Connects" : "Attached to", links: s.links.map((l) => link(l)) });
-      sections.push({ title: "Functions", text: s.functions });
-      sections.push({ title: "Clinical note", html: hash(s.clinical) });
-    }
-    out[id] = {
-      title: m.name,
-      subtitle: m.latin ?? (m.side === "midline" ? m.badges.kind : `${m.badges.kind}, ${m.side}`),
-      partOf: m.partOf ? `${m.partOf.id} | ${m.partOf.name}` : null,
-      common: m.common,
-      written: m.written,
-      pair: m.pair,
-      badges: [m.badges.layer, m.badges.kind, "Draft — not yet reviewed"],
-      meshAvailable: m.meshAvailable,
-      sections,
+      // The M10 golden recorded it where there is no no-model note (the soft panels' Hide reads it; the bones' note says it).
+      meshAvailable: m.note === undefined ? m.meshAvailable : undefined,
+      sections: m.sections.map(recordSection),
       trail: m.trail,
       parentCrumb: m.parentCrumb,
     };

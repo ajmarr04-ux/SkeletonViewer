@@ -1,7 +1,18 @@
 // The muscles layer: muscles and their parts (M6), the outermost layer.
 import type { KindTiers } from "../../../graph/types";
 import { defineLayer, type RolesSpec } from "../../types";
+import { MUSCLE_SECTIONS, PART_SECTIONS, muscleChrome } from "./panel";
 import { muscleRoles, patchIndex, type PatchIndex } from "./roles";
+
+const LABEL = "Muscles";
+/** Tendons and aponeuroses get the lighter muscle colour (spec §6.3). */
+const PART_TYPES = [
+  { id: "head", label: "Head" },
+  { id: "belly", label: "Belly" },
+  { id: "portion", label: "Portion" },
+  { id: "tendon", label: "Tendon", tendinous: true },
+  { id: "aponeurosis", label: "Aponeurosis", tendinous: true },
+] as const;
 
 const ATTACHMENTS = ["originates_on", "inserts_on"];
 
@@ -25,7 +36,7 @@ export const muscles = defineLayer({
   id: "muscles",
   system: "musculoskeletal",
   code: "m",
-  label: "Muscles",
+  label: LABEL,
   ghostOrder: 3,
   // M10 session AL (M7: #a8483f): the old swatch was under 3:1 on the legend.
   colour: { material: "#b44d43", debug: "#a8524c" },
@@ -56,6 +67,7 @@ export const muscles = defineLayer({
   kinds: [
     {
       id: "muscle",
+      label: "Muscle",
       noun: { one: "muscle", many: "muscles" },
       labelPriority: 0,
       // The most parts any muscle has (checked against content/soft-ids.json in tests/nestedSelection.test.ts).
@@ -63,15 +75,19 @@ export const muscles = defineLayer({
       parentOf: { childKind: "muscle_part", selection: "nested", maxParts: 3, via: { type: "part_of", except: "also" } },
       tiers: MUSCLE_TIERS,
       roles: ROLES,
+      panel: MUSCLE_SECTIONS,
+      chrome: muscleChrome("Muscle", LABEL),
     },
     {
       id: "muscle_part",
+      label: "Muscle part",
       noun: { one: "part", many: "parts" },
       labelPriority: 1,
       tiers: MUSCLE_TIERS,
       roles: ROLES,
-      // Tendons and aponeuroses get the lighter muscle colour (spec §6.3).
-      partTypes: [{ id: "head" }, { id: "belly" }, { id: "portion" }, { id: "tendon", tendinous: true }, { id: "aponeurosis", tendinous: true }],
+      partTypes: PART_TYPES,
+      panel: PART_SECTIONS,
+      chrome: muscleChrome("Muscle part", LABEL, PART_TYPES),
     },
   ],
 });

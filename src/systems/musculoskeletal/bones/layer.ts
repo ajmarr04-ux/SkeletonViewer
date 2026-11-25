@@ -1,6 +1,7 @@
 // The bones layer: bones and teeth (`content/ids.json`), loaded with the main chunk.
 import type { KindTiers } from "../../../graph/types";
 import { defineLayer } from "../../types";
+import { BONE_PANEL, TOOTH_PANEL } from "./panel";
 
 /** The soft structures that name a bone: cartilage on it, ligaments connecting it, muscles attached (layer order, then ID). */
 const NAMED_BY = ["has attached", "connected by", "origin of", "insertion of"];
@@ -33,7 +34,7 @@ export const bones = defineLayer({
   defaultSetting: "on",
   // Below every other layer for the labels' focus; teeth are counted as bones.
   kinds: [
-    { id: "bone", noun: { one: "bone", many: "bones" }, labelPriority: 6, tiers: BONE_TIERS },
-    { id: "tooth", noun: { one: "bone", many: "bones" }, labelPriority: 6, tiers: BONE_TIERS },
+    { id: "bone", label: "Bone", noun: { one: "bone", many: "bones" }, labelPriority: 6, tiers: BONE_TIERS, ...BONE_PANEL },
+    { id: "tooth", label: "Tooth", sideInName: false, noun: { one: "bone", many: "bones" }, labelPriority: 6, tiers: BONE_TIERS, ...TOOTH_PANEL },
   ],
 });

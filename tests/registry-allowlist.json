@@ -48,21 +48,13 @@
       "milestone": "M12",
       "reason": "Bone display names (teeth have no side suffix); M12 moves display names onto the panel descriptor."
     },
-    "src/content/panel.ts": {
-      "milestone": "M12",
-      "reason": "The bone panel model (tooth type line, names); M12 puts the bones on the shared panel."
-    },
-    "src/content/placeholder.ts": {
-      "milestone": "M12",
-      "reason": "The bone placeholder panel (tooth badges and names); M12's shared panel."
-    },
     "src/content/schema.ts": {
       "milestone": "M12",
       "reason": "The bone front-matter schema (bone/tooth kinds); M12 moves the bones onto the content halves' per-kind schemas."
     },
     "src/content/softPanel.ts": {
       "milestone": "M12",
-      "reason": "The soft panel's per-kind sections, labels and tier wording; M12's PanelSpec."
+      "reason": "M12 BD made it an adapter over src/panel/model.ts; left: the M9 section union InfoPanel.tsx renders (BE deletes it) and softAnnouncement's tier wording (BG)."
     },
     "src/content/softTree.ts": {
       "milestone": "M12",

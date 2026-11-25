@@ -1,12 +1,15 @@
 // The ligaments layer (M6).
 import { defineLayer } from "../../types";
+import { jointChrome, jointPanel } from "../jointPanel";
 import { jointTiers } from "../jointTiers";
+
+const LABEL = "Ligaments";
 
 export const ligaments = defineLayer({
   id: "ligaments",
   system: "musculoskeletal",
   code: "l",
-  label: "Ligaments",
+  label: LABEL,
   ghostOrder: 2,
   // M10 session AL (M7: #d9dde3): the old colour was too close to the hover outline.
   colour: { material: "#cccccc", debug: "#e4e0d6" },
@@ -19,5 +22,15 @@ export const ligaments = defineLayer({
   },
   contentChunk: "virtual:skeleton-soft-content-ligaments",
   defaultSetting: "off",
-  kinds: [{ id: "ligament", noun: { one: "ligament", many: "ligaments" }, labelPriority: 2, tiers: jointTiers("connects") }],
+  kinds: [
+    {
+      id: "ligament",
+      label: "Ligament",
+      noun: { one: "ligament", many: "ligaments" },
+      labelPriority: 2,
+      tiers: jointTiers("connects"),
+      panel: jointPanel("Connects", "connects", "connects"),
+      chrome: jointChrome("Ligament", LABEL),
+    },
+  ],
 });

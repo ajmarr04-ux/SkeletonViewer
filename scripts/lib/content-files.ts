@@ -4,7 +4,6 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { boneAttachedRows, type BoneAttachedRows } from "../../src/content/compile";
 import { splitFrontMatter } from "../../src/content/frontmatter";
 import { oppositeOf } from "../../src/content/placeholder";
 import { encodeEdges, type EdgeWire } from "../../src/graph/codec";
@@ -13,7 +12,7 @@ import type { Edge } from "../../src/graph/types";
 import { compileSoftLayer, withShipped, type SoftCompileDeps, type SoftLayerContent } from "../../src/content/softCompile";
 import type { SoftIdEntry } from "../../src/content/softValidate";
 import type { IdEntry } from "../../src/content/validate";
-import { EAGER_LAYER, EDGE_TYPES, LAZY_LAYERS, NESTED_LAYER, layerOfKind, type LazyLayerId } from "../../src/systems/registry";
+import { EAGER_LAYER, EDGE_TYPES, LAZY_LAYERS, layerOfKind, panelEdgeTypes, type LazyLayerId } from "../../src/systems/registry";
 import { compileContentGraph, contentFolder, layerContent } from "../../src/systems/registry.content";
 import type { Patch } from "../../src/systems/types";
 
@@ -164,14 +163,18 @@ export function readEagerEdges(): EdgeWire {
   return encodeEdges(shippedEdges(compileGraphFromDisk(layers).edges)[EAGER_LAYER] ?? []);
 }
 
-/** Each bone's derived Origins and Insertions for the panel (M8 plan decision 13, M9 decision 9), from the muscles layer's content (the nested layer). */
-export function readBoneAttached(): Record<string, BoneAttachedRows> {
-  const muscles = compileSoftFromDisk(NESTED_LAYER);
-  const soft = new Map(readSoftIds().map((e) => [e.id, e]));
-  return boneAttachedRows(muscles.derived?.attached ?? {}, (id) => {
-    const e = soft.get(id);
-    return { name: muscles.entries[id]?.fm.name ?? e?.name ?? id, side: e?.side ?? "midline" };
-  });
+/**
+ * The edges the eager layer's content chunk ships (M12 BD): those between it
+ * and a lazy layer, of the types its kinds' panels read (a bone's attached
+ * muscles), so its panel needs no lazy chunk. Registered when the chunk loads.
+ */
+export function readEagerContentEdges(): EdgeWire {
+  const layers = Object.fromEntries(LAZY_LAYERS.map((l) => [l, compileSoftFromDisk(l)])) as Record<LazyLayerId, SoftLayerContent>;
+  const types = panelEdgeTypes(EAGER_LAYER);
+  const eager = new Set(readStructures().filter((e) => layerOfKind(e.kind) === EAGER_LAYER).map((e) => e.id));
+  const known = new Set(readStructures().map((e) => e.id));
+  const lazy = (id: string) => known.has(id) && !eager.has(id);
+  return encodeEdges(compileGraphFromDisk(layers).edges.filter((e) => types.has(e.type) && ((eager.has(e.to) && lazy(e.from)) || (eager.has(e.from) && lazy(e.to)))));
 }
 
 /**

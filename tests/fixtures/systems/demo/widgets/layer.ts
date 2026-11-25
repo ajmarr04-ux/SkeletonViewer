@@ -22,9 +22,9 @@ export const widgets = defineLayer({
   },
   defaultSetting: "off",
   kinds: [
-    { id: "gear", noun: { one: "gear", many: "gears" }, labelPriority: 7 },
-    { id: "spring", noun: { one: "spring", many: "springs" }, labelPriority: 8 },
-    { id: "lever", noun: { one: "lever", many: "levers" }, labelPriority: 9 },
+    { id: "gear", label: "Gear", noun: { one: "gear", many: "gears" }, labelPriority: 7 },
+    { id: "spring", label: "Spring", noun: { one: "spring", many: "springs" }, labelPriority: 8 },
+    { id: "lever", label: "Lever", noun: { one: "lever", many: "levers" }, labelPriority: 9 },
   ],
 });
 

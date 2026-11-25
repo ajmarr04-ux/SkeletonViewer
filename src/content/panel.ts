@@ -1,16 +1,18 @@
-// The info panel's model (spec §7) from the compiled content (plan step 4).
-// Objects whose file isn't written yet fall back to the placeholder text
-// ("Not written yet"); the articulations always come from the graph's
-// `articulates_with` edges (articulations.json, M12), named by their joint node.
+// The bone panel's M4 shape, read off the generic panel model (src/panel/model.ts;
+// M12 BD) for InfoPanel.tsx until it renders the sections itself (BE, which
+// deletes this file). No kind switch here: the sections are the bone kinds'
+// descriptors (src/systems/musculoskeletal/bones/panel.ts).
 
-import type { AttachedRow, CompiledContent, CompiledEntry } from "./compile";
-import { groupTrail } from "./labels";
-import { panelModel as placeholderModel, type PanelModel as PlaceholderModel } from "./placeholder";
-import { appGraph } from "./appGraph";
-import { indexNode } from "./index";
+import { isEagerId } from "./index";
+import type { CompiledContent, CompiledEntry } from "./compile";
+import { oppositeOf, type PanelModel as PlaceholderModel } from "./placeholder";
+import { panelModel as generic, structureLabel, type PanelLink as GenericLink, type SectionModel } from "../panel/model";
+import { EAGER_LAYER } from "../systems/registry";
 import ids from "../../content/ids.json";
 
-type Entry = { id: string; name: string; side: "left" | "right" | "midline"; kind: string; meshAvailable: boolean };
+export { typeLabel } from "../systems/musculoskeletal/bones/panel";
+
+type Entry = { id: string; side: "left" | "right" | "midline" };
 const BY_ID = new Map((ids as Entry[]).map((e) => [e.id, e]));
 
 export type PanelLink = { id: string; label: string };
@@ -30,38 +32,15 @@ export type PanelModel = Omit<PlaceholderModel, "sections" | "latin" | "common">
   landmarks: string[] | null;
   /** How many landmarks have a 3D position (none yet: plan decision 9). */
   landmarkPositions: number;
-  /**
-   * Attached muscles (spec §5.4; M9 plan decision 9): the muscles and parts
-   * with their origin, and those with their insertion, on this bone, each a
-   * link. Null while the content is unwritten.
-   */
+  /** Attached muscles (spec §5.4): the muscles and parts with their origin, and those with their insertion, on this bone. Null while unwritten. */
   origins: PanelLink[] | null;
   insertions: PanelLink[] | null;
   clinical: string | null;
 };
 
-const TYPE_LABELS: Record<CompiledEntry["type"], string> = {
-  long: "Long bone",
-  short: "Short bone",
-  flat: "Flat bone",
-  irregular: "Irregular bone",
-  sesamoid: "Sesamoid bone",
-  tooth: "Tooth",
-};
-
-/** The type badge: "Flat bone", or "Tooth type: molar". */
-export function typeLabel(c: CompiledEntry): string {
-  if (c.type === "tooth" && c.toothType) return `Tooth type: ${c.toothType}`;
-  return TYPE_LABELS[c.type];
-}
-
 /** A partner's name as listed under the focus: the side only when it differs ("Rib 1 (right)"). */
 export function linkLabel(id: string, focus: string): string {
-  const e = BY_ID.get(id);
-  if (!e) return id;
-  const f = BY_ID.get(focus);
-  if (e.side === "midline" || e.kind === "tooth" || e.side === f?.side) return e.name;
-  return `${e.name} (${e.side})`;
+  return BY_ID.has(id) ? structureLabel(id, BY_ID.get(focus)?.side ?? "midline") : id;
 }
 
 /** A bone's landmark name by its ID, if written (the muscle panels name an attachment's landmark). */
@@ -71,38 +50,43 @@ export function landmarkName(c: CompiledEntry | undefined, landmark: string): st
 }
 
 /** A muscle or part attached to a bone: its name, with the side only when it differs from the bone's (both sides on a midline bone). */
-export function attachedLabel(row: AttachedRow, boneSide: Entry["side"]): string {
+export function attachedLabel(row: { id: string; name: string; side: Entry["side"] }, boneSide: Entry["side"]): string {
   return row.side === "midline" || row.side === boneSide ? row.name : `${row.name} (${row.side})`;
 }
 
+const plain = (l: GenericLink): PanelLink => ({ id: l.id, label: l.label });
+
 export function panelModel(id: string, content: CompiledContent | null): PanelModel | null {
-  const base = placeholderModel(id);
-  if (!base) return null;
-  const { sections: _sections, ...rest } = base;
-  const c = content?.[id] ?? null;
-  const graph = appGraph();
-  const neighbours = new Set(graph.neighbours(id, "adjacent_tooth"));
-  const articulations = graph
-    .out(id, "articulates_with")
-    .map((e) => ({ other: e.from === id ? e.to : e.from, joint: e.meta?.joint ?? "" }))
-    .filter((a) => !neighbours.has(a.other))
-    .map((a) => ({ id: a.other, label: linkLabel(a.other, id), joint: a.joint, name: indexNode(a.joint)?.name ?? a.joint }));
+  if (!isEagerId(id)) return null;
+  const m = generic(id, { content: (layer) => (layer === EAGER_LAYER ? content : null), opposite: oppositeOf });
+  if (!m) return null;
+  const by = new Map(m.sections.map((s) => [s.testId, s]));
+  const text = (k: string) => (by.get(k) as Extract<SectionModel, { render: "text" }> | undefined)?.value ?? null;
+  const list = (k: string) => by.get(k) as Extract<SectionModel, { render: "list" }> | undefined;
+  const links = m.sections.find((s): s is Extract<SectionModel, { render: "links" }> => s.render === "links")!;
+  const groups = m.sections.find((s): s is Extract<SectionModel, { render: "grouped-links" }> => s.render === "grouped-links")!.groups;
   return {
-    ...rest,
-    latin: c?.latin ?? null,
-    common: c ? c.common : null,
-    badges: c
-      ? { region: groupTrail(c.region)[0] ?? base.badges.region, type: typeLabel(c), draft: !c.reviewed }
-      : base.badges,
-    written: c !== null,
-    summary: c?.summary ?? null,
-    functions: c?.functions ?? null,
-    articulations,
-    neighbours: [...neighbours].filter((t) => BY_ID.has(t)).map((t) => ({ id: t, label: linkLabel(t, id) })),
-    landmarks: c?.landmarks ?? null,
-    landmarkPositions: c?.landmarkPositions ?? 0,
-    origins: c ? c.attached.origins.map((r) => ({ id: r.id, label: attachedLabel(r, base.side) })) : null,
-    insertions: c ? c.attached.insertions.map((r) => ({ id: r.id, label: attachedLabel(r, base.side) })) : null,
-    clinical: c ? c.clinical : null,
+    id,
+    name: m.title,
+    side: m.side,
+    kind: m.kind as PlaceholderModel["kind"],
+    latin: m.subtitle.latin ? m.subtitle.text : null,
+    common: m.common,
+    badges: { region: m.badges[0]!, type: m.badges[1]!, draft: m.draft },
+    trail: m.trail,
+    meshAvailable: m.meshAvailable,
+    note: m.note ?? null,
+    opposite: oppositeOf(id),
+    pair: m.pair,
+    written: m.written,
+    summary: text("summary"),
+    functions: list("functions")?.items ?? null,
+    articulations: (links.links ?? []).map((l) => ({ id: l.id, label: l.label, joint: l.node ?? "", name: l.detail ?? "" })),
+    neighbours: (links.also?.links ?? []).map(plain),
+    landmarks: list("landmarks")?.items ?? null,
+    landmarkPositions: list("landmarks")?.count ?? 0,
+    origins: groups ? groups[0]!.links.map(plain) : null,
+    insertions: groups ? groups[1]!.links.map(plain) : null,
+    clinical: text("clinical"),
   };
 }

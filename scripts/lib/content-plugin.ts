@@ -14,7 +14,7 @@ import { marked } from "marked";
 import type { Plugin } from "vite";
 import { compileContent } from "../../src/content/compile";
 import { LAZY_LAYERS, NESTED_LAYER, layerDescriptor } from "../../src/systems/registry";
-import { bonesDir, compileAllSoftFromDisk, readBoneAttached, readContentFiles, readEagerEdges, root, softDir } from "./content-files";
+import { bonesDir, compileAllSoftFromDisk, readContentFiles, readEagerContentEdges, readEagerEdges, root, softDir } from "./content-files";
 import { readSearchData, readSoftSearchData } from "./search-data";
 import { readSoftTree } from "./soft-tree-data";
 
@@ -93,11 +93,11 @@ export function contentPlugin(): Plugin {
       const files = readContentFiles();
       for (const name of files.keys()) this.addWatchFile(`${bonesDir}/${name}.md`);
       if (id === RESOLVED_CONTENT) {
-        // The bones' muscle lists are derived from the muscles layer's files (M8 session AD).
+        // The bones' attached muscles are edges from the muscles layer's files (M8 session AD; M12 BD).
         this.addWatchFile(softDir(NESTED_LAYER));
         softDeps.forEach((f) => this.addWatchFile(f));
       }
-      if (id === RESOLVED_CONTENT) return `export default ${JSON.stringify(compileContent(files, readBoneAttached()))};`;
+      if (id === RESOLVED_CONTENT) return `export default ${JSON.stringify(compileContent(files))};\nexport const edges = ${JSON.stringify(readEagerContentEdges())};`;
       this.addWatchFile(synonymsFile);
       return `export default ${JSON.stringify(readSearchData())};`;
     },

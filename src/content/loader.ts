@@ -3,6 +3,8 @@
 // text never delays the first frame.
 
 import { useEffect, useSyncExternalStore } from "react";
+import { EAGER_LAYER } from "../systems/registry";
+import { registerContentEdges } from "./appGraph";
 import type { CompiledContent } from "./compile";
 
 let content: CompiledContent | null = null;
@@ -12,6 +14,8 @@ const listeners = new Set<() => void>();
 export function loadContent(): Promise<CompiledContent> {
   if (content) return Promise.resolve(content);
   pending ??= import("virtual:skeleton-content").then((m) => {
+    // The attachment edges into the bones, so their panels need no lazy chunk (M12 BD).
+    registerContentEdges(`${EAGER_LAYER}-content`, m.edges);
     content = m.default;
     listeners.forEach((l) => l());
     return content;

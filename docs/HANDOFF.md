@@ -1,20 +1,20 @@
-# Handoff — written 2026-11-25 at the end of M12 BC
+# Handoff — written 2026-11-25 at the end of M12 BD
 
 ## Next session
-BD (design): panel sections as data (plan decision 11, step 5). `PanelSection` types in `src/systems/types.ts`; `panel` on every kind; `src/panel/model.ts` (sections + chrome) turns an ID + its layer's content + the graph into what `panels.json` records; the `attachments` custom section's model. The golden harness reads the new model.
-Done when: `panels.json` unchanged (harness imports only); `panel.ts`, `placeholder.ts`, `softPanel.ts` keep only what `InfoPanel.tsx` still imports until BE (listed in the notes), with no kind switches left; `npm run check` green.
+BE (routine): `InfoPanel.tsx` renders the sections in descriptor order (plan step 6).
+Done when: one `Sections` component maps `render` → `TextSection`, `ListSection`, `LinksSection`, `GroupedLinksSection`, `ActionsTable` and the `custom` map (`attachments` only); `Body`, `SoftBody`, `MuscleSectionsView`, `JoinSectionsView` deleted; the BD adapters deleted; test IDs kept; e2e `panel`, `soft-content`, `attached`, `nested`, `a11y`, `all-objects` pass unchanged; `npm run check` green.
 
 ## State
-- Last commit: M12 BC: ship the graph in the chunks; tiers, roles and tints on it (see `git log`).
-- `npm run check`: pass (651 tests, the five goldens unchanged). E2E `tiers`, `tints`, `related`, `attached`, `joints`, `nested`, `labels-layers`, `fixture`: 36 pass.
+- Last commit: M12 BD: panel sections as data, one generic panel model (see `git log`).
+- `npm run check`: pass (652 tests, the five goldens unchanged). E2E panel/attached/soft-content/nested/tiers/related/joints/tints/a11y: 53 pass.
 - Open fan-out work: none
 
 ## Waiting on the user
 none
 
 ## Things the next session must know
-- The runtime graph is `src/content/appGraph.ts`: `appGraph()` (eager edges added on first use), `tiers()` (engine), `rolesOf`, `structureLoaded`, `useGraphVersion`. Lazy chunks register through `registerSoftContent` (`softContentLoader.ts`); tests use it plus `resetSoftContent()` + `resetAppGraph()`.
-- Joint names: `indexNode(joint)?.name`. Bone articulations: `appGraph().out(id, "articulates_with")` (meta `joint`); neighbouring teeth `neighbours(id, "adjacent_tooth")` (mesial first). `panel.ts` names them today (allowlisted); BD should move that into the bone kind's panel descriptor.
-- The muscles chunk still ships `derived` (synergists, antagonists, attached: about 18.6 kB gzip) because `softPanel.ts` and `attachedTo` (now in `groups.ts`) read it. Once BD reads them off the graph (`synergist_of`, `antagonist_of`, inverse `origin of`/`insertion of` without meta `inherited`), `derived` can leave the chunk.
-- Roles live in `src/systems/musculoskeletal/muscles/roles.ts` (`KindDescriptor.roles`); the chunk's `patches` field feeds them. `npm run content:patch-check -- --check` must stay "up to date".
+- The model is `src/panel/model.ts` (`panelModel(id, { content(layer), opposite })`, `SectionModel` by `render`); sections and chrome live on the kinds (`bones/panel.ts`, `muscles/panel.ts`, `jointPanel.ts`). Each section carries `testId` and `empty`; `written` false → "Not written yet". Chrome: `commonShown`, `note`, `partOf`, `parentCrumb` (undefined = the kind doesn't show it). Use `oppositeAcross(oppositeOf, softOpposite)` for `opposite`.
+- Adapters to delete in BE: `panel.ts` (whole), `placeholder.ts`'s `panelModel`/`SECTION_TITLES` (keep `oppositeOf`, announcements for BG), `softPanel.ts`'s `softPanelModel`/`softSections` and types (keep `softAnnouncement` for BG). `Breadcrumb.tsx` reads `trail`/`parentCrumb` from them too. Tests `panel.test.ts`, `softPanel.test.ts`, `placeholder.test.ts`, `nestedSelection.test.ts`, `sceneView.test.ts` import them: rewrite against the model, listing why.
+- The bones' content chunk now exports `edges` (attachment edges into bones), registered by `loader.ts`; `CompiledEntry.attached` is gone. The muscles chunk's `derived` is no longer read by the panel (still by `attachedTo`, patch-check, migrate-attachments).
+- `Graph.add`: a chunk holding a node's whole list sets its order (written order no longer depends on load order).
 - Goldens: never `--write --force` without the user's approval. QUESTIONS: next is 140.

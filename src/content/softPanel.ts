@@ -1,32 +1,18 @@
-// The info panel's model for the new kinds: built from the soft-tissue table
-// (name, kind, layer, side, the muscle a part belongs to; M7 plan decision 12)
-// plus, once its layer's content chunk is loaded, the written Latin name and
-// summary (M8 plan decision 11). The kind-specific sections are M9's. Nothing is
-// invented here (spec §12).
+// The soft-tissue panels' M9 shapes, read off the generic panel model
+// (src/panel/model.ts; M12 BD) for InfoPanel.tsx until it renders the
+// sections itself (BE, which deletes the adapters). No kind switch here: the
+// sections and chrome are the kinds' descriptors (src/systems/musculoskeletal/).
+// `softAnnouncement` stays until the announcements move to the descriptors (BG).
 
-import { layerLabel } from "../systems/registry";
+import { isEagerId } from "./index";
 import { softEntry, softOpposite } from "./softRegistry";
-import type { SoftKind, SoftId } from "../layers/softIds";
+import type { SoftId } from "../layers/softIds";
 import type { SoftLayerContent } from "./softCompile";
-import type { Action, Attachment } from "./softSchema";
-import boneIds from "../../content/ids.json";
+import { panelModel as generic, structureLabel as label, type ActionRow, type PanelModel as GenericModel, type SectionModel } from "../panel/model";
+import type { AttachmentList } from "../systems/musculoskeletal/muscles/panel";
 
-export const KIND_LABELS: Record<SoftKind, string> = {
-  muscle: "Muscle",
-  muscle_part: "Muscle part",
-  ligament: "Ligament",
-  cartilage: "Cartilage",
-  disc: "Intervertebral disc",
-  meniscus: "Meniscus",
-};
-
-const PART_LABELS: Record<NonNullable<SoftId["partType"]>, string> = {
-  head: "Head",
-  belly: "Belly",
-  portion: "Portion",
-  tendon: "Tendon",
-  aponeurosis: "Aponeurosis",
-};
+export { MUSCLE_REGION_LABELS, partLabel, type AttachmentList, type AttachmentRow } from "../systems/musculoskeletal/muscles/panel";
+export { words, type ActionRow } from "../panel/model";
 
 export type SoftPanelModel = {
   id: string;
@@ -36,12 +22,7 @@ export type SoftPanelModel = {
   badges: { layer: string; kind: string };
   /** The muscle a part belongs to, or null. */
   partOf: { id: string; name: string } | null;
-  /**
-   * Breadcrumb under "Skeleton" (spec §5.1 rule 4): `Muscles › Upper limb ›
-   * Triceps brachii › Long head` for a part, `Muscles › Upper limb › Triceps
-   * brachii` for a muscle (the region once the muscles' content is loaded),
-   * `Ligaments › <name>` for the others.
-   */
+  /** Breadcrumb under "Skeleton" (spec §5.1 rule 4). */
   trail: string[];
   /** The crumb that names a selected part's muscle (one level up), else null. */
   parentCrumb: number | null;
@@ -58,64 +39,35 @@ export type SoftPanelModel = {
   written: boolean;
 };
 
-/** The regions of content/muscle-hierarchy.json (checked in tests/nestedSelection.test.ts). */
-export const MUSCLE_REGION_LABELS: Record<string, string> = {
-  head: "Head",
-  neck: "Neck",
-  back: "Back",
-  thorax: "Thorax",
-  abdomen: "Abdomen",
-  pelvis_perineum: "Pelvis and perineum",
-  upper_limb: "Upper limb",
-  lower_limb: "Lower limb",
-};
+/** A landmark's written name from its bone's content (else its ID in words, capitalised). */
+export type LandmarkName = (structure: string, landmark: string) => string | undefined;
 
-/** A part's crumb: its name without "of <muscle>" ("Long head of triceps brachii" → "Long head"). */
-export function partLabel(name: string, muscle: string): string {
-  const tail = ` of ${muscle}`;
-  if (!name.toLowerCase().endsWith(tail.toLowerCase()) || name.length === tail.length) return name;
-  const head = name.slice(0, name.length - tail.length);
-  return head[0]!.toUpperCase() + head.slice(1);
+function model(id: string, content: SoftLayerContent | null, landmarkName?: LandmarkName): GenericModel | null {
+  if (isEagerId(id) || !softEntry(id)) return null;
+  const layer = softEntry(id)!.layer;
+  return generic(id, { content: (l) => (l === layer ? (content as unknown as Record<string, unknown>) : null), opposite: softOpposite, landmarkName: landmarkName ?? (() => undefined) });
 }
 
-/** A muscle's region label from its content file's `region`, if loaded. */
-function regionLabel(muscleId: string, content: SoftLayerContent | null): string | null {
-  const fm = content?.entries[muscleId]?.fm;
-  const key = fm && "region" in fm && Array.isArray(fm.region) ? fm.region[0] : undefined;
-  return key ? (MUSCLE_REGION_LABELS[key] ?? null) : null;
-}
+type Text = Extract<SectionModel, { render: "text" }>;
 
 export function softPanelModel(id: string, content: SoftLayerContent | null = null): SoftPanelModel | null {
-  const e = softEntry(id);
-  if (!e) return null;
-  const parent = e.parent ? softEntry(e.parent) : undefined;
-  const opposite = softOpposite(id);
-  const written = content?.entries[id];
-  const kind = e.kind === "muscle_part" && e.partType ? `Muscle part: ${PART_LABELS[e.partType].toLowerCase()}` : KIND_LABELS[e.kind];
+  const m = model(id, content);
+  if (!m) return null;
   return {
     id,
-    name: e.name,
-    side: e.side,
-    badges: { layer: layerLabel(e.layer), kind },
-    partOf: parent ? { id: parent.id, name: parent.name } : null,
-    ...trailOf(e, parent, content),
-    pair: opposite === null ? null : e.side === "left" ? { left: id, right: opposite } : { left: opposite, right: id },
-    meshAvailable: e.mesh || (e.parts?.length ?? 0) > 0,
-    latin: written?.latin ?? null,
-    common: written?.common ?? null,
-    summary: written?.summary ?? null,
-    written: written !== undefined,
+    name: m.title,
+    side: m.side,
+    badges: { layer: m.badges[0]!, kind: m.badges[1]! },
+    partOf: m.partOf ?? null,
+    trail: m.trail,
+    parentCrumb: m.parentCrumb ?? null,
+    pair: m.pair,
+    meshAvailable: m.meshAvailable,
+    latin: m.subtitle.latin ? m.subtitle.text : null,
+    common: m.common,
+    summary: (m.sections[0] as Text).value,
+    written: m.written,
   };
-}
-
-function trailOf(e: SoftId, parent: SoftId | undefined, content: SoftLayerContent | null): { trail: string[]; parentCrumb: number | null } {
-  const layer = layerLabel(e.layer);
-  if (e.layer !== "muscles") return { trail: [layer, e.name], parentCrumb: null };
-  const muscle = parent ?? e;
-  const region = regionLabel(muscle.id, content);
-  const top = region ? [layer, region] : [layer];
-  if (!parent) return { trail: [...top, e.name], parentCrumb: null };
-  return { trail: [...top, parent.name, partLabel(e.name, parent.name)], parentCrumb: top.length };
 }
 
 /** What a screen reader hears on selecting one: "Biceps brachii, left, selected. Isolated." */
@@ -133,25 +85,10 @@ export function softAnnouncement(id: string, tier: 0 | 1 | 2 = 0, shown = 0): st
 }
 
 // ---------------------------------------------------------------------------
-// Kind-specific sections (musculoskeletal spec §7; M9 plan decision 9), from
-// the front matter in the layer's lazy content chunk. Every structure named
-// is a link; a part's inherited origin, insertion, actions and innervation
-// come from its muscle's file and say so. Nothing here is invented: an
-// unwritten field stays empty.
+// Kind-specific sections (musculoskeletal spec §7; M9 plan decision 9).
 
 /** A structure named in a section: what a link selects, and its label. */
 export type SoftLink = { id: string; label: string };
-/** One origin or insertion: a structure (link) with its landmark, or the free text of a non-object (spec §4.2). */
-export type AttachmentRow = {
-  link: SoftLink | null;
-  landmark: string | null;
-  text: string | null;
-  /** For a muscle whose parts declare their own (spec §4.1: its list is then empty): the part's short name ("Long head"). */
-  part: string | null;
-};
-export type AttachmentList = { rows: AttachmentRow[]; inheritedFrom: SoftLink | null };
-/** "Elbow joint · extension · prime mover". */
-export type ActionRow = { joint: string; movement: string; role: string };
 
 export type MuscleSections = {
   kind: "muscle";
@@ -181,81 +118,40 @@ export type JoinSections = {
 };
 export type SoftSections = MuscleSections | JoinSections;
 
-type BoneEntry = { id: string; name: string; side: "left" | "right" | "midline"; kind: string };
-const BONES = new Map((boneIds as BoneEntry[]).map((e) => [e.id, e]));
-
 /** A structure's label under a focus: its name, with the side only when it differs (a midline focus shows both sides). */
-export function structureLabel(id: string, focusSide: SoftId["side"]): string {
-  const b = BONES.get(id);
-  const e = b ?? softEntry(id);
-  if (!e) return id;
-  if (e.side === "midline" || e.side === focusSide || (b && b.kind === "tooth")) return e.name;
-  return `${e.name} (${e.side})`;
-}
+export const structureLabel = (id: string, focusSide: SoftId["side"]): string => label(id, focusSide);
 
-/** snake_case → words ("lateral_rotation" → "lateral rotation"). */
-export const words = (snake: string): string => snake.replace(/_/g, " ");
-const ROLE_LABELS: Record<Action["role"], string> = { prime: "prime mover", assist: "assists", stabiliser: "stabiliser" };
-
-/** A landmark's written name from its bone's content (else its ID in words, capitalised). */
-export type LandmarkName = (structure: string, landmark: string) => string | undefined;
-const fallbackLandmark = (l: string) => {
-  const w = words(l);
-  return w[0]!.toUpperCase() + w.slice(1);
-};
+const plain = (l: SoftLink): SoftLink => ({ id: l.id, label: l.label });
 
 /**
  * The sections for a soft-tissue structure once its layer's content is
  * loaded and its file written; else null (the panel says "Not written yet").
  */
 export function softSections(id: string, content: SoftLayerContent | null, landmarkName: LandmarkName = () => undefined): SoftSections | null {
-  const entry = content?.entries[id];
-  const e = softEntry(id);
-  if (!entry || !e) return null;
-  const fm = entry.fm;
-  const link = (x: string): SoftLink => ({ id: x, label: structureLabel(x, e.side) });
-  const joint = (j: string) => content.joints?.[j] ?? words(j);
-  if (fm.kind === "ligament") return { kind: "ligament", joint: fm.joint === null ? null : joint(fm.joint), links: fm.connects.map(link), functions: fm.functions, clinical: fm.clinicalNote };
-  if (fm.kind !== "muscle" && fm.kind !== "muscle_part")
-    return { kind: "cartilage", joint: fm.joint === null ? null : joint(fm.joint), links: fm.attachedTo.map(link), functions: fm.functions, clinical: fm.clinicalNote };
-  const parent = fm.kind === "muscle_part" && fm.parent !== null ? content.entries[fm.parent]?.fm : undefined;
-  const parentFm = parent && parent.kind === "muscle" ? parent : undefined;
-  const parentLink = fm.kind === "muscle_part" && fm.parent !== null ? link(fm.parent) : null;
-  const rows = (list: Attachment[], part: string | null = null): AttachmentRow[] =>
-    list.map((a) =>
-      "structure" in a
-        ? { link: link(a.structure), landmark: a.landmark === undefined ? null : (landmarkName(a.structure, a.landmark) ?? fallbackLandmark(a.landmark)), text: null, part }
-        : { link: null, landmark: null, text: a.soft, part },
-    );
-  const attachments = (own: Attachment[] | "inherit", key: "origin" | "insertion"): AttachmentList => {
-    if (own === "inherit") return { rows: rows(parentFm?.[key] ?? []), inheritedFrom: parentLink };
-    if (own.length > 0 || fm.kind !== "muscle") return { rows: rows(own), inheritedFrom: null };
-    // A muscle whose parts declare their own: each part's, named by the part.
-    const fromParts = fm.parts.flatMap((p) => {
-      const pf = content.entries[p]?.fm;
-      return pf && pf.kind === "muscle_part" && pf[key] !== "inherit" ? rows(pf[key], partLabel(softEntry(p)?.name ?? pf.name, e.name)) : [];
-    });
-    return { rows: fromParts, inheritedFrom: null };
-  };
-  const action = (a: Action): ActionRow => ({ joint: joint(a.joint), movement: words(a.movement), role: ROLE_LABELS[a.role] });
-  const inherited = fm.kind === "muscle_part" ? (parentFm?.actions ?? []).filter((a) => !fm.actions.some((o) => o.joint === a.joint && o.movement === a.movement)) : [];
-  const synergists = content.derived?.synergists[id] ?? [];
-  const syn = new Set(synergists);
-  const innervation =
-    fm.kind === "muscle" ? { text: fm.innervation, inheritedFrom: null } : fm.innervation ? { text: fm.innervation, inheritedFrom: null } : parentFm ? { text: parentFm.innervation, inheritedFrom: parentLink } : null;
+  const m = model(id, content, landmarkName);
+  if (!m || !m.written) return null;
+  const by = new Map(m.sections.map((s) => [s.testId, s]));
+  const links = (k: string) => ((by.get(k) as Extract<SectionModel, { render: "links" }> | undefined)?.links ?? []).map(plain);
+  const text = (k: string) => (by.get(k) as Text | undefined)?.value ?? null;
+  const functions = (by.get("functions") as Extract<SectionModel, { render: "list" }> | undefined)?.items ?? [];
+  if (!by.has("origin")) {
+    const joins = by.has("connects") ? "connects" : "attached-to";
+    return { kind: joins === "connects" ? "ligament" : "cartilage", joint: links("joint")[0]?.label ?? null, links: links(joins), functions, clinical: text("clinical") };
+  }
+  const actions = by.get("actions") as Extract<SectionModel, { render: "actions-table" }>;
+  const innervation = by.get("innervation") as Text;
   return {
     kind: "muscle",
-    parts: fm.kind === "muscle" ? fm.parts.map(link) : [],
-    partOf: parentLink,
-    origin: attachments(fm.origin, "origin"),
-    insertion: attachments(fm.insertion, "insertion"),
-    actions: fm.actions.map(action),
-    inheritedActions: inherited.map(action),
-    functions: fm.functions ?? [],
-    synergists: synergists.map(link),
-    // A structure that is both shows as a synergist, as in the 3D view (M9 plan decision 7).
-    antagonists: (content.derived?.antagonists[id] ?? []).filter((x) => !syn.has(x)).map(link),
-    innervation,
-    clinical: fm.clinicalNote ?? null,
+    parts: links("parts"),
+    partOf: m.partOf ? { id: m.partOf.id, label: label(m.partOf.id, m.side) } : null,
+    origin: (by.get("origin") as Extract<SectionModel, { render: "custom" }>).data as AttachmentList,
+    insertion: (by.get("insertion") as Extract<SectionModel, { render: "custom" }>).data as AttachmentList,
+    actions: actions.rows,
+    inheritedActions: actions.inherited,
+    functions: actions.fallback,
+    synergists: links("synergists"),
+    antagonists: links("antagonists"),
+    innervation: innervation.value === null ? null : { text: innervation.value, inheritedFrom: innervation.inherited ? plain(innervation.inherited) : null },
+    clinical: text("clinical"),
   };
 }
