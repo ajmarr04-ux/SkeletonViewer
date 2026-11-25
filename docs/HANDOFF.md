@@ -1,20 +1,22 @@
-# Handoff — written 2026-11-25 at the end of M13 session BK
+# Handoff — written 2026-11-25 at the end of M13 session BL
 
 ## Next session
-BL (design): membership — vertex shares → `located_in` edges, overrides, checks, the regions golden, per-region triangle totals in the index (`docs/PLAN-milestone-13.md` step 2, decisions 4–6).
-Done when: `npm run regions` writes `assets/build/located-in.json` and `check` verifies it; the spec §10 region checks pass; `tests/golden/regions.json` committed; the five goldens unchanged; main chunk measured.
-**Starts only after the user approves BK's region list** (decision 1's table, screenshots in `docs/screenshots/m13/`).
+BM (design): region focus state: the reducer's `reg`, `focusRegion` / `leaveRegion`, `levelOf` and Back, URL `reg=`, history (`skvDepth`), `sceneView` / `isolationView` intersections with the region's members, `isPickable` (`docs/PLAN-milestone-13.md` step 3, decision 7).
+Done when: unit tests for every transition; the five goldens and `regions.json` unchanged; `select`, `related`, `nested`, `layers` e2e pass.
 
 ## State
-- Last commit: see `git log` (M13 BK: body-region list, volumes, ?debug&regions)
-- `npm run check`: pass (672 tests; now also runs `regions:volumes -- --check`)
+- Last commit: see `git log` (M13 BL: body-region membership, located_in, regions golden)
+- `npm run check`: pass (690 tests; now also runs `regions:membership -- --check`)
+- e2e run this session: `fixture` (3), `smoke` + `related` (12), all pass
 - Open fan-out work: none
 
 ## Waiting on the user
-The BK gate: approve the region list (10 coarse, 35 fine) in plan decision 1, or say what to change. Departures from the spec: no Back: cervical (= posterior neck), Posterior abdominal wall added, no cavity regions.
+Nothing blocking. After BL the plan asks for a skim of `assets/build/REPORT-regions.md` (structures in many regions, the 63 overrides); it isn't a gate.
 
 ## Things the next session must know
-- Read BK's session notes in the plan: the fit vocabulary (`span`+`axis` per anchor, face pads, `{long, cross}`, `eachSide`) and the overlaps BL must settle by override or accept (ribs 2–7 in the shoulder, femoral heads in the pelvis, rib 1/clavicle in the anterior neck).
-- `scripts/lib/glb-points.ts` gives world vertices per named node for any layer file; `inRegion` in `src/regions/volume.ts` is the point test. Positions match the manifests to 0.014 mm.
-- Main chunk 486.3 kB (index + modulepreloads, `gzip -9`). A lazy chunk importing `three`/`react` without `meshoptimizer` reshuffles the vendor chunk (+1 kB): measure the whole eager set, not `index` alone.
-- Goldens: never `--write --force` without the user's approval; `regions.json` is new in BL.
+- Runtime lookups for BM: `src/regions/index.ts`: `regionInfo(key)` (fine/coarse, name, coarse parent, side), `isRegionKey`, `membersOf(key)` (a coarse key = the union of its fine regions' members), `isInRegion(id, key)`, `regionsOf(id)`. All available from the first frame (Vitest setup and the app entry load them via `indexData.ts`).
+- `src/regions/index.ts` must not import the registry at run time (Vitest's setup loads it before tests mock `registered.ts`).
+- Members include structures without a mesh (parent muscles, wisdom teeth): filter with `hasMesh` when drawing, as `isolationView` does.
+- `located_in` is in the app graph (chunk `regions`) and last in `EDGE_TYPES`; no tier rule or panel follows it (decision 5).
+- Goldens: never `--write --force` without the user's approval; `regions.json` now counts as a golden.
+- Main chunk 489.3 kB (`gzip -9`, index + modulepreloads; budget 500.1).

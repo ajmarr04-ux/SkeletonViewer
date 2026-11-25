@@ -12,7 +12,7 @@ import { compileGraphFromDisk } from "../scripts/lib/content-files";
 import { compileGraph, edgeCounts } from "../src/graph/compile";
 import { edgeTypeIndex } from "../src/graph/edgeTypes";
 import type { Edge, EdgeTypeDescriptor } from "../src/graph/types";
-import { EDGE_TYPES } from "../src/systems/registry";
+import { EDGE_TYPES, REGIONS } from "../src/systems/registry";
 import { compileContentGraph } from "../src/systems/registry.content";
 
 const TYPES: EdgeTypeDescriptor[] = [
@@ -178,7 +178,9 @@ describe("the real content's graph", () => {
   const either = (id: string, type: string) => g.edges.flatMap((e) => (e.type === type ? (e.from === id ? [e.to] : e.to === id ? [e.from] : []) : []));
   it("compiles with no errors, every registered type has edges, and symmetric ones are stored once as from < to", () => {
     expect(g.errors).toEqual([]);
-    expect(edgeCounts(g.edges, EDGE_TYPES).map(([t]) => t)).toEqual(EDGE_TYPES.map((t) => t.id));
+    // The body regions' located_in isn't compiled from the content (M13: generated, shipped with the index).
+    const contentTypes = EDGE_TYPES.filter((t) => t.id !== REGIONS.edgeType.id);
+    expect(edgeCounts(g.edges, contentTypes).map(([t]) => t)).toEqual(contentTypes.map((t) => t.id));
     for (const e of g.edges) if (edgeTypeIndex(EDGE_TYPES).isSymmetric(e.type)) expect(e.from < e.to, `${e.from} ${e.type} ${e.to}`).toBe(true);
   });
   it("teeth: neighbours in the arch, mesial first, across the midline for central incisors", () => {

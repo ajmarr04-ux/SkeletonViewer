@@ -365,6 +365,24 @@ export type SystemDescriptor = {
   presets?: readonly PresetDescriptor[];
 };
 
+/**
+ * The body regions (SPEC-platform §6; M13 plan decisions 4 and 5): a platform
+ * feature, not a system's. Regions are graph nodes of their own kind of node;
+ * a structure's membership is the `located_in` edge, computed at build time
+ * from the meshes' vertices and shipped with the ID index.
+ */
+export type RegionsDescriptor = {
+  /** The membership edge type (never derived at run time, not symmetric). */
+  edgeType: EdgeTypeDescriptor;
+  /** The graph node kind of a region (`GraphNode.node`). */
+  node: string;
+  /** The generated membership file (repo path): `npm run regions` writes it. */
+  membershipFile: string;
+  /** The resolved volumes (repo path), with the regions' names: `npm run regions:volumes` writes it. */
+  volumesFile: string;
+};
+
 /** Keeps the literal types (`id: "muscles"`), so `LayerId` is a union the compiler checks. */
 export const defineLayer = <const D extends LayerDescriptor>(d: D): D => d;
 export const defineSystem = <const D extends SystemDescriptor>(d: D): D => d;
+export const defineRegions = <const D extends RegionsDescriptor>(d: D): D => d;

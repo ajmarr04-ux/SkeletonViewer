@@ -7,37 +7,19 @@ import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { EAGER_LAYER, LAZY_LAYERS, type LayerId } from "../../src/systems/registry";
+import { REGIONS, type LayerId } from "../../src/systems/registry";
 import { checkRegionsFile, expandRegions, resolveRegions, type RegionsFile } from "../../src/regions/volume";
 import { volumesStale } from "../../src/regions/stale";
 import { fileStem } from "../lib/model-checks";
 import { readNodePoints } from "../lib/glb-points";
+import { meshLayers, takenKeys } from "../lib/region-files";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const SOURCE = "content/regions/regions.json";
-const OUT = "assets/build/region-volumes.json";
+const OUT = REGIONS.volumesFile;
 const readJson = <T>(rel: string) => JSON.parse(readFileSync(join(root, rel), "utf8")) as T;
 
-type Entry = { id: string; meshAvailable: boolean; layer?: string };
-const ids = readJson<Entry[]>("content/ids.json");
-const softIds = readJson<Entry[]>("content/soft-ids.json");
-const layerOf = new Map<string, LayerId>();
-for (const e of ids) if (e.meshAvailable) layerOf.set(e.id, EAGER_LAYER);
-for (const e of softIds) if (e.meshAvailable && (LAZY_LAYERS as readonly string[]).includes(e.layer!)) layerOf.set(e.id, e.layer as LayerId);
-
-/** Every key a region key must not reuse: structure IDs, joint and articulation IDs, hierarchy group keys. */
-function takenKeys(): Set<string> {
-  const out = new Set<string>([...ids.map((e) => e.id), ...softIds.map((e) => e.id)]);
-  for (const j of readJson<{ id: string }[]>("content/joints.json")) out.add(j.id);
-  for (const a of readJson<{ joint: string }[]>("content/articulations.json")) out.add(a.joint);
-  type H = { key: string; children: (H | string)[] };
-  const walk = (n: H) => {
-    out.add(n.key);
-    for (const c of n.children) if (typeof c !== "string") walk(c);
-  };
-  readJson<H[]>("content/hierarchy.json").forEach(walk);
-  return out;
-}
+const layerOf = meshLayers();
 
 const text = readFileSync(join(root, SOURCE), "utf8");
 const file = JSON.parse(text) as RegionsFile;

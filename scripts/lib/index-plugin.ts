@@ -19,7 +19,9 @@ import { join } from "node:path";
 import type { Plugin } from "vite";
 import { trimSoftIds, type RawSoftId } from "../../src/layers/softIds";
 import type { LayerContent } from "../../src/systems/contentTypes";
-import { REGISTRY } from "../../src/systems/registry";
+import { REGIONS, REGISTRY } from "../../src/systems/registry";
+import { encodeRegions, type PackedRegions } from "../../src/regions/codec";
+import type { LocatedInFile } from "../../src/regions/membership";
 import { CONTENT_REGISTRY, DEPTH_FILE, SYSTEM_CONTENT } from "../../src/systems/registry.content";
 import type { LayerDescriptor } from "../../src/systems/types";
 import type { IndexData } from "../../src/content/index";
@@ -63,6 +65,19 @@ export function readIndexData(reg: RegistryOption = REAL, read: (rel: string) =>
   return { eager: reg.layers.find((l) => l.models.eager)!.id as IndexData["eager"], entries, nodes };
 }
 
+/**
+ * The body regions for the index (M13 plan decision 5): the membership file the
+ * registry's regions descriptor names, with the region names from the resolved
+ * volumes, packed in index order (the eager ID file's IDs, then `data.entries`).
+ */
+export function readRegionData(data: IndexData, read: (rel: string) => unknown = readJsonFile): PackedRegions {
+  const file = read(REGIONS.membershipFile) as LocatedInFile;
+  const volumes = read(REGIONS.volumesFile) as { coarse: { key: string; name: string }[]; regions: { key: string; name: string }[] };
+  const names = Object.fromEntries([...volumes.regions, ...volumes.coarse].map((r) => [r.key, r.name]));
+  const ids = [...(read("content/ids.json") as { id: string }[]).map((e) => e.id), ...data.entries.map((e) => e.id)];
+  return encodeRegions(file, names, ids);
+}
+
 export function indexPlugin(reg: RegistryOption = REAL): Plugin {
   return {
     name: "skeleton-index",
@@ -73,7 +88,11 @@ export function indexPlugin(reg: RegistryOption = REAL): Plugin {
         this.addWatchFile(join(root, rel));
         return readJsonFile(rel);
       });
-      return `export default ${JSON.stringify(encodeIndex(data))};`;
+      const regions = readRegionData(data, (rel) => {
+        this.addWatchFile(join(root, rel));
+        return readJsonFile(rel);
+      });
+      return `export default ${JSON.stringify(encodeIndex(data))};\nexport const regions = ${JSON.stringify(regions)};`;
     },
   };
 }

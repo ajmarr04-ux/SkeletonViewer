@@ -23,6 +23,8 @@ declare module "virtual:skeleton-index" {
   /** The always-loaded ID index's lazy half: the lazy layers' trimmed entries and the joint nodes, packed (scripts/lib/index-plugin.ts, src/content/indexCodec.ts; M12 plan decision 7). */
   const data: import("./indexCodec").PackedIndex;
   export default data;
+  /** The body regions and every structure's `located_in` (src/regions/codec.ts; M13 plan decision 5). */
+  export const regions: import("../regions/codec").PackedRegions;
 }
 declare module "virtual:skeleton-graph" {
   /** The eager layer's edges, for the main chunk (scripts/lib/content-plugin.ts, src/graph/codec.ts; M12 plan decision 3). */

@@ -59,7 +59,7 @@ import { resetAppGraph, tiers } from "../src/content/appGraph";
 import { relatedAt } from "../src/scene/isolation";
 import { panelModel, type SectionModel } from "../src/panel/model";
 import { nodeMembers, isSoftNode } from "../src/tree/types";
-import { EDGE_TYPES, TREE_ROOTS, hasTier, tierWording, type LazyLayerId } from "../src/systems/registry";
+import { EDGE_TYPES, REGIONS, TREE_ROOTS, hasTier, tierWording, type LazyLayerId } from "../src/systems/registry";
 
 // The fixture's IDs aren't in the real registry's literal types.
 const W = "widgets" as LayerId;
@@ -175,8 +175,9 @@ describe("the graph, tiers, panel and tree (M12 plan decision 14)", () => {
   const fm = Object.fromEntries(Object.entries(chunk.entries).map(([id, e]) => [id, e.fm]));
 
   it("its edge types are registered through its system, and only there", () => {
-    expect(EDGE_TYPES.slice(-2)).toEqual([...DEMO_EDGES]);
-    expect(FIXTURE_GRAPH_REGISTRY.types).toEqual(EDGE_TYPES);
+    // The systems' types, then the body regions' located_in (M13), which no content compiles.
+    expect(EDGE_TYPES.slice(-3, -1)).toEqual([...DEMO_EDGES]);
+    expect([...FIXTURE_GRAPH_REGISTRY.types, REGIONS.edgeType]).toEqual(EDGE_TYPES);
     expect(DEMO_GRAPH_REGISTRY.types).toEqual([...DEMO_EDGES]);
   });
 

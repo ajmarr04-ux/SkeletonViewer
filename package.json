@@ -17,7 +17,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "e2e": "playwright test",
-    "check": "tsc --noEmit && vitest run && npm run check-models && npm run regions:volumes -- --check && npm run validate-content && npm run content:migrate-attachments -- --check",
+    "check": "tsc --noEmit && vitest run && npm run check-models && npm run regions:volumes -- --check && npm run regions:membership -- --check && npm run validate-content && npm run content:migrate-attachments -- --check",
     "build-pages": "bash scripts/build-pages.sh",
     "validate-content": "tsx scripts/validate-content.ts",
     "content:mirror": "tsx scripts/content/mirror.ts",
@@ -30,7 +30,9 @@
     "perf-load": "tsx scripts/perf-load.ts",
     "golden": "tsx scripts/golden.ts",
     "bench-container": "tsx scripts/bench-container.ts",
-    "regions:volumes": "tsx scripts/regions/volumes.ts"
+    "regions:volumes": "tsx scripts/regions/volumes.ts",
+    "regions:membership": "tsx scripts/regions/membership.ts",
+    "regions": "tsx scripts/regions/volumes.ts && tsx scripts/regions/membership.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
