@@ -36,7 +36,7 @@ Session kinds: **design** = strong model (graph, engine, descriptor shapes); **r
 | BG | routine | Announcements, tier wording, display names and label priority from descriptors (step 8) | none | decision 12 | `announce.ts`, `names.ts` off the allowlist; `announce.test.ts` unchanged and passing | **Done.** See session notes |
 | BH | routine | Validation and compile rules per kind onto the content halves (step 9) | none | decision 13 | `schema.ts`, `validate.ts`, `softValidate.ts`, `softCompile.ts`, `patch-check.ts` off the allowlist; `validate-content` and `content:patch-check` output unchanged | **Done.** See session notes |
 | BI | design | The fixture layer gains edges, tier rules, a panel and a tree; the allowlist's M12 entries are all gone (step 10) | none | decision 14 | fixture Vitest and e2e prove graph, tiers, panel and tree; allowlist has no M12 entry | **Done.** See session notes |
-| BJ | routine | Wrap-up: goldens, parity table, full e2e in the background, `/m12/` (step 11) | none | everything above | exit criteria ticked; `/m12/` live | **Done** except the live check. See step 11 |
+| BJ | routine | Wrap-up: goldens, parity table, full e2e in the background, `/m12/` (step 11) | none | everything above | exit criteria ticked; `/m12/` live | **Done.** See step 11 |
 
 Triggers: "begin session AZ" to "begin session BJ". Every session follows `docs/WORKFLOW_NEW.md` §7: read `docs/HANDOFF.md` and this file, do the one serial task, end with `npm run check` (which runs `tsc`, Vitest including the goldens, `check-models`, `validate-content`) and the e2e specs it touched, commit, push to the session branch, tick the row, write `docs/HANDOFF.md`, stop.
 
@@ -57,7 +57,7 @@ Triggers: "begin session AZ" to "begin session BJ". Every session follows `docs/
 - [x] The old relationship modules (`relations.ts`, `softTiers.ts`, `softRelations.ts`, `softPanel.ts` switches) deleted.
 - [x] Every golden unchanged (`tiers`, `panels`, `urls`, `search`, and the new `tree`); the allowlist has no M12 entry.
 - [x] No regression: every existing unit and e2e test passes unchanged, except where a step lists why (spec §2.1). Performance parity (bench, perf-load, main chunk ≤ 500.1 kB).
-- [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
+- [x] **Hosted copy is live and linked below** (extra requirement for every milestone): https://ajmarr04-ux.github.io/SkeletonViewer/m12/, confirmed by the user on 2026-11-25.
 
 ---
 
@@ -204,7 +204,7 @@ Main chunk **+13.7 kB** on M11 (the ID index and the graph's eager edges, +11.0 
 
 **e2e:** the full suite in one background run (`npx playwright test --trace off`, both projects, log in the session scratchpad): **171 of 174 passed** in 45.4 min. The three failures were timeouts under load: `keyboard.spec.ts:191` (3.0 min, page closed at the time limit), `keyboard.spec.ts:242` (the 7-minute keys-only journey, as in AX) and `nested.spec.ts:34` (a panel title not found within 5 s). Re-run alone, **all three pass** (8.7 min). Tests changed in M12 are only those listed in the session notes, plus the fixture spec's new test.
 
-**Merge and freeze:** [PR #27](https://github.com/ajmarr04-ux/SkeletonViewer/pull/27) merged as `3d8adef`; Deploy ran on it. A follow-up PR freezes `m12` at `3d8adef` and sets `"current": null` until M13's planning sets 13 (as after M11). **Left for the user:** a glance at https://ajmarr04-ux.github.io/SkeletonViewer/m12/ (the container can't reach `github.io`); then tick "Hosted copy is live" above.
+**Merge and freeze:** [PR #27](https://github.com/ajmarr04-ux/SkeletonViewer/pull/27) merged as `3d8adef`; Deploy ran on it. A follow-up PR freezes `m12` at `3d8adef` and sets `"current": null` until M13's planning sets 13 (as after M11). `/m12/` confirmed live by the user (2026-11-25, M13 planning); "Hosted copy is live" ticked above.
 
 ## Session notes
 
