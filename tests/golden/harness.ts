@@ -48,7 +48,7 @@ async function allIds(): Promise<{ bones: string[]; soft: string[] }> {
 export async function buildTiers(): Promise<Golden> {
   await loadEverything();
   const { relatedAt } = await import("../../src/scene/isolation");
-  const { softRoles } = await import("../../src/content/softRelations");
+  const { rolesOf: softRoles } = await import("../../src/content/appGraph");
   const { DEFAULT_MODES: DEFAULT_LAYERS } = await import("../../src/systems/registry");
   const allOn = { bones: "on", cartilage: "on", ligaments: "on", muscles: "on" } as const;
   const { bones, soft } = await allIds();

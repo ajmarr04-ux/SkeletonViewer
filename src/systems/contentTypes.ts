@@ -5,6 +5,7 @@
 
 import type { z } from "zod";
 import type { Edge, GraphNode } from "../graph/types";
+import type { Patch } from "./types";
 
 /**
  * What an edge source or rule may read (M12 plan decision 1): the authoring
@@ -43,6 +44,8 @@ export type LayerContent = {
   rules?: readonly GraphRule[];
   /** The content chunk's derived lists (`SoftDerived`), read off the compiled edges for this layer's IDs; the layers with none ship `derived: null`. */
   derivedLists?: (edges: readonly Edge[], ids: readonly string[]) => unknown;
+  /** The attachment patches its overlay draws (M9 plan decision 6), shipped in the layer's content chunk for the tints (M12 plan decision 8). */
+  patches?: (readJson: (rel: string) => unknown) => Record<string, Patch>;
 };
 
 /** A system's authoring half: edges from files that aren't one structure's front matter, the non-structure nodes, rules across its layers. */

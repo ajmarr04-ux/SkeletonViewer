@@ -8,18 +8,19 @@ import { displayName } from "../src/content/names";
 import { type RawSoftId } from "../src/layers/softIds";
 import { batchSkeleton, type BonePart } from "../src/scene/batchSkeleton";
 import {
+  EAGER_ONLY,
   FULL_VIEW,
   applyLayerView,
   isolationView,
   isPickable,
   isPickableIn,
+  relatedAt,
   sceneView,
   shownIn,
   viewOf,
   withJoint,
   type IsolationView,
 } from "../src/scene/isolation";
-import { relations } from "../src/content/relations";
 import { type LayerModes } from "../src/state/url";
 import { DEFAULT_MODES, LAYER_IDS } from "../src/systems/registry";
 
@@ -70,7 +71,7 @@ describe("layer modes and isolation (plan decision 6)", () => {
     for (const mode of ["ghost", "off"] as const) {
       const v = sceneView(iso("femur_left", 1), modes({ bones: mode }));
       expect(shownIn(v, "bones", "femur_left")).toBe("solid");
-      for (const r of relations.tier1("femur_left")) expect(shownIn(v, "bones", r)).toBe("solid");
+      for (const r of relatedAt("femur_left", 1, EAGER_ONLY)) expect(shownIn(v, "bones", r)).toBe("solid");
       expect(shownIn(v, "bones", "humerus_left")).toBe(mode === "ghost" ? "ghost" : "hidden");
     }
   });

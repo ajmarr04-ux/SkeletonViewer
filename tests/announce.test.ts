@@ -25,7 +25,8 @@ import {
 } from "../src/content/announce";
 import { groupOf } from "../src/content/groups";
 import { softEntry } from "../src/content/softRegistry";
-import { registerSoftTiers, resetSoftTiers } from "../src/content/softRelations";
+import { resetAppGraph, rolesOf } from "../src/content/appGraph";
+import { registerSoftContent, resetSoftContent } from "../src/content/softContentLoader";
 import { isolationView } from "../src/scene/isolation";
 import { type LayerModes } from "../src/state/url";
 import { DEFAULT_MODES, type LazyLayerId } from "../src/systems/registry";
@@ -40,10 +41,11 @@ const iso = (sel: string | null, tier: 0 | 1 | 2 = 0, grp: string | null = null)
 const say = (now: ReturnType<typeof iso>, prev: ReturnType<typeof iso> | null, m: LayerModes = ALL_ON) => isolationAnnouncement(now, prev, m, hasMesh);
 
 beforeAll(() => {
-  for (const l of ["muscles", "ligaments", "cartilage"] as const) registerSoftTiers(l, SOFT[l].tiers, SOFT[l].roles, SOFT[l].derived?.attached);
+  for (const l of ["muscles", "ligaments", "cartilage"] as const) registerSoftContent(l, SOFT[l]);
 });
 afterAll(() => {
-  resetSoftTiers();
+  resetSoftContent();
+    resetAppGraph();
 });
 
 describe("counts by kind", () => {
@@ -120,7 +122,7 @@ describe("depth, Hide, antagonists (rows 3, 4, 8)", () => {
     expect(antagonistAnnouncement(false, 4)).toBe("Antagonists hidden.");
     const n = antagonistCount("triceps_brachii_left", 2, MUSCLES_ON, hasMesh);
     expect(n).toBeGreaterThan(0);
-    const ant = SOFT.muscles.roles!.triceps_brachii_left!.ant;
+    const ant = rolesOf("triceps_brachii_left")!.ant;
     expect(n).toBeLessThanOrEqual(new Set(ant.map((x) => softEntry(x)?.parent ?? x)).size);
     expect(antagonistCount("triceps_brachii_left", 1, MUSCLES_ON, hasMesh)).toBe(0);
   });

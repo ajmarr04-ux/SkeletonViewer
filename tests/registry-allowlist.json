@@ -60,21 +60,9 @@
       "milestone": "M12",
       "reason": "The bone front-matter schema (bone/tooth kinds); M12 moves the bones onto the content halves' per-kind schemas."
     },
-    "src/content/softCompile.ts": {
-      "milestone": "M12",
-      "reason": "Per-kind compile (muscle/part entries for derive, derive only for the nested layer); M12's edge engine."
-    },
     "src/content/softPanel.ts": {
       "milestone": "M12",
       "reason": "The soft panel's per-kind sections, labels and tier wording; M12's PanelSpec."
-    },
-    "src/content/softRoles.ts": {
-      "milestone": "M12",
-      "reason": "Origin/insertion patch rules for muscles and parts; M12 re-expresses roles as edges."
-    },
-    "src/content/softTiers.ts": {
-      "milestone": "M12",
-      "reason": "Per-kind tier rules (muscle, part, ligament); M12's TierSpec."
     },
     "src/content/softTree.ts": {
       "milestone": "M12",

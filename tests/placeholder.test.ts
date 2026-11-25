@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import ids from "../content/ids.json";
 import { groupTrail, regionLabel } from "../src/content/labels";
-import { relations } from "../src/content/relations";
+import { EAGER_ONLY, relatedAt } from "../src/scene/isolation";
 import { announcement, NO_MODEL_NOTE, NOT_WRITTEN, oppositeOf, panelModel, SECTION_TITLES, type IdEntry } from "../src/content/placeholder";
 import { nearestSnap, nextSnap, PEEK_PX, snapHeights } from "../src/ui/InfoPanel";
 import { boxCentre, fitDistance, frameBeside, frameFrom, FOV_DEG, NO_PANEL, panelFractions, panelOffset, type Box } from "../src/camera/math";
@@ -98,7 +98,7 @@ describe("announcements (aria-live)", () => {
     expect(announcement({ sel: null, tier: 0 })).toBe("Full skeleton");
   });
   it("names the related bones and the region (tiers 1 and 2)", () => {
-    const rel = (id: string) => relations.tier1(id);
+    const rel = (id: string) => relatedAt(id, 1, EAGER_ONLY);
     expect(announcement({ sel: "femur_left", tier: 1 }, null, rel)).toBe("Femur, left: related bones shown. Hip bone, patella, tibia.");
     expect(announcement({ sel: "hip_bone_left", tier: 1 }, null, rel)).toBe(
       "Hip bone, left: related bones shown. Sacrum, hip bone (right), femur.",

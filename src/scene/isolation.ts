@@ -6,14 +6,13 @@
 import { Color } from "three";
 import idsJson from "../../content/ids.json";
 import { groupOf } from "../content/groups";
-import { relations } from "../content/relations";
-import { reverseRelated, softRelated, softRoles } from "../content/softRelations";
-import type { MuscleRoles, Role } from "../content/softRoles";
+import { rolesOf, tiers, type TintRoles } from "../content/appGraph";
+import type { TintEnd as Role } from "../systems/types";
 import type { TintRole } from "./tints";
 import type { ColourMode } from "./regionColours";
 import type { Tier } from "../state/isolation";
 import { type GhostMode, type Layer, type LayerModes, type MuscleDepth } from "../state/url";
-import { DEFAULT_MODES, EAGER_LAYER, LAYER_IDS, LAZY_LAYERS } from "../systems/registry";
+import { DEFAULT_MODES, EAGER_LAYER, LAYER_IDS } from "../systems/registry";
 import { peeledAt, softEntry, softLayerOf } from "../content/softRegistry";
 import type { BatchedSkeleton } from "./batchSkeleton";
 import { usePatchBatch } from "./layerRegistry";
@@ -59,19 +58,20 @@ const layerOfAny = (id: string): Layer | null => (BONES.has(id) ? EAGER_LAYER : 
 /**
  * What a selection adds at a tier (not itself), following the layers that are
  * showing (M9 plan decision 3): only structures in a layer that is On or
- * Ghost. A bone: the bones it articulates with (tier 1) and its region set
- * (tier 2) as in M8, plus the soft structures related to it (tier 1) or to any
- * bone of its tier-2 set (tier 2): muscles attached, ligaments connecting,
- * cartilage on it. A soft structure: its tier sets (`softTiers.ts`). With only
- * the bones layer on, a bone's additions are exactly M8's.
+ * Ghost. The kinds' tier rules over the app's graph (M12 plan decisions 5, 6):
+ * a bone gets the bones it articulates with (tier 1) and its region set (tier
+ * 2), plus the soft structures related to it or to those bones; a soft
+ * structure its own rules. A structure with no tier 2 (a ligament or
+ * cartilage with no joint) shows its tier 1 there. With only the bones layer
+ * on, a bone's additions are exactly M8's.
  */
+/** Only the eager layer showing: a bone's tier 1 is then the bones it articulates with (and a tooth's neighbours), M8's tier 1. */
+export const EAGER_ONLY: LayerModes = Object.fromEntries(LAYER_IDS.map((l) => [l, l === EAGER_LAYER ? "on" : "off"])) as LayerModes;
+
 export function relatedAt(id: string, tier: Tier, modes: LayerModes = DEFAULT_MODES): string[] {
   if (tier === 0) return [];
-  const showing = (x: string) => isShowing(x, modes);
-  if (!BONES.has(id)) return softRelated(id, tier).filter(showing);
-  const bones = relations.visibleAt(id, tier).filter((x) => x !== id);
-  const soft = LAZY_LAYERS.some((l) => modes[l] !== "off") ? (tier === 1 ? [id] : [id, ...bones]).flatMap((b) => reverseRelated(b)) : [];
-  return [...new Set([...bones, ...soft])].filter(showing);
+  const engine = tiers();
+  return [...(engine.related(id, `t${tier}`, modes) ?? (tier === 2 ? engine.related(id, "t1", modes) : null) ?? [])];
 }
 
 /**
@@ -150,18 +150,18 @@ export function withTints(
   ant: boolean,
   hasMesh: (id: string) => boolean,
   modes: LayerModes = DEFAULT_MODES,
-  rolesOf: (id: string) => MuscleRoles | undefined = softRoles,
+  roles: (id: string) => TintRoles | undefined = rolesOf,
   patchesFailed = false,
 ): IsolationView {
   if (sel === null || tier === 0 || iso.solid === null) return iso;
-  const r = rolesOf(sel);
+  const r = roles(sel);
   if (!r) return iso;
   const focus = new Set(iso.focusIds);
   const drawn = (x: string) => iso.solid!.has(x) && !focus.has(x);
   const tints = new Map<string, TintRole>();
   const both: string[] = [];
   // With no patch file, the patches' structures are tinted whole too.
-  const whole = (set: MuscleRoles["o"]) => (patchesFailed ? [...set.f, ...set.p.map(([, on]) => on)] : set.f);
+  const whole = (set: TintRoles["o"]) => (patchesFailed ? [...set.f, ...set.p.map(([, on]) => on)] : set.f);
   for (const x of whole(r.o)) if (drawn(x)) tints.set(x, "origin");
   for (const x of whole(r.i)) {
     if (!drawn(x)) continue;
@@ -307,7 +307,7 @@ export function viewOf(
   peel: (stop: MuscleDepth) => ReadonlySet<string> = peeledAt,
 ): SceneView {
   const base = isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp, softParts, softParent, st.layers);
-  const tinted = withTints(base, st.sel, st.tier, st.antagonists ?? false, hasMesh, st.layers, softRoles, usePatchBatch.getState().failed);
+  const tinted = withTints(base, st.sel, st.tier, st.antagonists ?? false, hasMesh, st.layers, rolesOf, usePatchBatch.getState().failed);
   const iso = withJoint(tinted, st.joint, hasMesh);
   return sceneView(iso, st.layers, withPeeled(st.hidden, peel(st.muscleDepth ?? 0)));
 }

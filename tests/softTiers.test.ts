@@ -1,16 +1,16 @@
 // M9 session AF: tiers per kind (spec §5.2; plan decisions 3 to 5), on the real
-// content. The equivalence test comes first: with only the bones layer on,
+// content. Since M12 BC the tiers come from the kinds' tier rules over the app's
+// graph (src/content/appGraph.ts); the expectations are M9's. The equivalence test comes first: with only the bones layer on,
 // every bone's tier sets are exactly M8's, whatever soft content is loaded.
 import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import ids from "../content/ids.json";
 import { compileAllSoftFromDisk, makeOpposite } from "../scripts/lib/content-files";
-import { relations } from "../src/content/relations";
+import { resetAppGraph, structureLoaded, tiers } from "../src/content/appGraph";
+import { registerSoftContent, resetSoftContent } from "../src/content/softContentLoader";
 import { softEntry } from "../src/content/softRegistry";
-import { hasSoftTier2, registerSoftTiers, resetSoftTiers, reverseRelated, softRelated, softTiersLoaded } from "../src/content/softRelations";
-import { jointScope } from "../src/content/softTiers";
 import { type RawSoftId } from "../src/layers/softIds";
-import { isolationView, relatedAt, sceneView, shownIn } from "../src/scene/isolation";
+import { EAGER_ONLY, isolationView, relatedAt, sceneView, shownIn } from "../src/scene/isolation";
 import { type LayerMode, type LayerModes } from "../src/state/url";
 import { DEFAULT_MODES, LAYER_IDS } from "../src/systems/registry";
 
@@ -19,17 +19,38 @@ const BONES = ids as { id: string; meshAvailable: boolean }[];
 const BONE_MESH = new Set(BONES.filter((e) => e.meshAvailable).map((e) => e.id));
 const hasMesh = (id: string) => BONE_MESH.has(id) || softEntry(id)?.mesh === true;
 const SOFT = compileAllSoftFromDisk();
-const TIERS = { ...SOFT.muscles.tiers!.tiers, ...SOFT.ligaments.tiers!.tiers, ...SOFT.cartilage.tiers!.tiers };
+const registerAll = () => {
+  for (const l of ["muscles", "ligaments", "cartilage"] as const) registerSoftContent(l, SOFT[l]);
+};
+const resetAll = () => {
+  resetSoftContent();
+  resetAppGraph();
+};
+const hasSoftTier2 = (id: string) => tiers().hasTier(id, "t2");
+/** A soft structure's additions at a tier, every layer (M9's `softRelated`). */
+const softRelated = (id: string, tier: 1 | 2): readonly string[] =>
+  tier === 1 ? (tiers().evaluate(id, "t1") ?? []) : (tiers().evaluate(id, "t2") ?? tiers().evaluate(id, "t1") ?? []);
+/** M9's shipped tier sets: tier 1, and tier 2 on top of it (null with no tier 2). */
+const tierSets = () =>
+  Object.fromEntries(
+    RAW.map((e) => {
+      const t1 = tiers().evaluate(e.id, "t1") ?? [];
+      const t2 = hasSoftTier2(e.id) ? tiers().evaluate(e.id, "t2")!.filter((x) => !t1.includes(x)) : null;
+      return [e.id, { t1, t2 }];
+    }),
+  );
+/** The soft structures related to a bone at tier 1 (M9's reverse index), from every layer. */
+const reverseRelated = (id: string) => relatedAt(id, 1, ALL_ON).filter((x) => softEntry(x) !== undefined);
 
 const modes = (m: Partial<LayerModes>): LayerModes => ({ ...DEFAULT_MODES, ...m });
 const ALL_ON = modes({ muscles: "on", ligaments: "on", cartilage: "on" });
-/** M8's solid set for a bone (relations.visibleAt), as `isolationView` drew it before M9. */
-const m8Solid = (id: string, tier: 0 | 1 | 2) => new Set(relations.visibleAt(id, tier).filter(hasMesh));
+/** M8's solid set for a bone (its tiers with only bones showing), as `isolationView` drew it before M9. */
+const m8Solid = (id: string, tier: 0 | 1 | 2) => new Set([id, ...relatedAt(id, tier, EAGER_ONLY)].filter(hasMesh));
 const solidOf = (sel: string, tier: 0 | 1 | 2, m: LayerModes) => isolationView(sel, tier, "ghost", hasMesh, null, undefined, undefined, m).solid;
 const layerOf = (id: string) => (BONES.some((b) => b.id === id) ? "bones" : softEntry(id)?.layer);
 
 afterAll(() => {
-  resetSoftTiers();
+  resetAll();
 });
 
 describe("bones-only equivalence (risk 1: written first)", () => {
@@ -42,12 +63,12 @@ describe("bones-only equivalence (risk 1: written first)", () => {
       }
   };
   it("before any soft content is loaded", () => {
-    resetSoftTiers();
+    resetAll();
     check(DEFAULT_MODES);
     check(ALL_ON); // nothing registered: no layer adds anything yet
   });
   it("with every layer's content loaded and only the bones layer on", () => {
-    for (const l of ["muscles", "ligaments", "cartilage"] as const) registerSoftTiers(l, SOFT[l].tiers);
+    registerAll();
     check(DEFAULT_MODES);
     check(modes({ muscles: "off", ligaments: "off", cartilage: "off" }));
   });
@@ -58,10 +79,11 @@ describe("bones-only equivalence (risk 1: written first)", () => {
 
 describe("tier sets on the real content (plan decision 4)", () => {
   beforeAll(() => {
-    for (const l of ["muscles", "ligaments", "cartilage"] as const) registerSoftTiers(l, SOFT[l].tiers);
+    registerAll();
   });
 
   it("every structure has tiers, and every ID they name is a bone or a soft structure", () => {
+    const TIERS = tierSets();
     expect(Object.keys(TIERS).sort()).toEqual(RAW.map((e) => e.id).sort());
     const known = new Set([...BONES.map((b) => b.id), ...RAW.map((e) => e.id)]);
     for (const [id, e] of Object.entries(TIERS)) {
@@ -70,11 +92,10 @@ describe("tier sets on the real content (plan decision 4)", () => {
       expect(e.t2 ?? []).not.toContain(id);
       for (const x of e.t2 ?? []) expect(e.t1, `${id}: ${x} in both tiers`).not.toContain(x);
     }
-    for (const l of ["muscles", "ligaments", "cartilage"] as const)
-      for (const [s, list] of Object.entries(SOFT[l].tiers!.reverse)) for (const x of list) expect(known.has(x) && known.has(s)).toBe(true);
   });
 
   it("left and right mirror each other", () => {
+    const TIERS = tierSets();
     const opp = makeOpposite();
     const mirror = (xs: readonly string[]) => xs.map((x) => opp(x) ?? x).sort();
     for (const [id, e] of Object.entries(TIERS)) {
@@ -131,18 +152,11 @@ describe("tier sets on the real content (plan decision 4)", () => {
     expect(reverseRelated("ulna_left")).toEqual(expect.arrayContaining(["triceps_brachii_long_head_left", "triceps_brachii_medial_head_left"]));
     expect(reverseRelated("rib_8_left")).toContain("costal_cartilage_8_left");
   });
-  it("jointScope: a pair inside a functional joint stands for the whole functional joint", () => {
-    const scope = jointScope(["a", "b", "c", "d"], { fj: ["a", "b"] });
-    expect([...scope("a")].sort()).toEqual(["a", "b"]);
-    expect([...scope("fj")].sort()).toEqual(["a", "b"]);
-    expect([...scope("c")]).toEqual(["c"]);
-    expect(scope("nope").size).toBe(0);
-  });
 });
 
 describe("layer filter (plan decision 3)", () => {
   beforeAll(() => {
-    for (const l of ["muscles", "ligaments", "cartilage"] as const) registerSoftTiers(l, SOFT[l].tiers);
+    registerAll();
   });
   const MODES: LayerMode[] = ["on", "ghost", "off"];
   const COMBOS: LayerModes[] = [];
@@ -179,7 +193,7 @@ describe("layer filter (plan decision 3)", () => {
   });
   it("a bone's tier 2 gains the soft structures of every bone in its tier-2 set", () => {
     const t2 = new Set(relatedAt("humerus_left", 2, modes({ muscles: "on" })));
-    for (const b of relations.visibleAt("humerus_left", 2)) for (const x of reverseRelated(b)) if (layerOf(x) === "muscles") expect(t2.has(x), `${b} → ${x}`).toBe(true);
+    for (const b of ["humerus_left", ...relatedAt("humerus_left", 2, EAGER_ONLY)]) for (const x of reverseRelated(b)) if (layerOf(x) === "muscles") expect(t2.has(x), `${b} → ${x}`).toBe(true);
   });
   it("related structures in a Ghost layer are drawn solid; the rest of that layer stays a ghost", () => {
     const m = modes({ muscles: "ghost" });
@@ -193,7 +207,7 @@ describe("layer filter (plan decision 3)", () => {
     expect(shownIn(view, "muscles", "triceps_brachii_long_head_left")).toBe("hidden");
   });
   it("tiers are reported loaded per structure", () => {
-    expect(softTiersLoaded("triceps_brachii_left")).toBe(true);
+    expect(structureLoaded("triceps_brachii_left")).toBe(true);
     expect(LAYER_IDS).toContain("muscles");
   });
 });

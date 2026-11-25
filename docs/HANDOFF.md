@@ -1,20 +1,20 @@
-# Handoff — written 2026-11-25 at the end of M12 BB
+# Handoff — written 2026-11-25 at the end of M12 BC
 
 ## Next session
-BC (design): ship the graph in the chunks and switch tiers, roles and tints onto it (plan decisions 3 and 8, step 4). The content plugin emits each layer's edges into its content chunk and the eager layer's into the main chunk; `softContentLoader.ts` registers them with the graph; `relatedAt` asks `query.ts`; `hasSoftTier2`, `softTiersLoaded`, `tierBlockedReason` and `withTints` read the graph. Delete `relations.ts`, `softTiers.ts`, `softRelations.ts`, `softRoles.ts` and the chunks' `tiers`/`reverse`/`roles` fields.
-Done when: those modules are gone; goldens unchanged (harness imports only); content chunk sizes before/after in the notes; e2e `tiers`, `tints`, `related`, `attached`, `joints`, `nested`, `labels-layers` pass; `npm run check` green.
+BD (design): panel sections as data (plan decision 11, step 5). `PanelSection` types in `src/systems/types.ts`; `panel` on every kind; `src/panel/model.ts` (sections + chrome) turns an ID + its layer's content + the graph into what `panels.json` records; the `attachments` custom section's model. The golden harness reads the new model.
+Done when: `panels.json` unchanged (harness imports only); `panel.ts`, `placeholder.ts`, `softPanel.ts` keep only what `InfoPanel.tsx` still imports until BE (listed in the notes), with no kind switches left; `npm run check` green.
 
 ## State
-- Last commit: M12 BB: the always-loaded ID index (see `git log`).
-- `npm run check`: pass (645 tests, the five goldens unchanged). Main chunk 483.1 kB `gzip -9` (+10.1 kB for the index, inside decision 7's 12 kB budget).
+- Last commit: M12 BC: ship the graph in the chunks; tiers, roles and tints on it (see `git log`).
+- `npm run check`: pass (651 tests, the five goldens unchanged). E2E `tiers`, `tints`, `related`, `attached`, `joints`, `nested`, `labels-layers`, `fixture`: 36 pass.
 - Open fan-out work: none
 
 ## Waiting on the user
 none
 
 ## Things the next session must know
-- The index: `src/content/index.ts` (`isKnownId`, `hasMesh`, `layerOfId`, `lazyEntry`, `lazyEntries`, `isEagerId`, `indexNode` for joint names). It is handed over by `src/content/indexData.ts`, which `src/main.tsx` and `tests/setup.ts` import first. Scripts and Vite plugins never load it, so `index.ts` must not import a virtual module (or the registry at run time).
-- The golden harness's `freshModules()` re-imports `indexData` after `vi.resetModules`; any new harness builder that resets modules must use it.
-- `anatomical` order: keep `indexRank([...ids.json, ...lazyEntries()])` (the index is in file order, not ID-sorted).
-- A soft `sel=` still goes through `selectSoftFromUrl` (`initSelectionFromUrl` parses with `isEagerId`), which keeps `urls.json`; `onPopState` parses with `isKnownId` (Back to a muscle entry).
-- The app still runs on `relations.ts`, `softTiers.ts`, `softRelations.ts` until BC. Goldens: never `--write --force` without the user's approval. QUESTIONS: next is 140.
+- The runtime graph is `src/content/appGraph.ts`: `appGraph()` (eager edges added on first use), `tiers()` (engine), `rolesOf`, `structureLoaded`, `useGraphVersion`. Lazy chunks register through `registerSoftContent` (`softContentLoader.ts`); tests use it plus `resetSoftContent()` + `resetAppGraph()`.
+- Joint names: `indexNode(joint)?.name`. Bone articulations: `appGraph().out(id, "articulates_with")` (meta `joint`); neighbouring teeth `neighbours(id, "adjacent_tooth")` (mesial first). `panel.ts` names them today (allowlisted); BD should move that into the bone kind's panel descriptor.
+- The muscles chunk still ships `derived` (synergists, antagonists, attached: about 18.6 kB gzip) because `softPanel.ts` and `attachedTo` (now in `groups.ts`) read it. Once BD reads them off the graph (`synergist_of`, `antagonist_of`, inverse `origin of`/`insertion of` without meta `inherited`), `derived` can leave the chunk.
+- Roles live in `src/systems/musculoskeletal/muscles/roles.ts` (`KindDescriptor.roles`); the chunk's `patches` field feeds them. `npm run content:patch-check -- --check` must stay "up to date".
+- Goldens: never `--write --force` without the user's approval. QUESTIONS: next is 140.

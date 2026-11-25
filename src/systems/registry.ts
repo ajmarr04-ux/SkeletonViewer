@@ -6,7 +6,7 @@ import { REGISTRY, SYSTEMS } from "./registered";
 import type { Graph } from "../graph/graph";
 import type { TierContext } from "../graph/query";
 import type { EdgeTypeDescriptor } from "../graph/types";
-import type { KindDescriptor, LayerDescriptor, LayerMode, OverlaySpec, PresetDescriptor, SystemDescriptor } from "./types";
+import type { KindDescriptor, LayerDescriptor, LayerMode, OverlaySpec, PresetDescriptor, RolesSpec, SystemDescriptor } from "./types";
 
 export { REGISTRY, SYSTEMS };
 
@@ -68,6 +68,8 @@ export const layerOfKind = (kind: string): LayerId | undefined => KIND_LAYER.get
 
 const KIND = new Map<string, KindDescriptor>(REGISTRY.flatMap((l) => (l.kinds as readonly KindDescriptor[]).map((k) => [k.id, k] as const)));
 export const kindDescriptor = (kind: KindId): KindDescriptor => KIND.get(kind)!;
+/** A kind's origin/insertion tints (M12 plan decision 8), or undefined. */
+export const rolesSpecOf = (kind: string): RolesSpec | undefined => KIND.get(kind)?.roles;
 
 // ---------------------------------------------------------------------------
 // Tier rules over the graph (M12 plan decisions 5 and 6)

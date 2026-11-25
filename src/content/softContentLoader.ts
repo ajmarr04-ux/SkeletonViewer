@@ -8,7 +8,7 @@ import { useEffect, useSyncExternalStore } from "react";
 import importers from "virtual:skeleton-layer-importers";
 import type { LazyLayerId } from "../systems/registry";
 import type { SoftLayerContent } from "./softCompile";
-import { registerSoftTiers } from "./softRelations";
+import { registerLayerEdges } from "./appGraph";
 
 const loaded: Partial<Record<LazyLayerId, SoftLayerContent>> = {};
 const pending: Partial<Record<LazyLayerId, Promise<SoftLayerContent>>> = {};
@@ -22,13 +22,25 @@ export function loadSoftContent(layer: LazyLayerId): Promise<SoftLayerContent> {
   // A layer without a `contentChunk` (the fixture layer, M11 plan decision 8) has no content: the placeholder panel.
   const importer = importers[layer] ?? (() => Promise.resolve({ default: NO_CONTENT }));
   pending[layer] ??= importer().then((m) => {
-    loaded[layer] = m.default;
-    registerSoftTiers(layer, m.default.tiers, m.default.roles, m.default.derived?.attached);
-    version++;
-    listeners.forEach((l) => l());
+    registerSoftContent(layer, m.default);
     return m.default;
   });
   return pending[layer];
+}
+
+/** A layer's content has arrived: keep it and add its edges (and patches) to the app's graph (M12 plan decision 3). Tests call it directly. */
+export function registerSoftContent(layer: LazyLayerId, content: SoftLayerContent): void {
+  loaded[layer] = content;
+  registerLayerEdges(layer, content);
+  version++;
+  listeners.forEach((l) => l());
+}
+
+/** For tests: forget the content loaded so far (the graph has `resetAppGraph`). */
+export function resetSoftContent(): void {
+  for (const l of Object.keys(loaded) as LazyLayerId[]) delete loaded[l];
+  for (const l of Object.keys(pending) as LazyLayerId[]) delete pending[l];
+  version++;
 }
 
 /** The content loaded so far for a layer, else null. */

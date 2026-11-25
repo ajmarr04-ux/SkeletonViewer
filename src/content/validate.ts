@@ -4,7 +4,7 @@
 
 import type { ZodError } from "zod";
 import { mirrorFile, splitFrontMatter } from "./frontmatter";
-import { buildRelations } from "./relations";
+import { adjacentTeeth } from "../systems/musculoskeletal/bones/teeth";
 import {
   BODY_WORDS,
   articulationsSchema,
@@ -169,7 +169,9 @@ export function validateContent(input: ContentInput, opts: ContentOptions = {}):
   const regs = regionsSchema.safeParse(input.regions);
   if (!regs.success) errors.push(...zodLines("regions.json", regs.error));
   else {
-    const rel = buildRelations(articulations, regs.data);
+    // Tier 1 as the bones' rules give it with only bones showing: articulation partners and a tooth's neighbours.
+    const partners = new Map<string, Set<string>>();
+    for (const a of articulations) for (const [x, y] of [[a.a, a.b], [a.b, a.a]] as const) (partners.get(x) ?? partners.set(x, new Set()).get(x)!).add(y);
     for (const id of Object.keys(regs.data)) if (!known(id)) errors.push(`regions.json: unknown ID ${id}`);
     for (const e of input.ids) {
       const set = regs.data[e.id];
@@ -177,7 +179,7 @@ export function validateContent(input: ContentInput, opts: ContentOptions = {}):
         errors.push(`regions.json: no entry for ${e.id}`);
         continue;
       }
-      const t1 = new Set(rel.tier1(e.id));
+      const t1 = new Set([...(partners.get(e.id) ?? []), ...adjacentTeeth(e.id)]);
       const dup = set.filter((x, i) => set.indexOf(x) !== i);
       if (dup.length) errors.push(`regions.json ${e.id}: listed twice: ${[...new Set(dup)].join(", ")}`);
       for (const x of set) {

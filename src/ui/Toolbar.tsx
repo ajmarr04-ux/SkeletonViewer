@@ -2,7 +2,7 @@ import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { PRESETS, type Preset } from "../camera/math";
 import { explodeMovers } from "../scene/Explode";
 import { isolationView } from "../scene/isolation";
-import { useSoftTiersVersion } from "../content/softRelations";
+import { useGraphVersion } from "../content/appGraph";
 import { expandRegion, hasMesh, isMuscleKind, setColourMode, setGhostMode, showAllHidden, showRelated, tierBlockedReason } from "../state/selection";
 import { GHOST_OPACITY, useViewer } from "../state/store";
 import { takeScreenshot } from "./capture";
@@ -148,7 +148,7 @@ export function Toolbar() {
   ];
   // Show related / Expand region (spec §7 toolbar: one button, the next tier). A group has no tiers.
   // A soft structure gets them once its content has loaded (M9 plan decisions 4 and 5).
-  useSoftTiersVersion();
+  useGraphVersion();
   const muscle = sel !== null && isMuscleKind(sel);
   if (sel !== null && tier === 0 && tierBlockedReason(sel, 1) === null) {
     tools.push({

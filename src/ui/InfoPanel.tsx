@@ -9,7 +9,7 @@ import { useSoftContent } from "../content/softContentLoader";
 import { softPanelModel, softSections, type AttachmentList, type ActionRow, type SoftLink, type SoftPanelModel, type SoftSections } from "../content/softPanel";
 import { softLayerOf } from "../content/softRegistry";
 import { expandRegion, goBack, hasMesh, hideSelected, isMuscleKind, isolateAttached, selectLink, setAntagonists, showRelated, switchSide, tierBlockedReason } from "../state/selection";
-import { useSoftTiersVersion } from "../content/softRelations";
+import { useGraphVersion } from "../content/appGraph";
 import { useViewer, type JointHighlight } from "../state/store";
 import { focusCanvas } from "./canvasFocus";
 import { PHONE_QUERY, useMedia } from "./useMedia";
@@ -260,7 +260,7 @@ function Title({ model }: { model: PanelModel }) {
 }
 
 function GroupTitle({ group }: { group: Group }) {
-  useSoftTiersVersion(); // an attached-muscles group fills in when the muscles' content arrives
+  useGraphVersion(); // an attached-muscles group fills in when the muscles' content arrives
   const { shown, total } = groupCounts(group.key);
   if (group.attached) {
     const n = group.members.length - 1;
@@ -315,7 +315,7 @@ function GroupBody({ group }: { group: Group }) {
  * Insertions as links (hovering one highlights it); Back returns to the bone.
  */
 function AttachedGroupBody({ group }: { group: Group }) {
-  useSoftTiersVersion();
+  useGraphVersion();
   const a = group.attached!;
   const bone = { id: a.bone, label: displayName(a.bone) };
   const rows = (ids: readonly string[]) => ids.map((id) => ({ id, label: displayName(id) })).sort((x, y) => x.label.localeCompare(y.label));
@@ -699,7 +699,7 @@ function JoinSectionsView({ s }: { s: Extract<SoftSections, { kind: "ligament" |
  * layer's content loads, and Expand for a structure that has no joint.
  */
 function SoftTierButtons({ id }: { id: string }) {
-  useSoftTiersVersion();
+  useGraphVersion();
   const tier = useViewer((s) => s.tier);
   const muscle = isMuscleKind(id);
   const r1 = tierBlockedReason(id, 1);
@@ -757,7 +757,7 @@ function AntagonistToggle() {
 
 /** The reason a tier button is off, written out (a title alone isn't read on touch). */
 function TierReason({ id }: { id: string }) {
-  useSoftTiersVersion();
+  useGraphVersion();
   const r1 = tierBlockedReason(id, 1);
   const r2 = tierBlockedReason(id, 2);
   if (r1 === null && r2 === null) return null;

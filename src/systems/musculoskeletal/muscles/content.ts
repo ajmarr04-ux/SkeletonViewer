@@ -4,6 +4,7 @@ import { z } from "zod";
 import { actionSchema, attachmentSchema, inheritable, overridesSchema, side, snake, text } from "../../../content/softFields";
 import { defineLayerContent } from "../../contentTypes";
 import { PART_TYPES, type PartType } from "../../registry";
+import type { Patch } from "../../types";
 import { derivedLists, inheritAttachments, muscleEdges, musclePartEdges, synergistsAndAntagonists } from "./derive";
 
 /** Spec §4.1. */
@@ -67,6 +68,11 @@ export const musclesContent = defineLayerContent({
   rules: [inheritAttachments, synergistsAndAntagonists],
   /** The content chunk's `derived` lists, read off the edges. */
   derivedLists,
+  // The attachment patches (M6) as soft-to-id.json maps them.
+  patches: (readJson) => {
+    const raw = readJson("assets/mapping/soft-to-id.json") as { attachments: Record<string, { structures: string[]; end: Patch["end"]; on?: string | null }> };
+    return Object.fromEntries(Object.entries(raw.attachments).map(([id, p]) => [id, { structures: p.structures, end: p.end, on: p.on ?? null }]));
+  },
   // Side-free key → 1/2/3 (M7 session V).
   depthFile: "content/muscle-depth.json",
 });

@@ -13,6 +13,7 @@
 //   unknown, as they were before M12.
 
 import ids from "../../content/ids.json";
+import type { EdgeWire } from "../graph/codec";
 import type { GraphNode } from "../graph/types";
 import type { SoftId } from "../layers/softIds";
 import type { LayerId, LazyLayerId } from "../systems/registry";
@@ -42,6 +43,14 @@ export function setIndex(data: IndexData): void {
   lazyOrder = data.entries;
   nodes = new Map(data.nodes.map((n) => [n.id, n]));
 }
+
+let eagerEdgeWire: EdgeWire = { ids: [], t: {} };
+/** Called once by src/content/indexData.ts: the eager layer's edges (`virtual:skeleton-graph`). */
+export function setEagerEdges(wire: EdgeWire): void {
+  eagerEdgeWire = wire;
+}
+/** The eager layer's edges as shipped (src/content/appGraph.ts registers them). */
+export const eagerEdges = (): EdgeWire => eagerEdgeWire;
 
 /** A lazy layer's structure (`SoftId`), or undefined. */
 export const lazyEntry = (id: string): SoftId | undefined => lazy.get(id);

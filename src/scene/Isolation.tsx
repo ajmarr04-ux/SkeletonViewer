@@ -5,7 +5,7 @@ import { useViewer } from "../state/store";
 import type { BatchedSkeleton } from "./batchSkeleton";
 import { Color } from "three";
 import { applyBaseColours, applyLayerView, boneAccent, drawnColourMode, isPickableIn, PLAIN, viewOf, visibleCount, type BaseTint, type SceneView } from "./isolation";
-import { subscribeSoftTiers } from "../content/softRelations";
+import { subscribeGraph } from "../content/appGraph";
 import { useLayerBatches, usePatchBatch, type LayerBatches, type PatchBatch } from "./layerRegistry";
 import { EAGER_LAYER, LAZY_LAYERS, type LazyLayerId } from "../systems/registry";
 import { tintFor } from "./material";
@@ -264,7 +264,7 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
     const unsubscribeLayers = useLayerBatches.subscribe(apply);
     const unsubscribePatches = usePatchBatch.subscribe(apply);
     // A layer's tier sets arriving can change a related set on screen (M9 plan decision 3).
-    const unsubscribeTiers = subscribeSoftTiers(apply);
+    const unsubscribeTiers = subscribeGraph(apply);
     const unsubscribe = useViewer.subscribe((s, prev) => {
       if (
         s.sel !== prev.sel ||

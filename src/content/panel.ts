@@ -1,11 +1,13 @@
 // The info panel's model (spec §7) from the compiled content (plan step 4).
 // Objects whose file isn't written yet fall back to the placeholder text
-// ("Not written yet"); the articulations always come from articulations.json.
+// ("Not written yet"); the articulations always come from the graph's
+// `articulates_with` edges (articulations.json, M12), named by their joint node.
 
 import type { AttachedRow, CompiledContent, CompiledEntry } from "./compile";
 import { groupTrail } from "./labels";
 import { panelModel as placeholderModel, type PanelModel as PlaceholderModel } from "./placeholder";
-import { adjacentTeeth, relations as appRelations, type Relations } from "./relations";
+import { appGraph } from "./appGraph";
+import { indexNode } from "./index";
 import ids from "../../content/ids.json";
 
 type Entry = { id: string; name: string; side: "left" | "right" | "midline"; kind: string; meshAvailable: boolean };
@@ -73,16 +75,18 @@ export function attachedLabel(row: AttachedRow, boneSide: Entry["side"]): string
   return row.side === "midline" || row.side === boneSide ? row.name : `${row.name} (${row.side})`;
 }
 
-export function panelModel(id: string, content: CompiledContent | null, rel: Relations = appRelations): PanelModel | null {
+export function panelModel(id: string, content: CompiledContent | null): PanelModel | null {
   const base = placeholderModel(id);
   if (!base) return null;
   const { sections: _sections, ...rest } = base;
   const c = content?.[id] ?? null;
-  const neighbours = new Set(adjacentTeeth(id));
-  const articulations = rel
-    .articulationsOf(id)
+  const graph = appGraph();
+  const neighbours = new Set(graph.neighbours(id, "adjacent_tooth"));
+  const articulations = graph
+    .out(id, "articulates_with")
+    .map((e) => ({ other: e.from === id ? e.to : e.from, joint: e.meta?.joint ?? "" }))
     .filter((a) => !neighbours.has(a.other))
-    .map((a) => ({ id: a.other, label: linkLabel(a.other, id), joint: a.joint, name: a.name }));
+    .map((a) => ({ id: a.other, label: linkLabel(a.other, id), joint: a.joint, name: indexNode(a.joint)?.name ?? a.joint }));
   return {
     ...rest,
     latin: c?.latin ?? null,

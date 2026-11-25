@@ -16,7 +16,7 @@ import { loadSoftContent } from "../content/softContentLoader";
 import { ALL_SHOWN_ANNOUNCEMENT, hiddenAnnouncement } from "../content/announce";
 import { hideTargets, isSoftId, softEntry, softLayerOf } from "../content/softRegistry";
 import { hasMesh, isEagerId, isKnownId, layerOfId } from "../content/index";
-import { hasSoftTier2, softTiersLoaded } from "../content/softRelations";
+import { structureLoaded, tiers } from "../content/appGraph";
 import { useLayerBatches } from "../scene/layerRegistry";
 import { FULL_SKELETON, isolationStep, resolveClick, type HistoryStep, type Isolation, type IsolationAction, type ParentOf } from "./isolation";
 import { COLOUR_MODE_KEY, type ColourMode } from "../scene/regionColours";
@@ -203,8 +203,8 @@ export const NO_JOINT_REASON = "Not part of a joint";
  */
 export function tierBlockedReason(id: string | null, tier: 1 | 2): string | null {
   if (id === null || isEagerId(id) || !isSoftId(id)) return null;
-  if (!softTiersLoaded(id)) return LOADING_CONTENT_REASON;
-  if (tier === 2 && !hasSoftTier2(id)) return NO_JOINT_REASON;
+  if (!structureLoaded(id)) return LOADING_CONTENT_REASON;
+  if (tier === 2 && !tiers().hasTier(id, "t2")) return NO_JOINT_REASON;
   return null;
 }
 

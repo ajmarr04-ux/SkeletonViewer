@@ -10,7 +10,7 @@ import { groupTrail } from "./labels";
 import { displayName } from "./names";
 import type { HierarchyNode } from "./schema";
 import { NESTED_LAYER, type LazyLayerId } from "../systems/registry";
-import { attachedTo } from "./softRelations";
+import { softContentOf } from "./softContentLoader";
 import { softEntry } from "./softRegistry";
 import { SOFT_ROOTS, isSoftNode, nodeMembers, type SoftTreeData, type SoftTreeNode } from "./softTree";
 
@@ -97,6 +97,17 @@ export function attachedBoneOf(key: string): string | null {
   if (!key.startsWith(ATTACHED_PREFIX)) return null;
   const bone = key.slice(ATTACHED_PREFIX.length);
   return BY_ID.has(bone) ? bone : null;
+}
+
+/**
+ * The muscles and parts attached to a structure (spec §5.4: "Show attached
+ * muscles"), as declared in their origins and insertions (the nested layer's
+ * `derived.attached`); null until that layer's content has loaded.
+ */
+export function attachedTo(structure: string): { origins: readonly string[]; insertions: readonly string[] } | null {
+  const c = softContentOf(NESTED_LAYER);
+  if (!c) return null;
+  return c.derived?.attached[structure] ?? { origins: [], insertions: [] };
 }
 
 /** The attached-muscles group of a bone, built from what the muscles' content declares (once loaded). */

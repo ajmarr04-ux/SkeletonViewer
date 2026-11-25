@@ -1,11 +1,10 @@
 import { useEffect } from "react";
-import { relations } from "../content/relations";
 import { hasMesh } from "../state/selection";
 import { useViewer } from "../state/store";
 import { allInstanceBounds, type BatchedSkeleton } from "./batchSkeleton";
 import { beginExplode, boneBox, endExplode, explodeOffsets, setExplode, type BoneBox, type ExplodeRun } from "./explode";
 import type { SkeletonScene } from "./Isolation";
-import { isolationView } from "./isolation";
+import { EAGER_ONLY, isolationView, relatedAt } from "./isolation";
 import { setOutlineTarget } from "./outline";
 
 /** Box centre and radius of every bone, worked out once per batch (on the first explode). */
@@ -22,7 +21,7 @@ function boxesOf(sk: BatchedSkeleton): Map<string, BoneBox> {
 /** The tier-1 bones that move for the current selection, or null if Explode doesn't apply. */
 export function explodeMovers(sel: string | null, tier: number): { focus: string; movers: string[] } | null {
   if (sel === null || tier < 1 || !hasMesh(sel)) return null;
-  const movers = relations.tier1(sel).filter(hasMesh);
+  const movers = relatedAt(sel, 1, EAGER_ONLY).filter(hasMesh);
   return movers.length ? { focus: sel, movers } : null;
 }
 

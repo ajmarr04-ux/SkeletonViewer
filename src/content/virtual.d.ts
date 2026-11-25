@@ -22,6 +22,11 @@ declare module "virtual:skeleton-index" {
   const data: import("./indexCodec").PackedIndex;
   export default data;
 }
+declare module "virtual:skeleton-graph" {
+  /** The eager layer's edges, for the main chunk (scripts/lib/content-plugin.ts, src/graph/codec.ts; M12 plan decision 3). */
+  const edges: import("../graph/codec").EdgeWire;
+  export default edges;
+}
 declare module "virtual:skeleton-soft-content-*" {
   /** A lazy layer's content chunk, its descriptor's `contentChunk`: content/<folder>/*.md compiled (src/content/softCompile.ts; M8 plan decision 11). */
   const content: import("./softCompile").SoftLayerContent;

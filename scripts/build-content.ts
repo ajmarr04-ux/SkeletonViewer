@@ -15,7 +15,7 @@ const soft = compileAllSoftFromDisk();
 for (const layer of LAZY_LAYERS) {
   const c = soft[layer];
   const j = JSON.stringify(c);
-  console.log(`content (${layer}): ${Object.keys(c.entries).length} file(s), ${kb(j.length)} raw, ${kb(gzipSync(j).length)} gzipped (tier sets ${kb(JSON.stringify(c.tiers).length)} raw)`);
+  console.log(`content (${layer}): ${Object.keys(c.entries).length} file(s), ${kb(j.length)} raw, ${kb(gzipSync(j).length)} gzipped (edges ${kb(JSON.stringify(c.edges).length)} raw)`);
 }
 const i = process.argv.indexOf("--out");
 if (i > 0 && process.argv[i + 1]) writeFileSync(process.argv[i + 1]!, json);

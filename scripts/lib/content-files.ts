@@ -7,13 +7,15 @@ import { fileURLToPath } from "node:url";
 import { boneAttachedRows, type BoneAttachedRows } from "../../src/content/compile";
 import { splitFrontMatter } from "../../src/content/frontmatter";
 import { oppositeOf } from "../../src/content/placeholder";
-import type { Patch } from "../../src/content/softRoles";
-import { compileSoftLayer, withSoftTiers, type SoftCompileDeps, type SoftLayerContent } from "../../src/content/softCompile";
+import { encodeEdges, type EdgeWire } from "../../src/graph/codec";
+import { shipEdges } from "../../src/graph/ship";
+import type { Edge } from "../../src/graph/types";
+import { compileSoftLayer, withShipped, type SoftCompileDeps, type SoftLayerContent } from "../../src/content/softCompile";
 import type { SoftIdEntry } from "../../src/content/softValidate";
 import type { IdEntry } from "../../src/content/validate";
-import { EAGER_LAYER, LAZY_LAYERS, NESTED_LAYER, type LazyLayerId } from "../../src/systems/registry";
-import { compileContentGraph } from "../../src/systems/registry.content";
-import { contentFolder } from "../../src/systems/registry.content";
+import { EAGER_LAYER, EDGE_TYPES, LAZY_LAYERS, NESTED_LAYER, layerOfKind, type LazyLayerId } from "../../src/systems/registry";
+import { compileContentGraph, contentFolder, layerContent } from "../../src/systems/registry.content";
+import type { Patch } from "../../src/systems/types";
 
 export const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
 /** The eager layer's content folder (content/bones). */
@@ -127,17 +129,39 @@ export function readJointNames(): Record<string, string> {
   return out;
 }
 
-/** The attachment patches (M6) as `soft-to-id.json` maps them (M9 plan decision 6). */
-export function readPatches(): Record<string, Patch> {
-  const raw = readJson("assets/mapping/soft-to-id.json") as { attachments: Record<string, { structures: string[]; end: Patch["end"]; on?: string | null }> };
-  return Object.fromEntries(Object.entries(raw.attachments).map(([id, p]) => [id, { structures: p.structures, end: p.end, on: p.on ?? null }]));
+/** The attachment patches (M6) of every lazy layer whose content half names them (M9 plan decision 6), by layer. */
+export function readLayerPatches(): Partial<Record<LazyLayerId, Record<string, Patch>>> {
+  const out: Partial<Record<LazyLayerId, Record<string, Patch>>> = {};
+  for (const l of LAZY_LAYERS) {
+    const read = layerContent(l).patches;
+    if (read) out[l] = read(readJson);
+  }
+  return out;
 }
 
-/** Every layer compiled, with the tier sets and the muscles' roles (M9 plan decisions 4, 6, 7): what the lazy chunks ship. */
+/** Every layer's attachment patches, together (patch IDs are unique across layers). */
+export const readPatches = (): Record<string, Patch> => Object.assign({}, ...Object.values(readLayerPatches())) as Record<string, Patch>;
+
+/** The edges each chunk ships (M12 plan decision 3): the eager layer's in the main chunk, each lazy layer's (and its reverse index) in its own. */
+export function shippedEdges(edges: readonly Edge[]): Record<string, Edge[]> {
+  const layers = new Map(readStructures().map((e) => [e.id, layerOfKind(e.kind)]));
+  const symmetric = new Set(EDGE_TYPES.filter((t) => t.symmetric).map((t) => t.id));
+  return shipEdges(edges, { eager: EAGER_LAYER, lazy: LAZY_LAYERS, layerOf: (id) => layers.get(id), isSymmetric: (t) => symmetric.has(t) });
+}
+
+/** Every layer compiled, with what each lazy chunk ships besides its entries: edges, patches, joint names (M12 plan decisions 3 and 8). */
 export function compileAllSoftFromDisk(files = readSoftFiles()): Record<LazyLayerId, SoftLayerContent> {
   const deps = softDeps();
   const layers = Object.fromEntries(LAZY_LAYERS.map((l) => [l, compileSoftLayer(l, files[l], deps)])) as Record<LazyLayerId, SoftLayerContent>;
-  return withSoftTiers(layers, { ...deps, patches: readPatches(), jointNames: readJointNames() });
+  const shipped = shippedEdges(compileGraphFromDisk(layers).edges);
+  const edges = Object.fromEntries(LAZY_LAYERS.map((l) => [l, encodeEdges(shipped[l] ?? [])])) as Record<LazyLayerId, EdgeWire>;
+  return withShipped(layers, { edges, patches: readLayerPatches(), jointNames: readJointNames() });
+}
+
+/** The edges the main chunk ships (the eager layer's, and those between non-structure nodes), encoded. */
+export function readEagerEdges(): EdgeWire {
+  const layers = Object.fromEntries(LAZY_LAYERS.map((l) => [l, compileSoftFromDisk(l)])) as Record<LazyLayerId, SoftLayerContent>;
+  return encodeEdges(shippedEdges(compileGraphFromDisk(layers).edges)[EAGER_LAYER] ?? []);
 }
 
 /** Each bone's derived Origins and Insertions for the panel (M8 plan decision 13, M9 decision 9), from the muscles layer's content (the nested layer). */

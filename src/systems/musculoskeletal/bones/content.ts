@@ -1,7 +1,7 @@
 // The bones layer's authoring half. Its validation and compiler stay on their
 // M10 code (`src/content/validate.ts`, `compile.ts`) until M12 (M11 plan decision 3).
 import { BODY_WORDS, frontMatterSchema } from "../../../content/schema";
-import { adjacentTeeth } from "../../../content/relations";
+import { adjacentTeeth } from "./teeth";
 import type { Edge } from "../../../graph/types";
 import { defineLayerContent, type GraphContext } from "../../contentTypes";
 

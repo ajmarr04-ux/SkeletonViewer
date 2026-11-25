@@ -4,10 +4,11 @@
 import { afterAll, describe, expect, it } from "vitest";
 import ids from "../content/ids.json";
 import { compileAllSoftFromDisk } from "../scripts/lib/content-files";
-import { attachedBoneOf, attachedKey, groupAncestors, groupOf, isGroupKey, ancestorsOf } from "../src/content/groups";
+import { attachedBoneOf, attachedTo, attachedKey, groupAncestors, groupOf, isGroupKey, ancestorsOf } from "../src/content/groups";
 import { groupIsolationAnnouncement } from "../src/content/announce";
 import { softEntry } from "../src/content/softRegistry";
-import { attachedTo, registerSoftTiers, resetSoftTiers } from "../src/content/softRelations";
+import { resetAppGraph } from "../src/content/appGraph";
+import { registerSoftContent, resetSoftContent } from "../src/content/softContentLoader";
 import { softSections, structureLabel, type MuscleSections, type JoinSections } from "../src/content/softPanel";
 import { groupView, isolationView, withJoint } from "../src/scene/isolation";
 import { isolationStep, FULL_SKELETON } from "../src/state/isolation";
@@ -21,7 +22,8 @@ const muscle = (id: string) => softSections(id, SOFT.muscles) as MuscleSections;
 const ids_ = (l: { id: string }[]) => l.map((x) => x.id);
 
 afterAll(() => {
-  resetSoftTiers();
+  resetSoftContent();
+    resetAppGraph();
 });
 
 describe("muscle and part sections", () => {
@@ -161,7 +163,8 @@ describe('"Show attached muscles": grp=attached:<bone>', () => {
   });
 
   it("before the muscles' content loads: the bone alone, loading", () => {
-    resetSoftTiers();
+    resetSoftContent();
+    resetAppGraph();
     expect(attachedTo("femur_left")).toBeNull();
     const g = groupOf("attached:femur_left")!;
     expect(g.members).toEqual(["femur_left"]);
@@ -173,7 +176,7 @@ describe('"Show attached muscles": grp=attached:<bone>', () => {
   });
 
   it("once loaded: the bone plus every muscle and part attached (as derived), drawn as meshes", () => {
-    for (const l of ["muscles", "ligaments", "cartilage"] as const) registerSoftTiers(l, SOFT[l].tiers, SOFT[l].roles, SOFT[l].derived?.attached);
+    for (const l of ["muscles", "ligaments", "cartilage"] as const) registerSoftContent(l, SOFT[l]);
     const a = SOFT.muscles.derived!.attached.femur_left!;
     const g = groupOf("attached:femur_left")!;
     expect(g.attached).toMatchObject({ bone: "femur_left", loading: false, origins: a.origins, insertions: a.insertions });

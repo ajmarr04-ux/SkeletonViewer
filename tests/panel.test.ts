@@ -5,7 +5,7 @@ import ids from "../content/ids.json";
 import { readBoneAttached } from "../scripts/lib/content-files";
 import { boneAttachedRows, compileContent } from "../src/content/compile";
 import { attachedLabel, landmarkName, linkLabel, panelModel, typeLabel } from "../src/content/panel";
-import { relations } from "../src/content/relations";
+import { appGraph } from "../src/content/appGraph";
 
 const dir = join(__dirname, "../content/bones");
 const files = new Map(readdirSync(dir).filter((f) => f.endsWith(".md")).map((f) => [f.slice(0, -3), readFileSync(join(dir, f), "utf8")]));
@@ -129,7 +129,7 @@ describe("panel model", () => {
 
   it("lists every articulation from either side of the pair, labelled with the partner's side only when it differs", () => {
     const m = panelModel("sternum", content)!;
-    expect(m.articulations.length).toBe(relations.articulationsOf("sternum").length);
+    expect(m.articulations.length).toBe(appGraph().out("sternum", "articulates_with").length);
     expect(m.articulations.map((a) => a.label)).toContain("Rib 1 (left)");
     expect(m.articulations.map((a) => a.label)).toContain("Clavicle (right)");
     expect(panelModel("rib_1_left", content)!.articulations.map((a) => a.label)).toEqual(expect.arrayContaining(["T1 vertebra", "Sternum"]));

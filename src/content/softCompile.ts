@@ -8,8 +8,8 @@
 
 import { marked } from "marked";
 import { splitFrontMatter } from "./frontmatter";
-import { buildMuscleRoles, type MuscleRoles, type Patch } from "./softRoles";
-import { buildSoftTiers, type SoftTierData } from "./softTiers";
+import type { EdgeWire } from "../graph/codec";
+import type { Patch } from "../systems/types";
 import type { LazyLayerId } from "../systems/registry";
 import type { CompiledGraph } from "../graph/compile";
 import { contentFolder, layerContent, schemaForKind } from "../systems/registry.content";
@@ -33,11 +33,11 @@ export type SoftDerived = {
 export type SoftLayerContent = {
   entries: Record<string, SoftCompiledEntry>;
   derived: SoftDerived | null;
-  /** Tier sets (M9 plan decision 4), from every layer's content; added by `withSoftTiers`. */
-  tiers?: SoftTierData;
-  /** Muscles layer only: origin/insertion patches and fallback structures, antagonists (M9 plan decisions 6 and 7); added by `withSoftTiers`. */
-  roles?: Record<string, MuscleRoles>;
-  /** Names of the joints this layer's structures name (actions, `joint`), for the panel (M9 plan decision 9); added by `withSoftTiers`. */
+  /** The layer's edges (M12 plan decision 3), registered with the runtime graph when the chunk loads; added by `withShipped`. */
+  edges?: EdgeWire;
+  /** The attachment patches the layer's overlay draws, for the tints (M12 plan decision 8); added by `withShipped`. */
+  patches?: Record<string, Patch>;
+  /** Names of the joints this layer's structures name (actions, `joint`), for the panel (M9 plan decision 9); added by `withShipped`. */
   joints?: Record<string, string>;
 };
 
@@ -79,20 +79,16 @@ export function compileSoftLayer(layer: LazyLayerId, files: Map<string, string>,
 }
 
 /**
- * Add the tier sets (M9 plan decision 4) to compiled layers. They need every
- * layer at once: a muscle's tier 2 uses the derived synergists, and a
- * ligament's tier 2 names cartilage (and the other way round).
+ * Add what each lazy chunk ships besides its entries (M12 plan decision 3):
+ * the edges whose `from` (or, as the reverse index, `to`) is in the layer, the
+ * attachment patches of a layer whose overlay draws them (decision 8), and the
+ * names of the joints the layer's structures name (M9 plan decision 9).
  */
-export function withSoftTiers(
+export function withShipped(
   layers: Record<LazyLayerId, SoftLayerContent>,
-  deps: Pick<SoftCompileDeps, "pairJoints" | "functionalJoints"> & { patches?: Record<string, Patch>; jointNames?: Record<string, string> },
+  deps: { edges: Record<LazyLayerId, EdgeWire>; patches: Partial<Record<LazyLayerId, Record<string, Patch>>>; jointNames: Record<string, string> },
 ): Record<LazyLayerId, SoftLayerContent> {
-  const fm: Record<string, SoftFm> = {};
-  for (const c of Object.values(layers)) for (const [id, e] of Object.entries(c.entries)) fm[id] = e.fm;
-  const tiers = buildSoftTiers({ fm, synergists: layers.muscles.derived?.synergists ?? {}, pairJoints: deps.pairJoints, functionalJoints: deps.functionalJoints });
-  const d = layers.muscles.derived;
-  const roles = buildMuscleRoles({ fm, patches: deps.patches ?? {}, synergists: d?.synergists ?? {}, antagonists: d?.antagonists ?? {} });
-  const names = deps.jointNames ?? {};
+  const names = deps.jointNames;
   const joints = (c: SoftLayerContent) => {
     const out: Record<string, string> = {};
     for (const { fm: f } of Object.values(c.entries)) {
@@ -101,9 +97,10 @@ export function withSoftTiers(
     }
     return out;
   };
-  return {
-    muscles: { ...layers.muscles, tiers: tiers.muscles, roles, joints: joints(layers.muscles) },
-    ligaments: { ...layers.ligaments, tiers: tiers.ligaments, joints: joints(layers.ligaments) },
-    cartilage: { ...layers.cartilage, tiers: tiers.cartilage, joints: joints(layers.cartilage) },
-  };
+  const out = {} as Record<LazyLayerId, SoftLayerContent>;
+  for (const [layer, c] of Object.entries(layers) as [LazyLayerId, SoftLayerContent][]) {
+    const patches = deps.patches[layer];
+    out[layer] = { ...c, edges: deps.edges[layer], ...(patches ? { patches } : {}), joints: joints(c) };
+  }
+  return out;
 }

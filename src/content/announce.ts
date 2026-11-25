@@ -6,14 +6,13 @@
 // one message (risk 3: the selection wins, the layer change is folded in).
 
 import ids from "../../content/ids.json";
-import { isolationView, withTints } from "../scene/isolation";
+import { EAGER_ONLY, isolationView, relatedAt, withTints } from "../scene/isolation";
 import type { Tier } from "../state/isolation";
 import { type Layer, type LayerMode, type LayerModes, type MuscleDepth } from "../state/url";
 import { COUNT_ORDER, countKind, isLazyLayer, kindNoun, LAYER_IDS, LAZY_LAYERS, layerLabel, presetDescriptor, presetOf, systemDescriptor, systemMode, type KindId, type LazyLayerId, type SystemId } from "../systems/registry";
 import { groupAnnouncement, groupOf } from "./groups";
 import { displayName } from "./names";
 import { announcement as boneAnnouncement } from "./placeholder";
-import { relations } from "./relations";
 import { softEntry } from "./softRegistry";
 
 // ---------------------------------------------------------------------------
@@ -240,7 +239,7 @@ export function isolationAnnouncement(
   }
   // A bone: its own mesh counts among "N bones" (M5's wording).
   const all = [...(view.solid ?? [])];
-  return boneSelectionAnnouncement(now, prev, (id) => relations.tier1(id), countByKind(all));
+  return boneSelectionAnnouncement(now, prev, (id) => relatedAt(id, 1, EAGER_ONLY), countByKind(all));
 }
 
 /** How many muscles the antagonist toggle adds (parts count once, as their muscle). */

@@ -8,8 +8,10 @@
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { compileAllSoftFromDisk, readPatches, root } from "../lib/content-files";
-import { bothSynergistAndAntagonist, patchAgreement, type Disagreement } from "../../src/content/softRoles";
+import { compileAllSoftFromDisk, compileGraphFromDisk, readPatches, root } from "../lib/content-files";
+import { createGraph } from "../../src/graph/graph";
+import { EDGE_TYPES, rolesSpecOf } from "../../src/systems/registry";
+import { bothSynergistAndAntagonist, muscleRoles, patchAgreement, patchIndex, type Disagreement } from "../../src/systems/musculoskeletal/muscles/roles";
 import type { SoftFm } from "../../src/content/softSchema";
 import { MAX_BOTH_OUTLINES } from "../../src/scene/tints";
 
@@ -20,15 +22,21 @@ export function patchReport(): string {
   const fm: Record<string, SoftFm> = {};
   for (const c of Object.values(layers)) for (const [id, e] of Object.entries(c.entries)) fm[id] = e.fm;
   const patches = readPatches();
-  const all = patchAgreement(fm, patches);
+  // The same model the app's tints run on (M12 plan decision 8): the graph and the patch list.
+  const graph = createGraph(EDGE_TYPES);
+  graph.add("all", compileGraphFromDisk(layers).edges);
+  const index = patchIndex(patches);
+  const muscles = Object.keys(fm)
+    .sort()
+    .filter((id) => rolesSpecOf(fm[id]!.kind) !== undefined);
+  const all = patchAgreement(graph, muscles, index);
   // Left and midline, plus any right-side row that isn't the mirror of a left one (the content
   // mirrors, but the source's patches don't always come in pairs).
   const isRight = (id: string) => id.endsWith("_right") || id.includes("_right__");
   const keep = (id: string) => !isRight(id);
   const noContent = all.filter((d): d is Extract<Disagreement, { kind: "patch-without-content" }> => d.kind === "patch-without-content");
   const noPatch = all.filter((d): d is Extract<Disagreement, { kind: "content-without-patch" }> => d.kind === "content-without-patch");
-  const roles = layers.muscles.roles ?? {};
-  const muscles = Object.keys(roles);
+  const roles = Object.fromEntries(muscles.map((id) => [id, muscleRoles(graph, id, index)]));
   const drawnPatches = new Set(Object.values(roles).flatMap((r) => [...r.o.p, ...r.i.p].map(([p]) => p)));
   const derived = layers.muscles.derived!;
   const overlap = bothSynergistAndAntagonist(derived).filter(([a]) => keep(a));

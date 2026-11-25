@@ -5,6 +5,7 @@
 // (AV); fields later milestones fill (`tiers`, `panel`, `searchFields`, the
 // tree builder) are optional until then.
 
+import type { Graph } from "../graph/graph";
 import type { EdgeTypeDescriptor, KindTiers } from "../graph/types";
 
 export type LayerMode = "on" | "ghost" | "off";
@@ -58,6 +59,23 @@ export type OverlaySpec = {
   budgets: Readonly<Record<Lod, ModelBudget>>;
 };
 
+/** The two ends of a structure the tints colour (spec §5.3). */
+export type TintEnd = "origin" | "insertion";
+/** One attachment patch of an overlay (M6, `soft-to-id.json` `attachments`): the structures it serves, its end, the structure it lies on. */
+export type Patch = { structures: readonly string[]; end: TintEnd; on: string | null };
+/** One end of a structure's tints: patches drawn (`[patch ID, structure it lies on]`) and structures tinted whole. */
+export type RoleSet = { p: [string, string][]; f: string[] };
+export type Roles = { o: RoleSet; i: RoleSet };
+/**
+ * A kind's origin/insertion tints over the graph and its layer's patches
+ * (M12 plan decision 8). The patch index is built once per patch list.
+ */
+export type RolesSpec = {
+  index(patches: Readonly<Record<string, Patch>>): unknown;
+  /** `index`: what `index` returned. */
+  roles(graph: Graph, id: string, index: unknown): Roles;
+};
+
 /** How the sidebar root is built (M12 defines and fills it). */
 export type TreeSpec = Record<string, never>;
 
@@ -88,6 +106,8 @@ export type KindDescriptor = {
   tiers?: KindTiers;
   /** The values of the entries' `partType`, in order. */
   partTypes?: readonly PartTypeSpec[];
+  /** Origin and insertion tints (spec §5.3), from the graph and the layer's attachment patches. */
+  roles?: RolesSpec;
 };
 
 export type LayerDescriptor = {
