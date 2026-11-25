@@ -20,7 +20,7 @@ muscles, ligaments and cartilage, per [`SPEC-musculoskeletal.md`](SPEC-musculosk
 | 9: Interaction (muscle → part selection, tiers per kind, origins and insertions, panel sections, sidebar and search for the new kinds) | https://ajmarr04-ux.github.io/SkeletonViewer/m9/ | Live (frozen at `ef6ee75`; [plan](docs/PLAN-milestone-9.md)) |
 | 10: Polish and measurement (labels, colours, announcements and keyboard for the new kinds; performance budgets; `STATUS.md`) | https://ajmarr04-ux.github.io/SkeletonViewer/m10/ | Live (frozen at `317b445`; [plan](docs/PLAN-milestone-10.md)) |
 | 11: Registry (layer and kind descriptors, one registry, grouped Layers panel; platform phase, [`SPEC-platform.md`](SPEC-platform.md)) | https://ajmarr04-ux.github.io/SkeletonViewer/m11/ | Live (frozen at `a2709f6`; [plan](docs/PLAN-milestone-11.md)) |
-| 12: Relationship graph and descriptor-driven UI (typed edges, tier rules as data, panels, trees and announcements from descriptors) | https://ajmarr04-ux.github.io/SkeletonViewer/m12/ | In progress ([plan](docs/PLAN-milestone-12.md)) |
+| 12: Relationship graph and descriptor-driven UI (typed edges, tier rules as data, panels, trees and announcements from descriptors) | https://ajmarr04-ux.github.io/SkeletonViewer/m12/ | Live (frozen at `3d8adef`; [plan](docs/PLAN-milestone-12.md)) |
 
 Known issues and requested changes for later milestones: [`docs/BACKLOG.md`](docs/BACKLOG.md).
 
