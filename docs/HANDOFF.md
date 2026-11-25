@@ -7,7 +7,7 @@ Done when: new tests in `tests/e2e/regions.spec.ts` (exists, 4 tests from BM: ex
 ## State
 - Last commit: see `git log` (M13 BM: region focus state)
 - `npm run check`: pass (714 tests; the six goldens unchanged)
-- e2e run this session: `regions`, `select`, `related`, `nested`, `layers` (see the plan's BM notes for the result)
+- e2e run this session: `regions`, `select`, `related`, `nested`, `layers`: 43/44, plus `nested` alone 3/3 twice (the one failure was a hover-tooltip timing flake under parallel load)
 - Open fan-out work: none
 
 ## Waiting on the user
