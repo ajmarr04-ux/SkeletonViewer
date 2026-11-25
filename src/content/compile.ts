@@ -5,7 +5,7 @@
 
 import { marked } from "marked";
 import { splitFrontMatter } from "./frontmatter";
-import { frontMatterSchema, type FrontMatter } from "./schema";
+import { frontMatterSchema, type FrontMatter } from "../systems/musculoskeletal/bones/schema";
 
 export type CompiledEntry = {
   latin: string;

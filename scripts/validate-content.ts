@@ -6,7 +6,7 @@
 // decision 10): missing files are counted, every file that exists is checked.
 import { join } from "node:path";
 import { oppositeOf } from "../src/content/placeholder";
-import { validateContent } from "../src/content/validate";
+import { validateContent } from "../src/systems/musculoskeletal/bones/validate";
 import type { DepthEntry } from "../src/content/muscleDepth";
 import { validateMuscleDepth } from "../src/content/muscleDepthRules";
 import { checkNoJointLists, validateSoftContent } from "../src/content/softValidate";

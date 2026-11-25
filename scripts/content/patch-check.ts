@@ -11,8 +11,8 @@ import { join } from "node:path";
 import { compileAllSoftFromDisk, compileGraphFromDisk, readPatches, root } from "../lib/content-files";
 import { createGraph } from "../../src/graph/graph";
 import { EDGE_TYPES, rolesSpecOf } from "../../src/systems/registry";
-import { bothSynergistAndAntagonist, muscleRoles, patchAgreement, patchIndex, type Disagreement } from "../../src/systems/musculoskeletal/muscles/roles";
-import type { SoftFm } from "../../src/content/softSchema";
+import { bothSynergistAndAntagonist, muscleRoles, synergyLists, patchAgreement, patchIndex, type Disagreement } from "../../src/systems/musculoskeletal/muscles/roles";
+import type { MuscleFm, MusclePartFm, SoftFm } from "../../src/content/softSchema";
 import { MAX_BOTH_OUTLINES } from "../../src/scene/tints";
 
 const out = join(root, "assets/build/REPORT-patches.md");
@@ -38,8 +38,9 @@ export function patchReport(): string {
   const noPatch = all.filter((d): d is Extract<Disagreement, { kind: "content-without-patch" }> => d.kind === "content-without-patch");
   const roles = Object.fromEntries(muscles.map((id) => [id, muscleRoles(graph, id, index)]));
   const drawnPatches = new Set(Object.values(roles).flatMap((r) => [...r.o.p, ...r.i.p].map(([p]) => p)));
-  const derived = layers.muscles.derived!;
-  const overlap = bothSynergistAndAntagonist(derived).filter(([a]) => keep(a));
+  // Synergists and antagonists off the same graph (M12 plan decision 13).
+  const both = bothSynergistAndAntagonist(synergyLists(graph, muscles));
+  const overlap = both.filter(([a]) => keep(a));
   const bothFallback = Object.entries(roles)
     .map(([id, r]) => [id, r.o.f.filter((x) => r.i.f.includes(x))] as const)
     .filter(([id, xs]) => xs.length > 0 && keep(id));
@@ -68,7 +69,7 @@ export function patchReport(): string {
   lines.push(`| Content attachments with no patch (whole-structure tint) | ${noPatch.length} | ${noPatch.filter((d) => keep(d.id)).length} |`);
   lines.push(`| Muscles and parts | ${muscles.length} | ${muscles.filter(keep).length} |`);
   lines.push(`| Muscles and parts with a structure both origin and insertion, no patch (origin tint + outline) | ${Object.values(roles).filter((r) => r.o.f.some((x) => r.i.f.includes(x))).length} | ${bothFallback.length} |`);
-  lines.push(`| Structures both synergist and antagonist of a muscle or part (shown as synergists) | ${bothSynergistAndAntagonist(derived).length} | ${overlap.length} |`);
+  lines.push(`| Structures both synergist and antagonist of a muscle or part (shown as synergists) | ${both.length} | ${overlap.length} |`);
   lines.push("");
   lines.push("The tables below list the left and midline, then any right-side row that isn't the mirror of a left one: the content mirrors, but the source's patches don't always come in pairs (22 exist on the right only, 1 on the left only, and serratus anterior's are numbered differently).");
   lines.push("");
@@ -117,8 +118,10 @@ export function patchReport(): string {
 function describe(fm: Record<string, SoftFm>, id: string, role: "origin" | "insertion"): string {
   const f = fm[id];
   if (!f) return "no content file";
-  if (f.kind !== "muscle" && f.kind !== "muscle_part") return `not a muscle (${f.kind})`;
-  const list = role === "origin" ? f.origin : f.insertion;
+  if (rolesSpecOf(f.kind) === undefined) return `not a muscle (${f.kind})`;
+  // A kind with roles has origins and insertions.
+  const m = f as MuscleFm | MusclePartFm;
+  const list = role === "origin" ? m.origin : m.insertion;
   if (list === "inherit") return `${role} inherited`;
   const named = list.map((a) => ("structure" in a ? a.structure : `soft: ${a.soft}`));
   return named.length ? named.join(", ") : `no ${role}`;

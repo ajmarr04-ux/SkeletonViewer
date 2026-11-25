@@ -7,7 +7,7 @@
 import type { z } from "zod";
 import { compileGraph, type CompiledGraph, type EdgeRule, type EdgeSource } from "../graph/compile";
 import type { Edge, GraphNode } from "../graph/types";
-import type { GraphContext, KindContent, LayerContent, SystemContent } from "./contentTypes";
+import type { EntryCheck, GraphContext, KindContent, LayerContent, SystemContent } from "./contentTypes";
 import { musculoskeletalContent } from "./musculoskeletal/content";
 import { bonesContent } from "./musculoskeletal/bones/content";
 import { cartilageContent } from "./musculoskeletal/cartilage/content";
@@ -34,6 +34,10 @@ export const schemaForKind = <T = unknown>(kind: string): z.ZodType<T> | null =>
 
 /** The summary's length in words for a kind. */
 export const bodyWordsOf = (kind: string): { min: number; max: number } | undefined => KINDS.get(kind)?.bodyWords;
+
+/** A kind's cross-file check of one parsed entry (M12 plan decision 13), or undefined for a kind with none. */
+export const entryCheckOf = (kind: string): ((fm: unknown, ctx: EntryCheck) => readonly string[]) | undefined =>
+  KINDS.get(kind)?.validate as ((fm: unknown, ctx: EntryCheck) => readonly string[]) | undefined;
 
 /** The depth layer's table (`content/muscle-depth.json`), relative to the repository root. */
 export const DEPTH_FILE: string = layerContent(DEPTH_LAYER).depthFile!;

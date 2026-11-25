@@ -1,8 +1,9 @@
-// The cartilage layer's authoring half: front matter schema (spec §4.5) and summary lengths.
+// The cartilage layer's authoring half: front matter schema (spec §4.5), summary lengths, edges and checks.
 import { z } from "zod";
 import { side, snake, text } from "../../../content/softFields";
 import type { Edge } from "../../../graph/types";
 import { defineLayerContent } from "../../contentTypes";
+import { jointStructureCheck } from "../jointValidate";
 import { cartilage } from "./layer";
 
 type CartilageKind = (typeof cartilage.kinds)[number]["id"];
@@ -31,13 +32,18 @@ export const cartilageEdges = (fm: CartilageFm): Edge[] => [
   ...(fm.joint ? [{ from: fm.id, type: "member_of_joint", to: fm.joint }] : []),
 ];
 
+/** Cartilage that may have `joint: null` (spec §4.5, M8 plan decision 3), without side. */
+export const CARTILAGE_NO_JOINT: ReadonlySet<string> = new Set(["costal_cartilage_8", "costal_cartilage_9", "costal_cartilage_10"]);
+const check = jointStructureCheck("attachedTo", CARTILAGE_NO_JOINT);
+
 const words = { min: 40, max: 80 } as const;
 export const cartilageContent = defineLayerContent({
   folder: "cartilage",
   idsFile: "content/soft-ids.json",
   kinds: {
-    cartilage: { schema: cartilageSchema, bodyWords: words, edges: cartilageEdges },
-    disc: { schema: cartilageSchema, bodyWords: words, edges: cartilageEdges },
-    meniscus: { schema: cartilageSchema, bodyWords: words, edges: cartilageEdges },
+    cartilage: { schema: cartilageSchema, bodyWords: words, edges: cartilageEdges, validate: check },
+    disc: { schema: cartilageSchema, bodyWords: words, edges: cartilageEdges, validate: check },
+    meniscus: { schema: cartilageSchema, bodyWords: words, edges: cartilageEdges, validate: check },
   },
+  listedKeys: [...CARTILAGE_NO_JOINT],
 });

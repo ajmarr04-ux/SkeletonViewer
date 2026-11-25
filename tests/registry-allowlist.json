@@ -12,10 +12,6 @@
       "milestone": "M15",
       "reason": "Shared Blender pipeline (bone material name, bounds-check label); M15's build.json."
     },
-    "scripts/content/patch-check.ts": {
-      "milestone": "M12",
-      "reason": "Patch agreement report for muscles and parts; moves with softRoles.ts to M12's edges."
-    },
     "scripts/mapping/classify_soft_tissue.py": {
       "milestone": "M15",
       "reason": "M6 soft-tissue classifier (layer and kind per source object); M15's per-system mapping."
@@ -31,18 +27,6 @@
     "scripts/perf-load.ts": {
       "milestone": "M14",
       "reason": "Times turning on the largest layer (the muscles), named as the result field; M14's real-device and perf runs choose the layer from the registry (its budgets)."
-    },
-    "src/content/schema.ts": {
-      "milestone": "M12",
-      "reason": "The bone front-matter schema (bone/tooth kinds); M12 moves the bones onto the content halves' per-kind schemas."
-    },
-    "src/content/softValidate.ts": {
-      "milestone": "M12",
-      "reason": "Per-kind validation rules (muscle hierarchy, ligament joints); M12 moves them onto the content halves."
-    },
-    "src/content/validate.ts": {
-      "milestone": "M12",
-      "reason": "Bone validation (bone and tooth counts, muscle lists on bones); M12 with the bone content half."
     }
   },
   "otherVocabulary": [

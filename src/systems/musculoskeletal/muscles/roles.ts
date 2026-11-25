@@ -82,6 +82,12 @@ export function muscleRoles(graph: Graph, id: string, patches: PatchIndex): Role
 }
 
 /** A structure both synergist and antagonist of a muscle (M9 decision 7: shown as a synergist). */
+/** The synergists and antagonists of each ID, off the graph (sorted, as the content chunk's derived lists hold them). */
+export function synergyLists(graph: Graph, ids: readonly string[]): { synergists: Record<string, string[]>; antagonists: Record<string, string[]> } {
+  const read = (type: string) => Object.fromEntries(ids.map((id) => [id, uniq(graph.neighbours(id, type))]));
+  return { synergists: read("synergist_of"), antagonists: read("antagonist_of") };
+}
+
 export function bothSynergistAndAntagonist(lists: { synergists: Readonly<Record<string, readonly string[]>>; antagonists: Readonly<Record<string, readonly string[]>> }): [string, string][] {
   const out: [string, string][] = [];
   for (const [id, ants] of Object.entries(lists.antagonists)) {

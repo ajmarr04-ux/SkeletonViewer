@@ -143,6 +143,17 @@ export const looksLikeTreeGroup = (key: string): boolean => {
   return TREE_ROOTS.some((r) => r.key === head) && /^[a-z0-9_]+(\.[a-z0-9_]+)*$/.test(key);
 };
 
+/**
+ * The group synonyms' own sets (content/synonyms.json `groups` with `members`): they sit under the root whose
+ * tree spec says `sets`, keyed `<root>.sets.<name>`, and their members are that layer's structures with parts.
+ */
+export const SYNONYM_SETS: { prefix: string; memberKind: string | undefined; noun: string } = (() => {
+  const l = REGISTRY.find((x) => ((x as LayerDescriptor).tree as { sets?: true } | undefined)?.sets);
+  if (!l) return { prefix: "", memberKind: undefined, noun: "structure" }; // no layer holds sets: every set is an error
+  const k = (l.kinds as readonly KindDescriptor[]).find((x) => x.parentOf) ?? l.kinds[0]!;
+  return { prefix: `${l.id}.sets.`, memberKind: k.id, noun: k.noun.one };
+})();
+
 /** Every part type, in order (the content schema's enum). */
 export const PART_TYPES: readonly PartType[] = [...KIND.values()].flatMap((k) => (k.partTypes ?? []).map((t) => t.id as PartType));
 const TENDINOUS = new Set([...KIND.values()].flatMap((k) => (k.partTypes ?? []).filter((t) => t.tendinous).map((t) => t.id)));
