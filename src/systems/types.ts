@@ -5,6 +5,8 @@
 // (AV); fields later milestones fill (`tiers`, `panel`, `searchFields`, the
 // tree builder) are optional until then.
 
+import type { EdgeTypeDescriptor } from "../graph/types";
+
 export type LayerMode = "on" | "ghost" | "off";
 export type Lod = "low" | "high";
 
@@ -118,6 +120,8 @@ export type SystemDescriptor = {
   id: string;
   /** The Layers panel's group header ("Musculoskeletal"). */
   label: string;
+  /** The system's relationship types (SPEC-platform §4.2; M12 plan decision 1). */
+  edgeTypes?: readonly EdgeTypeDescriptor[];
   /** Layer presets, shown above the groups. */
   presets?: readonly PresetDescriptor[];
 };

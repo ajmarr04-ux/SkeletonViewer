@@ -1,14 +1,15 @@
 // Soft-tissue content (M8 session X): the validation rules (spec §10, plan
-// decisions 2 to 10) on small fixtures, the derived synergists, antagonists and
-// attachments (plan decision 9), the compiler, and the real seed files.
+// decisions 2 to 10) on small fixtures, the compiler (whose derived synergists,
+// antagonists and attachments come off the relationship graph since M12 AZ;
+// the rule's own tests are in tests/graph.test.ts), and the real seed files.
 import { describe, expect, it } from "vitest";
 import { stringify } from "yaml";
 import { compileSoftFromDisk, makeOpposite, readJson } from "../scripts/lib/content-files";
-import { derive, type DeriveMuscle } from "../src/content/derive";
 import { mirrorFile } from "../src/content/frontmatter";
 import { compileSoftLayer } from "../src/content/softCompile";
 import { validateSoftContent, type SoftContentInput, type SoftIdEntry } from "../src/content/softValidate";
 import type { LazyLayerId as SoftLayer } from "../src/systems/registry";
+import { compileContentGraph } from "../src/systems/registry.content";
 
 // --- Fixture: a two-headed flexor, a helper flexor, an extensor, a ligament, a meniscus ---
 const L = (id: string, kind: string, layer: SoftLayer, extra: Partial<SoftIdEntry> = {}): SoftIdEntry => ({
@@ -261,77 +262,33 @@ describe("validateSoftContent: rules", () => {
   });
 });
 
-// --- Derived data (plan decision 9) ---
-const D = (over: Partial<DeriveMuscle>): DeriveMuscle => ({ kind: "muscle", parent: null, parts: [], origin: [], insertion: [], actions: [], ...over });
-const act = (joint: string, movement: string, role: "prime" | "assist" | "stabiliser" = "prime") => ({ joint, movement, role });
-const fixture = derive({
-  muscles: {
-    flexor: D({ parts: ["flexor_a", "flexor_b"], insertion: [{ structure: "bone_b" }], actions: [act("elbow", "flexion")] }),
-    flexor_a: D({ kind: "muscle_part", parent: "flexor", origin: [{ structure: "bone_a" }], insertion: "inherit" }),
-    flexor_b: D({ kind: "muscle_part", parent: "flexor", origin: [{ structure: "bone_a" }], insertion: "inherit", actions: [act("shoulder", "flexion", "assist")] }),
-    helper: D({ origin: [{ structure: "bone_a" }], insertion: [{ structure: "bone_c" }], actions: [act("hinge", "flexion", "assist")] }),
-    extensor: D({ origin: [{ soft: "fascia" }], insertion: [{ structure: "bone_b" }], actions: [act("elbow", "extension")] }),
-    steady: D({ actions: [act("elbow", "flexion", "stabiliser")] }),
-    shoulder_flexor: D({ actions: [act("shoulder", "flexion")] }),
-    other_joint: D({ actions: [act("knee", "flexion")] }),
-  },
-  pairJoints: ["hinge", "pair2", "shoulder", "knee"],
-  functionalJoints: { elbow: ["hinge", "pair2"] },
-  antagonistPairs: [["flexion", "extension"]],
-});
-
-describe("derive", () => {
-  it("resolves joints: a pair is itself; a functional joint is its pairs; overlap is the same joint", () => {
-    expect([...fixture.pairsOf("elbow")]).toEqual(["hinge", "pair2"]);
-    expect(fixture.sameJoint("elbow", "hinge")).toBe(true);
-    expect(fixture.sameJoint("hinge", "pair2")).toBe(false);
-    expect(fixture.sameJoint("nowhere", "nowhere")).toBe(false);
-  });
-  it("gives a part its parent's actions plus its own", () => {
-    expect(fixture.actionsOf("flexor_b").map((a) => `${a.joint}:${a.movement}`)).toEqual(["elbow:flexion", "shoulder:flexion"]);
-  });
-  it("finds synergists across a functional joint and its pairs, never in the same muscle", () => {
-    expect(fixture.synergistsOf("helper")).toEqual(["flexor"]);
-    expect(fixture.synergistsOf("flexor")).toEqual(["helper"]);
-  });
-  it("lists a part only when its own action matches", () => {
-    expect(fixture.synergistsOf("shoulder_flexor")).toEqual(["flexor_b"]);
-    expect(fixture.synergistsOf("flexor_a")).toEqual(["helper"]);
-  });
-  it("leaves stabilisers out", () => {
-    expect(fixture.synergistsOf("steady")).toEqual([]);
-    expect(fixture.synergistsOf("helper")).not.toContain("steady");
-  });
-  it("finds antagonists by the paired movement on the same joint", () => {
-    expect(fixture.antagonistsOf("extensor")).toEqual(["flexor", "helper"]);
-    expect(fixture.antagonistsOf("helper")).toEqual(["extensor"]);
-    expect(fixture.antagonistsOf("other_joint")).toEqual([]);
-  });
-  it("lists each structure's attached muscles by their own declarations", () => {
-    expect(fixture.attachedMuscles("bone_a")).toEqual({ origins: ["flexor_a", "flexor_b", "helper"], insertions: [] });
-    expect(fixture.attachedMuscles("bone_b")).toEqual({ origins: [], insertions: ["extensor", "flexor"] });
-    expect(fixture.attachedMuscles("bone_z")).toEqual({ origins: [], insertions: [] });
-  });
-  it("applies synergistOverrides last", () => {
-    const d = derive({
-      muscles: { a: D({ actions: [act("hinge", "flexion")], synergistOverrides: { add: ["c"], remove: ["b"] } }), b: D({ actions: [act("hinge", "flexion")] }), c: D({}) },
-      pairJoints: ["hinge"],
-      functionalJoints: {},
-      antagonistPairs: [],
-    });
-    expect(d.synergistsOf("a")).toEqual(["c"]);
-  });
+// --- Derived data (plan decision 9): the rule's fixture tests are in tests/graph.test.ts since M12 AZ ---
+/** The fixture's graph: two pair joints in one functional joint (elbow_left), flexion against extension. */
+const FIXTURE_JSON: Record<string, unknown> = {
+  "content/articulations.json": [
+    { a: "bone_a_left", b: "bone_b_left", joint: "hinge_left", name: "Hinge" },
+    { a: "bone_a_left", b: "bone_c_left", joint: "pair2_left", name: "Pair 2" },
+  ],
+  "content/regions.json": {},
+  "content/joints.json": [{ id: "elbow_left", name: "Elbow", side: "left", articulations: ["hinge_left", "pair2_left"] }],
+  "content/movements.json": { movements: ["flexion", "extension"], antagonistPairs: [["flexion", "extension"]] },
+};
+const fixtureDeps = (kindOf: (id: string) => string | undefined) => ({
+  kindOf,
+  pairJoints: ["hinge_left", "pair2_left"],
+  functionalJoints: { elbow_left: ["hinge_left", "pair2_left"] },
+  graph: (fm: Readonly<Record<string, unknown>>) =>
+    compileContentGraph({
+      fm,
+      structures: [...SOFT.map((e) => ({ id: e.id, kind: e.kind })), ...[...BONES, "bone_c_left"].map((id) => ({ id, kind: "bone" }))],
+      readJson: (rel) => FIXTURE_JSON[rel],
+    }),
 });
 
 describe("compileSoftLayer", () => {
   it("renders the summary and derives the muscles layer's relationships", () => {
     const i = input();
-    const c = compileSoftLayer("muscles", i.files.muscles, {
-      kindOf: (id) => SOFT.find((e) => e.id === id)?.kind,
-      pairJoints: ["hinge_left", "pair2_left"],
-      functionalJoints: { elbow_left: ["hinge_left", "pair2_left"] },
-      antagonistPairs: [["flexion", "extension"]],
-    });
+    const c = compileSoftLayer("muscles", i.files.muscles, fixtureDeps((id) => SOFT.find((e) => e.id === id)?.kind));
     expect(c.entries.helper_left!.summary).toMatch(/^<p>word0 /);
     expect(c.entries.helper_left!.latin).toBe("Musculus testis");
     expect(c.derived!.synergists.helper_left).toEqual(["flexor_left"]);
@@ -340,7 +297,7 @@ describe("compileSoftLayer", () => {
     expect(c.derived!.attached.bone_a_left!.origins).toEqual(["extensor_left", "flexor_head_a_left", "flexor_head_b_left", "helper_left"]);
   });
   it("has no derived data for the other layers", () => {
-    const c = compileSoftLayer("ligaments", input().files.ligaments, { kindOf: () => "ligament", pairJoints: [], functionalJoints: {}, antagonistPairs: [] });
+    const c = compileSoftLayer("ligaments", input().files.ligaments, fixtureDeps(() => "ligament"));
     expect(c.derived).toBeNull();
     expect(Object.keys(c.entries)).toEqual(["band_left"]);
   });

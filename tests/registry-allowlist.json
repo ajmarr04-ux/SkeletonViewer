@@ -40,10 +40,6 @@
       "milestone": "M12",
       "reason": "Wording for muscles (attachments, functional group, antagonist counts) and the part \u2192 muscle count fallback; M12 re-expresses tiers and antagonists as edges with their own wording."
     },
-    "src/content/derive.ts": {
-      "milestone": "M12",
-      "reason": "Synergist/antagonist/attachment derivation over muscles and parts; M12's edge engine replaces it."
-    },
     "src/content/groups.ts": {
       "milestone": "M12",
       "reason": "Bone tree's tooth-type groups and the muscle synonym sets' layer; M12 builds the trees from TreeSpec."

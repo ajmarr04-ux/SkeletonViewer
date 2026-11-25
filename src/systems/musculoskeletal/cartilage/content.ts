@@ -1,6 +1,7 @@
 // The cartilage layer's authoring half: front matter schema (spec §4.5) and summary lengths.
 import { z } from "zod";
 import { side, snake, text } from "../../../content/softFields";
+import type { Edge } from "../../../graph/types";
 import { defineLayerContent } from "../../contentTypes";
 import { cartilage } from "./layer";
 
@@ -24,13 +25,19 @@ export const cartilageSchema = z.strictObject({
 });
 export type CartilageFm = z.infer<typeof cartilageSchema>;
 
+/** `attached_to`, in order, and `member_of_joint` (M12 plan decision 1). */
+export const cartilageEdges = (fm: CartilageFm): Edge[] => [
+  ...fm.attachedTo.map((to) => ({ from: fm.id, type: "attached_to", to })),
+  ...(fm.joint ? [{ from: fm.id, type: "member_of_joint", to: fm.joint }] : []),
+];
+
 const words = { min: 40, max: 80 } as const;
 export const cartilageContent = defineLayerContent({
   folder: "cartilage",
   idsFile: "content/soft-ids.json",
   kinds: {
-    cartilage: { schema: cartilageSchema, bodyWords: words },
-    disc: { schema: cartilageSchema, bodyWords: words },
-    meniscus: { schema: cartilageSchema, bodyWords: words },
+    cartilage: { schema: cartilageSchema, bodyWords: words, edges: cartilageEdges },
+    disc: { schema: cartilageSchema, bodyWords: words, edges: cartilageEdges },
+    meniscus: { schema: cartilageSchema, bodyWords: words, edges: cartilageEdges },
   },
 });

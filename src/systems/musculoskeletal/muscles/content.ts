@@ -4,6 +4,7 @@ import { z } from "zod";
 import { actionSchema, attachmentSchema, inheritable, overridesSchema, side, snake, text } from "../../../content/softFields";
 import { defineLayerContent } from "../../contentTypes";
 import { PART_TYPES, type PartType } from "../../registry";
+import { derivedLists, inheritAttachments, muscleEdges, musclePartEdges, synergistsAndAntagonists } from "./derive";
 
 /** Spec §4.1. */
 export const muscleSchema = z.strictObject({
@@ -59,9 +60,13 @@ export const musclesContent = defineLayerContent({
   idsFile: "content/soft-ids.json",
   kinds: {
     // Summary lengths in words (M8 plan decision 5).
-    muscle: { schema: muscleSchema, bodyWords: { min: 40, max: 80 } },
-    muscle_part: { schema: musclePartSchema, bodyWords: { min: 20, max: 60 } },
+    muscle: { schema: muscleSchema, bodyWords: { min: 40, max: 80 }, edges: muscleEdges },
+    muscle_part: { schema: musclePartSchema, bodyWords: { min: 20, max: 60 }, edges: musclePartEdges },
   },
+  // Derived edges (M12 plan decision 4): a part's inherited attachments, then synergists and antagonists.
+  rules: [inheritAttachments, synergistsAndAntagonists],
+  /** The content chunk's `derived` lists, read off the edges. */
+  derivedLists,
   // Side-free key → 1/2/3 (M7 session V).
   depthFile: "content/muscle-depth.json",
 });

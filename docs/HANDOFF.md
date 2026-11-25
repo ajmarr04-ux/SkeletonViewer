@@ -1,19 +1,20 @@
-# Handoff — written 2026-11-25 at the end of M12 planning
+# Handoff — written 2026-11-25 at the end of M12 AZ
 
 ## Next session
-AZ (design): commit `tests/golden/tree.json` first (decision 9), then the graph core: edge types, the edge compiler from the authoring files, derived edges (incl. `adjacent_tooth`, `shares_joint_with`), compiler checks; delete `src/content/derive.ts`.
-Done when: tree golden committed before any `src/`/`scripts/` change; the compiled graph reproduces today's derived synergists, antagonists and attached muscles for every muscle and part; isolation test also scans edge type IDs; `npm run check` green.
+BA (design): the query engine (`src/graph/graph.ts` runtime index, `src/graph/query.ts`) and tier rules as data on every `KindDescriptor` (plan decisions 5–6), proven offline against `tests/golden/tiers.json`.
+Done when: the engine over the Node-compiled graph (`compileGraphFromDisk`) gives `tiers.json` exactly for all 1,138 IDs (t1, t2 all On, `bonesOnly`, `ant`); engine unit tests (step types, `from` modes, three orders, parts expansion, Off-layer filter, memoisation); the app still runs on the old tier code until BC; `npm run check` green.
 
 ## State
-- Planning commit on `claude/keen-clarke-32a10a`: `deploy/pages.json` `current` 12; M11 "Hosted copy is live" ticked; README M12 row; `docs/PLAN-milestone-12.md` written.
-- `npm run check`: not re-run (docs and `deploy/pages.json` only changed).
+- Last commit: M12 AZ: graph core (see `git log`); tree golden in `5dc9ec8`.
+- `npm run check`: pass (618 tests, five goldens unchanged). Main chunk 472.7 kB.
 - Open fan-out work: none
 
 ## Waiting on the user
-- Decisions 1–14 in `docs/PLAN-milestone-12.md` (say if any should change). Notable: two extra derived edge types (decision 2), the ID index in the main chunk (~+11 kB, decision 7), the sidebar's system grouping deferred to M14 (decision 10), Origin/Insertion as the two allowed `custom` panel sections (decision 11).
+none (AZ amended decisions 2 and 4: `synergist_of`, `antagonist_of`, `adjacent_tooth` are directed to keep today's behaviour; see the plan's AZ notes)
 
 ## Things the next session must know
-- Order is behaviour: soft tier lists are ID-sorted, bone partners in `ids.json` order, region neighbours as written (decision 5).
-- Goldens: never `--write --force` without the user's approval; `--write` for the new `tree.json` only.
-- Shipping invariant (decision 3): a structure's panel and tiers need the main chunk, its own layer's chunk and the showing layers' chunks, nothing else.
-- QUESTIONS: 1–139, the next is 140.
+- Graph core: `src/graph/{types,edgeTypes,compile}.ts`; edge types `src/systems/musculoskeletal/edges.ts`; extractors `KindContent.edges`, rules `LayerContent.rules`, system half `src/systems/musculoskeletal/content.ts`; `compileContentGraph` (registry.content), `compileGraphFromDisk` (scripts/lib/content-files.ts). 17,640 edges, 0 errors.
+- Parts' `inherit` is resolved into the part's own `originates_on`/`inserts_on` with meta `inherited: "true"`; `derivedLists` (attached muscles) ignores those, tiers should include them.
+- Order is behaviour: soft tier lists ID-sorted, bone partners in `ids.json` order, region neighbours as written (edges keep written order). Today's ligament/cartilage t2 = `shares_joint_with` minus t1; `t2: null` when the structure has no `member_of_joint`.
+- The isolation test now also flags edge type IDs and inverse labels: `src/graph/` must name none (tier rules live in descriptors).
+- Goldens: never `--write --force` without the user's approval. QUESTIONS: next is 140.

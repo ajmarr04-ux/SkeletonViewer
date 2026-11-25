@@ -3,6 +3,7 @@
 // else asks instead of naming a layer or kind. Main chunk: data only.
 
 import { REGISTRY, SYSTEMS } from "./registered";
+import type { EdgeTypeDescriptor } from "../graph/types";
 import type { KindDescriptor, LayerDescriptor, LayerMode, OverlaySpec, PresetDescriptor, SystemDescriptor } from "./types";
 
 export { REGISTRY, SYSTEMS };
@@ -119,6 +120,9 @@ export const DEBUG_CODES: ReadonlyMap<string, string> = new Map([...REGISTRY.map
 
 /** The layers of a system, in registry order. */
 export const layersOfSystem = (system: SystemId): readonly LayerId[] => REGISTRY.filter((l) => l.system === system).map((l) => l.id);
+/** Every system's edge types, in system order (M12 plan decision 1). */
+export const EDGE_TYPES: readonly EdgeTypeDescriptor[] = SYSTEMS.flatMap((s): readonly EdgeTypeDescriptor[] => ("edgeTypes" in s ? s.edgeTypes : []));
+
 export const systemDescriptor = (system: SystemId): SystemDescriptor => SYSTEMS.find((s) => s.id === system)!;
 
 /** The system's layers all in one mode, or "mixed" when they differ. */

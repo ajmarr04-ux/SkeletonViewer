@@ -12,6 +12,7 @@ import { compileSoftLayer, withSoftTiers, type SoftCompileDeps, type SoftLayerCo
 import type { SoftIdEntry } from "../../src/content/softValidate";
 import type { IdEntry } from "../../src/content/validate";
 import { EAGER_LAYER, LAZY_LAYERS, NESTED_LAYER, type LazyLayerId } from "../../src/systems/registry";
+import { compileContentGraph } from "../../src/systems/registry.content";
 import { contentFolder } from "../../src/systems/registry.content";
 
 export const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -99,14 +100,17 @@ export function makeOpposite(soft: SoftIdEntry[] = readSoftIds()): (id: string) 
   };
 }
 
+/** Every structure's ID and kind (ids.json, soft-ids.json). */
+const readStructures = () => [...readIds(), ...readSoftIds()].map((e) => ({ id: e.id, kind: e.kind }));
+
 function softDeps(): SoftCompileDeps {
   const kinds = new Map(readSoftIds().map((e) => [e.id, e.kind]));
-  const movements = readJson("content/movements.json") as { antagonistPairs: [string, string][] };
+  const structures = readStructures();
   return {
     kindOf: (id) => kinds.get(id),
     pairJoints: (readJson("content/articulations.json") as { joint: string }[]).map((a) => a.joint),
     functionalJoints: Object.fromEntries((readJson("content/joints.json") as { id: string; articulations: string[] }[]).map((j) => [j.id, j.articulations])),
-    antagonistPairs: movements.antagonistPairs,
+    graph: (fm) => compileContentGraph({ fm, structures, readJson }),
   };
 }
 
@@ -144,4 +148,16 @@ export function readBoneAttached(): Record<string, BoneAttachedRows> {
     const e = soft.get(id);
     return { name: muscles.entries[id]?.fm.name ?? e?.name ?? id, side: e?.side ?? "midline" };
   });
+}
+
+/**
+ * The relationship graph from the files on disk (M12 plan decision 1): the
+ * soft-tissue front matter as compiled (every layer, or the layers given), the
+ * ID tables and the system's JSON sources. `errors` lists every edge the
+ * compiler refused.
+ */
+export function compileGraphFromDisk(layers: Partial<Record<LazyLayerId, SoftLayerContent>> = compileAllSoftFromDisk()) {
+  const fm: Record<string, unknown> = {};
+  for (const c of Object.values(layers)) for (const [id, e] of Object.entries(c!.entries)) fm[id] = e.fm;
+  return compileContentGraph({ fm, structures: readStructures(), readJson });
 }

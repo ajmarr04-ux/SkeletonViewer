@@ -1,17 +1,18 @@
 // The soft-tissue content compiler (M8 plan decisions 9 and 11): one layer's
 // content folder → one object per ID with the summary rendered to HTML, plus,
-// for the muscles layer, the derived synergists, antagonists and each
-// structure's attached muscles. Pure, so Vitest can run it on fixtures; the
+// for a layer whose content half reads derived lists off the graph (the
+// muscles: synergists, antagonists and each structure's attached muscles, M12
+// plan decision 4), those lists. Pure, so Vitest can run it on fixtures; the
 // Vite plugin (scripts/lib/content-plugin.ts) serves each layer as its own lazy
 // chunk.
 
 import { marked } from "marked";
-import { derive, type DeriveMuscle } from "./derive";
 import { splitFrontMatter } from "./frontmatter";
 import { buildMuscleRoles, type MuscleRoles, type Patch } from "./softRoles";
 import { buildSoftTiers, type SoftTierData } from "./softTiers";
 import type { LazyLayerId } from "../systems/registry";
-import { contentFolder, schemaForKind } from "../systems/registry.content";
+import type { CompiledGraph } from "../graph/compile";
+import { contentFolder, layerContent, schemaForKind } from "../systems/registry.content";
 import type { SoftFm } from "./softSchema";
 
 export type SoftCompiledEntry = {
@@ -45,7 +46,8 @@ export type SoftCompileDeps = {
   kindOf: (id: string) => string | undefined;
   pairJoints: Iterable<string>;
   functionalJoints: Record<string, readonly string[]>;
-  antagonistPairs: readonly (readonly [string, string])[];
+  /** The relationship graph over the front matter given (by ID) plus the system's sources (M12 plan decision 1). */
+  graph: (fm: Readonly<Record<string, unknown>>) => CompiledGraph;
 };
 
 /** Compile one layer. Throws on the first file that doesn't parse (validate-content lists every problem). */
@@ -69,30 +71,11 @@ export function compileSoftLayer(layer: LazyLayerId, files: Map<string, string>,
       fm,
     };
   }
-  return { entries, derived: layer === "muscles" ? deriveAll(entries, deps) : null };
-}
-
-function deriveAll(entries: Record<string, SoftCompiledEntry>, deps: SoftCompileDeps): SoftDerived {
-  const muscles: Record<string, DeriveMuscle> = {};
-  for (const [id, { fm }] of Object.entries(entries)) {
-    if (fm.kind === "muscle")
-      muscles[id] = { kind: "muscle", parent: null, parts: fm.parts, origin: fm.origin, insertion: fm.insertion, actions: fm.actions, synergistOverrides: fm.synergistOverrides };
-    else if (fm.kind === "muscle_part")
-      muscles[id] = { kind: "muscle_part", parent: fm.parent, parts: [], origin: fm.origin, insertion: fm.insertion, actions: fm.actions };
-  }
-  const d = derive({ muscles, pairJoints: deps.pairJoints, functionalJoints: deps.functionalJoints, antagonistPairs: deps.antagonistPairs });
-  const synergists: Record<string, string[]> = {};
-  const antagonists: Record<string, string[]> = {};
-  const structures = new Set<string>();
-  for (const id of Object.keys(muscles)) {
-    synergists[id] = d.synergistsOf(id);
-    antagonists[id] = d.antagonistsOf(id);
-    const m = muscles[id]!;
-    for (const list of [m.origin, m.insertion]) if (list !== "inherit") for (const a of list) if ("structure" in a) structures.add(a.structure);
-  }
-  const attached: SoftDerived["attached"] = {};
-  for (const s of [...structures].sort()) attached[s] = d.attachedMuscles(s);
-  return { synergists, antagonists, attached };
+  const lists = layerContent(layer).derivedLists;
+  if (!lists) return { entries, derived: null };
+  const g = deps.graph(Object.fromEntries(Object.entries(entries).map(([id, e]) => [id, e.fm])));
+  if (g.errors.length > 0) throw new Error(`content/${contentFolder(layer)}: ${g.errors.slice(0, 5).join("; ")}`);
+  return { entries, derived: lists(g.edges, Object.keys(entries)) as SoftDerived };
 }
 
 /**
