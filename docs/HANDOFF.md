@@ -5,7 +5,7 @@ BA (design): the query engine (`src/graph/graph.ts` runtime index, `src/graph/qu
 Done when: the engine over the Node-compiled graph (`compileGraphFromDisk`) gives `tiers.json` exactly for all 1,138 IDs (t1, t2 all On, `bonesOnly`, `ant`); engine unit tests (step types, `from` modes, three orders, parts expansion, Off-layer filter, memoisation); the app still runs on the old tier code until BC; `npm run check` green.
 
 ## State
-- Last commit: M12 AZ: graph core (see `git log`); tree golden in `5dc9ec8`.
+- Last commit: dcae4f7 M12 AZ: graph core; tree golden in `5dc9ec8`.
 - `npm run check`: pass (618 tests, five goldens unchanged). Main chunk 472.7 kB.
 - Open fan-out work: none
 
