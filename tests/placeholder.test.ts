@@ -2,11 +2,23 @@ import { describe, expect, it } from "vitest";
 import ids from "../content/ids.json";
 import { groupTrail, regionLabel } from "../src/content/labels";
 import { EAGER_ONLY, relatedAt } from "../src/scene/isolation";
-import { announcement, NO_MODEL_NOTE, NOT_WRITTEN, oppositeOf, panelModel, SECTION_TITLES, type IdEntry } from "../src/content/placeholder";
+import { announcement, oppositeOf, type IdEntry } from "../src/content/placeholder";
+import { panelModel as generic, type SectionModel } from "../src/panel/model";
+import { NO_MODEL_NOTE } from "../src/systems/musculoskeletal/bones/panel";
 import { nearestSnap, nextSnap, PEEK_PX, snapHeights } from "../src/ui/InfoPanel";
 import { boxCentre, fitDistance, frameBeside, frameFrom, FOV_DEG, NO_PANEL, panelFractions, panelOffset, type Box } from "../src/camera/math";
 
 const ENTRIES = ids as IdEntry[];
+
+// M12 BE: the placeholder model (placeholder.ts's `panelModel`, `SECTION_TITLES`) is gone; an unwritten bone is the
+// generic model with no content. Its sections are the kinds' (Attached muscles, not M3's "Major muscle attachments"),
+// and only the ones read from the content file are empty (the articulations come from the graph).
+const panelModel = (id: string) => {
+  const m = generic(id, { content: () => null, opposite: oppositeOf });
+  return m && { ...m, name: m.title, badges: { region: m.badges[0], type: m.badges[1], draft: m.draft }, note: m.note ?? null };
+};
+const unwritten = (s: SectionModel): boolean =>
+  s.render === "text" ? s.value === null : s.render === "list" ? s.items === null : s.render === "grouped-links" ? s.groups === null : s.render === "links";
 
 describe("placeholder panel content", () => {
   it("every ID has a panel model with the spec §7 sections, all unwritten", () => {
@@ -14,11 +26,12 @@ describe("placeholder panel content", () => {
       const m = panelModel(e.id)!;
       expect(m, e.id).not.toBeNull();
       expect(m.name).toBe(e.name);
-      expect(m.latin).toBeNull();
+      expect(m.written).toBe(false);
+      expect(m.subtitle).toEqual({ text: "Latin name not written yet", latin: false });
       expect(m.common).toBeNull();
       expect(m.badges.draft).toBe(true);
-      expect(m.sections.map((s) => s.title)).toEqual([...SECTION_TITLES]);
-      expect(m.sections.every((s) => s.text === NOT_WRITTEN)).toBe(true);
+      expect(m.sections.map((s) => s.title)).toEqual(["Summary", "Functions", "Articulations", "Key landmarks", "Attached muscles", "Clinical note"]);
+      expect(m.sections.every(unwritten), e.id).toBe(true);
       expect(m.trail[m.trail.length - 1]).toBe(e.name);
       expect(m.badges.region).not.toBe("");
     }

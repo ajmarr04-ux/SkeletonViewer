@@ -54,7 +54,7 @@
     },
     "src/content/softPanel.ts": {
       "milestone": "M12",
-      "reason": "M12 BD made it an adapter over src/panel/model.ts; left: the M9 section union InfoPanel.tsx renders (BE deletes it) and softAnnouncement's tier wording (BG)."
+      "reason": "Only softAnnouncement is left (M12 BE deleted the panel adapters): its muscle/part tier wording moves onto the tier rules in BG."
     },
     "src/content/softTree.ts": {
       "milestone": "M12",
@@ -67,10 +67,6 @@
     "src/content/validate.ts": {
       "milestone": "M12",
       "reason": "Bone validation (bone and tooth counts, muscle lists on bones); M12 with the bone content half."
-    },
-    "src/ui/InfoPanel.tsx": {
-      "milestone": "M12",
-      "reason": "Per-kind panel rendering (muscle sections, ligament/cartilage joint lines, tooth); M12's PanelSpec."
     }
   },
   "otherVocabulary": [
@@ -100,6 +96,13 @@
       "files": [
         "scripts/content/attachment-check.ts",
         "scripts/content/migrate-attachments.ts"
+      ]
+    },
+    {
+      "literal": "muscles",
+      "meaning": "The test ID \"section-muscles\" of the attached-muscles group's section (the e2e specs select it, as the bone panel's own section), not the muscles layer.",
+      "files": [
+        "src/ui/InfoPanel.tsx"
       ]
     }
   ]

@@ -3,7 +3,10 @@ import { describe, expect, it } from "vitest";
 import { BufferAttribute, BufferGeometry, Color, Matrix4, MeshStandardMaterial } from "three";
 import ids from "../content/ids.json";
 import { hideTargets, softDisplayName, softEntry, softOpposite } from "../src/content/softRegistry";
-import { softAnnouncement, softPanelModel } from "../src/content/softPanel";
+import { softAnnouncement } from "../src/content/softPanel";
+import { panelModel as generic, type LayerContent, type SectionModel } from "../src/panel/model";
+import { isEagerId } from "../src/content/index";
+import type { SoftLayerContent } from "../src/content/softCompile";
 import { displayName } from "../src/content/names";
 import { type RawSoftId } from "../src/layers/softIds";
 import { batchSkeleton, type BonePart } from "../src/scene/batchSkeleton";
@@ -23,6 +26,23 @@ import {
 } from "../src/scene/isolation";
 import { type LayerModes } from "../src/state/url";
 import { DEFAULT_MODES, LAYER_IDS } from "../src/systems/registry";
+
+// M12 BE: the M9 soft panel shape (softPanel.ts's `softPanelModel`, deleted) read off the generic model.
+function softPanelModel(id: string, content: SoftLayerContent | null = null) {
+  const layer = softEntry(id)?.layer;
+  if (isEagerId(id) || !layer) return null;
+  const m = generic(id, { content: (l) => (l === layer ? (content as unknown as LayerContent) : null), opposite: softOpposite })!;
+  const summary = m.sections[0] as Extract<SectionModel, { render: "text" }>;
+  return {
+    ...m,
+    badges: { layer: m.badges[0], kind: m.badges[1] },
+    partOf: m.partOf ?? null,
+    parentCrumb: m.parentCrumb ?? null,
+    latin: m.subtitle.latin ? m.subtitle.text : null,
+    summary: summary.value,
+  };
+}
+
 
 // M7 session U, step 4 (plan decisions 6 and 8): the layer-aware view.
 

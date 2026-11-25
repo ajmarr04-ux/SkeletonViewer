@@ -54,7 +54,7 @@ type Common = { title: string; testId: string; empty: string | undefined };
 export type SectionModel = Common &
   (
     | { render: "text"; format: "html" | "prose" | "line"; value: string | null; inherited: PanelLink | null }
-    | { render: "list"; items: string[] | null; inline: boolean; count: number | null }
+    | { render: "list"; items: string[] | null; inline: boolean; count: number | null; toggle: string | null }
     | { render: "links"; links: PanelLink[] | null; nameOnly: boolean; also: { title: string; links: PanelLink[] } | null; highlight: boolean }
     | { render: "grouped-links"; groups: { title: string; testId: string; role: string; links: PanelLink[] }[] | null }
     | { render: "actions-table"; rows: ActionRow[]; inherited: ActionRow[]; fallback: string[] }
@@ -88,6 +88,9 @@ export type PanelModel = {
   /** The crumb naming the parent, for kinds whose trail has one; undefined for the others. */
   parentCrumb: number | null | undefined;
 };
+
+/** What a section (or the common name) says while the structure's file isn't written or loaded. */
+export const NOT_WRITTEN = "Not written yet";
 
 /** snake_case → words ("lateral_rotation" → "lateral rotation"). */
 export const words = (snake: string): string => snake.replace(/_/g, " ");
@@ -202,7 +205,8 @@ function sectionModel(s: PanelSection, ctx: PanelContext, g: Graph): SectionMode
         render: "list",
         items: r ? ((r[s.field] as string[] | null | undefined) ?? null) : null,
         inline: s.inline ?? false,
-        count: s.count ? ((r?.[s.count] as number | undefined) ?? 0) : null,
+        count: s.count ? ((r?.[s.count.field] as number | undefined) ?? 0) : null,
+        toggle: s.count?.toggle ?? null,
       };
     case "links": {
       if (s.needsContent && !r) return { ...common, render: "links", links: null, nameOnly: s.nameOnly ?? false, also: null, highlight: false };

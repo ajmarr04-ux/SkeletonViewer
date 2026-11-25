@@ -4,14 +4,52 @@ import { describe, expect, it } from "vitest";
 import ids from "../content/ids.json";
 import { readEagerContentEdges } from "../scripts/lib/content-files";
 import { compileContent } from "../src/content/compile";
-import { attachedLabel, landmarkName, linkLabel, panelModel, typeLabel } from "../src/content/panel";
 import { appGraph, registerContentEdges } from "../src/content/appGraph";
+import type { CompiledContent, CompiledEntry } from "../src/content/compile";
+import { oppositeOf } from "../src/content/placeholder";
+import { panelModel as generic, structureLabel, type SectionModel } from "../src/panel/model";
+import { typeLabel } from "../src/systems/musculoskeletal/bones/panel";
+import { EAGER_LAYER } from "../src/systems/registry";
 
 const dir = join(__dirname, "../content/bones");
 const files = new Map(readdirSync(dir).filter((f) => f.endsWith(".md")).map((f) => [f.slice(0, -3), readFileSync(join(dir, f), "utf8")]));
 const content = compileContent(files);
 // The bones' content chunk ships the attachment edges into them (M12 BD), as the loader registers them.
 registerContentEdges("bones-content", readEagerContentEdges());
+
+// M12 BE: the M4 panel shape (src/content/panel.ts, deleted) read off the generic model, so these expectations stay as written.
+type Link = { id: string; label: string };
+function panelModel(id: string, c: CompiledContent | Record<string, never> | null) {
+  const m = generic(id, { content: (layer) => (layer === EAGER_LAYER ? c : null), opposite: oppositeOf });
+  if (!m) return null;
+  const by = new Map(m.sections.map((x) => [x.testId, x]));
+  const text = (k: string) => (by.get(k) as Extract<SectionModel, { render: "text" }>).value;
+  const list = (k: string) => by.get(k) as Extract<SectionModel, { render: "list" }>;
+  const links = by.get("articulations") as Extract<SectionModel, { render: "links" }>;
+  const groups = (by.get("muscles") as Extract<SectionModel, { render: "grouped-links" }>).groups;
+  const plain = (l: Link): Link => ({ id: l.id, label: l.label });
+  return {
+    written: m.written,
+    latin: m.subtitle.latin ? m.subtitle.text : null,
+    common: m.common,
+    badges: { region: m.badges[0], type: m.badges[1], draft: m.draft },
+    note: m.note ?? null,
+    summary: text("summary"),
+    functions: list("functions").items,
+    landmarks: list("landmarks").items,
+    articulations: links.links!.map((l) => ({ id: l.id, label: l.label, joint: l.node, name: l.detail })),
+    neighbours: (links.also?.links ?? []).map(plain),
+    origins: groups ? groups[0]!.links.map(plain) : null,
+    insertions: groups ? groups[1]!.links.map(plain) : null,
+    clinical: text("clinical"),
+  };
+}
+/** A bone's landmark name by ID, as the model's default `landmarkName` reads it. */
+function landmarkName(c: CompiledEntry, landmark: string): string | undefined {
+  const i = c.landmarkIds.indexOf(landmark);
+  return i < 0 ? undefined : c.landmarks[i];
+}
+const linkLabel = (id: string, focus: string) => structureLabel(id, (ids as { id: string; side: "left" | "right" | "midline" }[]).find((e) => e.id === focus)!.side);
 
 const fixture = (over: Record<string, string> = {}) => `---
 id: ${over.id ?? "sternum"}
@@ -90,10 +128,11 @@ describe("the bones' derived Origins and Insertions (M8 session AD, M9 session A
     expect(withMuscles.length).toBeGreaterThan(150);
   });
 
+  // M12 BE: `attachedLabel` (a pure function over made-up rows) is gone; the one label rule is `structureLabel`.
   it("labels: the side only when it differs from the bone's", () => {
-    expect(attachedLabel({ id: "x_left", name: "Alpha", side: "left" }, "left")).toBe("Alpha");
-    expect(attachedLabel({ id: "x_left", name: "Alpha", side: "left" }, "midline")).toBe("Alpha (left)");
-    expect(attachedLabel({ id: "y", name: "Beta", side: "midline" }, "left")).toBe("Beta");
+    expect(structureLabel("gluteus_maximus_left", "left")).toBe("Gluteus maximus");
+    expect(structureLabel("gluteus_maximus_left", "midline")).toBe("Gluteus maximus (left)");
+    expect(structureLabel("diaphragm", "left")).toBe("Diaphragm");
   });
 });
 

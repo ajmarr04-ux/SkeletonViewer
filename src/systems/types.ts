@@ -112,8 +112,8 @@ export type PanelSection = SectionBase &
         field: string;
         /** Shown inline (the landmarks). */
         inline?: boolean;
-        /** A count field shown with the list (the landmarks with a 3D position). */
-        count?: string;
+        /** A count field shown with the list (the landmarks with a 3D position), and its toggle's label ("Show landmarks"), off while the count is 0. */
+        count?: { field: string; toggle: string };
       }
     | {
         render: "links";

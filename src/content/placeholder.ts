@@ -1,44 +1,12 @@
-// Placeholder info-panel content (Milestone 3): built from content/ids.json
-// only. Everything that needs written anatomy (Latin name, summary, functions,
-// articulations, landmarks, muscles, clinical note) says "Not written yet";
-// the real content files arrive in Milestone 4. Nothing is invented (spec §12).
+// The bones' side pairing and their aria-live wording (spec §10). The panel
+// itself is the generic model (src/panel/model.ts, M12 BD/BE); the
+// announcements move onto the descriptors in BG.
 
 import ids from "../../content/ids.json";
-import { panelModel as generic } from "../panel/model";
 import { kindDescriptor, type EagerKind } from "../systems/registry";
 
 export type Side = "left" | "right" | "midline";
 export type IdEntry = { id: string; name: string; kind: EagerKind; side: Side; group: string[]; meshAvailable: boolean };
-
-export const NOT_WRITTEN = "Not written yet";
-export { NO_MODEL_NOTE } from "../systems/musculoskeletal/bones/panel";
-
-/** The text sections of the panel, in spec §7 order (after the name and badges). */
-export const SECTION_TITLES = ["Summary", "Functions", "Articulations", "Key landmarks", "Major muscle attachments", "Clinical note"] as const;
-export type SectionTitle = (typeof SECTION_TITLES)[number];
-
-export type PanelModel = {
-  id: string;
-  name: string;
-  /** Latin name, or null until the content is written. */
-  latin: string | null;
-  /** Common name ("kneecap"), or null until the content is written. */
-  common: string | null;
-  side: Side;
-  kind: EagerKind;
-  /** Badge row: region, bone or tooth type, and the draft note. */
-  badges: { region: string; type: string; draft: boolean };
-  /** Breadcrumb under "Skeleton", ending with the object's name. */
-  trail: string[];
-  meshAvailable: boolean;
-  /** Shown for objects without a mesh (the wisdom teeth). */
-  note: string | null;
-  sections: { title: SectionTitle; text: string }[];
-  /** The same object on the other side, for paired objects; else null. */
-  opposite: string | null;
-  /** Both sides of a pair, left first (for the side toggle); else null. */
-  pair: { left: string; right: string } | null;
-};
 
 const ENTRIES = ids as IdEntry[];
 const BY_ID = new Map(ENTRIES.map((e) => [e.id, e]));
@@ -61,32 +29,6 @@ export function oppositeOf(id: string): string | null {
   const other: Side = e.side === "left" ? "right" : "left";
   const want = { ...e, name: swapSide(e.name), group: e.group.map(swapSide) };
   return BY_PAIR_KEY.get(pairKey(want, other)) ?? null;
-}
-
-export function entryOf(id: string): IdEntry | undefined {
-  return BY_ID.get(id);
-}
-
-/** The panel's content for one object before its file is loaded (the generic model with no content, M12 BD), or null for an unknown ID. */
-export function panelModel(id: string): PanelModel | null {
-  const e = BY_ID.get(id);
-  if (!e) return null;
-  const m = generic(id, { content: () => null, opposite: oppositeOf })!;
-  return {
-    id,
-    name: e.name,
-    latin: null,
-    common: null,
-    side: e.side,
-    kind: e.kind,
-    badges: { region: m.badges[0]!, type: m.badges[1]!, draft: m.draft },
-    trail: m.trail,
-    meshAvailable: e.meshAvailable,
-    note: m.note ?? null,
-    sections: SECTION_TITLES.map((title) => ({ title, text: NOT_WRITTEN })),
-    opposite: oppositeOf(id),
-    pair: m.pair,
-  };
 }
 
 /** False for kinds whose name says the side already (teeth). */

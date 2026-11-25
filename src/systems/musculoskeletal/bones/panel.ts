@@ -61,7 +61,7 @@ const sections = (noMuscles: string): readonly PanelSection[] => [
     also: { title: "Neighbouring teeth", edges: "adjacent_tooth" },
     empty: "No bony articulation.",
   },
-  { title: "Key landmarks", testId: "landmarks", render: "list", field: "landmarks", inline: true, count: "landmarkPositions", empty: "None listed." },
+  { title: "Key landmarks", testId: "landmarks", render: "list", field: "landmarks", inline: true, count: { field: "landmarkPositions", toggle: "Show landmarks" }, empty: "None listed." },
   {
     title: "Attached muscles",
     testId: "muscles",
