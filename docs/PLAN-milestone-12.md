@@ -36,7 +36,7 @@ Session kinds: **design** = strong model (graph, engine, descriptor shapes); **r
 | BG | routine | Announcements, tier wording, display names and label priority from descriptors (step 8) | none | decision 12 | `announce.ts`, `names.ts` off the allowlist; `announce.test.ts` unchanged and passing | **Done.** See session notes |
 | BH | routine | Validation and compile rules per kind onto the content halves (step 9) | none | decision 13 | `schema.ts`, `validate.ts`, `softValidate.ts`, `softCompile.ts`, `patch-check.ts` off the allowlist; `validate-content` and `content:patch-check` output unchanged | **Done.** See session notes |
 | BI | design | The fixture layer gains edges, tier rules, a panel and a tree; the allowlist's M12 entries are all gone (step 10) | none | decision 14 | fixture Vitest and e2e prove graph, tiers, panel and tree; allowlist has no M12 entry | **Done.** See session notes |
-| BJ | routine | Wrap-up: goldens, parity table, full e2e in the background, `/m12/` (step 11) | none | everything above | exit criteria ticked; `/m12/` live | |
+| BJ | routine | Wrap-up: goldens, parity table, full e2e in the background, `/m12/` (step 11) | none | everything above | exit criteria ticked; `/m12/` live | **Done** except the live check. See step 11 |
 
 Triggers: "begin session AZ" to "begin session BJ". Every session follows `docs/WORKFLOW_NEW.md` §7: read `docs/HANDOFF.md` and this file, do the one serial task, end with `npm run check` (which runs `tsc`, Vitest including the goldens, `check-models`, `validate-content`) and the e2e specs it touched, commit, push to the session branch, tick the row, write `docs/HANDOFF.md`, stop.
 
@@ -50,13 +50,13 @@ Triggers: "begin session AZ" to "begin session BJ". Every session follows `docs/
 
 ## Exit criteria (from `SPEC-platform.md` §11, M12)
 
-- [ ] Edge types, edge compiler, derived edges, query engine.
-- [ ] Tier rules for every kind as data; `golden/tiers.json` matches for all 1,138 IDs.
+- [x] Edge types, edge compiler, derived edges, query engine.
+- [x] Tier rules for every kind as data; `golden/tiers.json` matches for all 1,138 IDs.
 - [x] The small always-loaded ID index replaces `registerSoftIds`.
-- [ ] Panels, tree builders, announcements and label priority from descriptors; `golden/panels.json` matches.
-- [ ] The old relationship modules (`relations.ts`, `softTiers.ts`, `softRelations.ts`, `softPanel.ts` switches) deleted.
-- [ ] Every golden unchanged (`tiers`, `panels`, `urls`, `search`, and the new `tree`); the allowlist has no M12 entry.
-- [ ] No regression: every existing unit and e2e test passes unchanged, except where a step lists why (spec §2.1). Performance parity (bench, perf-load, main chunk ≤ 500.1 kB).
+- [x] Panels, tree builders, announcements and label priority from descriptors; `golden/panels.json` matches.
+- [x] The old relationship modules (`relations.ts`, `softTiers.ts`, `softRelations.ts`, `softPanel.ts` switches) deleted.
+- [x] Every golden unchanged (`tiers`, `panels`, `urls`, `search`, and the new `tree`); the allowlist has no M12 entry.
+- [x] No regression: every existing unit and e2e test passes unchanged, except where a step lists why (spec §2.1). Performance parity (bench, perf-load, main chunk ≤ 500.1 kB).
 - [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
 
 ---
@@ -178,6 +178,33 @@ Decision 14. The allowlist ends with M14 (1) and M15 (6) entries only.
 - Full e2e in the background with a log file (`docs/WORKFLOW_NEW.md` §3), then a grep for failures.
 - Docs: `CLAUDE.md`'s key-file table (`src/graph/`, `src/panel/`, `src/tree/`, the index, the edge types); `STATUS.md` §4 ("How relationships work") rewritten for the graph.
 - `/m12/`: PR to `main`, merge, Deploy run, then freeze `m12` in `deploy/pages.json` at the merge commit (`current` to 13 at the start of M13, `CLAUDE.md`, milestone handover).
+
+**Done** (2026-11-25). `npm run check` green (46 files, 658 tests); `npm run golden`: unchanged, **no approved differences** (the table at the end stays "none"). `git diff a2709f6 HEAD -- public/models/ content/` is empty: M12 added no anatomy. The allowlist has no M12 entry (7 left: M14 ×1, M15 ×6).
+
+**Fix found by the full run:** `src/systems/musculoskeletal/bones/panel.ts` (BD) imported `content/ids.json` without `with { type: "json" }`. Playwright loads `layers-debug.spec.ts` → `scripts/lib/model-checks.ts` → the registry natively, so the whole e2e run failed at collection ("0 tests in 0 files"); the per-session runs never loaded that spec. Added the attribute (no change to the build: same chunk hashes); `CLAUDE.md`'s environment notes record the rule.
+
+**Parity table.** Both builds made in this container from the same `node_modules` (`a2709f6` in a scratch worktree), measured back to back. SwiftShader, so FPS only compares like with like. `bench-container` doesn't print label layout times (only `?bench`'s panel does), so they aren't in the table.
+
+| Measure | M11 (`a2709f6`) | M12 head |
+| --- | --- | --- |
+| Triangles, bones only / all four layers (high) | 499,981 / 1,499,634 | 499,981 / 1,499,634 |
+| Draw calls, bones only / all four layers | 1 / 4 | 1 / 4 |
+| `?bench` bones only, median / 5th pct FPS | 2.3 / 1.9 | 2.4 / 2.1 |
+| `?bench` all four layers, median / 5th pct FPS | 0.7 / 0.5 | 0.7 / 0.6 |
+| `perf-load` desktop: skeleton / full detail / muscles | 4.03 / 7.26 / 8.96 s | 4.25 / 7.45 / 8.80 s |
+| `perf-load` phone: skeleton / full detail / muscles | 4.12 / 7.40 / 9.95 s | 4.19 / 7.53 / 9.77 s |
+| Main chunk, `gzip -9` of `index` + modulepreloads | **472.4 kB** (index 298.6 + meshoptimizer 167.6 + registry 2.6 + names 2.7 + softRegistry 0.5 + runtime 0.5) | **486.1 kB** (index 307.6 + meshoptimizer 167.6 + registry 9.7 + names 0.8 + runtime 0.5) |
+| Lazy ID table (`softTable`) | 11.0 kB | gone (in the index, decision 7) |
+| Content chunks: bones / muscles / ligaments / cartilage | 42.1 / 127.1 / 41.8 / 8.5 kB | 40.0 / 114.1 / 40.5 / 8.9 kB |
+| Soft tree / bone search / soft search | 12.1 / 9.1 / 36.8 kB | 12.1 / 9.1 / 36.8 kB |
+
+Main chunk **+13.7 kB** on M11 (the ID index and the graph's eager edges, +11.0 kB of it moved from the lazy table), under the 500.1 kB budget. The content chunks are smaller (edges replace the shipped tier sets). `perf-load` differences are within run-to-run spread (one M12 desktop run took 1.97 s for the skeleton, one M11 phone run 1.98 s); the muscles layer FAILs its budget in both builds, as in every container run since M7 (STATUS §6), and the skeleton's desktop budget too, in both.
+
+**Docs:** `STATUS.md` gains §4 "How relationships work (M12: one graph)" and §5's tier, roles and panel rows point at the graph, the tier engine and the panel model; `CLAUDE.md`'s key-file table already named `src/graph/`, `src/panel/`, `src/tree/`, the index and the edge types (updated session by session).
+
+**e2e:** the full suite in one background run (`npx playwright test --trace off`, both projects, log in the session scratchpad): **171 of 174 passed** in 45.4 min. The three failures were timeouts under load: `keyboard.spec.ts:191` (3.0 min, page closed at the time limit), `keyboard.spec.ts:242` (the 7-minute keys-only journey, as in AX) and `nested.spec.ts:34` (a panel title not found within 5 s). Re-run alone, **all three pass** (8.7 min). Tests changed in M12 are only those listed in the session notes, plus the fixture spec's new test.
+
+**Merge and freeze:** see below.
 
 ## Session notes
 
@@ -303,4 +330,4 @@ Decision 14. The allowlist ends with M14 (1) and M15 (6) entries only.
 
 | Approved golden difference | File | Why |
 | --- | --- | --- |
-| none yet | | |
+| none | | |
