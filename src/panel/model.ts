@@ -56,7 +56,12 @@ export type SectionModel = Common &
     | { render: "text"; format: "html" | "prose" | "line"; value: string | null; inherited: PanelLink | null }
     | { render: "list"; items: string[] | null; inline: boolean; count: number | null; toggle: string | null }
     | { render: "links"; links: PanelLink[] | null; nameOnly: boolean; also: { title: string; links: PanelLink[] } | null; highlight: boolean }
-    | { render: "grouped-links"; groups: { title: string; testId: string; role: string; links: PanelLink[] }[] | null }
+    | {
+        render: "grouped-links";
+        groups: { title: string; testId: string; role: string; links: PanelLink[] }[] | null;
+        /** The section's isolate button (the bones' "Show attached muscles"), else null. */
+        isolate: { text: string; title: string; noneTitle: string; noneReason: string } | null;
+      }
     | { render: "actions-table"; rows: ActionRow[]; inherited: ActionRow[]; fallback: string[] }
     | { render: "custom"; component: string; data: unknown }
   );
@@ -230,6 +235,7 @@ function sectionModel(s: PanelSection, ctx: PanelContext, g: Graph): SectionMode
       return {
         ...common,
         render: "grouped-links",
+        isolate: s.isolate ?? null,
         groups:
           s.needsContent && !r
             ? null

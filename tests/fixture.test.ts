@@ -4,10 +4,13 @@
 // swaps it, and every surface M11 built has to pick the layer up with no other
 // change: Layers panel groups, URL, defaults, presets, announcements, colours,
 // ghost order, the layer files table, the ID table and the content registry.
-// tests/e2e/fixture.spec.ts covers the browser side.
+// tests/e2e/fixture.spec.ts covers the browser side. Since M12 (plan decision
+// 14) the layer also has its system's edge types, front matter, tier rules, a
+// three-section panel and a `byKind` tree: the graph compiler, the tier engine,
+// the panel model and the tree builder run on it unchanged.
 import { readFileSync } from "node:fs";
 import { NodeIO } from "@gltf-transform/core";
-import { describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 vi.mock("../src/systems/registered", () => import("./fixtures/systems/registry"));
 
@@ -43,6 +46,20 @@ import { fixtureRegistry } from "./fixtures/systems/vite";
 import { FIXTURE_CONTENT } from "./fixtures/systems/registry.content";
 import { WIDGET_IDS, widgets } from "./fixtures/systems/demo/widgets/layer";
 import { centreOf } from "./fixtures/systems/demo/widgets/generate";
+import { compileWidgets, readWidgetFiles, widgetGraph, widgetsTree } from "./fixtures/systems/demo/widgets/compile";
+import { DEMO_GRAPH_REGISTRY, FIXTURE_GRAPH_REGISTRY } from "./fixtures/systems/registry.content";
+import { DEMO_EDGES } from "./fixtures/systems/demo/edges";
+import { MUSCULOSKELETAL_EDGES } from "../src/systems/musculoskeletal/edges";
+import { edgeCounts } from "../src/graph/compile";
+import { compileContentGraph } from "../src/systems/registry.content";
+import { setIndex } from "../src/content/index";
+import { readIndexData } from "../scripts/lib/index-plugin";
+import { registerSoftContent, resetSoftContent } from "../src/content/softContentLoader";
+import { resetAppGraph, tiers } from "../src/content/appGraph";
+import { relatedAt } from "../src/scene/isolation";
+import { panelModel, type SectionModel } from "../src/panel/model";
+import { nodeMembers, isSoftNode } from "../src/tree/types";
+import { EDGE_TYPES, TREE_ROOTS, hasTier, tierWording, type LazyLayerId } from "../src/systems/registry";
 
 // The fixture's IDs aren't in the real registry's literal types.
 const W = "widgets" as LayerId;
@@ -150,6 +167,123 @@ describe("fixture files and the content side", () => {
         expect(b.bboxMin.map((x, k) => (x + b.bboxMax[k]!) / 2)).toEqual(centreOf(i).map((x) => expect.closeTo(x, 9)));
       });
     }
+  });
+});
+
+describe("the graph, tiers, panel and tree (M12 plan decision 14)", () => {
+  const chunk = compileWidgets();
+  const fm = Object.fromEntries(Object.entries(chunk.entries).map(([id, e]) => [id, e.fm]));
+
+  it("its edge types are registered through its system, and only there", () => {
+    expect(EDGE_TYPES.slice(-2)).toEqual([...DEMO_EDGES]);
+    expect(FIXTURE_GRAPH_REGISTRY.types).toEqual(EDGE_TYPES);
+    expect(DEMO_GRAPH_REGISTRY.types).toEqual([...DEMO_EDGES]);
+  });
+
+  it("the compiler accepts its edges: meshes_with stored once per pair, drives as written", () => {
+    const g = widgetGraph(fm);
+    expect(g.errors).toEqual([]);
+    expect(edgeCounts(g.edges, DEMO_EDGES)).toEqual([
+      ["meshes_with", 3],
+      ["drives", 7],
+    ]);
+    // Written from the other end, a symmetric edge is the same edge.
+    const twice = widgetGraph({ ...fm, widget_gear_2: { ...(fm.widget_gear_2 as object), meshesWith: ["widget_gear_1", "widget_gear_3"] } });
+    expect(twice.edges.filter((e) => e.type === "meshes_with")).toEqual(g.edges.filter((e) => e.type === "meshes_with"));
+  });
+
+  it("the compiler rejects a bad endpoint and an unregistered type", () => {
+    const bad = widgetGraph({ ...fm, widget_gear_4: { ...(fm.widget_gear_4 as object), drives: ["widget_gear_9"] } });
+    expect(bad.errors).toEqual(["content/widgets/widget_gear_4.md: drives widget_gear_4 → widget_gear_9: widget_gear_9 not known"]);
+    const structures = WIDGET_IDS.map((id) => ({ id, kind: id.split("_")[1]! }));
+    const unregistered = compileContentGraph({ fm, structures, readJson: () => null }, { ...DEMO_GRAPH_REGISTRY, types: MUSCULOSKELETAL_EDGES });
+    expect(unregistered.edges).toEqual([]);
+    expect(unregistered.errors).toContain("content/widgets/widget_gear_1.md: edge type meshes_with is not registered");
+    expect(unregistered.errors).toContain("content/widgets/widget_gear_1.md: edge type drives is not registered");
+    // A file that breaks its kind's schema doesn't compile.
+    const files = readWidgetFiles();
+    files.set("widget_lever_4", files.get("widget_lever_4")!.replace("drives: []", "drives: [not_a_widget]"));
+    expect(() => compileWidgets(files)).toThrow(/widget_lever_4\.md: drives\.0/);
+  });
+
+  describe("with the widgets in the ID index and their chunk loaded", () => {
+    beforeAll(() => {
+      setIndex(readIndexData(fixtureRegistry));
+      resetAppGraph();
+      resetSoftContent();
+      registerSoftContent(W as LazyLayerId, chunk);
+    });
+    afterAll(() => {
+      resetSoftContent();
+      resetAppGraph();
+    });
+    const on = { ...DEFAULT_MODES, [W]: "on" } as LayerModes;
+
+    it("tiers follow its rules: tier 1 = what it meshes with, drives or is driven by; tier 2 adds its gear train", () => {
+      expect(tiers().evaluate("widget_gear_2", "t1")).toEqual(["widget_gear_1", "widget_gear_3", "widget_lever_2", "widget_spring_2"]);
+      expect(tiers().evaluate("widget_gear_2", "t2")).toEqual(["widget_gear_1", "widget_gear_3", "widget_lever_2", "widget_spring_2", "widget_gear_4"]);
+      expect(tiers().evaluate("widget_spring_1", "t2")).toEqual(["widget_gear_1", "widget_gear_2"]);
+      expect(tiers().evaluate("widget_lever_4", "t1")).toEqual([]);
+      expect(tiers().evaluate("widget_lever_4", "ant")).toBeNull();
+      // Filtered by the layers showing, as every layer's are.
+      expect(relatedAt("widget_gear_2", 1, on)).toEqual(["widget_gear_1", "widget_gear_3", "widget_lever_2", "widget_spring_2"]);
+      expect(relatedAt("widget_gear_2", 1, DEFAULT_MODES)).toEqual([]);
+      expect(hasTier("lever", "t2")).toBe(true);
+      expect(tierWording("gear", "t1")?.label).toBe("linked widgets");
+      expect(tierWording("spring", "t2")?.button.text).toBe("Show the train");
+    });
+
+    it("the panel model gives its three sections, from its content and the graph", () => {
+      const m = panelModel("widget_gear_2", { content: (l) => (l === W ? chunk : null), opposite: () => null })!;
+      expect(m).not.toBeNull();
+      expect({ title: m.title, subtitle: m.subtitle, badges: m.badges, draft: m.draft, trail: m.trail, pair: m.pair, written: m.written }).toEqual({
+        title: "Gear 2",
+        subtitle: { text: "Gear", latin: false },
+        badges: ["Widgets", "Gear"],
+        draft: true,
+        trail: ["Widgets", "Gear 2"],
+        pair: null,
+        written: true,
+      });
+      const [summary, meshes, drive] = m.sections as [SectionModel, SectionModel, SectionModel];
+      expect(m.sections.map((s) => [s.render, s.testId])).toEqual([
+        ["text", "summary"],
+        ["links", "meshes"],
+        ["grouped-links", "drive"],
+      ]);
+      expect(summary.render === "text" && summary.value).toBe("<p>The second gear of the front train. It meshes with gears 1 and 3 and drives lever 2.</p>");
+      expect(meshes.render === "links" && meshes.links!.map((l) => l.label)).toEqual(["Gear 1", "Gear 3"]);
+      expect(drive.render === "grouped-links" && drive.groups!.map((g) => [g.title, g.links.map((l) => l.id)])).toEqual([
+        ["Drives", ["widget_lever_2"]],
+        ["Driven by", ["widget_spring_2"]],
+      ]);
+      // No isolate button: that is the bones' "Show attached muscles", declared on their section only.
+      expect(drive.render === "grouped-links" && drive.isolate).toBeNull();
+      // Nothing linked: empty lists, each section's empty text kept for the view.
+      const lone = panelModel("widget_lever_4", { content: (l) => (l === W ? chunk : null), opposite: () => null })!;
+      expect(lone.sections.map((s) => (s.render === "links" ? s.links : s.render === "grouped-links" ? s.groups!.flatMap((g) => g.links) : "text"))).toEqual(["text", [], []]);
+      expect(lone.sections.map((s) => s.empty)).toEqual([undefined, "Meshes with nothing.", "Drives nothing and is driven by nothing."]);
+      // Before its chunk has loaded: every section, unwritten.
+      const early = panelModel("widget_gear_2", { content: () => null, opposite: () => null })!;
+      expect(early.written).toBe(false);
+      expect(early.sections).toHaveLength(3);
+    });
+  });
+
+  it("the tree builder gives its root: kind, then assembly", () => {
+    const root = widgetsTree(chunk);
+    expect([root.key, root.label, root.name]).toEqual(["widgets", "Widgets", "All widgets"]);
+    expect(root.children.map((c) => (isSoftNode(c) ? c.key : c.id))).toEqual(["widgets.gear", "widgets.spring", "widgets.lever"]);
+    const gears = root.children[0]!;
+    expect(isSoftNode(gears) && gears.children.map((c) => (isSoftNode(c) ? [c.key, c.name, nodeMembers(c)] : c.id))).toEqual([
+      ["widgets.gear.front_train", "Gears: Front train", ["widget_gear_1", "widget_gear_2"]],
+      ["widgets.gear.rear_train", "Gears: Rear train", ["widget_gear_3", "widget_gear_4"]],
+    ]);
+    expect(nodeMembers(root)).toEqual([...WIDGET_IDS]);
+    // The sidebar's roots: the real ones in their order, then this one (the fixture build appends its built root to the
+    // real tree, `fixtureTree` in ./fixtures/systems/vite.ts; tests/e2e/fixture.spec.ts opens it).
+    expect(TREE_ROOTS.map((r) => r.key)).toEqual(["muscles", "ligaments", "cartilage", W]);
+    expect(TREE_ROOTS.at(-1)).toEqual({ key: W, label: "Widgets", name: "All widgets" });
   });
 });
 

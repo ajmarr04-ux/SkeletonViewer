@@ -74,6 +74,12 @@ const sections = (noMuscles: string): readonly PanelSection[] => [
     order: "name",
     needsContent: true,
     empty: noMuscles,
+    isolate: {
+      text: "Show attached muscles",
+      title: "Show the bone with every muscle attached to it",
+      noneTitle: "No muscles attach here",
+      noneReason: "Show attached muscles: no muscles attach here.",
+    },
   },
   { title: "Clinical note", testId: "clinical", render: "text", field: "clinical", format: "prose", empty: "None." },
 ];

@@ -75,3 +75,62 @@ test("layers= with the demo code round-trips through a reload", async ({ page })
   await page.getByTestId("layer-cartilage-on").check();
   await expect(page).toHaveURL(/layers=b:on,c:on,l:off,m:off,w:ghost(&|$)/);
 });
+
+// M12 session BI (plan decision 14): the demo system's edge types, the widgets'
+// front matter, tier rules, panel and tree, all from the test registry. The
+// widgets' content chunk and tree root are compiled by the app's generic code.
+test("a widget's panel shows its links from the graph, its tiers follow its rules, and its tree root opens", async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("./?lod=low&debug&layers=b:on,w:on");
+  await bonesShown(page);
+  await expect(page.getByTestId("layers-report").locator("[data-layer=widgets]")).toHaveAttribute("data-nodes", String(WIDGETS.length), { timeout: 60_000 });
+
+  const panel = page.getByTestId("info-panel");
+  await page.evaluate(() => window.__viewer!.select("widget_gear_2"));
+  await expect(panel).toHaveAttribute("data-id", "widget_gear_2");
+  await expect(panel.getByTestId("section-summary")).toContainText("The second gear of the front train.");
+  await expect(panel.getByTestId("section-meshes").getByRole("button")).toHaveText(["Gear 1", "Gear 3"]);
+  await expect(panel.getByTestId("attached-drives").getByRole("button")).toHaveText(["Lever 2"]);
+  await expect(panel.getByTestId("attached-driven-by").getByRole("button")).toHaveText(["Spring 2"]);
+  // The bones' "Show attached muscles" belongs to their section, not to every grouped-links section.
+  await expect(panel.getByTestId("show-attached")).toHaveCount(0);
+
+  const solid = (ids: string[]) => page.evaluate((list) => Object.fromEntries(list.map((id) => [id, window.__viewer!.solidNow(id)])), ids);
+  const all = ["widget_gear_1", "widget_gear_2", "widget_gear_3", "widget_gear_4", "widget_lever_2", "widget_spring_2", "widget_lever_4"];
+  // Tier 1: what it meshes with, drives or is driven by.
+  await expect(panel.getByTestId("show-related")).toHaveText("Show linked");
+  await panel.getByTestId("show-related").click();
+  await expect(page).toHaveURL(/tier=1/);
+  await expect.poll(() => solid(all)).toEqual({
+    widget_gear_1: true,
+    widget_gear_2: true,
+    widget_gear_3: true,
+    widget_gear_4: false,
+    widget_lever_2: true,
+    widget_spring_2: true,
+    widget_lever_4: false,
+  });
+  await expect(page.getByTestId("announcer")).toHaveText(/Gear 2: linked widgets shown/);
+  // Tier 2: its gear train adds gear 4 (meshing with gear 3).
+  await expect(panel.getByTestId("expand-region")).toHaveText("Show the train");
+  await panel.getByTestId("expand-region").click();
+  await expect(page).toHaveURL(/tier=2/);
+  await expect.poll(() => solid(["widget_gear_4", "widget_lever_4"])).toEqual({ widget_gear_4: true, widget_lever_4: false });
+
+  // A link selects the widget at the other end.
+  await panel.getByTestId("attached-driven-by").getByRole("button", { name: "Spring 2" }).click();
+  await expect(panel).toHaveAttribute("data-id", "widget_spring_2");
+
+  // The sidebar: its root after the real ones, opened to the selected widget; kind, then assembly.
+  const row = (key: string) => page.getByTestId("tree").locator(`[data-key="${key}"]`);
+  await page.getByTestId("sidebar-toggle").click();
+  await expect(row("widgets")).toHaveAttribute("aria-expanded", "true");
+  await expect(row("widget_spring_2")).toHaveAttribute("aria-selected", "true");
+  await expect(row("widgets.gear")).toHaveAttribute("aria-expanded", "false");
+  await row("widgets.gear").click();
+  await row("widgets.gear.rear_train").click();
+  await expect(row("widget_gear_4")).toHaveText(/Gear 4/);
+  expect(errors).toEqual([]);
+});

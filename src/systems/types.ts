@@ -145,6 +145,11 @@ export type PanelSection = SectionBase &
         exceptMeta?: string;
         order?: LinksOrder;
         needsContent?: true;
+        /**
+         * A button under the panel that isolates the structure with everything in the groups (the bones' "Show attached
+         * muscles", `grp=attached:<id>`): its text and title, its title and the reason line shown while every group is empty.
+         */
+        isolate?: { text: string; title: string; noneTitle: string; noneReason: string };
       }
     | {
         render: "actions-table";

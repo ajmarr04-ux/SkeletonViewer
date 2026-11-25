@@ -7,12 +7,14 @@
 // chunk.
 
 import { marked } from "marked";
+import type { z } from "zod";
 import { splitFrontMatter } from "./frontmatter";
 import type { EdgeWire } from "../graph/codec";
 import type { Patch } from "../systems/types";
 import type { LazyLayerId } from "../systems/registry";
 import type { CompiledGraph } from "../graph/compile";
-import { contentFolder, layerContent, schemaForKind } from "../systems/registry.content";
+import type { LayerContent } from "../systems/contentTypes";
+import { layerContent, schemaForKind } from "../systems/registry.content";
 import type { SoftFm } from "./softSchema";
 
 export type SoftCompiledEntry = {
@@ -50,13 +52,16 @@ export type SoftCompileDeps = {
   graph: (fm: Readonly<Record<string, unknown>>) => CompiledGraph;
 };
 
-/** Compile one layer. Throws on the first file that doesn't parse (validate-content lists every problem). */
-export function compileSoftLayer(layer: LazyLayerId, files: Map<string, string>, deps: SoftCompileDeps): SoftLayerContent {
+/**
+ * Compile one layer. Throws on the first file that doesn't parse (validate-content lists every problem).
+ * `lc`: the layer's content half (the registry's by default; the fixture build passes its own, M12 plan decision 14).
+ */
+export function compileSoftLayer(layer: LazyLayerId, files: Map<string, string>, deps: SoftCompileDeps, lc: LayerContent = layerContent(layer)): SoftLayerContent {
   const entries: Record<string, SoftCompiledEntry> = {};
   for (const [name, text] of [...files].sort(([a], [b]) => a.localeCompare(b))) {
-    const where = `content/${contentFolder(layer)}/${name}.md`;
+    const where = `content/${lc.folder}/${name}.md`;
     const kind = deps.kindOf(name);
-    const schema = kind ? schemaForKind<SoftFm>(kind) : null;
+    const schema = kind ? ((lc.kinds[kind]?.schema as z.ZodType<SoftFm> | undefined) ?? schemaForKind<SoftFm>(kind)) : null;
     if (!schema) throw new Error(`${where}: not in content/soft-ids.json`);
     const { data, body } = splitFrontMatter(text);
     const res = schema.safeParse(data);
@@ -71,10 +76,10 @@ export function compileSoftLayer(layer: LazyLayerId, files: Map<string, string>,
       fm,
     };
   }
-  const lists = layerContent(layer).derivedLists;
+  const lists = lc.derivedLists;
   if (!lists) return { entries, derived: null };
   const g = deps.graph(Object.fromEntries(Object.entries(entries).map(([id, e]) => [id, e.fm])));
-  if (g.errors.length > 0) throw new Error(`content/${contentFolder(layer)}: ${g.errors.slice(0, 5).join("; ")}`);
+  if (g.errors.length > 0) throw new Error(`content/${lc.folder}: ${g.errors.slice(0, 5).join("; ")}`);
   return { entries, derived: lists(g.edges, Object.keys(entries)) as SoftDerived };
 }
 

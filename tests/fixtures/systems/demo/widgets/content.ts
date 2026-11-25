@@ -1,16 +1,41 @@
-// The fixture layer's authoring half: an ID table and a minimal schema per kind.
-// No content files: the layer has no `contentChunk`, so its panel is the placeholder.
+// The fixture layer's authoring half: an ID table, a schema per kind and the
+// edges each widget's front matter declares (M12 plan decision 14). The files
+// are `content/<id>.md` next to this one (never under the repository's content/,
+// which the fixture doesn't touch); the fixture build compiles them into the
+// layer's content chunk (../../vite.ts).
 import { z } from "zod";
+import type { Edge } from "../../../../../src/graph/types";
 import { defineLayerContent } from "../../../../../src/systems/contentTypes";
 
-const schema = (kind: string) => z.strictObject({ id: z.string(), kind: z.literal(kind), name: z.string(), reviewed: z.boolean() });
+/** The widgets' content folder, relative to the repository root. */
+export const WIDGETS_DIR = "tests/fixtures/systems/demo/widgets/content";
+
+const widgetId = z.string().regex(/^widget_[a-z]+_\d+$/);
+const schema = (kind: string) =>
+  z.strictObject({
+    id: widgetId,
+    kind: z.literal(kind),
+    name: z.string(),
+    latin: z.null(),
+    commonName: z.string().nullable(),
+    /** The assembly it belongs to (the tree's level under its kind), or null. */
+    assembly: z.string().nullable(),
+    meshesWith: z.array(widgetId),
+    drives: z.array(widgetId),
+    reviewed: z.boolean(),
+  });
+export type WidgetFm = z.infer<ReturnType<typeof schema>>;
+
+/** `meshesWith` → `meshes_with` (symmetric), `drives` → `drives`, as written. */
+export const widgetEdges = (fm: WidgetFm): Edge[] => [
+  ...fm.meshesWith.map((to) => ({ from: fm.id, type: "meshes_with", to })),
+  ...fm.drives.map((to) => ({ from: fm.id, type: "drives", to })),
+];
+
+const kind = (k: string) => ({ schema: schema(k), bodyWords: { min: 1, max: 40 }, edges: widgetEdges });
 
 export const widgetsContent = defineLayerContent({
   folder: "widgets",
   idsFile: "tests/fixtures/systems/demo/widgets/ids.json",
-  kinds: {
-    gear: { schema: schema("gear"), bodyWords: { min: 1, max: 40 } },
-    spring: { schema: schema("spring"), bodyWords: { min: 1, max: 40 } },
-    lever: { schema: schema("lever"), bodyWords: { min: 1, max: 40 } },
-  },
+  kinds: { gear: kind("gear"), spring: kind("spring"), lever: kind("lever") },
 });

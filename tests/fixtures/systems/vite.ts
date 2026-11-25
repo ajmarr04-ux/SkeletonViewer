@@ -1,13 +1,24 @@
 // `vite build --mode fixture` (M11 plan decision 8): the app built with the test
-// registry. Three things differ from the real build, and nothing else:
+// registry. These things differ from the real build, and nothing else:
 //   1. src/systems/registered.ts resolves to ./registry.ts (real layers + `widgets`);
 //   2. the index plugin reads the test registry, so the widgets' IDs are in the ID index;
-//   3. the widgets' model files are served (dev) and emitted (build) at models/.
+//   3. the widgets' model files are served (dev) and emitted (build) at models/;
+//   4. (M12 plan decision 14) the widgets' content chunk (their entries and edges),
+//      the layer importers with it, and the sidebar tree with the widgets' root,
+//      each compiled by the app's own generic code (./demo/widgets/compile.ts).
+//      The content plugin runs in Node with the real registry, so the fixture
+//      serves these three modules itself, before it.
 // Output goes to dist-fixture/, so the real dist/ is never touched.
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Plugin } from "vite";
+import { importersModule } from "../../../scripts/lib/content-plugin";
 import type { RegistryOption } from "../../../scripts/lib/index-plugin";
+import { readSoftTree } from "../../../scripts/lib/soft-tree-data";
+import type { SoftTreeData } from "../../../src/tree/types";
+import { compileWidgets, widgetsTree } from "./demo/widgets/compile";
+import { WIDGETS_DIR } from "./demo/widgets/content";
+import { widgets } from "./demo/widgets/layer";
 import { FIXTURE_CONTENT } from "./registry.content";
 import { REGISTRY } from "./registry";
 
@@ -46,6 +57,32 @@ function fixtureModels(): Plugin {
   };
 }
 
+/** The sidebar tree: the real roots, then the widgets' (its `order` is after theirs). */
+export function fixtureTree(): SoftTreeData {
+  const real = readSoftTree();
+  return { ...real, roots: [...real.roots, widgetsTree()] };
+}
+
+/** The layer importers (every lazy layer of the test registry), the widgets' content chunk and the sidebar tree. */
+function fixtureContent(): Plugin {
+  const modules = new Map<string, () => string>([
+    ["virtual:skeleton-layer-importers", () => importersModule(REGISTRY.filter((l) => !l.models.eager))],
+    [widgets.contentChunk, () => `export default ${JSON.stringify(compileWidgets())};`],
+    ["virtual:skeleton-soft-tree", () => `export default ${JSON.stringify(fixtureTree())};`],
+  ]);
+  return {
+    name: "fixture-content",
+    enforce: "pre",
+    resolveId: (source) => (modules.has(source) ? `\0fixture:${source}` : null),
+    load(id) {
+      const make = id.startsWith("\0fixture:") ? modules.get(id.slice("\0fixture:".length)) : undefined;
+      if (!make) return null;
+      this.addWatchFile(join(here, "../../..", WIDGETS_DIR));
+      return make();
+    },
+  };
+}
+
 export const fixtureRegistry: RegistryOption = { layers: REGISTRY, content: FIXTURE_CONTENT };
-export const fixturePlugins = (): Plugin[] => [testRegistry(), fixtureModels()];
+export const fixturePlugins = (): Plugin[] => [testRegistry(), fixtureModels(), fixtureContent()];
 export const FIXTURE_OUT_DIR = "dist-fixture";

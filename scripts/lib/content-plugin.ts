@@ -48,8 +48,11 @@ const softModules = new Map(LAZY_LAYERS.map((l) => ["\0" + layerDescriptor(l).co
 /** `{ <layer>: () => import("<contentChunk>"), … }` for src/content/softContentLoader.ts. */
 const IMPORTERS = "virtual:skeleton-layer-importers";
 const RESOLVED_IMPORTERS = "\0" + IMPORTERS;
-export const importersModule = (): string =>
-  `export default {\n${LAZY_LAYERS.map((l) => `  ${JSON.stringify(l)}: () => import(${JSON.stringify(layerDescriptor(l).contentChunk!)}),\n`).join("")}};\n`;
+export const importersModule = (layers: readonly { id: string; contentChunk?: string }[] = LAZY_LAYERS.map(layerDescriptor)): string =>
+  `export default {\n${layers
+    .filter((l) => l.contentChunk !== undefined)
+    .map((l) => `  ${JSON.stringify(l.id)}: () => import(${JSON.stringify(l.contentChunk)}),\n`)
+    .join("")}};\n`;
 /** Files the soft-tissue chunks are built from, besides the content folders. */
 const softDeps = ["content/soft-ids.json", "content/articulations.json", "content/regions.json", "content/joints.json", "content/movements.json", "assets/mapping/soft-to-id.json"].map((f) => join(root, f));
 

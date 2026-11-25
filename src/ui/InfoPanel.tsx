@@ -393,8 +393,9 @@ function selectFromPanel(id: string) {
 
 type Grouped = Extract<SectionModel, { render: "grouped-links" }>;
 
-/** The attached-structures section (grouped links), if the kind has one: it drives "Show attached muscles". */
-const groupedOf = (model: PanelModel): Grouped | undefined => model.sections.find((s): s is Grouped => s.render === "grouped-links");
+/** The grouped-links section with an isolate button (the bones' attached muscles: "Show attached muscles"), if the kind has one. */
+const groupedOf = (model: PanelModel): (Grouped & { isolate: NonNullable<Grouped["isolate"]> }) | undefined =>
+  model.sections.find((s): s is Grouped & { isolate: NonNullable<Grouped["isolate"]> } => s.render === "grouped-links" && s.isolate !== null);
 /** Written, and every group empty. */
 const allEmpty = (s: Grouped | undefined): boolean => s?.groups != null && s.groups.every((g) => g.links.length === 0);
 
@@ -434,10 +435,10 @@ function Body({ model }: { model: PanelModel }) {
             data-testid="show-attached"
             disabled={grouped.groups === null || noAttached}
             aria-describedby={noAttached ? "attached-reason" : undefined}
-            title={noAttached ? "No muscles attach here" : "Show the bone with every muscle attached to it"}
+            title={noAttached ? grouped.isolate.noneTitle : grouped.isolate.title}
             onClick={() => isolateAttached(model.id)}
           >
-            Show attached muscles
+            {grouped.isolate.text}
           </button>
         )}
         {model.meshAvailable && <HideButton />}
@@ -446,9 +447,9 @@ function Body({ model }: { model: PanelModel }) {
         </button>
       </div>
       <TierReason id={model.id} />
-      {noAttached && (
+      {grouped && noAttached && (
         <p className="muted" id="attached-reason" data-testid="attached-reason">
-          Show attached muscles: no muscles attach here.
+          {grouped.isolate.noneReason}
         </p>
       )}
     </>
