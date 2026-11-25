@@ -418,7 +418,7 @@ export async function buildTree(): Promise<Golden> {
   const { loadSoftTree } = await import("../../src/content/softTreeLoader");
   await loadSoftTree();
   const data = groups.softTree()!;
-  const { isSoftNode } = await import("../../src/content/softTree");
+  const { isSoftNode } = await import("../../src/tree/types");
 
   // Every openable row open: grow the open set until the rows stop changing.
   let open = new Set<string>();
@@ -439,7 +439,7 @@ export async function buildTree(): Promise<Golden> {
   out["rows:order"] = rows.map((r) => r.key);
 
   const keys: string[] = [...groups.GROUPS.keys()];
-  const walk = (items: readonly import("../../src/content/softTree").SoftTreeItem[]) => {
+  const walk = (items: readonly import("../../src/tree/types").SoftTreeItem[]) => {
     for (const i of items)
       if (isSoftNode(i)) {
         keys.push(i.key);

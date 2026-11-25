@@ -24,6 +24,18 @@ export const cartilage = defineLayer({
   },
   contentChunk: "virtual:skeleton-soft-content-cartilage",
   defaultSetting: "off",
+  // By kind, then joint (M9 plan decision 11).
+  tree: {
+    builder: "byKind",
+    root: { label: LABEL, name: "All cartilage", order: 2 },
+    field: "joint",
+    kinds: [
+      { kind: "cartilage", label: "Cartilage and labra" },
+      { kind: "disc", label: "Discs" },
+      { kind: "meniscus", label: "Menisci and articular discs" },
+    ],
+    nodeName: (kindLabel, jointLabel) => `${kindLabel}: ${jointLabel}`,
+  },
   kinds: [
     { id: "cartilage", label: "Cartilage", noun: { one: "cartilage", many: "cartilages" }, labelPriority: 3, tiers: TIERS, panel: PANEL, chrome: jointChrome("Cartilage", LABEL) },
     { id: "disc", label: "Intervertebral disc", noun: { one: "disc", many: "discs" }, labelPriority: 4, tiers: TIERS, panel: PANEL, chrome: jointChrome("Intervertebral disc", LABEL) },

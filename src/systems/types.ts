@@ -209,8 +209,74 @@ export type PanelChrome = {
   unwritten: "all-sections" | "first-section";
 };
 
-/** How the sidebar root is built (M12 defines and fills it). */
-export type TreeSpec = Record<string, never>;
+/**
+ * How a layer's sidebar tree is built (SPEC-platform §5.2; M12 plan decision
+ * 10). Each spec names a generic builder in `src/tree/`; the per-layer facts
+ * (labels, kind order, names) are data here.
+ */
+export type TreeSpec = HierarchyTreeSpec | RegionCompartmentTreeSpec | ByJointTreeSpec | ByKindTreeSpec;
+
+/** A lazy layer's own sidebar root: its key is the layer's ID (group keys are `<layer>.<path>`). */
+export type TreeRootSpec = {
+  /** The root row's label ("Muscles"). */
+  label: string;
+  /** The root group's name ("All muscles"). */
+  name: string;
+  /** Position among the lazy layers' roots, which follow the eager layer's (lowest first). */
+  order: number;
+};
+
+/** The eager layer's tree: a hierarchy file's nodes, plus groups of one kind by their last group segment ("All molars"). */
+export type HierarchyTreeSpec = {
+  builder: "hierarchy";
+  /** Labels that only qualify their parent ("Left", "Upper"): a group's name joins them on ("Carpals, left"). Lower case. */
+  qualifiers: readonly string[];
+  /** Node keys that are a classification, not a place: left out of the names. */
+  skipInNames: readonly string[];
+  /** Extra groups shown under one node, after its children. */
+  typeGroups?: {
+    /** The node they sit under. */
+    parent: string;
+    /** The kind of entry they collect. */
+    kind: string;
+    groups: readonly { key: string; label: string; name: string; /** The entry's last group segment. */ segment: string }[];
+  };
+};
+
+/** Region → compartment → structure → parts, from a hierarchy file of nodes and structure IDs (left or midline). */
+export type RegionCompartmentTreeSpec = {
+  builder: "regionCompartment";
+  root: TreeRootSpec;
+  /** The hierarchy file (repo path), read at build time. */
+  file: string;
+  /** The name of a node with nodes under it ("Muscles of the shoulder"), from its label. */
+  innerName(label: string): string;
+  /** This root holds the group synonyms' own sets (content/synonyms.json `groups` with `members`). */
+  sets?: true;
+};
+
+/** By functional joint, then pair joint, from each structure's joint field; structures without one under `other`. */
+export type ByJointTreeSpec = {
+  builder: "byJoint";
+  root: TreeRootSpec;
+  /** The front-matter field naming the structure's joint. */
+  field: string;
+  /** A joint node's name, from its label ("Ligaments of the elbow joint (left)"). */
+  nodeName(label: string): string;
+  other: { key: string; label: string };
+};
+
+/** By kind, then joint (a joint with one structure needs no level of its own). */
+export type ByKindTreeSpec = {
+  builder: "byKind";
+  root: TreeRootSpec;
+  /** The front-matter field naming the structure's joint. */
+  field: string;
+  /** The kinds in tree order, with their node labels. */
+  kinds: readonly { kind: string; label: string }[];
+  /** A joint node's name under a kind ("Discs: Intervertebral joint L4–L5"). */
+  nodeName(kindLabel: string, jointLabel: string): string;
+};
 
 /** A kind's subtype (a muscle part's `partType`). */
 export type PartTypeSpec = {

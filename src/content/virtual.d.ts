@@ -40,8 +40,8 @@ declare module "virtual:skeleton-layer-importers" {
   export default importers;
 }
 declare module "virtual:skeleton-soft-tree" {
-  /** The sidebar's Muscles, Ligaments and Cartilage roots (src/content/softTree.ts; M9 plan decision 11). */
-  const tree: import("./softTree").SoftTreeData;
+  /** The lazy layers' sidebar roots (src/tree/, built from their TreeSpecs; M9 plan decision 11, M12 plan decision 10). */
+  const tree: import("../tree/types").SoftTreeData;
   export default tree;
 }
 declare module "virtual:skeleton-search-soft" {

@@ -7,7 +7,7 @@ import MiniSearch, { type AsPlainObject, type Options, type SearchResult as RawR
 import type { CompiledContent } from "./compile";
 import { displayName } from "./names";
 import type { GroupSynonym, Synonyms } from "./schema";
-import type { SoftTreeData, SoftTreeNode } from "./softTree";
+import type { SoftTreeData, SoftTreeNode } from "../tree/types";
 
 type Side = "left" | "right" | "midline";
 type IdEntry = { id: string; name: string; kind: string; side: Side };

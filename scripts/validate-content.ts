@@ -26,7 +26,7 @@ import {
   root,
 } from "./lib/content-files";
 import { readFileSync } from "node:fs";
-import { isSoftNode, type SoftTreeNode } from "../src/content/softTree";
+import { isSoftNode, type SoftTreeNode } from "../src/tree/types";
 import { readSoftTree } from "./lib/soft-tree-data";
 
 // The soft tree's group keys, for the group synonyms (M9 plan decision 12).

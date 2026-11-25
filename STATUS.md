@@ -381,7 +381,7 @@ Bones: three roots (axial, appendicular, dentition); the skull splits into `cran
   { "key": "scalp", "label": "Scalp (epicranius)", "children": ["occipitofrontalis_left", "temporoparietalis_left"] }, … ] }
 ```
 
-Ligaments (by joint) and cartilage (by kind, then joint) have no hierarchy file: their tree is built from `joint` and `kind` (`src/content/softTree.ts`).
+Ligaments (by joint) and cartilage (by kind, then joint) have no hierarchy file: their tree is built from `joint` and `kind` (the `byJoint` and `byKind` builders in `src/tree/`, since M12 BF).
 
 ### Muscle depth: `content/muscle-depth.json` (M7)
 

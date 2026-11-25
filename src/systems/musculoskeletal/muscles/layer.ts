@@ -49,6 +49,14 @@ export const muscles = defineLayer({
   },
   contentChunk: "virtual:skeleton-soft-content-muscles",
   defaultSetting: "off",
+  // Region → compartment → muscle → parts (content/muscle-hierarchy.json); the group synonyms' sets sit under this root (M9 plan decisions 11, 12).
+  tree: {
+    builder: "regionCompartment",
+    root: { label: LABEL, name: "All muscles", order: 0 },
+    file: "content/muscle-hierarchy.json",
+    innerName: (label) => `Muscles of the ${label.toLowerCase()}`,
+    sets: true,
+  },
   // Three stops, each one layer deeper (session V; the spec's fourth, "Deep only", was the same as the third).
   // `3` was "Deep only" while the control had four stops (session V's first build): the same as 2.
   depth: { stops: ["All", "Hide superficial", "Hide superficial + intermediate"], legacy: { 3: 2 } },

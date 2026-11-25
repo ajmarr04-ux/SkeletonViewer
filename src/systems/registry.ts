@@ -7,7 +7,7 @@ import type { Graph } from "../graph/graph";
 import type { TierContext } from "../graph/query";
 import { edgeTypeIndex } from "../graph/edgeTypes";
 import type { EdgeTypeDescriptor } from "../graph/types";
-import type { KindDescriptor, LayerDescriptor, LayerMode, OverlaySpec, PresetDescriptor, RolesSpec, SystemDescriptor } from "./types";
+import type { HierarchyTreeSpec, KindDescriptor, LayerDescriptor, LayerMode, OverlaySpec, PresetDescriptor, RolesSpec, SystemDescriptor, TreeSpec } from "./types";
 
 export { REGISTRY, SYSTEMS };
 
@@ -124,6 +124,24 @@ export const maxPartsOf = (id: LayerId): number =>
   Math.max(0, ...(layerDescriptor(id).kinds as readonly KindDescriptor[]).map((k) => k.parentOf?.maxParts ?? 0));
 /** The layer whose structures have parts (the muscles): their attachments, functional groups and antagonists. */
 export const NESTED_LAYER: LazyLayerId = REGISTRY.find((l) => hasNestedParts(l.id))!.id as LazyLayerId;
+
+/** The lazy layers with a sidebar root of their own (M12 plan decision 10), in sidebar order: key = the layer's ID. */
+export const TREE_ROOTS: readonly { key: LazyLayerId; label: string; name: string }[] = REGISTRY.flatMap((l) => {
+  const t = (l as LayerDescriptor).tree as TreeSpec | undefined;
+  return t && t.builder !== "hierarchy" ? [{ key: l.id as LazyLayerId, label: t.root.label, name: t.root.name, order: t.root.order }] : [];
+})
+  .sort((a, b) => a.order - b.order)
+  .map(({ key, label, name }) => ({ key, label, name }));
+/** The eager layer's tree spec (its hierarchy file and type groups). */
+export const EAGER_TREE: HierarchyTreeSpec | undefined = (() => {
+  const t = (layerDescriptor(EAGER_LAYER) as LayerDescriptor).tree;
+  return t?.builder === "hierarchy" ? t : undefined;
+})();
+/** Is this a lazy layer's group key by its form (`<layer>` or `<layer>.<path>`)? Whether it exists is known once the tree has loaded. */
+export const looksLikeTreeGroup = (key: string): boolean => {
+  const head = key.split(".", 1)[0]!;
+  return TREE_ROOTS.some((r) => r.key === head) && /^[a-z0-9_]+(\.[a-z0-9_]+)*$/.test(key);
+};
 
 /** Every part type, in order (the content schema's enum). */
 export const PART_TYPES: readonly PartType[] = [...KIND.values()].flatMap((k) => (k.partTypes ?? []).map((t) => t.id as PartType));

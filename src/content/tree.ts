@@ -1,19 +1,20 @@
 // The sidebar's tree (plan step 2): content/hierarchy.json as rows, plus the
-// tooth-type groups under Teeth ("All molars"), then the soft-tissue roots
-// Muscles, Ligaments and Cartilage (M9 plan decision 11), whose rows come
-// from the soft tree's lazy chunk once it has loaded. Pure: which rows are
+// eager layer's type groups ("All molars" under Teeth), then the lazy layers'
+// roots (M9 plan decision 11; registry `TREE_ROOTS`, M12 plan decision 10),
+// whose rows come from the soft tree's lazy chunk once it has loaded. Pure: which rows are
 // visible for a set of open groups, and where each tree key goes (WAI-ARIA
 // tree pattern). The component is src/ui/Sidebar.tsx.
 
 import hierarchy from "../../content/hierarchy.json";
-import { GROUPS, TOOTH_TYPE_GROUPS, groupOf, softTree } from "./groups";
-import { SOFT_ROOTS, isSoftNode, type SoftTreeData, type SoftTreeItem, type SoftTreeLeaf } from "./softTree";
+import { TREE_ROOTS } from "../systems/registry";
+import type { HierarchyNode } from "../tree/hierarchy";
+import { isSoftNode, type SoftTreeData, type SoftTreeItem, type SoftTreeLeaf } from "../tree/types";
+import { GROUPS, TYPE_GROUPS, groupOf, softTree } from "./groups";
 import { displayName } from "./names";
-import type { HierarchyNode } from "./schema";
 
 /**
  * - `group`: an inner node; opens and closes, and can be isolated;
- * - `type`: a tooth-type group ("All molars"); no children shown, can be isolated;
+ * - `type`: a type group ("All molars"); no children shown, can be isolated;
  * - `leaf`: an object; selecting it is the same as clicking the bone.
  */
 export type RowKind = "group" | "type" | "leaf";
@@ -52,8 +53,8 @@ function build(): Node[] {
     if (typeof n === "string") return { row: { key: n, kind: "leaf", label: displayName(n), level, parent, count: 0 }, children: [] };
     const g = GROUPS.get(n.key)!;
     const children = n.children.map((c) => make(c, level + 1, n.key));
-    if (n.key === "dentition")
-      for (const [key, label] of TOOTH_TYPE_GROUPS)
+    for (const { key, label, parent: under } of TYPE_GROUPS)
+      if (under === n.key)
         children.push({ row: { key, kind: "type", label, level: level + 1, parent: n.key, count: GROUPS.get(key)!.members.length }, children: [] });
     return { row: { key: n.key, kind: "group", label: n.label, level, parent, count: g.members.length }, children };
   };
@@ -65,7 +66,7 @@ const ROOTS = build();
 /** The keys of the top-level bone groups (open at first). */
 export const TOP_KEYS: readonly string[] = ROOTS.map((n) => n.row.key);
 /** The soft-tissue roots' keys (closed at first: opening one loads the soft tree). */
-export const SOFT_ROOT_KEYS: readonly string[] = SOFT_ROOTS.map((r) => r.key);
+export const SOFT_ROOT_KEYS: readonly string[] = TREE_ROOTS.map((r) => r.key);
 
 function softLeaf(l: SoftTreeLeaf, level: number, parent: string): Node {
   const children = (l.parts ?? []).map((p): Node => ({ row: { key: p.id, kind: "leaf", label: p.label, level: level + 1, parent: l.id, count: 0, drawn: p.drawn, soft: true }, children: [] }));
@@ -82,8 +83,8 @@ function softItem(i: SoftTreeItem, level: number, parent: string): Node {
 }
 /** The soft roots: the three rows alone until the tree has loaded, then with their children. */
 function softRoots(data: SoftTreeData | null): Node[] {
-  return SOFT_ROOTS.map((r, i) => {
-    const n = data?.roots[i];
+  return TREE_ROOTS.map((r) => {
+    const n = data?.roots.find((x) => x.key === r.key);
     return {
       row: { key: r.key, kind: "group", label: r.label, level: 1, parent: null, count: n ? (groupOf(r.key)?.members.length ?? null) : null, soft: true },
       children: n ? n.children.map((c) => softItem(c, 2, r.key)) : [],

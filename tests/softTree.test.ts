@@ -17,7 +17,8 @@ import {
   resetSoftTree,
 } from "../src/content/groups";
 import { buildIndex, makeSearcher, mergeSearchers } from "../src/content/search";
-import { isSoftNode, looksLikeSoftGroup, nodeMembers, type SoftTreeItem, type SoftTreeNode } from "../src/content/softTree";
+import { looksLikeTreeGroup as looksLikeSoftGroup } from "../src/systems/registry";
+import { isSoftNode, nodeMembers, type SoftTreeItem, type SoftTreeNode } from "../src/tree/types";
 import { SOFT_ROOT_KEYS, TOP_KEYS, treeKey, visibleRows } from "../src/content/tree";
 import { groupView } from "../src/scene/isolation";
 import { parseUrlState, serialiseUrlState } from "../src/state/url";

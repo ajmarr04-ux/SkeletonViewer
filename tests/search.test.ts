@@ -3,7 +3,7 @@ import { buildIndex, loadSearcher, buildSearchData, makeSearcher, parseQuery } f
 import { validateSynonyms } from "../src/content/validate";
 import { readIds, readJson, readSoftIds } from "../scripts/lib/content-files";
 import { readSoftTree } from "../scripts/lib/soft-tree-data";
-import { isSoftNode, type SoftTreeNode } from "../src/content/softTree";
+import { isSoftNode, type SoftTreeNode } from "../src/tree/types";
 import { readSearchDocuments } from "../scripts/lib/search-data";
 
 const docs = readSearchDocuments();

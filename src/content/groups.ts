@@ -1,18 +1,19 @@
 // Groups (Milestone 5, plan decision 5): every inner node of
-// content/hierarchy.json, plus one group per tooth type across all four
-// quadrants ("Molars, upper and lower"). A group can be isolated as a whole
-// from the tree, the legend, or a `grp=` link. Labels only: no anatomy is
+// content/hierarchy.json, plus the eager layer's type groups (the tooth types,
+// "Molars, upper and lower"), built by the `hierarchy` tree builder from the
+// eager layer's `TreeSpec` (M12 plan decision 10). A group can be isolated as a
+// whole from the tree, the legend, or a `grp=` link. Labels only: no anatomy is
 // added here (spec §12).
 
 import hierarchy from "../../content/hierarchy.json";
 import ids from "../../content/ids.json";
 import { groupTrail } from "./labels";
 import { displayName } from "./names";
-import type { HierarchyNode } from "./schema";
-import { NESTED_LAYER, type LazyLayerId } from "../systems/registry";
+import { EAGER_TREE, NESTED_LAYER, TREE_ROOTS, type LazyLayerId } from "../systems/registry";
+import { hierarchyGroups, hierarchyParents, type HierarchyNode } from "../tree/hierarchy";
+import { isSoftNode, nodeMembers, type SoftTreeData, type SoftTreeNode } from "../tree/types";
 import { softContentOf } from "./softContentLoader";
 import { softEntry } from "./softRegistry";
-import { SOFT_ROOTS, isSoftNode, nodeMembers, type SoftTreeData, type SoftTreeNode } from "./softTree";
 
 export type Group = {
   key: string;
@@ -39,55 +40,14 @@ type IdEntry = { id: string; name: string; group: string[]; kind: string; meshAv
 const ENTRIES = ids as IdEntry[];
 const BY_ID = new Map(ENTRIES.map((e) => [e.id, e]));
 
-/** Labels that only qualify their parent ("Left", "Upper"), so a group's name joins them on. */
-const QUALIFIERS = new Set(["left", "right", "upper", "lower"]);
-const SKIPPED = new Set(["axial", "appendicular"]);
+const ROOTS = hierarchy as HierarchyNode[];
+const NO_TREE = { builder: "hierarchy", qualifiers: [], skipInNames: [] } as const;
 
-/** The tooth-type groups: key → [tree label, name, last group segment]. */
-export const TOOTH_TYPE_GROUPS = [
-  ["dentition.type.incisors", "All incisors", "Incisors, upper and lower", "incisors"],
-  ["dentition.type.canines", "All canines", "Canines, upper and lower", "canines"],
-  ["dentition.type.premolars", "All premolars", "Premolars, upper and lower", "premolars"],
-  ["dentition.type.molars", "All molars", "Molars, upper and lower", "molars"],
-] as const;
+/** The eager layer's type groups (the tooth types): key → tree label, in order. */
+export const TYPE_GROUPS: readonly { key: string; label: string; parent: string }[] =
+  EAGER_TREE?.typeGroups?.groups.map((g) => ({ key: g.key, label: g.label, parent: EAGER_TREE!.typeGroups!.parent })) ?? [];
 
-function nameOf(labels: string[]): string {
-  const base: string[] = [];
-  const qual: string[] = [];
-  for (const l of labels) (QUALIFIERS.has(l.toLowerCase()) ? qual : base).push(l);
-  const head = base[base.length - 1] ?? labels[labels.length - 1] ?? "";
-  return qual.length ? `${head}, ${qual.map((q) => q.toLowerCase()).join(" ")}` : head;
-}
-
-function build(): Map<string, Group> {
-  const out = new Map<string, Group>();
-  const walk = (n: HierarchyNode, parent: string | null, labels: string[]): string[] => {
-    const here = SKIPPED.has(n.key) ? labels : [...labels, n.label];
-    const members: string[] = [];
-    const trail = groupTrail(n.key.split("."));
-    const g: Group = { key: n.key, label: n.label, name: nameOf(here.length ? here : [n.label]), trail: trail.length ? trail : [n.label], members, parent };
-    out.set(n.key, g);
-    for (const c of n.children) {
-      if (typeof c === "string") members.push(c);
-      else members.push(...walk(c, n.key, here));
-    }
-    return members;
-  };
-  for (const top of hierarchy as HierarchyNode[]) walk(top, null, []);
-  for (const [key, label, name, segment] of TOOTH_TYPE_GROUPS) {
-    out.set(key, {
-      key,
-      label,
-      name,
-      trail: ["Teeth", label],
-      members: ENTRIES.filter((e) => e.kind === "tooth" && e.group[e.group.length - 1] === segment).map((e) => e.id),
-      parent: "dentition",
-    });
-  }
-  return out;
-}
-
-export const GROUPS: ReadonlyMap<string, Group> = build();
+export const GROUPS: ReadonlyMap<string, Group> = hierarchyGroups(EAGER_TREE ?? NO_TREE, ROOTS, ENTRIES, groupTrail);
 
 /** `grp=attached:<bone>` (M9 plan decision 10). */
 export const ATTACHED_PREFIX = "attached:";
@@ -159,7 +119,10 @@ export function registerSoftTree(data: SoftTreeData): void {
     }
   };
   data.roots.forEach((r) => walk(r, r.key as LazyLayerId, null, []));
-  for (const s of data.sets) SOFT_GROUPS.set(s.key, { key: s.key, label: s.label, name: s.label, trail: [SOFT_ROOTS[0].label, s.label], members: s.members, parent: SOFT_ROOTS[0].key, layer: "muscles" });
+  for (const s of data.sets) {
+    const root = TREE_ROOTS.find((r) => r.key === s.root);
+    if (root) SOFT_GROUPS.set(s.key, { key: s.key, label: s.label, name: s.label, trail: [root.label, s.label], members: s.members, parent: root.key, layer: root.key });
+  }
   softVersion++;
   softListeners.forEach((l) => l());
 }
@@ -221,20 +184,7 @@ export function groupAnnouncement(key: string, back = false): string {
   return `${back ? "Back to " : ""}${g.name}: ${shown} shown${missing}.`;
 }
 
-const PARENT_OF_LEAF = new Map<string, string>();
-for (const g of GROUPS.values()) {
-  if (g.key.startsWith("dentition.type.")) continue;
-  const node = (function find(nodes: (HierarchyNode | string)[]): HierarchyNode | undefined {
-    for (const n of nodes) {
-      if (typeof n === "string") continue;
-      if (n.key === g.key) return n;
-      const f = find(n.children);
-      if (f) return f;
-    }
-    return undefined;
-  })(hierarchy as HierarchyNode[]);
-  for (const c of node?.children ?? []) if (typeof c === "string") PARENT_OF_LEAF.set(c, g.key);
-}
+const PARENT_OF_LEAF = hierarchyParents(ROOTS);
 
 /** The tree branch an object sits in, top down (group keys); empty for an unknown ID. */
 export function ancestorsOf(id: string): string[] {

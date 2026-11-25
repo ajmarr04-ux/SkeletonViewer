@@ -32,6 +32,22 @@ export const bones = defineLayer({
     budgets: { high: { maxMiB: 15, targetTris: 500_000 }, low: { maxMiB: 6, targetTris: 150_000 } },
   },
   defaultSetting: "on",
+  // The sidebar: content/hierarchy.json, then one group per tooth type across all four quadrants (Milestone 5 plan decision 5).
+  tree: {
+    builder: "hierarchy",
+    qualifiers: ["left", "right", "upper", "lower"],
+    skipInNames: ["axial", "appendicular"],
+    typeGroups: {
+      parent: "dentition",
+      kind: "tooth",
+      groups: [
+        { key: "dentition.type.incisors", label: "All incisors", name: "Incisors, upper and lower", segment: "incisors" },
+        { key: "dentition.type.canines", label: "All canines", name: "Canines, upper and lower", segment: "canines" },
+        { key: "dentition.type.premolars", label: "All premolars", name: "Premolars, upper and lower", segment: "premolars" },
+        { key: "dentition.type.molars", label: "All molars", name: "Molars, upper and lower", segment: "molars" },
+      ],
+    },
+  },
   // Below every other layer for the labels' focus; teeth are counted as bones.
   kinds: [
     { id: "bone", label: "Bone", noun: { one: "bone", many: "bones" }, labelPriority: 6, tiers: BONE_TIERS, ...BONE_PANEL },

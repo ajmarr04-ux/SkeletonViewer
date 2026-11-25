@@ -10,7 +10,6 @@
 // it replaces the entry instead (history.back() would leave the site).
 
 import { attachedBoneOf, attachedKey, groupLayer, isGroupKey } from "../content/groups";
-import { looksLikeSoftGroup } from "../content/softTree";
 import { loadSoftTree } from "../content/softTreeLoader";
 import { loadSoftContent } from "../content/softContentLoader";
 import { ALL_SHOWN_ANNOUNCEMENT, hiddenAnnouncement } from "../content/announce";
@@ -22,7 +21,7 @@ import { FULL_SKELETON, isolationStep, resolveClick, type HistoryStep, type Isol
 import { COLOUR_MODE_KEY, type ColourMode } from "../scene/regionColours";
 import { LAYERS_KEY, storedFlag, useViewer } from "./store";
 import { DEFAULT_LAYER_SETTING, formatLayers, isDefaultLayers, isUserLayersValue, HIDDEN_URL_CAP, parseHidden, parseLayers, parseUrlState, serialiseUrlState, type GhostMode, type Layer, type LayerMode, type LayerSetting, type MuscleDepth, type UrlState } from "./url";
-import { EAGER_LAYER, isLazyLayer, LAZY_LAYERS, layersOfSystem, NESTED_LAYER, presetDescriptor, presetModes, type LazyLayerId, type PresetId, type SystemId } from "../systems/registry";
+import { EAGER_LAYER, isLazyLayer, LAZY_LAYERS, layersOfSystem, looksLikeTreeGroup, NESTED_LAYER, presetDescriptor, presetModes, type LazyLayerId, type PresetId, type SystemId } from "../systems/registry";
 
 export { hasMesh, isKnownId, layerOfId };
 /** A muscle part's muscle (spec §5.1), else null. */
@@ -100,7 +99,7 @@ export const goBack = (): void => dispatchIsolation({ type: "back" });
  * on screen. A soft group key not yet known loads the soft tree first.
  */
 export async function isolateGroup(key: string): Promise<void> {
-  if (!isGroupKey(key) && looksLikeSoftGroup(key)) await loadSoftTree();
+  if (!isGroupKey(key) && looksLikeTreeGroup(key)) await loadSoftTree();
   if (!isGroupKey(key)) return;
   const layer = groupLayer(key);
   if (layer !== null && attachedBoneOf(key) === null) {
@@ -404,7 +403,7 @@ export function initSelectionFromUrl(): UrlState {
     if (url.cam === null) void frameWhenMusclesReady(url.grp);
   }
   const rawGrp = new URLSearchParams(window.location.search).get("grp");
-  if (url.sel === null && url.grp === null && rawGrp !== null && looksLikeSoftGroup(rawGrp)) void softGroupFromUrl(rawGrp, url.cam !== null);
+  if (url.sel === null && url.grp === null && rawGrp !== null && looksLikeTreeGroup(rawGrp)) void softGroupFromUrl(rawGrp, url.cam !== null);
   const over = parseHidden(new URLSearchParams(window.location.search).get("hid")).dropped;
   if (over > 0) st.showToast(`Only the first ${url.hid.length} hidden structures are kept in the link`);
   const rawSel = new URLSearchParams(window.location.search).get("sel");
@@ -474,7 +473,7 @@ export async function softGroupFromUrl(key: string, hasCam: boolean): Promise<vo
 export function onPopState(): void {
   // An entry naming a soft group the page hasn't loaded yet: load the soft tree, then apply it.
   const rawGrp = new URLSearchParams(window.location.search).get("grp");
-  if (rawGrp !== null && !isGroupKey(rawGrp) && looksLikeSoftGroup(rawGrp)) {
+  if (rawGrp !== null && !isGroupKey(rawGrp) && looksLikeTreeGroup(rawGrp)) {
     const at = window.location.href;
     void loadSoftTree().then(() => {
       if (window.location.href === at && isGroupKey(rawGrp)) onPopState();

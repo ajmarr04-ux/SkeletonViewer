@@ -22,6 +22,14 @@ export const ligaments = defineLayer({
   },
   contentChunk: "virtual:skeleton-soft-content-ligaments",
   defaultSetting: "off",
+  // By functional joint, then pair joint; no joint → "Other ligaments" (M9 plan decision 11).
+  tree: {
+    builder: "byJoint",
+    root: { label: LABEL, name: "All ligaments", order: 1 },
+    field: "joint",
+    nodeName: (label) => `Ligaments of the ${label.charAt(0).toLowerCase()}${label.slice(1)}`,
+    other: { key: "other", label: "Other ligaments" },
+  },
   kinds: [
     {
       id: "ligament",
