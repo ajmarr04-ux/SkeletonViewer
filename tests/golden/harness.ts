@@ -404,3 +404,79 @@ export async function buildUrls(): Promise<Golden> {
   if (lateWrites.length > 0) throw new Error(`a page wrote its address after it was recorded:\n${lateWrites.join("\n")}`);
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// tree.json (M12 plan decision 9, recorded at M11 before the tree builders move)
+
+/**
+ * The sidebar's tree and its groups. `rows:initial` is the rows with the top
+ * bone groups open before the soft tree loads (the soft roots alone, count
+ * null). After everything has loaded: `row:<key>` for every row with every
+ * openable row open (kind, label, level, parent, pos/size, count, and the
+ * soft rows' `expandable`/`drawn`), `rows:order` the keys in order; `group:<key>`
+ * for every group (bone groups, tooth types, soft tree nodes, synonym sets and
+ * every bone's `attached:` group): label, name, trail, parent, layer, members,
+ * counts, both announcements, ancestors; `ancestors:<id>` for every structure.
+ */
+export async function buildTree(): Promise<Golden> {
+  const groups = await import("../../src/content/groups");
+  const tree = await import("../../src/content/tree");
+  const out: Golden = {};
+  groups.resetSoftTree();
+  out["rows:initial"] = tree.visibleRows(new Set(tree.TOP_KEYS)).map((r) => `${r.key} | ${r.level} | ${r.count}${r.soft ? " | soft" : ""}`);
+
+  await loadEverything();
+  const { loadSoftTree } = await import("../../src/content/softTreeLoader");
+  await loadSoftTree();
+  const data = groups.softTree()!;
+  const { isSoftNode } = await import("../../src/content/softTree");
+
+  // Every openable row open: grow the open set until the rows stop changing.
+  let open = new Set<string>();
+  for (let rows = tree.visibleRows(open); ; ) {
+    const next = new Set(rows.filter(tree.openable).map((r) => r.key));
+    if (next.size === open.size) break;
+    open = next;
+    rows = tree.visibleRows(open);
+  }
+  const rows = tree.visibleRows(open);
+  const seen = new Map<string, number>();
+  for (const r of rows) {
+    const n = (seen.get(r.key) ?? 0) + 1;
+    seen.set(r.key, n);
+    const { key, ...rest } = r;
+    out[`row:${key}${n > 1 ? `#${n}` : ""}`] = rest;
+  }
+  out["rows:order"] = rows.map((r) => r.key);
+
+  const keys: string[] = [...groups.GROUPS.keys()];
+  const walk = (items: readonly import("../../src/content/softTree").SoftTreeItem[]) => {
+    for (const i of items)
+      if (isSoftNode(i)) {
+        keys.push(i.key);
+        walk(i.children);
+      }
+  };
+  walk(data.roots);
+  keys.push(...data.sets.map((s) => s.key));
+  const { bones, soft } = await allIds();
+  keys.push(...bones.map(groups.attachedKey));
+  for (const key of keys) {
+    const g = groups.groupOf(key)!;
+    out[`group:${key}`] = {
+      label: g.label,
+      name: g.name,
+      trail: g.trail,
+      parent: g.parent,
+      layer: groups.groupLayer(key),
+      members: g.members,
+      ...(g.attached ? { attached: g.attached } : {}),
+      counts: groups.groupCounts(key),
+      announce: groups.groupAnnouncement(key),
+      back: groups.groupAnnouncement(key, true),
+      ancestors: groups.groupAncestors(key),
+    };
+  }
+  for (const id of [...bones, ...soft]) out[`ancestors:${id}`] = groups.ancestorsOf(id);
+  return out;
+}
