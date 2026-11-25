@@ -6,13 +6,15 @@
 // decision 10): missing files are counted, every file that exists is checked.
 import { join } from "node:path";
 import { oppositeOf } from "../src/content/placeholder";
-import { validateContent } from "../src/content/validate";
+import { validateContent } from "../src/systems/musculoskeletal/bones/validate";
 import type { DepthEntry } from "../src/content/muscleDepth";
 import { validateMuscleDepth } from "../src/content/muscleDepthRules";
 import { checkNoJointLists, validateSoftContent } from "../src/content/softValidate";
-import { LAZY_LAYERS, layerDescriptor } from "../src/systems/registry";
+import { edgeCounts } from "../src/graph/compile";
+import { EDGE_TYPES, LAZY_LAYERS, layerDescriptor } from "../src/systems/registry";
 import { DEPTH_FILE } from "../src/systems/registry.content";
 import {
+  compileGraphFromDisk,
   glbNodeNames,
   makeOpposite,
   readBoneLandmarks,
@@ -24,7 +26,7 @@ import {
   root,
 } from "./lib/content-files";
 import { readFileSync } from "node:fs";
-import { isSoftNode, type SoftTreeNode } from "../src/content/softTree";
+import { isSoftNode, type SoftTreeNode } from "../src/tree/types";
 import { readSoftTree } from "./lib/soft-tree-data";
 
 // The soft tree's group keys, for the group synonyms (M9 plan decision 12).
@@ -85,6 +87,16 @@ const soft = validateSoftContent(
 report.errors.push(...soft.errors, ...checkNoJointLists(softIds));
 report.warnings.push(...soft.warnings);
 
+// The relationship graph (SPEC-platform §10; M12 plan decision 1): every edge's
+// type registered, both ends known, symmetric edges once. Needs every file to
+// parse, so it runs only when everything above passed.
+let graphLine = "graph not compiled (fix the errors above first)";
+if (report.errors.length === 0) {
+  const g = compileGraphFromDisk();
+  report.errors.push(...g.errors.map((e) => `graph: ${e}`));
+  graphLine = `graph: ${g.edges.length} edges (${edgeCounts(g.edges, EDGE_TYPES).map(([t, n]) => `${t} ${n}`).join(", ")}), ${g.joints.length} joint nodes`;
+}
+
 for (const w of report.warnings) console.warn(`warning: ${w}`);
 if (report.errors.length) {
   console.error(`validate-content FAILED (${report.errors.length}):\n  ${report.errors.join("\n  ")}`);
@@ -95,3 +107,4 @@ console.log(
     `${soft.files} of ${soft.expected} soft-tissue files${allowMissingSoft ? ", missing files allowed" : ""}; ` +
     `${report.warnings.length} warning(s))`,
 );
+console.log(graphLine);

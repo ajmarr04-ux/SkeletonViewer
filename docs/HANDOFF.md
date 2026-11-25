@@ -1,19 +1,20 @@
-# Handoff — written 2026-11-25 at the end of M11 session AY
+# Handoff — written 2026-11-25 at the end of M12 BI
 
 ## Next session
-M12 planning (`SPEC-platform.md` §11, M12: relationship graph, tier rules as data, descriptor-driven panels, tree builders, announcement wording). Start with `CLAUDE.md`'s milestone handover: `m11` is already frozen at `a2709f6`, so only set `current` to 12, confirm `/m11/` is live (ask the user), tick "Hosted copy is live" in `docs/PLAN-milestone-11.md`, then write `docs/PLAN-milestone-12.md`.
+BJ (routine): M12 wrap-up (plan step 11): goldens, parity table (bench, perf-load, main chunk ≤ 500.1 kB), the full e2e run in the background, exit criteria, `STATUS.md`, `/m12/` (set `deploy/pages.json` first as the plan says).
+Done when: exit criteria ticked; `/m12/` live (ask the user to confirm; the container can't reach github.io).
 
 ## State
-- M11 merged to `main` as `a2709f6` ([PR #25](https://github.com/ajmarr04-ux/SkeletonViewer/pull/25)); the freeze (`m11`, `"current": null`) goes in a follow-up PR from this branch.
-- `npm run check`: pass (41 files, 606 tests incl. goldens). Full e2e: 173 of 173 (36.7 min).
-- Parity against `317b445` (step 7's table): bench and perf-load the same within noise; main chunk 472.3 kB (+2.3; budget 500.1).
+- Last commit: M12 BI: the fixture layer gains edges, tier rules, a panel and a tree (see `git log`).
+- `npm run check`: pass (658 tests, the five goldens unchanged). E2E `fixture`: 3 pass; `attached`, `panel`: 16 pass.
 - Open fan-out work: none
 
 ## Waiting on the user
-- A glance at https://ajmarr04-ux.github.io/SkeletonViewer/m11/ (plan checkpoint "after AY").
+none
 
 ## Things the next session must know
-- The registry allowlist (`tests/registry-allowlist.json`) names 17 files for M12: that list is M12's work queue, and each file removed must leave the goldens unchanged.
-- Goldens: `npm run golden` compares; never `--write --force` without the user's approval. When M12 moves a function, change `tests/golden/harness.ts`'s import, never the snapshot.
-- `npm run bench-container [runs] [dist dir]` takes the dist dir **relative** to the working directory (it joins it onto cwd).
-- QUESTIONS: 1–139, the next is 140.
+- The allowlist has no M12 entry (7 left: M14 ×1, M15 ×6).
+- New generic hooks: `compileContentGraph(input, reg: ContentRegistry = CONTENT_REAL)`, `compileSoftLayer(…, lc)`, `importersModule(layers)`. The fixture build serves the layer importers, `virtual:skeleton-soft-content-widgets` and `virtual:skeleton-soft-tree` itself (`tests/fixtures/systems/vite.ts`), because the content plugin runs in Node with the real registry.
+- "Show attached muscles" is now the bones' grouped-links section's `isolate` option, not implied by any grouped-links section.
+- Main chunk `index` 307.6 kB `gzip -9` (unchanged since BH).
+- Goldens: never `--write --force` without the user's approval. QUESTIONS: next is 140.

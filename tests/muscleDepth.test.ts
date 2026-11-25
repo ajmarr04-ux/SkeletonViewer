@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { depthOf, peeled, sideFree, type DepthEntry } from "../src/content/muscleDepth";
 import { validateMuscleDepth } from "../src/content/muscleDepthRules";
-import { peeledAt, peeledMuscleCount, registerSoftIds, resetSoftIds } from "../src/content/softRegistry";
+import { peeledAt, peeledMuscleCount,  } from "../src/content/softRegistry";
 import { trimSoftIds, type RawSoftId } from "../src/layers/softIds";
 import { FULL_VIEW, shownIn, viewOf } from "../src/scene/isolation";
 import { depthAnnouncement } from "../src/content/announce";
@@ -62,8 +62,6 @@ describe("the rules on fixtures", () => {
 });
 
 describe("peeling in the view", () => {
-  beforeAll(() => registerSoftIds(trimSoftIds(raw, depths)));
-  afterAll(() => resetSoftIds());
   const st = (muscleDepth: 0 | 1 | 2, sel: string | null = null) => ({
     sel,
     tier: 0 as const,

@@ -5,8 +5,10 @@ import idsJson from "../content/ids.json";
 import regions from "../content/regions.json";
 import { mirrorFile, splitFrontMatter, swapSideWords } from "../src/content/frontmatter";
 import { oppositeOf } from "../src/content/placeholder";
-import { frontMatterSchema, wordCount } from "../src/content/schema";
-import { validateContent, type ContentInput, type IdEntry } from "../src/content/validate";
+import { wordCount } from "../src/content/schema";
+import type { IdEntry } from "../src/content/validate";
+import { frontMatterSchema } from "../src/systems/musculoskeletal/bones/schema";
+import { validateContent, type ContentInput } from "../src/systems/musculoskeletal/bones/validate";
 
 const ids = idsJson as IdEntry[];
 const meshIds = ids.filter((e) => e.meshAvailable).map((e) => e.id);

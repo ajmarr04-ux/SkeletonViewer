@@ -1,14 +1,17 @@
 // M9 session AG: origins, insertions and antagonists (spec §5.2–5.3; plan
-// decisions 6–8), on the real content and the real patch mapping.
+// decisions 6–8), on the real content and the real patch mapping. Since M12 BC
+// the roles are read off the app's graph (src/systems/musculoskeletal/muscles/roles.ts,
+// the muscles' `ant` tier rule); the expectations are M9's.
 import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import ids from "../content/ids.json";
 import { compileAllSoftFromDisk, readPatches } from "../scripts/lib/content-files";
-import { registerSoftIds, resetSoftIds, softEntry } from "../src/content/softRegistry";
-import { registerSoftTiers, resetSoftTiers } from "../src/content/softRelations";
-import { bothSynergistAndAntagonist, buildMuscleRoles, muscleModel, patchAgreement, type MuscleRoles } from "../src/content/softRoles";
+import { softEntry } from "../src/content/softRegistry";
+import { appGraph, resetAppGraph, rolesOf, type TintRoles as MuscleRoles } from "../src/content/appGraph";
+import { registerSoftContent, resetSoftContent } from "../src/content/softContentLoader";
 import type { SoftFm } from "../src/content/softSchema";
-import { trimSoftIds, type RawSoftId } from "../src/layers/softIds";
+import { bothSynergistAndAntagonist, muscleModel, muscleRoles, patchAgreement, patchIndex } from "../src/systems/musculoskeletal/muscles/roles";
+import { type RawSoftId } from "../src/layers/softIds";
 import { isolationView, sceneView, withTints } from "../src/scene/isolation";
 import { type LayerModes } from "../src/state/url";
 import { DEFAULT_MODES } from "../src/systems/registry";
@@ -18,7 +21,10 @@ const BONES = ids as { id: string; meshAvailable: boolean }[];
 const BONE_MESH = new Set(BONES.filter((e) => e.meshAvailable).map((e) => e.id));
 const hasMesh = (id: string) => BONE_MESH.has(id) || softEntry(id)?.mesh === true;
 const SOFT = compileAllSoftFromDisk();
-const ROLES = SOFT.muscles.roles!;
+const MUSCLE_IDS = RAW.filter((e) => e.kind === "muscle" || e.kind === "muscle_part")
+  .map((e) => e.id)
+  .sort();
+let ROLES: Record<string, MuscleRoles> = {};
 const FM: Record<string, SoftFm> = {};
 for (const c of Object.values(SOFT)) for (const [id, e] of Object.entries(c.entries)) FM[id] = e.fm;
 const PATCHES = readPatches();
@@ -35,18 +41,19 @@ function view(sel: string, tier: 0 | 1 | 2, m: LayerModes, opts: { ant?: boolean
 }
 
 beforeAll(() => {
-  registerSoftIds(trimSoftIds(RAW));
-  for (const l of ["muscles", "ligaments", "cartilage"] as const) registerSoftTiers(l, SOFT[l].tiers, SOFT[l].roles);
+  for (const l of ["muscles", "ligaments", "cartilage"] as const) registerSoftContent(l, SOFT[l]);
+  ROLES = Object.fromEntries(MUSCLE_IDS.flatMap((id) => (rolesOf(id) ? [[id, rolesOf(id)!]] : [])));
 });
 afterAll(() => {
-  resetSoftIds();
-  resetSoftTiers();
+  resetSoftContent();
+  resetAppGraph();
 });
 
 describe("roles on the real content (plan decision 6)", () => {
   it("every muscle and part has roles, and nothing else", () => {
-    const muscles = RAW.filter((e) => e.kind === "muscle" || e.kind === "muscle_part").map((e) => e.id);
-    expect(Object.keys(ROLES).sort()).toEqual(muscles.sort());
+    expect(Object.keys(ROLES).sort()).toEqual(MUSCLE_IDS);
+    expect(RAW.filter((e) => !MUSCLE_IDS.includes(e.id)).some((e) => rolesOf(e.id) !== undefined)).toBe(false);
+    expect(rolesOf("femur_left")).toBeUndefined();
   });
 
   it("the long head of triceps: its own origin patch on the scapula, the muscle's insertion patch on the ulna", () => {
@@ -73,7 +80,7 @@ describe("roles on the real content (plan decision 6)", () => {
   });
 
   it("every structure named in a role is drawn, by a patch or by the fallback", () => {
-    const m = muscleModel(FM);
+    const m = muscleModel(appGraph());
     for (const [id, r] of Object.entries(ROLES)) {
       for (const [role, set] of [["origin", r.o], ["insertion", r.i]] as const) {
         const drawn = new Set([...set.p.map(([, on]) => on), ...set.f]);
@@ -86,7 +93,7 @@ describe("roles on the real content (plan decision 6)", () => {
   });
 
   it("a patch is drawn only for a role the content gives its bone, and only for a structure it serves", () => {
-    const m = muscleModel(FM);
+    const m = muscleModel(appGraph());
     for (const [id, r] of Object.entries(ROLES)) {
       for (const [role, set] of [["origin", r.o], ["insertion", r.i]] as const) {
         for (const [pid, on] of set.p) {
@@ -102,7 +109,7 @@ describe("roles on the real content (plan decision 6)", () => {
 
   it("every patch is either drawn for some muscle or part, or reported as never drawn", () => {
     const drawn = new Set(Object.values(ROLES).flatMap((r) => [...r.o.p, ...r.i.p].map(([p]) => p)));
-    const never = new Set(patchAgreement(FM, PATCHES).flatMap((d) => (d.kind === "patch-without-content" ? [d.patch] : [])));
+    const never = new Set(patchAgreement(appGraph(), MUSCLE_IDS, patchIndex(PATCHES)).flatMap((d) => (d.kind === "patch-without-content" ? [d.patch] : [])));
     for (const p of never) expect(drawn.has(p), p).toBe(false);
     expect(drawn.size + never.size).toBe(Object.keys(PATCHES).length);
   });
@@ -130,9 +137,8 @@ describe("roles on the real content (plan decision 6)", () => {
     expect(bothSynergistAndAntagonist(DERIVED)).toContainEqual(["biceps_brachii_left", "pronator_teres_left"]);
   });
 
-  it("buildMuscleRoles with no patches tints every named structure whole", () => {
-    const roles = buildMuscleRoles({ fm: FM, patches: {}, synergists: DERIVED.synergists, antagonists: DERIVED.antagonists });
-    expect(roles.triceps_brachii_long_head_left).toMatchObject({ o: { p: [], f: ["scapula_left"] }, i: { p: [], f: ["ulna_left"] } });
+  it("with no patches every named structure is tinted whole", () => {
+    expect(muscleRoles(appGraph(), "triceps_brachii_long_head_left", patchIndex({}))).toMatchObject({ o: { p: [], f: ["scapula_left"] }, i: { p: [], f: ["ulna_left"] } });
   });
 });
 

@@ -6,7 +6,7 @@
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { buildPanels, buildSearch, buildTiers, buildUrls, type Golden } from "./golden/harness";
+import { buildPanels, buildSearch, buildTiers, buildTree, buildUrls, type Golden } from "./golden/harness";
 
 const WRITE = process.env.GOLDEN_WRITE === "1";
 const FORCE = process.env.GOLDEN_FORCE === "1";
@@ -35,6 +35,7 @@ const SNAPSHOTS: [string, () => Promise<Golden>][] = [
   ["panels", buildPanels],
   ["search", buildSearch],
   ["urls", buildUrls],
+  ["tree", buildTree],
 ];
 
 describe("golden snapshots (M10 behaviour)", () => {

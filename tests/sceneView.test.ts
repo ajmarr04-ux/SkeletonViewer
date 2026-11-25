@@ -1,27 +1,51 @@
 import { readFileSync } from "node:fs";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { BufferAttribute, BufferGeometry, Color, Matrix4, MeshStandardMaterial } from "three";
 import ids from "../content/ids.json";
-import { hideTargets, registerSoftIds, resetSoftIds, softDisplayName, softEntry, softOpposite } from "../src/content/softRegistry";
-import { softAnnouncement, softPanelModel } from "../src/content/softPanel";
+import { hideTargets, softDisplayName, softEntry, softOpposite } from "../src/content/softRegistry";
+import { softSelectionAnnouncement } from "../src/content/announce";
+import { panelModel as generic, type LayerContent, type SectionModel } from "../src/panel/model";
+import { isEagerId } from "../src/content/index";
+import type { SoftLayerContent } from "../src/content/softCompile";
 import { displayName } from "../src/content/names";
-import { trimSoftIds, type RawSoftId } from "../src/layers/softIds";
+import { type RawSoftId } from "../src/layers/softIds";
 import { batchSkeleton, type BonePart } from "../src/scene/batchSkeleton";
 import {
+  EAGER_ONLY,
   FULL_VIEW,
   applyLayerView,
   isolationView,
   isPickable,
   isPickableIn,
+  relatedAt,
   sceneView,
   shownIn,
   viewOf,
   withJoint,
   type IsolationView,
 } from "../src/scene/isolation";
-import { relations } from "../src/content/relations";
 import { type LayerModes } from "../src/state/url";
 import { DEFAULT_MODES, LAYER_IDS } from "../src/systems/registry";
+
+// M12 BG deleted softPanel.ts's softAnnouncement; its tier-0 wording is announce.ts' own.
+const softAnnouncement = (id: string) => softSelectionAnnouncement(id, 0, null, {});
+
+// M12 BE: the M9 soft panel shape (softPanel.ts's `softPanelModel`, deleted) read off the generic model.
+function softPanelModel(id: string, content: SoftLayerContent | null = null) {
+  const layer = softEntry(id)?.layer;
+  if (isEagerId(id) || !layer) return null;
+  const m = generic(id, { content: (l) => (l === layer ? (content as unknown as LayerContent) : null), opposite: softOpposite })!;
+  const summary = m.sections[0] as Extract<SectionModel, { render: "text" }>;
+  return {
+    ...m,
+    badges: { layer: m.badges[0], kind: m.badges[1] },
+    partOf: m.partOf ?? null,
+    parentCrumb: m.parentCrumb ?? null,
+    latin: m.subtitle.latin ? m.subtitle.text : null,
+    summary: summary.value,
+  };
+}
+
 
 // M7 session U, step 4 (plan decisions 6 and 8): the layer-aware view.
 
@@ -70,7 +94,7 @@ describe("layer modes and isolation (plan decision 6)", () => {
     for (const mode of ["ghost", "off"] as const) {
       const v = sceneView(iso("femur_left", 1), modes({ bones: mode }));
       expect(shownIn(v, "bones", "femur_left")).toBe("solid");
-      for (const r of relations.tier1("femur_left")) expect(shownIn(v, "bones", r)).toBe("solid");
+      for (const r of relatedAt("femur_left", 1, EAGER_ONLY)) expect(shownIn(v, "bones", r)).toBe("solid");
       expect(shownIn(v, "bones", "humerus_left")).toBe(mode === "ghost" ? "ghost" : "hidden");
     }
   });
@@ -133,8 +157,6 @@ describe("applyLayerView", () => {
 
 describe("soft-tissue registry and placeholder (plan decisions 12, 13)", () => {
   const raw = JSON.parse(readFileSync("content/soft-ids.json", "utf8")) as RawSoftId[];
-  beforeAll(() => registerSoftIds(trimSoftIds(raw)));
-  afterAll(() => resetSoftIds());
   it("names, opposite side and hide targets", () => {
     expect(displayName("biceps_brachii_left")).toBe("Biceps brachii (left)");
     expect(displayName("linea_alba")).toBe("Linea alba");

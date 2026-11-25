@@ -1,17 +1,16 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { NO_PANEL } from "../camera/math";
 import { groupCounts, groupOf, type Group } from "../content/groups";
-import { useContent } from "../content/loader";
 import { displayName } from "../content/names";
-import { landmarkName, panelModel, type PanelLink, type PanelModel } from "../content/panel";
-import { NOT_WRITTEN } from "../content/placeholder";
-import { useSoftContent } from "../content/softContentLoader";
-import { softPanelModel, softSections, type AttachmentList, type ActionRow, type SoftLink, type SoftPanelModel, type SoftSections } from "../content/softPanel";
-import { softLayerOf } from "../content/softRegistry";
-import { expandRegion, goBack, hasMesh, hideSelected, isMuscleKind, isolateAttached, selectLink, setAntagonists, showRelated, switchSide, tierBlockedReason } from "../state/selection";
-import { useSoftTiersVersion } from "../content/softRelations";
+import { kindOfId } from "../content/index";
+import { hasTier, tierWording } from "../systems/registry";
+import { NOT_WRITTEN, type ActionRow, type PanelLink, type PanelModel, type SectionModel } from "../panel/model";
+import type { AttachmentList } from "../systems/musculoskeletal/muscles/panel";
+import { expandRegion, goBack, hasMesh, hideSelected, isolateAttached, selectLink, setAntagonists, showRelated, switchSide, tierBlockedReason } from "../state/selection";
+import { useGraphVersion } from "../content/appGraph";
 import { useViewer, type JointHighlight } from "../state/store";
 import { focusCanvas } from "./canvasFocus";
+import { usePanelModel } from "./usePanelModel";
 import { PHONE_QUERY, useMedia } from "./useMedia";
 
 /** Bottom-sheet snap points (spec §7: peek shows the name, half the summary, full everything). */
@@ -46,19 +45,23 @@ export const nextSnap = (s: Snap): Snap => SNAPS[(SNAPS.indexOf(s) + 1) % SNAPS.
  * canvas area it covers to the store, so `F` and double-click frame the bone
  * beside it, and to CSS (`--panel-right`, `--panel-bottom`) for the toolbar.
  */
+/**
+ * Info panel (spec §7): a right-hand panel on desktop (collapsible), a bottom
+ * sheet on phones. A structure's panel is the generic model (src/panel/model.ts)
+ * rendered section by section in its kind's descriptor order (M12 BE); a group
+ * shows its members. It reports the canvas area it covers to the store, so `F`
+ * and double-click frame the structure beside it, and to CSS (`--panel-right`,
+ * `--panel-bottom`) for the toolbar.
+ */
 export function InfoPanel() {
   const sel = useViewer((s) => s.sel);
   const grp = useViewer((s) => s.grp);
   const phone = useMedia(PHONE_QUERY);
-  const content = useContent();
-  const model = sel === null ? null : panelModel(sel, content);
-  // M7: a muscle, ligament or cartilage structure gets the placeholder panel (plan decision 12).
-  const softContent = useSoftContent(sel === null || model ? null : softLayerOf(sel));
-  const soft = sel === null || model ? null : softPanelModel(sel, softContent);
+  const model = usePanelModel(sel);
   // A group (plan step 3): its name, member count and members as links.
   const group = sel === null && grp !== null ? (groupOf(grp) ?? null) : null;
   const setInset = useViewer((s) => s.setPanelInset);
-  const open = model !== null || soft !== null || group !== null;
+  const open = model !== null || group !== null;
 
   // Clear the inset once the panel is gone.
   useEffect(() => {
@@ -69,7 +72,6 @@ export function InfoPanel() {
 
   let view: PanelView;
   if (model) view = { id: model.id, group: null, head: <Title model={model} />, body: <Body model={model} /> };
-  else if (soft) view = { id: soft.id, group: null, head: <SoftTitle model={soft} />, body: <SoftBody model={soft} sections={softSections(soft.id, softContent, (b, l) => landmarkName(content?.[b], l))} /> };
   else if (group?.attached) view = { id: null, group: group.key, head: <GroupTitle group={group} />, body: <AttachedGroupBody group={group} /> };
   else if (group) view = { id: null, group: group.key, head: <GroupTitle group={group} />, body: <GroupBody group={group} /> };
   else return null;
@@ -246,21 +248,35 @@ function Sheet({ view }: { view: PanelView }) {
   );
 }
 
+/** The name, the Latin name (or the kind's type line) and, for a part, the structure it belongs to. */
 function Title({ model }: { model: PanelModel }) {
+  const { subtitle, partOf } = model;
   return (
     <div className="panel-title">
       <h2 id="panel-title" tabIndex={-1}>
-        {model.name}
+        {model.title}
       </h2>
-      <p className="latin" lang="la">
-        {model.latin ?? (model.written ? "" : "Latin name not written yet")}
-      </p>
+      {subtitle.latin ? (
+        <p className="latin" lang="la">
+          {subtitle.text}
+        </p>
+      ) : (
+        <p className="latin">{subtitle.text}</p>
+      )}
+      {partOf && (
+        <p className="part-of-title" data-testid="part-of">
+          <span className="muted">Part of</span>{" "}
+          <button type="button" className="link-inline" data-testid={`link-${partOf.id}`} onClick={() => selectFromPanel(partOf.id)}>
+            {partOf.name}
+          </button>
+        </p>
+      )}
     </div>
   );
 }
 
 function GroupTitle({ group }: { group: Group }) {
-  useSoftTiersVersion(); // an attached-muscles group fills in when the muscles' content arrives
+  useGraphVersion(); // an attached-muscles group fills in when the muscles' content arrives
   const { shown, total } = groupCounts(group.key);
   if (group.attached) {
     const n = group.members.length - 1;
@@ -315,7 +331,7 @@ function GroupBody({ group }: { group: Group }) {
  * Insertions as links (hovering one highlights it); Back returns to the bone.
  */
 function AttachedGroupBody({ group }: { group: Group }) {
-  useSoftTiersVersion();
+  useGraphVersion();
   const a = group.attached!;
   const bone = { id: a.bone, label: displayName(a.bone) };
   const rows = (ids: readonly string[]) => ids.map((id) => ({ id, label: displayName(id) })).sort((x, y) => x.label.localeCompare(y.label));
@@ -351,7 +367,7 @@ function AttachedGroupBody({ group }: { group: Group }) {
  * or part a link that selects it; hovering or focusing a row (press-and-hold
  * on touch) highlights it with the bone, as an articulation row does.
  */
-function AttachedList({ title, testId, bone, rows, role }: { title: string; testId: string; bone: string; rows: PanelLink[]; role: "origin" | "insertion" }) {
+function AttachedList({ title, testId, bone, rows, role }: { title: string; testId: string; bone: string; rows: PanelLink[]; role: string }) {
   return (
     <div data-testid={`attached-${testId}`}>
       <h4>{title}</h4>
@@ -375,132 +391,227 @@ function selectFromPanel(id: string) {
   void selectLink(id).then(() => requestAnimationFrame(() => document.getElementById("panel-title")?.focus()));
 }
 
+type Grouped = Extract<SectionModel, { render: "grouped-links" }>;
+
+/** The grouped-links section with an isolate button (the bones' attached muscles: "Show attached muscles"), if the kind has one. */
+const groupedOf = (model: PanelModel): (Grouped & { isolate: NonNullable<Grouped["isolate"]> }) | undefined =>
+  model.sections.find((s): s is Grouped & { isolate: NonNullable<Grouped["isolate"]> } => s.render === "grouped-links" && s.isolate !== null);
+/** Written, and every group empty. */
+const allEmpty = (s: Grouped | undefined): boolean => s?.groups != null && s.groups.every((g) => g.links.length === 0);
+
+/** The chrome (common name, side toggle, badges, no-model note), the sections in descriptor order, then the actions. */
 function Body({ model }: { model: PanelModel }) {
-  const tier = useViewer((s) => s.tier);
-  const isTooth = model.kind === "tooth";
-  const noMuscles = model.origins !== null && model.origins.length + (model.insertions?.length ?? 0) === 0;
+  const grouped = groupedOf(model);
+  const noAttached = allEmpty(grouped);
+  const showCommon = model.common !== null || (model.commonShown === "always" && !model.written);
   return (
     <>
-      {(!model.written || model.common) && (
+      {showCommon && (
         <p className="common" data-testid="common-name">
           <span className="muted">Common name:</span> {model.common ?? NOT_WRITTEN}
         </p>
       )}
       {model.pair && <SideToggle pair={model.pair} current={model.id} />}
       <ul className="badges" aria-label="Classification">
-        <li className="badge">{model.badges.region}</li>
-        <li className="badge">{model.badges.type}</li>
-        {model.badges.draft && <li className="badge draft">Draft — not yet reviewed</li>}
+        {model.badges.map((b) => (
+          <li key={b} className="badge">
+            {b}
+          </li>
+        ))}
+        {model.draft && <li className="badge draft">Draft — not yet reviewed</li>}
       </ul>
       {model.note && (
         <p className="no-model" data-testid="no-model-note">
           {model.note}
         </p>
       )}
-      <Section title="Summary" testId="summary">
-        {model.summary !== null ? <div className="summary" dangerouslySetInnerHTML={{ __html: model.summary }} /> : <Unwritten />}
-      </Section>
-      <Section title="Functions" testId="functions">
-        {model.functions ? <List items={model.functions} /> : <Unwritten />}
-      </Section>
-      <Section title="Articulations" testId="articulations">
-        {model.articulations.length ? (
-          <ul className="links">
-            {model.articulations.map((a) => (
-              <li key={a.joint}>
-                <LinkButton link={a} detail={a.name} joint={{ a: model.id, b: a.id, name: a.name }} />
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="muted">No bony articulation.</p>
-        )}
-        {isTooth && model.neighbours.length > 0 && (
-          <>
-            <h4>Neighbouring teeth</h4>
-            <ul className="links">
-              {model.neighbours.map((n) => (
-                <li key={n.id}>
-                  <LinkButton link={n} />
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </Section>
-      <Section title="Key landmarks" testId="landmarks">
-        {model.landmarks ? model.landmarks.length ? <List items={model.landmarks} inline /> : <p className="muted">None listed.</p> : <Unwritten />}
-        <label className={`toggle${model.landmarkPositions === 0 ? " disabled" : ""}`}>
-          <input type="checkbox" disabled={model.landmarkPositions === 0} /> Show landmarks
-          {model.landmarkPositions === 0 && <span className="muted"> (no positions yet)</span>}
-        </label>
-      </Section>
-      <Section title="Attached muscles" testId="muscles">
-        {model.origins && model.insertions ? (
-          noMuscles ? (
-            <p className="muted">{isTooth ? "None (teeth have no muscle attachments)." : "None."}</p>
-          ) : (
-            <>
-              <AttachedList title="Origins" testId="origins" bone={model.id} rows={model.origins} role="origin" />
-              <AttachedList title="Insertions" testId="insertions" bone={model.id} rows={model.insertions} role="insertion" />
-            </>
-          )
-        ) : (
-          <Unwritten />
-        )}
-      </Section>
-      <Section title="Clinical note" testId="clinical">
-        {model.clinical ? <p>{model.clinical}</p> : model.written ? <p className="muted">None.</p> : <Unwritten />}
-      </Section>
+      <Sections model={model} />
       <div className="panel-actions">
-        <button
-          type="button"
-          className="button"
-          data-testid="show-related"
-          aria-keyshortcuts="R"
-          disabled={tier !== 0}
-          title={tier === 0 ? "Show the bones it articulates with" : "Related bones are shown"}
-          onClick={showRelated}
-        >
-          Show related
-        </button>
-        <button
-          type="button"
-          className="button"
-          data-testid="expand-region"
-          aria-keyshortcuts="E"
-          disabled={tier !== 1}
-          title={tier === 1 ? "Show the surrounding region" : tier === 2 ? "The region is shown" : "Show related first"}
-          onClick={expandRegion}
-        >
-          Expand region
-        </button>
-        <button
-          type="button"
-          className="button"
-          data-testid="show-attached"
-          disabled={model.origins === null || noMuscles}
-          aria-describedby={noMuscles ? "attached-reason" : undefined}
-          title={noMuscles ? "No muscles attach here" : "Show the bone with every muscle attached to it"}
-          onClick={() => isolateAttached(model.id)}
-        >
-          Show attached muscles
-        </button>
+        <TierButtons id={model.id} />
+        {grouped && (
+          <button
+            type="button"
+            className="button"
+            data-testid="show-attached"
+            disabled={grouped.groups === null || noAttached}
+            aria-describedby={noAttached ? "attached-reason" : undefined}
+            title={noAttached ? grouped.isolate.noneTitle : grouped.isolate.title}
+            onClick={() => isolateAttached(model.id)}
+          >
+            {grouped.isolate.text}
+          </button>
+        )}
         {model.meshAvailable && <HideButton />}
         <button type="button" className="button primary" data-testid="panel-back" onClick={back}>
           Back
         </button>
       </div>
-      {noMuscles && (
+      <TierReason id={model.id} />
+      {grouped && noAttached && (
         <p className="muted" id="attached-reason" data-testid="attached-reason">
-          Show attached muscles: no muscles attach here.
+          {grouped.isolate.noneReason}
         </p>
       )}
     </>
   );
 }
 
-const Unwritten = () => <p className="muted">{NOT_WRITTEN}</p>;
+/** The sections by render type (SPEC-platform §5.1): each in its kind's order, with its test ID. */
+function Sections({ model }: { model: PanelModel }) {
+  return (
+    <>
+      {model.sections.map((s) => (
+        <Section key={s.testId} title={s.title} testId={s.testId}>
+          <SectionBody s={s} model={model} />
+        </Section>
+      ))}
+    </>
+  );
+}
+
+function SectionBody({ s, model }: { s: SectionModel; model: PanelModel }) {
+  switch (s.render) {
+    case "text":
+      return <TextSection s={s} written={model.written} />;
+    case "list":
+      return <ListSection s={s} />;
+    case "links":
+      return <LinksSection s={s} />;
+    case "grouped-links":
+      return <GroupedLinksSection s={s} focus={model.id} />;
+    case "actions-table":
+      return <ActionsTable s={s} />;
+    case "custom": {
+      const View = CUSTOM[s.component];
+      if (!View) throw new Error(`InfoPanel: no custom section "${s.component}"`);
+      return <View data={s.data} />;
+    }
+  }
+}
+
+/** What a section says while empty: its own text once written; "Not written yet" before (or with no text of its own). */
+const Empty = ({ s, written = true }: { s: SectionModel; written?: boolean }) => <p className="muted">{written && s.empty !== undefined ? s.empty : NOT_WRITTEN}</p>;
+
+function TextSection({ s, written }: { s: Extract<SectionModel, { render: "text" }>; written: boolean }) {
+  if (!s.value) return <Empty s={s} written={written} />;
+  if (s.format === "html") return <div className="summary" dangerouslySetInnerHTML={{ __html: s.value }} />;
+  return (
+    <p>
+      {s.value}
+      {s.inherited && <span className="muted"> (as the whole muscle)</span>}
+    </p>
+  );
+}
+
+function ListSection({ s }: { s: Extract<SectionModel, { render: "list" }> }) {
+  return (
+    <>
+      {s.items === null ? <Empty s={s} written={false} /> : s.items.length === 0 && s.empty !== undefined ? <Empty s={s} /> : <List items={s.items} inline={s.inline} />}
+      {s.count !== null && s.toggle !== null && (
+        // The 3D positions of a list's items (the landmarks): none placed yet (M4 plan decision 9).
+        <label className={`toggle${s.count === 0 ? " disabled" : ""}`}>
+          <input type="checkbox" disabled={s.count === 0} /> {s.toggle}
+          {s.count === 0 && <span className="muted"> (no positions yet)</span>}
+        </label>
+      )}
+    </>
+  );
+}
+
+/** Links, each selecting its target; with `highlight`, hovering one highlights the pair (an articulation). */
+function LinkList({ links, highlight }: { links: PanelLink[]; highlight?: boolean }) {
+  return (
+    <ul className="links">
+      {links.map((l) => (
+        <li key={l.node === undefined ? l.id : `${l.id} ${l.node}`}>
+          <LinkButton link={l} detail={l.detail} joint={highlight ? l.joint : undefined} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function LinksSection({ s }: { s: Extract<SectionModel, { render: "links" }> }) {
+  if (s.links === null) return <Empty s={s} written={false} />;
+  return (
+    <>
+      {s.links.length === 0 ? (
+        s.empty !== undefined && <Empty s={s} />
+      ) : s.nameOnly ? (
+        <p>{s.links.map((l) => l.label).join(", ")}</p>
+      ) : (
+        <LinkList links={s.links} highlight={s.highlight} />
+      )}
+      {s.also && (
+        <>
+          <h4>{s.also.title}</h4>
+          <LinkList links={s.also.links} />
+        </>
+      )}
+    </>
+  );
+}
+
+function GroupedLinksSection({ s, focus }: { s: Grouped; focus: string }) {
+  if (s.groups === null) return <Empty s={s} written={false} />;
+  if (allEmpty(s)) return <Empty s={s} />;
+  return (
+    <>
+      {s.groups.map((g) => (
+        <AttachedList key={g.testId} title={g.title} testId={g.testId} bone={focus} rows={g.links} role={g.role} />
+      ))}
+    </>
+  );
+}
+
+const actionText = (a: ActionRow) => `${a.joint} · ${a.movement} · ${a.role}`;
+
+/** Actions ("Elbow joint · extension · prime mover"); a part's inherited ones under their own heading; else the fallback list. */
+function ActionsTable({ s }: { s: Extract<SectionModel, { render: "actions-table" }> }) {
+  return (
+    <>
+      {s.rows.length > 0 && <List items={s.rows.map(actionText)} />}
+      {s.inherited.length > 0 && (
+        <>
+          <h4>With the whole muscle</h4>
+          <List items={s.inherited.map(actionText)} />
+        </>
+      )}
+      {s.rows.length + s.inherited.length === 0 && (s.fallback.length ? <List items={s.fallback} /> : <Empty s={s} />)}
+    </>
+  );
+}
+
+/** An origin or insertion: each structure a link with its landmark, or the free text; a part's inherited one says so. */
+function Attachments({ data }: { data: unknown }) {
+  const list = data as AttachmentList;
+  return (
+    <>
+      {list.inheritedFrom && <p className="muted">As the whole muscle ({list.inheritedFrom.label}):</p>}
+      {list.rows.length === 0 ? (
+        <p className="muted">None listed.</p>
+      ) : (
+        <ul className="links">
+          {list.rows.map((r, i) => (
+            <li key={`${r.link?.id ?? r.text}-${i}`}>
+              {r.link ? (
+                <LinkButton link={r.link} detail={[r.landmark, r.part].filter(Boolean).join(" · ") || undefined} />
+              ) : (
+                <p className="soft-attachment">
+                  {r.text}
+                  {r.part && <span className="muted"> · {r.part}</span>}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  );
+}
+
+/** The `custom` sections' views by `component` (M12 plan decision 11: the escape hatch, `attachments` only). */
+const CUSTOM: Readonly<Record<string, (p: { data: unknown }) => React.ReactNode>> = { attachments: Attachments };
 
 /** Hide the selected structure (spec §5.5); `X` does the same. Focus goes back to the 3D view. */
 function HideButton() {
@@ -521,191 +632,28 @@ function HideButton() {
   );
 }
 
-function SoftTitle({ model }: { model: SoftPanelModel }) {
-  return (
-    <div className="panel-title">
-      <h2 id="panel-title" tabIndex={-1}>
-        {model.name}
-      </h2>
-      {model.latin ? (
-        <p className="latin" lang="la">
-          {model.latin}
-        </p>
-      ) : (
-        <p className="latin">{model.side === "midline" ? model.badges.kind : `${model.badges.kind}, ${model.side}`}</p>
-      )}
-      {model.partOf && (
-        <p className="part-of-title" data-testid="part-of">
-          <span className="muted">Part of</span>{" "}
-          <button type="button" className="link-inline" data-testid={`link-${model.partOf.id}`} onClick={() => selectFromPanel(model.partOf!.id)}>
-            {model.partOf.name}
-          </button>
-        </p>
-      )}
-    </div>
-  );
+/** The tier buttons' wording, from the kind's tier rules (M12 plan decision 12). */
+function tierWords(id: string) {
+  const kind = kindOfId(id) ?? "";
+  const t1 = tierWording(kind, "t1")!.button;
+  const t2 = tierWording(kind, "t2")!.button;
+  return { related: t1.text, expand: t2.text, relatedTitle: t1.title, expandTitle: t2.title, relatedShown: t1.shown, expandShown: t2.shown };
 }
+
+/** The antagonist set's tier rule: a kind that has it shows the toggle at tier 2. */
+const ANT = "ant";
 
 /**
- * The panel for a muscle, ligament or cartilage structure: kind, layer, side,
- * and the written summary (M8), else "Not written yet" (M7 plan decision 12).
- * Its tiers since M9 (session AF) and its kind-specific sections (session AH,
- * spec §7), in the spec's order after the summary.
+ * Tier 1 and 2 (spec §6; M9 plan decisions 4 and 5). Disabled, with the
+ * reason, while the layer's content loads, and Expand for a structure that has
+ * no joint. "Show antagonists" at a muscle's tier 2.
  */
-function SoftBody({ model, sections }: { model: SoftPanelModel; sections: SoftSections | null }) {
-  return (
-    <>
-      {model.pair && <SideToggle pair={model.pair} current={model.id} />}
-      <ul className="badges" aria-label="Classification">
-        <li className="badge">{model.badges.layer}</li>
-        <li className="badge">{model.badges.kind}</li>
-        <li className="badge draft">Draft — not yet reviewed</li>
-      </ul>
-      {model.common && (
-        <p className="common" data-testid="common-name">
-          <span className="muted">Common name:</span> {model.common}
-        </p>
-      )}
-      <Section title="Summary" testId="summary">
-        {model.summary !== null ? <div className="summary" dangerouslySetInnerHTML={{ __html: model.summary }} /> : <Unwritten />}
-      </Section>
-      {sections?.kind === "muscle" && <MuscleSectionsView s={sections} />}
-      {sections && sections.kind !== "muscle" && <JoinSectionsView s={sections} />}
-      <div className="panel-actions">
-        <SoftTierButtons id={model.id} />
-        {model.meshAvailable && <HideButton />}
-        <button type="button" className="button primary" data-testid="panel-back" onClick={back}>
-          Back
-        </button>
-      </div>
-      <TierReason id={model.id} />
-    </>
-  );
-}
-
-/** Links to structures (each selects its target). */
-function Links({ links, empty }: { links: SoftLink[]; empty: string }) {
-  if (links.length === 0) return <p className="muted">{empty}</p>;
-  return (
-    <ul className="links">
-      {links.map((l) => (
-        <li key={l.id}>
-          <LinkButton link={l} />
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-/** An origin or insertion: each structure a link with its landmark, or the free text; a part's inherited one says so. */
-function Attachments({ list }: { list: AttachmentList }) {
-  return (
-    <>
-      {list.inheritedFrom && <p className="muted">As the whole muscle ({list.inheritedFrom.label}):</p>}
-      {list.rows.length === 0 ? (
-        <p className="muted">None listed.</p>
-      ) : (
-        <ul className="links">
-          {list.rows.map((r, i) => (
-            <li key={`${r.link?.id ?? r.text}-${i}`}>{r.link ? (
-                <LinkButton link={r.link} detail={[r.landmark, r.part].filter(Boolean).join(" · ") || undefined} />
-              ) : (
-                <p className="soft-attachment">
-                  {r.text}
-                  {r.part && <span className="muted"> · {r.part}</span>}
-                </p>
-              )}</li>
-          ))}
-        </ul>
-      )}
-    </>
-  );
-}
-
-const actionText = (a: ActionRow) => `${a.joint} · ${a.movement} · ${a.role}`;
-
-/** Muscle and part sections (spec §7): Parts, Origin, Insertion, Actions, Synergists, Antagonists, Innervation, Clinical note. */
-function MuscleSectionsView({ s }: { s: Extract<SoftSections, { kind: "muscle" }> }) {
-  return (
-    <>
-      {s.parts.length > 0 && (
-        <Section title="Parts" testId="parts">
-          <Links links={s.parts} empty="" />
-        </Section>
-      )}
-      <Section title="Origin" testId="origin">
-        <Attachments list={s.origin} />
-      </Section>
-      <Section title="Insertion" testId="insertion">
-        <Attachments list={s.insertion} />
-      </Section>
-      <Section title="Actions" testId="actions">
-        {s.actions.length > 0 && <List items={s.actions.map(actionText)} />}
-        {s.inheritedActions.length > 0 && (
-          <>
-            <h4>With the whole muscle</h4>
-            <List items={s.inheritedActions.map(actionText)} />
-          </>
-        )}
-        {s.actions.length + s.inheritedActions.length === 0 && (s.functions.length ? <List items={s.functions} /> : <p className="muted">None listed.</p>)}
-      </Section>
-      <Section title="Synergists" testId="synergists">
-        <Links links={s.synergists} empty="None found." />
-      </Section>
-      <Section title="Antagonists" testId="antagonists">
-        <Links links={s.antagonists} empty="None found." />
-      </Section>
-      <Section title="Innervation" testId="innervation">
-        {s.innervation ? (
-          <p>
-            {s.innervation.text}
-            {s.innervation.inheritedFrom && <span className="muted"> (as the whole muscle)</span>}
-          </p>
-        ) : (
-          <p className="muted">Not listed.</p>
-        )}
-      </Section>
-      <Section title="Clinical note" testId="clinical">
-        {s.clinical ? <p>{s.clinical}</p> : <p className="muted">None.</p>}
-      </Section>
-    </>
-  );
-}
-
-/** Ligament and cartilage sections (spec §7): Joint, Connects or Attached to, Functions, Clinical note. */
-function JoinSectionsView({ s }: { s: Extract<SoftSections, { kind: "ligament" | "cartilage" }> }) {
-  return (
-    <>
-      <Section title="Joint" testId="joint">
-        {s.joint ? <p>{s.joint}</p> : <p className="muted">Not part of a joint.</p>}
-      </Section>
-      <Section title={s.kind === "ligament" ? "Connects" : "Attached to"} testId={s.kind === "ligament" ? "connects" : "attached-to"}>
-        <Links links={s.links} empty="None listed." />
-      </Section>
-      <Section title="Functions" testId="functions">
-        <List items={s.functions} />
-      </Section>
-      <Section title="Clinical note" testId="clinical">
-        {s.clinical ? <p>{s.clinical}</p> : <p className="muted">None.</p>}
-      </Section>
-    </>
-  );
-}
-
-/**
- * Tiers for the new kinds (M9 plan decisions 4 and 5): muscles and parts say
- * "Show attachments" and "Show functional group"; ligaments and cartilage keep
- * "Show related" and "Expand region". Disabled, with the reason, while the
- * layer's content loads, and Expand for a structure that has no joint.
- */
-function SoftTierButtons({ id }: { id: string }) {
-  useSoftTiersVersion();
+function TierButtons({ id }: { id: string }) {
+  useGraphVersion();
   const tier = useViewer((s) => s.tier);
-  const muscle = isMuscleKind(id);
+  const w = tierWords(id);
   const r1 = tierBlockedReason(id, 1);
   const r2 = tierBlockedReason(id, 2);
-  const relatedLabel = muscle ? "Show attachments" : "Show related";
-  const expandLabel = muscle ? "Show functional group" : "Expand region";
   const reason = r1 ?? r2;
   return (
     <>
@@ -715,11 +663,11 @@ function SoftTierButtons({ id }: { id: string }) {
         data-testid="show-related"
         aria-keyshortcuts="R"
         disabled={tier !== 0 || r1 !== null}
-        title={r1 ?? (tier === 0 ? (muscle ? "Show the structures it attaches to" : "Show the structures it joins") : "Shown")}
+        title={r1 ?? (tier === 0 ? w.relatedTitle : w.relatedShown)}
         aria-describedby={reason ? "tier-reason" : undefined}
         onClick={showRelated}
       >
-        {relatedLabel}
+        {w.related}
       </button>
       <button
         type="button"
@@ -727,42 +675,43 @@ function SoftTierButtons({ id }: { id: string }) {
         data-testid="expand-region"
         aria-keyshortcuts="E"
         disabled={tier !== 1 || r2 !== null}
-        title={r2 ?? (tier === 1 ? (muscle ? "Show the muscles that work with it" : "Show the joint's other structures") : tier === 2 ? "Shown" : `${relatedLabel} first`)}
+        title={r2 ?? (tier === 1 ? w.expandTitle : tier === 2 ? w.expandShown : `${w.related} first`)}
         aria-describedby={reason ? "tier-reason" : undefined}
         onClick={expandRegion}
       >
-        {expandLabel}
+        {w.expand}
       </button>
-      {muscle && tier === 2 && <AntagonistToggle />}
+      {hasTier(kindOfId(id) ?? "", ANT) && tier === 2 && <AntagonistToggle id={id} />}
     </>
   );
 }
 
-/** "Show antagonists" (spec §5.2, M9 plan decision 7): only at a muscle's tier 2, off by default; `ant=1`. */
-function AntagonistToggle() {
+/** "Show antagonists" (spec §5.2, M9 plan decision 7): only at tier 2 of a kind with an `ant` rule, off by default; `ant=1`. */
+function AntagonistToggle({ id }: { id: string }) {
   const on = useViewer((s) => s.antagonists);
+  const w = tierWording(kindOfId(id) ?? "", ANT)!.button;
   return (
     <button
       type="button"
       className="button"
       data-testid="show-antagonists"
       aria-pressed={on}
-      title={on ? "Hide the antagonists" : "Show the muscles that oppose it, in their own colour"}
+      title={on ? w.shown : w.title}
       onClick={() => setAntagonists(!on)}
     >
-      Show antagonists
+      {w.text}
     </button>
   );
 }
 
 /** The reason a tier button is off, written out (a title alone isn't read on touch). */
 function TierReason({ id }: { id: string }) {
-  useSoftTiersVersion();
+  useGraphVersion();
   const r1 = tierBlockedReason(id, 1);
   const r2 = tierBlockedReason(id, 2);
   if (r1 === null && r2 === null) return null;
-  const muscle = isMuscleKind(id);
-  const label = r1 !== null ? (muscle ? "Show attachments and Show functional group" : "Show related and Expand region") : muscle ? "Show functional group" : "Expand region";
+  const w = tierWords(id);
+  const label = r1 !== null ? `${w.related} and ${w.expand}` : w.expand;
   return (
     <p className="muted" id="tier-reason" data-testid="tier-reason">
       {label}: {r1 ?? r2}.

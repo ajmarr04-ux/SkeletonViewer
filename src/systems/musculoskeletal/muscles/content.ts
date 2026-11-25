@@ -1,9 +1,12 @@
 // The muscles layer's authoring half: front matter schemas for muscles and
-// parts (spec §4.1, §4.2), summary lengths and the depth table.
+// parts (spec §4.1, §4.2), summary lengths, edges, checks and the depth table.
 import { z } from "zod";
 import { actionSchema, attachmentSchema, inheritable, overridesSchema, side, snake, text } from "../../../content/softFields";
 import { defineLayerContent } from "../../contentTypes";
 import { PART_TYPES, type PartType } from "../../registry";
+import type { Patch } from "../../types";
+import { derivedLists, inheritAttachments, muscleEdges, musclePartEdges, synergistsAndAntagonists } from "./derive";
+import { validateMuscle, validateMuscleLayer, validateMusclePart } from "./validate";
 
 /** Spec §4.1. */
 export const muscleSchema = z.strictObject({
@@ -59,8 +62,19 @@ export const musclesContent = defineLayerContent({
   idsFile: "content/soft-ids.json",
   kinds: {
     // Summary lengths in words (M8 plan decision 5).
-    muscle: { schema: muscleSchema, bodyWords: { min: 40, max: 80 } },
-    muscle_part: { schema: musclePartSchema, bodyWords: { min: 20, max: 60 } },
+    muscle: { schema: muscleSchema, bodyWords: { min: 40, max: 80 }, edges: muscleEdges, validate: validateMuscle },
+    muscle_part: { schema: musclePartSchema, bodyWords: { min: 20, max: 60 }, edges: musclePartEdges, validate: validateMusclePart },
+  },
+  // Every muscle has an origin and an insertion; content/muscle-hierarchy.json (M12 plan decision 13).
+  validate: validateMuscleLayer,
+  // Derived edges (M12 plan decision 4): a part's inherited attachments, then synergists and antagonists.
+  rules: [inheritAttachments, synergistsAndAntagonists],
+  /** The content chunk's `derived` lists, read off the edges. */
+  derivedLists,
+  // The attachment patches (M6) as soft-to-id.json maps them.
+  patches: (readJson) => {
+    const raw = readJson("assets/mapping/soft-to-id.json") as { attachments: Record<string, { structures: string[]; end: Patch["end"]; on?: string | null }> };
+    return Object.fromEntries(Object.entries(raw.attachments).map(([id, p]) => [id, { structures: p.structures, end: p.end, on: p.on ?? null }]));
   },
   // Side-free key → 1/2/3 (M7 session V).
   depthFile: "content/muscle-depth.json",

@@ -12,14 +12,6 @@
       "milestone": "M15",
       "reason": "Shared Blender pipeline (bone material name, bounds-check label); M15's build.json."
     },
-    "scripts/content/patch-check.ts": {
-      "milestone": "M12",
-      "reason": "Patch agreement report for muscles and parts; moves with softRoles.ts to M12's edges."
-    },
-    "scripts/lib/soft-tree-data.ts": {
-      "milestone": "M12",
-      "reason": "Builds the ligament and cartilage tree data; M12's TreeSpec."
-    },
     "scripts/mapping/classify_soft_tissue.py": {
       "milestone": "M15",
       "reason": "M6 soft-tissue classifier (layer and kind per source object); M15's per-system mapping."
@@ -35,66 +27,6 @@
     "scripts/perf-load.ts": {
       "milestone": "M14",
       "reason": "Times turning on the largest layer (the muscles), named as the result field; M14's real-device and perf runs choose the layer from the registry (its budgets)."
-    },
-    "src/content/announce.ts": {
-      "milestone": "M12",
-      "reason": "Wording for muscles (attachments, functional group, antagonist counts) and the part \u2192 muscle count fallback; M12 re-expresses tiers and antagonists as edges with their own wording."
-    },
-    "src/content/derive.ts": {
-      "milestone": "M12",
-      "reason": "Synergist/antagonist/attachment derivation over muscles and parts; M12's edge engine replaces it."
-    },
-    "src/content/groups.ts": {
-      "milestone": "M12",
-      "reason": "Bone tree's tooth-type groups and the muscle synonym sets' layer; M12 builds the trees from TreeSpec."
-    },
-    "src/content/names.ts": {
-      "milestone": "M12",
-      "reason": "Bone display names (teeth have no side suffix); M12 moves display names onto the panel descriptor."
-    },
-    "src/content/panel.ts": {
-      "milestone": "M12",
-      "reason": "The bone panel model (tooth type line, names); M12 puts the bones on the shared panel."
-    },
-    "src/content/placeholder.ts": {
-      "milestone": "M12",
-      "reason": "The bone placeholder panel (tooth badges and names); M12's shared panel."
-    },
-    "src/content/schema.ts": {
-      "milestone": "M12",
-      "reason": "The bone front-matter schema (bone/tooth kinds); M12 moves the bones onto the content halves' per-kind schemas."
-    },
-    "src/content/softCompile.ts": {
-      "milestone": "M12",
-      "reason": "Per-kind compile (muscle/part entries for derive, derive only for the nested layer); M12's edge engine."
-    },
-    "src/content/softPanel.ts": {
-      "milestone": "M12",
-      "reason": "The soft panel's per-kind sections, labels and tier wording; M12's PanelSpec."
-    },
-    "src/content/softRoles.ts": {
-      "milestone": "M12",
-      "reason": "Origin/insertion patch rules for muscles and parts; M12 re-expresses roles as edges."
-    },
-    "src/content/softTiers.ts": {
-      "milestone": "M12",
-      "reason": "Per-kind tier rules (muscle, part, ligament); M12's TierSpec."
-    },
-    "src/content/softTree.ts": {
-      "milestone": "M12",
-      "reason": "The soft sidebar roots and their per-layer builders; M12's TreeSpec."
-    },
-    "src/content/softValidate.ts": {
-      "milestone": "M12",
-      "reason": "Per-kind validation rules (muscle hierarchy, ligament joints); M12 moves them onto the content halves."
-    },
-    "src/content/validate.ts": {
-      "milestone": "M12",
-      "reason": "Bone validation (bone and tooth counts, muscle lists on bones); M12 with the bone content half."
-    },
-    "src/ui/InfoPanel.tsx": {
-      "milestone": "M12",
-      "reason": "Per-kind panel rendering (muscle sections, ligament/cartilage joint lines, tooth); M12's PanelSpec."
     }
   },
   "otherVocabulary": [
@@ -124,6 +56,13 @@
       "files": [
         "scripts/content/attachment-check.ts",
         "scripts/content/migrate-attachments.ts"
+      ]
+    },
+    {
+      "literal": "muscles",
+      "meaning": "The test ID \"section-muscles\" of the attached-muscles group's section (the e2e specs select it, as the bone panel's own section), not the muscles layer.",
+      "files": [
+        "src/ui/InfoPanel.tsx"
       ]
     }
   ]

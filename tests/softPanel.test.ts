@@ -1,35 +1,99 @@
 // M9 session AH: the info panel's kind-specific sections (spec §7; plan
 // decision 9) and "Show attached muscles" (spec §5.4; plan decision 10), on the
 // real content.
-import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import ids from "../content/ids.json";
 import { compileAllSoftFromDisk } from "../scripts/lib/content-files";
-import { attachedBoneOf, attachedKey, groupAncestors, groupOf, isGroupKey, ancestorsOf } from "../src/content/groups";
+import { attachedBoneOf, attachedTo, attachedKey, groupAncestors, groupOf, isGroupKey, ancestorsOf } from "../src/content/groups";
 import { groupIsolationAnnouncement } from "../src/content/announce";
-import { registerSoftIds, resetSoftIds, softEntry } from "../src/content/softRegistry";
-import { attachedTo, registerSoftTiers, resetSoftTiers } from "../src/content/softRelations";
-import { softSections, structureLabel, type MuscleSections, type JoinSections } from "../src/content/softPanel";
-import { trimSoftIds, type RawSoftId } from "../src/layers/softIds";
+import { softEntry } from "../src/content/softRegistry";
+import { resetAppGraph } from "../src/content/appGraph";
+import { registerSoftContent, resetSoftContent } from "../src/content/softContentLoader";
+import { isEagerId } from "../src/content/index";
+import type { SoftLayerContent } from "../src/content/softCompile";
+import { panelModel as generic, structureLabel, type ActionRow, type LayerContent, type SectionModel } from "../src/panel/model";
+import type { AttachmentList } from "../src/systems/musculoskeletal/muscles/panel";
+import { softOpposite } from "../src/content/softRegistry";
 import { groupView, isolationView, withJoint } from "../src/scene/isolation";
 import { isolationStep, FULL_SKELETON } from "../src/state/isolation";
 import { parseUrlState, serialiseUrlState } from "../src/state/url";
 
-const RAW = JSON.parse(readFileSync("content/soft-ids.json", "utf8")) as RawSoftId[];
+// M12 BE: the M9 section shapes (softPanel.ts's `softSections`, deleted) read off the generic model, so the
+// expectations below stay as written: a written structure's sections by test ID; null while unwritten or unloaded.
+type Link = { id: string; label: string };
+type MuscleSections = {
+  kind: "muscle";
+  parts: Link[];
+  partOf: Link | null;
+  origin: AttachmentList;
+  insertion: AttachmentList;
+  actions: ActionRow[];
+  inheritedActions: ActionRow[];
+  functions: string[];
+  synergists: Link[];
+  antagonists: Link[];
+  innervation: { text: string; inheritedFrom: Link | null } | null;
+  clinical: string | null;
+};
+type JoinSections = { kind: "ligament" | "cartilage"; joint: string | null; links: Link[]; functions: string[]; clinical: string | null };
+type LandmarkName = (structure: string, landmark: string) => string | undefined;
+function softSections(id: string, content: SoftLayerContent | null, landmarkName: LandmarkName = () => undefined): MuscleSections | JoinSections | null {
+  const layer = softEntry(id)?.layer;
+  if (isEagerId(id) || !layer) return null;
+  const m = generic(id, { content: (l) => (l === layer ? (content as unknown as LayerContent) : null), opposite: softOpposite, landmarkName });
+  if (!m || !m.written) return null;
+  const by = new Map(m.sections.map((x) => [x.testId, x]));
+  const plain = (l: Link): Link => ({ id: l.id, label: l.label });
+  const links = (k: string) => ((by.get(k) as Extract<SectionModel, { render: "links" }> | undefined)?.links ?? []).map(plain);
+  const text = (k: string) => (by.get(k) as Extract<SectionModel, { render: "text" }> | undefined)?.value ?? null;
+  const functions = (by.get("functions") as Extract<SectionModel, { render: "list" }> | undefined)?.items ?? [];
+  if (!by.has("origin")) {
+    const joins = by.has("connects") ? "connects" : "attached-to";
+    return { kind: joins === "connects" ? "ligament" : "cartilage", joint: links("joint")[0]?.label ?? null, links: links(joins), functions, clinical: text("clinical") };
+  }
+  const actions = by.get("actions") as Extract<SectionModel, { render: "actions-table" }>;
+  const innervation = by.get("innervation") as Extract<SectionModel, { render: "text" }>;
+  const custom = (k: string) => (by.get(k) as Extract<SectionModel, { render: "custom" }>).data as AttachmentList;
+  return {
+    kind: "muscle",
+    parts: links("parts"),
+    partOf: m.partOf ? { id: m.partOf.id, label: structureLabel(m.partOf.id, m.side) } : null,
+    origin: custom("origin"),
+    insertion: custom("insertion"),
+    actions: actions.rows,
+    inheritedActions: actions.inherited,
+    functions: actions.fallback,
+    synergists: links("synergists"),
+    antagonists: links("antagonists"),
+    innervation: innervation.value === null ? null : { text: innervation.value, inheritedFrom: innervation.inherited ? plain(innervation.inherited) : null },
+    clinical: text("clinical"),
+  };
+}
+
 const BONES = ids as { id: string; meshAvailable: boolean }[];
 const BONE_MESH = new Set(BONES.filter((e) => e.meshAvailable).map((e) => e.id));
 const hasMesh = (id: string) => BONE_MESH.has(id) || softEntry(id)?.mesh === true;
 const SOFT = compileAllSoftFromDisk();
 const muscle = (id: string) => softSections(id, SOFT.muscles) as MuscleSections;
 const ids_ = (l: { id: string }[]) => l.map((x) => x.id);
+/** M12 BD: the sections read the graph, so the section tests register the chunks as the loader does (and forget them after). */
+function withChunks() {
+  beforeAll(() => {
+    for (const l of ["muscles", "ligaments", "cartilage"] as const) registerSoftContent(l, SOFT[l]);
+  });
+  afterAll(() => {
+    resetSoftContent();
+    resetAppGraph();
+  });
+}
 
-beforeAll(() => registerSoftIds(trimSoftIds(RAW)));
 afterAll(() => {
-  resetSoftIds();
-  resetSoftTiers();
+  resetSoftContent();
+    resetAppGraph();
 });
 
 describe("muscle and part sections", () => {
+  withChunks();
   it("a muscle with parts: Parts, each part's origin named by the part, its insertion with the landmark, actions, innervation, clinical note", () => {
     const s = muscle("triceps_brachii_left");
     expect(s.kind).toBe("muscle");
@@ -116,6 +180,7 @@ describe("muscle and part sections", () => {
 });
 
 describe("ligament and cartilage sections", () => {
+  withChunks();
   it("a ligament: joint name, Connects links, functions, clinical note", () => {
     const s = softSections("anterior_cruciate_ligament_left", SOFT.ligaments) as JoinSections;
     expect(s).toMatchObject({ kind: "ligament", joint: "Knee joint (tibiofemoral)" });
@@ -166,7 +231,8 @@ describe('"Show attached muscles": grp=attached:<bone>', () => {
   });
 
   it("before the muscles' content loads: the bone alone, loading", () => {
-    resetSoftTiers();
+    resetSoftContent();
+    resetAppGraph();
     expect(attachedTo("femur_left")).toBeNull();
     const g = groupOf("attached:femur_left")!;
     expect(g.members).toEqual(["femur_left"]);
@@ -178,7 +244,7 @@ describe('"Show attached muscles": grp=attached:<bone>', () => {
   });
 
   it("once loaded: the bone plus every muscle and part attached (as derived), drawn as meshes", () => {
-    for (const l of ["muscles", "ligaments", "cartilage"] as const) registerSoftTiers(l, SOFT[l].tiers, SOFT[l].roles, SOFT[l].derived?.attached);
+    for (const l of ["muscles", "ligaments", "cartilage"] as const) registerSoftContent(l, SOFT[l]);
     const a = SOFT.muscles.derived!.attached.femur_left!;
     const g = groupOf("attached:femur_left")!;
     expect(g.attached).toMatchObject({ bone: "femur_left", loading: false, origins: a.origins, insertions: a.insertions });

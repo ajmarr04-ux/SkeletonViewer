@@ -1,8 +1,10 @@
 import { defineSystem } from "../types";
+import { MUSCULOSKELETAL_EDGES } from "./edges";
 
 export const musculoskeletal = defineSystem({
   id: "musculoskeletal",
   label: "Musculoskeletal",
+  edgeTypes: MUSCULOSKELETAL_EDGES,
   // The Layers panel's presets (musculoskeletal spec §6.1; M11 plan decision 5).
   presets: [
     { id: "skeleton", label: "Skeleton", summary: "bones only", modes: { bones: "on" } },

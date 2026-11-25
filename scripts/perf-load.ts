@@ -134,7 +134,7 @@ async function main() {
       const mt = await page.evaluate((from) => {
         const res = performance.getEntriesByType("resource") as PerformanceResourceTiming[];
         const file = res.find((r) => r.name.includes("muscles-low.glb"));
-        const chunks = res.filter((r) => /\/assets\/(LayerScenes|softTable)-/.test(r.name));
+        const chunks = res.filter((r) => /\/assets\/LayerScenes-/.test(r.name));
         const tasks = (window as unknown as { __longTasks: [number, number][] }).__longTasks;
         return {
           file: (file?.responseEnd ?? NaN) - from,

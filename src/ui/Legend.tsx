@@ -1,4 +1,4 @@
-import { useSoftTiersVersion } from "../content/softRelations";
+import { useGraphVersion } from "../content/appGraph";
 import { viewOf } from "../scene/isolation";
 import { usePatchBatch } from "../scene/layerRegistry";
 import { REGIONS, regionColour } from "../scene/regionColours";
@@ -41,7 +41,7 @@ export function tintsInUse(s: Pick<ViewerState, "sel" | "tier" | "antagonists" |
 export function Legend() {
   const regions = useViewer((s) => s.colourMode === "region");
   const grp = useViewer((s) => s.grp);
-  const version = useSoftTiersVersion();
+  const version = useGraphVersion();
   const failed = usePatchBatch((p) => p.failed);
   const tints = useViewer((s) => tintsInUse(s, version, failed));
   const layers = useViewer((s) => LAYER_IDS.filter((l) => s.layers[l] !== "off").join(","));

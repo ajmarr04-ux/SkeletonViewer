@@ -3,7 +3,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { Box3, Matrix4, Sphere, Vector3, type PerspectiveCamera } from "three";
 import { displayName } from "../content/names";
 import { softEntry, softLayerOf } from "../content/softRegistry";
-import { subscribeSoftTiers } from "../content/softRelations";
+import { subscribeGraph } from "../content/appGraph";
 import type { BatchedSkeleton } from "../scene/batchSkeleton";
 import { relatedAt, viewOf } from "../scene/isolation";
 import { recordLabelLayout } from "../scene/bench";
@@ -83,7 +83,7 @@ export function LabelProbe({ skeleton }: { skeleton: BatchedSkeleton | null }) {
   // The soft tier sets arrive with the lazy content chunks (M9 AF): rank again once they do.
   useEffect(
     () =>
-      subscribeSoftTiers(() => {
+      subscribeGraph(() => {
         last.current.dirty = true;
       }),
     [],

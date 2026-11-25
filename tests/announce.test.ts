@@ -1,7 +1,6 @@
 // M10 session AM: announcement wording (plan decision 4), one test per row of
 // the final table, on the real soft-tissue table and content; then the
 // composer that folds one action's changes into one message (risk 3).
-import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import ids from "../content/ids.json";
 import { compileAllSoftFromDisk } from "../scripts/lib/content-files";
@@ -25,14 +24,13 @@ import {
   type AnnounceState,
 } from "../src/content/announce";
 import { groupOf } from "../src/content/groups";
-import { registerSoftIds, resetSoftIds, softEntry } from "../src/content/softRegistry";
-import { registerSoftTiers, resetSoftTiers } from "../src/content/softRelations";
-import { trimSoftIds, type RawSoftId } from "../src/layers/softIds";
+import { softEntry } from "../src/content/softRegistry";
+import { resetAppGraph, rolesOf } from "../src/content/appGraph";
+import { registerSoftContent, resetSoftContent } from "../src/content/softContentLoader";
 import { isolationView } from "../src/scene/isolation";
 import { type LayerModes } from "../src/state/url";
 import { DEFAULT_MODES, type LazyLayerId } from "../src/systems/registry";
 
-const RAW = JSON.parse(readFileSync("content/soft-ids.json", "utf8")) as RawSoftId[];
 const BONE_MESH = new Set((ids as { id: string; meshAvailable: boolean }[]).filter((e) => e.meshAvailable).map((e) => e.id));
 const hasMesh = (id: string) => BONE_MESH.has(id) || softEntry(id)?.mesh === true;
 const SOFT = compileAllSoftFromDisk();
@@ -43,12 +41,11 @@ const iso = (sel: string | null, tier: 0 | 1 | 2 = 0, grp: string | null = null)
 const say = (now: ReturnType<typeof iso>, prev: ReturnType<typeof iso> | null, m: LayerModes = ALL_ON) => isolationAnnouncement(now, prev, m, hasMesh);
 
 beforeAll(() => {
-  registerSoftIds(trimSoftIds(RAW));
-  for (const l of ["muscles", "ligaments", "cartilage"] as const) registerSoftTiers(l, SOFT[l].tiers, SOFT[l].roles, SOFT[l].derived?.attached);
+  for (const l of ["muscles", "ligaments", "cartilage"] as const) registerSoftContent(l, SOFT[l]);
 });
 afterAll(() => {
-  resetSoftTiers();
-  resetSoftIds();
+  resetSoftContent();
+    resetAppGraph();
 });
 
 describe("counts by kind", () => {
@@ -125,7 +122,7 @@ describe("depth, Hide, antagonists (rows 3, 4, 8)", () => {
     expect(antagonistAnnouncement(false, 4)).toBe("Antagonists hidden.");
     const n = antagonistCount("triceps_brachii_left", 2, MUSCLES_ON, hasMesh);
     expect(n).toBeGreaterThan(0);
-    const ant = SOFT.muscles.roles!.triceps_brachii_left!.ant;
+    const ant = rolesOf("triceps_brachii_left")!.ant;
     expect(n).toBeLessThanOrEqual(new Set(ant.map((x) => softEntry(x)?.parent ?? x)).size);
     expect(antagonistCount("triceps_brachii_left", 1, MUSCLES_ON, hasMesh)).toBe(0);
   });

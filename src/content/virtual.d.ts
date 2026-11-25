@@ -1,6 +1,8 @@
 declare module "virtual:skeleton-content" {
   const content: import("./compile").CompiledContent;
   export default content;
+  /** The edges between the eager layer and the lazy ones its panels read (M12 BD). */
+  export const edges: import("../graph/codec").EdgeWire;
 }
 declare module "virtual:skeleton-search" {
   const data: import("./search").SearchData;
@@ -17,10 +19,15 @@ declare module "virtual:skeleton-model-versions" {
   /** File stem → size in bytes. */
   export const sizes: Record<string, number>;
 }
-declare module "virtual:skeleton-soft-ids" {
-  /** content/soft-ids.json, trimmed (scripts/lib/soft-ids-plugin.ts). */
-  const table: import("../layers/softIds").SoftId[];
-  export default table;
+declare module "virtual:skeleton-index" {
+  /** The always-loaded ID index's lazy half: the lazy layers' trimmed entries and the joint nodes, packed (scripts/lib/index-plugin.ts, src/content/indexCodec.ts; M12 plan decision 7). */
+  const data: import("./indexCodec").PackedIndex;
+  export default data;
+}
+declare module "virtual:skeleton-graph" {
+  /** The eager layer's edges, for the main chunk (scripts/lib/content-plugin.ts, src/graph/codec.ts; M12 plan decision 3). */
+  const edges: import("../graph/codec").EdgeWire;
+  export default edges;
 }
 declare module "virtual:skeleton-soft-content-*" {
   /** A lazy layer's content chunk, its descriptor's `contentChunk`: content/<folder>/*.md compiled (src/content/softCompile.ts; M8 plan decision 11). */
@@ -33,8 +40,8 @@ declare module "virtual:skeleton-layer-importers" {
   export default importers;
 }
 declare module "virtual:skeleton-soft-tree" {
-  /** The sidebar's Muscles, Ligaments and Cartilage roots (src/content/softTree.ts; M9 plan decision 11). */
-  const tree: import("./softTree").SoftTreeData;
+  /** The lazy layers' sidebar roots (src/tree/, built from their TreeSpecs; M9 plan decision 11, M12 plan decision 10). */
+  const tree: import("../tree/types").SoftTreeData;
   export default tree;
 }
 declare module "virtual:skeleton-search-soft" {

@@ -6,7 +6,7 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { GROUP_LABELS } from "../../src/content/labels";
-import type { HierarchyNode } from "../../src/content/schema";
+import type { HierarchyNode } from "../../src/systems/musculoskeletal/bones/schema";
 import { readIds, root } from "../lib/content-files";
 
 const EXTRA: Record<string, string> = {

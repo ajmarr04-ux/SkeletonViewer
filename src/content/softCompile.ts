@@ -1,17 +1,20 @@
 // The soft-tissue content compiler (M8 plan decisions 9 and 11): one layer's
 // content folder → one object per ID with the summary rendered to HTML, plus,
-// for the muscles layer, the derived synergists, antagonists and each
-// structure's attached muscles. Pure, so Vitest can run it on fixtures; the
+// for a layer whose content half reads derived lists off the graph (the
+// muscles: synergists, antagonists and each structure's attached muscles, M12
+// plan decision 4), those lists. Pure, so Vitest can run it on fixtures; the
 // Vite plugin (scripts/lib/content-plugin.ts) serves each layer as its own lazy
 // chunk.
 
 import { marked } from "marked";
-import { derive, type DeriveMuscle } from "./derive";
+import type { z } from "zod";
 import { splitFrontMatter } from "./frontmatter";
-import { buildMuscleRoles, type MuscleRoles, type Patch } from "./softRoles";
-import { buildSoftTiers, type SoftTierData } from "./softTiers";
+import type { EdgeWire } from "../graph/codec";
+import type { Patch } from "../systems/types";
 import type { LazyLayerId } from "../systems/registry";
-import { contentFolder, schemaForKind } from "../systems/registry.content";
+import type { CompiledGraph } from "../graph/compile";
+import type { LayerContent } from "../systems/contentTypes";
+import { layerContent, schemaForKind } from "../systems/registry.content";
 import type { SoftFm } from "./softSchema";
 
 export type SoftCompiledEntry = {
@@ -32,11 +35,11 @@ export type SoftDerived = {
 export type SoftLayerContent = {
   entries: Record<string, SoftCompiledEntry>;
   derived: SoftDerived | null;
-  /** Tier sets (M9 plan decision 4), from every layer's content; added by `withSoftTiers`. */
-  tiers?: SoftTierData;
-  /** Muscles layer only: origin/insertion patches and fallback structures, antagonists (M9 plan decisions 6 and 7); added by `withSoftTiers`. */
-  roles?: Record<string, MuscleRoles>;
-  /** Names of the joints this layer's structures name (actions, `joint`), for the panel (M9 plan decision 9); added by `withSoftTiers`. */
+  /** The layer's edges (M12 plan decision 3), registered with the runtime graph when the chunk loads; added by `withShipped`. */
+  edges?: EdgeWire;
+  /** The attachment patches the layer's overlay draws, for the tints (M12 plan decision 8); added by `withShipped`. */
+  patches?: Record<string, Patch>;
+  /** Names of the joints this layer's structures name (actions, `joint`), for the panel (M9 plan decision 9); added by `withShipped`. */
   joints?: Record<string, string>;
 };
 
@@ -45,16 +48,20 @@ export type SoftCompileDeps = {
   kindOf: (id: string) => string | undefined;
   pairJoints: Iterable<string>;
   functionalJoints: Record<string, readonly string[]>;
-  antagonistPairs: readonly (readonly [string, string])[];
+  /** The relationship graph over the front matter given (by ID) plus the system's sources (M12 plan decision 1). */
+  graph: (fm: Readonly<Record<string, unknown>>) => CompiledGraph;
 };
 
-/** Compile one layer. Throws on the first file that doesn't parse (validate-content lists every problem). */
-export function compileSoftLayer(layer: LazyLayerId, files: Map<string, string>, deps: SoftCompileDeps): SoftLayerContent {
+/**
+ * Compile one layer. Throws on the first file that doesn't parse (validate-content lists every problem).
+ * `lc`: the layer's content half (the registry's by default; the fixture build passes its own, M12 plan decision 14).
+ */
+export function compileSoftLayer(layer: LazyLayerId, files: Map<string, string>, deps: SoftCompileDeps, lc: LayerContent = layerContent(layer)): SoftLayerContent {
   const entries: Record<string, SoftCompiledEntry> = {};
   for (const [name, text] of [...files].sort(([a], [b]) => a.localeCompare(b))) {
-    const where = `content/${contentFolder(layer)}/${name}.md`;
+    const where = `content/${lc.folder}/${name}.md`;
     const kind = deps.kindOf(name);
-    const schema = kind ? schemaForKind<SoftFm>(kind) : null;
+    const schema = kind ? ((lc.kinds[kind]?.schema as z.ZodType<SoftFm> | undefined) ?? schemaForKind<SoftFm>(kind)) : null;
     if (!schema) throw new Error(`${where}: not in content/soft-ids.json`);
     const { data, body } = splitFrontMatter(text);
     const res = schema.safeParse(data);
@@ -69,47 +76,24 @@ export function compileSoftLayer(layer: LazyLayerId, files: Map<string, string>,
       fm,
     };
   }
-  return { entries, derived: layer === "muscles" ? deriveAll(entries, deps) : null };
-}
-
-function deriveAll(entries: Record<string, SoftCompiledEntry>, deps: SoftCompileDeps): SoftDerived {
-  const muscles: Record<string, DeriveMuscle> = {};
-  for (const [id, { fm }] of Object.entries(entries)) {
-    if (fm.kind === "muscle")
-      muscles[id] = { kind: "muscle", parent: null, parts: fm.parts, origin: fm.origin, insertion: fm.insertion, actions: fm.actions, synergistOverrides: fm.synergistOverrides };
-    else if (fm.kind === "muscle_part")
-      muscles[id] = { kind: "muscle_part", parent: fm.parent, parts: [], origin: fm.origin, insertion: fm.insertion, actions: fm.actions };
-  }
-  const d = derive({ muscles, pairJoints: deps.pairJoints, functionalJoints: deps.functionalJoints, antagonistPairs: deps.antagonistPairs });
-  const synergists: Record<string, string[]> = {};
-  const antagonists: Record<string, string[]> = {};
-  const structures = new Set<string>();
-  for (const id of Object.keys(muscles)) {
-    synergists[id] = d.synergistsOf(id);
-    antagonists[id] = d.antagonistsOf(id);
-    const m = muscles[id]!;
-    for (const list of [m.origin, m.insertion]) if (list !== "inherit") for (const a of list) if ("structure" in a) structures.add(a.structure);
-  }
-  const attached: SoftDerived["attached"] = {};
-  for (const s of [...structures].sort()) attached[s] = d.attachedMuscles(s);
-  return { synergists, antagonists, attached };
+  const lists = lc.derivedLists;
+  if (!lists) return { entries, derived: null };
+  const g = deps.graph(Object.fromEntries(Object.entries(entries).map(([id, e]) => [id, e.fm])));
+  if (g.errors.length > 0) throw new Error(`content/${lc.folder}: ${g.errors.slice(0, 5).join("; ")}`);
+  return { entries, derived: lists(g.edges, Object.keys(entries)) as SoftDerived };
 }
 
 /**
- * Add the tier sets (M9 plan decision 4) to compiled layers. They need every
- * layer at once: a muscle's tier 2 uses the derived synergists, and a
- * ligament's tier 2 names cartilage (and the other way round).
+ * Add what each lazy chunk ships besides its entries (M12 plan decision 3):
+ * the edges whose `from` (or, as the reverse index, `to`) is in the layer, the
+ * attachment patches of a layer whose overlay draws them (decision 8), and the
+ * names of the joints the layer's structures name (M9 plan decision 9).
  */
-export function withSoftTiers(
+export function withShipped(
   layers: Record<LazyLayerId, SoftLayerContent>,
-  deps: Pick<SoftCompileDeps, "pairJoints" | "functionalJoints"> & { patches?: Record<string, Patch>; jointNames?: Record<string, string> },
+  deps: { edges: Record<LazyLayerId, EdgeWire>; patches: Partial<Record<LazyLayerId, Record<string, Patch>>>; jointNames: Record<string, string> },
 ): Record<LazyLayerId, SoftLayerContent> {
-  const fm: Record<string, SoftFm> = {};
-  for (const c of Object.values(layers)) for (const [id, e] of Object.entries(c.entries)) fm[id] = e.fm;
-  const tiers = buildSoftTiers({ fm, synergists: layers.muscles.derived?.synergists ?? {}, pairJoints: deps.pairJoints, functionalJoints: deps.functionalJoints });
-  const d = layers.muscles.derived;
-  const roles = buildMuscleRoles({ fm, patches: deps.patches ?? {}, synergists: d?.synergists ?? {}, antagonists: d?.antagonists ?? {} });
-  const names = deps.jointNames ?? {};
+  const names = deps.jointNames;
   const joints = (c: SoftLayerContent) => {
     const out: Record<string, string> = {};
     for (const { fm: f } of Object.values(c.entries)) {
@@ -118,9 +102,10 @@ export function withSoftTiers(
     }
     return out;
   };
-  return {
-    muscles: { ...layers.muscles, tiers: tiers.muscles, roles, joints: joints(layers.muscles) },
-    ligaments: { ...layers.ligaments, tiers: tiers.ligaments, joints: joints(layers.ligaments) },
-    cartilage: { ...layers.cartilage, tiers: tiers.cartilage, joints: joints(layers.cartilage) },
-  };
+  const out = {} as Record<LazyLayerId, SoftLayerContent>;
+  for (const [layer, c] of Object.entries(layers) as [LazyLayerId, SoftLayerContent][]) {
+    const patches = deps.patches[layer];
+    out[layer] = { ...c, edges: deps.edges[layer], ...(patches ? { patches } : {}), joints: joints(c) };
+  }
+  return out;
 }

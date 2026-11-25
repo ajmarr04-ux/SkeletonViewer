@@ -19,10 +19,9 @@ const hash = (s: string | null | undefined): string | null => (s == null ? null 
 /** Load the bone content, the soft-tissue table and every soft layer's content, through the app's loaders. */
 async function loadEverything() {
   const { loadContent } = await import("../../src/content/loader");
-  const { loadSoftIds } = await import("../../src/content/loadSoftIds");
   const { loadSoftContent } = await import("../../src/content/softContentLoader");
   const bones = await loadContent();
-  await loadSoftIds();
+  // The soft-tissue table is the always-loaded ID index since M12 BB (tests/setup.ts loads it).
   const soft = {
     cartilage: await loadSoftContent("cartilage"),
     ligaments: await loadSoftContent("ligaments"),
@@ -49,7 +48,7 @@ async function allIds(): Promise<{ bones: string[]; soft: string[] }> {
 export async function buildTiers(): Promise<Golden> {
   await loadEverything();
   const { relatedAt } = await import("../../src/scene/isolation");
-  const { softRoles } = await import("../../src/content/softRelations");
+  const { rolesOf: softRoles } = await import("../../src/content/appGraph");
   const { DEFAULT_MODES: DEFAULT_LAYERS } = await import("../../src/systems/registry");
   const allOn = { bones: "on", cartilage: "on", ligaments: "on", muscles: "on" } as const;
   const { bones, soft } = await allIds();
@@ -70,101 +69,86 @@ export async function buildTiers(): Promise<Golden> {
 // ---------------------------------------------------------------------------
 // panels.json
 
-type Link = { id: string; label: string };
+type Link = { id: string; label: string; detail?: string };
 /** A link as the panel shows it: "id | label" (with " | detail" where a row has one). */
 const link = (l: Link, detail?: string | null): string => (detail ? `${l.id} | ${l.label} | ${detail}` : `${l.id} | ${l.label}`);
 type Section = { title: string; links?: string[]; text?: (string | null)[]; html?: string | null };
+type SectionModel = import("../../src/panel/model").SectionModel;
+type AttachmentList = import("../../src/systems/musculoskeletal/muscles/panel").AttachmentList;
+
+/** One section as the golden records it, by render type (M12 BD: the generic panel model). */
+function recordSection(s: SectionModel): Section {
+  const { title } = s;
+  switch (s.render) {
+    case "text":
+      return s.format === "line" ? { title, text: s.value === null ? [] : [s.value + (s.inherited ? " (as the whole muscle)" : "")] } : { title, html: hash(s.value) };
+    case "list":
+      return { title, text: s.items ?? [], ...(s.count ? { links: [`positions: ${s.count}`] } : {}) };
+    case "links":
+      if (s.nameOnly) return { title, text: [s.links?.[0]?.label ?? null] };
+      return {
+        title,
+        links: (s.links ?? []).map((l) => link(l, l.detail)),
+        ...(s.also ? { text: [s.also.title, ...s.also.links.map((n) => link(n))] } : {}),
+      };
+    case "grouped-links":
+      return { title, ...(s.groups ? { text: s.groups.flatMap((g) => [g.title, ...g.links.map((l) => link(l))]) } : {}) };
+    case "actions-table": {
+      const act = (a: { joint: string; movement: string; role: string }) => `${a.joint} · ${a.movement} · ${a.role}`;
+      return {
+        title,
+        text: [
+          ...s.rows.map(act),
+          ...(s.inherited.length ? ["With the whole muscle", ...s.inherited.map(act)] : []),
+          ...(s.rows.length + s.inherited.length === 0 ? s.fallback : []),
+        ],
+      };
+    }
+    case "custom": {
+      // The one custom component (plan decision 11): an origin or insertion list.
+      const list = s.data as AttachmentList;
+      return {
+        title,
+        ...(list.inheritedFrom ? { text: [`As the whole muscle: ${link(list.inheritedFrom)}`] } : {}),
+        links: list.rows.map((r) => (r.link ? link(r.link, [r.landmark, r.part].filter(Boolean).join(" · ") || null) : `text | ${r.text}${r.part ? ` · ${r.part}` : ""}`)),
+      };
+    }
+  }
+}
 
 /**
  * For every ID, what the info panel shows (InfoPanel.tsx at M10): the title and
  * the line under it, Part of, the side pair, the badges, the common name, the
  * sections in order with their links (in order) and short texts, and the
  * breadcrumb trail. Prose (summary and clinical note HTML) is recorded as a
- * hash, so the file stays small but any change shows.
+ * hash, so the file stays small but any change shows. Since M12 BD it reads
+ * the generic panel model (`src/panel/model.ts`); a field the kind's chrome
+ * doesn't have is undefined and so left out, as the M10 golden did per kind.
  */
 export async function buildPanels(): Promise<Golden> {
   const { bones: boneContent, soft } = await loadEverything();
-  const { panelModel, landmarkName } = await import("../../src/content/panel");
-  const placeholder = await import("../../src/content/placeholder");
-  const { softPanelModel, softSections } = await import("../../src/content/softPanel");
-  const { softLayerOf } = await import("../../src/content/softRegistry");
+  const { panelModel, oppositeAcross } = await import("../../src/panel/model");
+  const { oppositeOf } = await import("../../src/content/placeholder");
+  const { softOpposite } = await import("../../src/content/softRegistry");
+  const { EAGER_LAYER } = await import("../../src/systems/registry");
   const { bones, soft: softIds } = await allIds();
+  const contents: Record<string, unknown> = { [EAGER_LAYER]: boneContent, ...soft };
+  const inputs = { content: (layer: string) => (contents[layer] ?? null) as Record<string, unknown> | null, opposite: oppositeAcross(oppositeOf, softOpposite) };
   const out: Golden = {};
-
-  for (const id of bones) {
-    const m = panelModel(id, boneContent)!;
-    const base = placeholder.panelModel(id)!;
-    const sections: Section[] = [
-      { title: "Summary", html: hash(m.summary) },
-      { title: "Functions", text: m.functions ?? [] },
-      {
-        title: "Articulations",
-        links: m.articulations.map((a) => link(a, a.name)),
-        ...(m.kind === "tooth" && m.neighbours.length > 0 ? { text: ["Neighbouring teeth", ...m.neighbours.map((n) => link(n))] } : {}),
-      },
-      { title: "Key landmarks", text: m.landmarks ?? [], ...(m.landmarkPositions ? { links: [`positions: ${m.landmarkPositions}`] } : {}) },
-      {
-        title: "Attached muscles",
-        ...(m.origins && m.insertions ? { text: ["Origins", ...m.origins.map((l) => link(l)), "Insertions", ...m.insertions.map((l) => link(l))] } : {}),
-      },
-      { title: "Clinical note", html: hash(m.clinical) },
-    ];
+  for (const id of [...bones, ...softIds]) {
+    const m = panelModel(id, inputs)!;
     out[id] = {
-      title: m.name,
-      subtitle: m.latin ?? (m.written ? "" : "Latin name not written yet"),
+      title: m.title,
+      subtitle: m.subtitle.text,
+      partOf: m.partOf === undefined ? undefined : m.partOf ? `${m.partOf.id} | ${m.partOf.name}` : null,
       common: m.common,
       written: m.written,
       pair: m.pair,
-      badges: [m.badges.region, m.badges.type, ...(m.badges.draft ? ["Draft — not yet reviewed"] : [])],
+      badges: [...m.badges, ...(m.draft ? ["Draft — not yet reviewed"] : [])],
       note: m.note,
-      sections,
-      trail: base.trail,
-    };
-  }
-
-  for (const id of softIds) {
-    const layer = softLayerOf(id)!;
-    const content = soft[layer];
-    const m = softPanelModel(id, content)!;
-    const s = softSections(id, content, (b, l) => landmarkName(boneContent[b], l));
-    const sections: Section[] = [{ title: "Summary", html: hash(m.summary) }];
-    if (s?.kind === "muscle") {
-      const rows = (list: typeof s.origin) => ({
-        ...(list.inheritedFrom ? { text: [`As the whole muscle: ${link(list.inheritedFrom)}`] } : {}),
-        links: list.rows.map((r) => (r.link ? link(r.link, [r.landmark, r.part].filter(Boolean).join(" · ") || null) : `text | ${r.text}${r.part ? ` · ${r.part}` : ""}`)),
-      });
-      const act = (a: { joint: string; movement: string; role: string }) => `${a.joint} · ${a.movement} · ${a.role}`;
-      if (s.parts.length > 0) sections.push({ title: "Parts", links: s.parts.map((l) => link(l)) });
-      sections.push({ title: "Origin", ...rows(s.origin) });
-      sections.push({ title: "Insertion", ...rows(s.insertion) });
-      sections.push({
-        title: "Actions",
-        text: [
-          ...s.actions.map(act),
-          ...(s.inheritedActions.length ? ["With the whole muscle", ...s.inheritedActions.map(act)] : []),
-          ...(s.actions.length + s.inheritedActions.length === 0 ? s.functions : []),
-        ],
-      });
-      sections.push({ title: "Synergists", links: s.synergists.map((l) => link(l)) });
-      sections.push({ title: "Antagonists", links: s.antagonists.map((l) => link(l)) });
-      sections.push({ title: "Innervation", text: s.innervation ? [s.innervation.text + (s.innervation.inheritedFrom ? " (as the whole muscle)" : "")] : [] });
-      sections.push({ title: "Clinical note", html: hash(s.clinical) });
-    } else if (s) {
-      sections.push({ title: "Joint", text: [s.joint] });
-      sections.push({ title: s.kind === "ligament" ? "Connects" : "Attached to", links: s.links.map((l) => link(l)) });
-      sections.push({ title: "Functions", text: s.functions });
-      sections.push({ title: "Clinical note", html: hash(s.clinical) });
-    }
-    out[id] = {
-      title: m.name,
-      subtitle: m.latin ?? (m.side === "midline" ? m.badges.kind : `${m.badges.kind}, ${m.side}`),
-      partOf: m.partOf ? `${m.partOf.id} | ${m.partOf.name}` : null,
-      common: m.common,
-      written: m.written,
-      pair: m.pair,
-      badges: [m.badges.layer, m.badges.kind, "Draft — not yet reviewed"],
-      meshAvailable: m.meshAvailable,
-      sections,
+      // The M10 golden recorded it where there is no no-model note (the soft panels' Hide reads it; the bones' note says it).
+      meshAvailable: m.note === undefined ? m.meshAvailable : undefined,
+      sections: m.sections.map(recordSection),
       trail: m.trail,
       parentCrumb: m.parentCrumb,
     };
@@ -330,10 +314,9 @@ const tick = (ms = 0) => new Promise((r) => setTimeout(r, ms));
 /** Wait until the page is idle: the lazy chunks the app may have asked for are in, and nothing has changed for 300 ms. */
 async function settle(snapshot: () => string): Promise<void> {
   const { loadSoftTree } = await import("../../src/content/softTreeLoader");
-  const { loadSoftIds } = await import("../../src/content/loadSoftIds");
   const { loadSoftContent } = await import("../../src/content/softContentLoader");
   // Loading a chunk only registers data; it never changes the store or the address by itself.
-  await Promise.allSettled([loadSoftTree(), loadSoftIds(), loadSoftContent("cartilage"), loadSoftContent("ligaments"), loadSoftContent("muscles")]);
+  await Promise.allSettled([loadSoftTree(), loadSoftContent("cartilage"), loadSoftContent("ligaments"), loadSoftContent("muscles")]);
   let last = snapshot();
   for (let still = 0; still < 30; ) {
     await tick(10);
@@ -344,8 +327,14 @@ async function settle(snapshot: () => string): Promise<void> {
 }
 
 /** Open one URL as a fresh page and record what the app ends up with. */
-async function openUrl(search: string): Promise<Golden> {
+/** A new module graph, with the always-loaded ID index handed over first, as the app's entry (src/main.tsx) does (M12 BB). */
+async function freshModules(): Promise<void> {
   vi.resetModules();
+  await import("../../src/content/indexData");
+}
+
+async function openUrl(search: string): Promise<Golden> {
+  await freshModules();
   const win = fakeWindow(search);
   vi.stubGlobal("window", win);
   vi.stubGlobal("requestAnimationFrame", (f: (t: number) => void) => setTimeout(() => f(0), 0));
@@ -400,7 +389,83 @@ export async function buildUrls(): Promise<Golden> {
   const out: Golden = {};
   for (const u of URLS) out[u === "" ? "(none)" : u] = await openUrl(u);
   await tick(200);
-  vi.resetModules();
+  await freshModules();
   if (lateWrites.length > 0) throw new Error(`a page wrote its address after it was recorded:\n${lateWrites.join("\n")}`);
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// tree.json (M12 plan decision 9, recorded at M11 before the tree builders move)
+
+/**
+ * The sidebar's tree and its groups. `rows:initial` is the rows with the top
+ * bone groups open before the soft tree loads (the soft roots alone, count
+ * null). After everything has loaded: `row:<key>` for every row with every
+ * openable row open (kind, label, level, parent, pos/size, count, and the
+ * soft rows' `expandable`/`drawn`), `rows:order` the keys in order; `group:<key>`
+ * for every group (bone groups, tooth types, soft tree nodes, synonym sets and
+ * every bone's `attached:` group): label, name, trail, parent, layer, members,
+ * counts, both announcements, ancestors; `ancestors:<id>` for every structure.
+ */
+export async function buildTree(): Promise<Golden> {
+  const groups = await import("../../src/content/groups");
+  const tree = await import("../../src/content/tree");
+  const out: Golden = {};
+  groups.resetSoftTree();
+  out["rows:initial"] = tree.visibleRows(new Set(tree.TOP_KEYS)).map((r) => `${r.key} | ${r.level} | ${r.count}${r.soft ? " | soft" : ""}`);
+
+  await loadEverything();
+  const { loadSoftTree } = await import("../../src/content/softTreeLoader");
+  await loadSoftTree();
+  const data = groups.softTree()!;
+  const { isSoftNode } = await import("../../src/tree/types");
+
+  // Every openable row open: grow the open set until the rows stop changing.
+  let open = new Set<string>();
+  for (let rows = tree.visibleRows(open); ; ) {
+    const next = new Set(rows.filter(tree.openable).map((r) => r.key));
+    if (next.size === open.size) break;
+    open = next;
+    rows = tree.visibleRows(open);
+  }
+  const rows = tree.visibleRows(open);
+  const seen = new Map<string, number>();
+  for (const r of rows) {
+    const n = (seen.get(r.key) ?? 0) + 1;
+    seen.set(r.key, n);
+    const { key, ...rest } = r;
+    out[`row:${key}${n > 1 ? `#${n}` : ""}`] = rest;
+  }
+  out["rows:order"] = rows.map((r) => r.key);
+
+  const keys: string[] = [...groups.GROUPS.keys()];
+  const walk = (items: readonly import("../../src/tree/types").SoftTreeItem[]) => {
+    for (const i of items)
+      if (isSoftNode(i)) {
+        keys.push(i.key);
+        walk(i.children);
+      }
+  };
+  walk(data.roots);
+  keys.push(...data.sets.map((s) => s.key));
+  const { bones, soft } = await allIds();
+  keys.push(...bones.map(groups.attachedKey));
+  for (const key of keys) {
+    const g = groups.groupOf(key)!;
+    out[`group:${key}`] = {
+      label: g.label,
+      name: g.name,
+      trail: g.trail,
+      parent: g.parent,
+      layer: groups.groupLayer(key),
+      members: g.members,
+      ...(g.attached ? { attached: g.attached } : {}),
+      counts: groups.groupCounts(key),
+      announce: groups.groupAnnouncement(key),
+      back: groups.groupAnnouncement(key, true),
+      ancestors: groups.groupAncestors(key),
+    };
+  }
+  for (const id of [...bones, ...soft]) out[`ancestors:${id}`] = groups.ancestorsOf(id);
   return out;
 }

@@ -1,44 +1,12 @@
-// Placeholder info-panel content (Milestone 3): built from content/ids.json
-// only. Everything that needs written anatomy (Latin name, summary, functions,
-// articulations, landmarks, muscles, clinical note) says "Not written yet";
-// the real content files arrive in Milestone 4. Nothing is invented (spec §12).
+// The bones' side pairing and their aria-live wording (spec §10). The panel
+// itself is the generic model (src/panel/model.ts, M12 BD/BE); the
+// tier wording and nouns come from the descriptors (M12 BG).
 
 import ids from "../../content/ids.json";
-import type { EagerKind } from "../systems/registry";
-import { groupTrail, regionLabel, TOOTH_TYPES } from "./labels";
+import { kindDescriptor, kindNoun, tierWording, type EagerKind } from "../systems/registry";
 
 export type Side = "left" | "right" | "midline";
 export type IdEntry = { id: string; name: string; kind: EagerKind; side: Side; group: string[]; meshAvailable: boolean };
-
-export const NOT_WRITTEN = "Not written yet";
-export const NO_MODEL_NOTE = "No 3D model: this tooth is absent from the source model.";
-
-/** The text sections of the panel, in spec §7 order (after the name and badges). */
-export const SECTION_TITLES = ["Summary", "Functions", "Articulations", "Key landmarks", "Major muscle attachments", "Clinical note"] as const;
-export type SectionTitle = (typeof SECTION_TITLES)[number];
-
-export type PanelModel = {
-  id: string;
-  name: string;
-  /** Latin name, or null until the content is written. */
-  latin: string | null;
-  /** Common name ("kneecap"), or null until the content is written. */
-  common: string | null;
-  side: Side;
-  kind: EagerKind;
-  /** Badge row: region, bone or tooth type, and the draft note. */
-  badges: { region: string; type: string; draft: boolean };
-  /** Breadcrumb under "Skeleton", ending with the object's name. */
-  trail: string[];
-  meshAvailable: boolean;
-  /** Shown for objects without a mesh (the wisdom teeth). */
-  note: string | null;
-  sections: { title: SectionTitle; text: string }[];
-  /** The same object on the other side, for paired objects; else null. */
-  opposite: string | null;
-  /** Both sides of a pair, left first (for the side toggle); else null. */
-  pair: { left: string; right: string } | null;
-};
 
 const ENTRIES = ids as IdEntry[];
 const BY_ID = new Map(ENTRIES.map((e) => [e.id, e]));
@@ -63,38 +31,14 @@ export function oppositeOf(id: string): string | null {
   return BY_PAIR_KEY.get(pairKey(want, other)) ?? null;
 }
 
-export function entryOf(id: string): IdEntry | undefined {
-  return BY_ID.get(id);
-}
-
-/** The panel's content for one object, or null for an unknown ID. */
-export function panelModel(id: string): PanelModel | null {
-  const e = BY_ID.get(id);
-  if (!e) return null;
-  const opposite = oppositeOf(id);
-  const last = e.group[e.group.length - 1] ?? "";
-  return {
-    id,
-    name: e.name,
-    latin: null,
-    common: null,
-    side: e.side,
-    kind: e.kind,
-    badges: { region: regionLabel(e.group), type: e.kind === "tooth" ? (TOOTH_TYPES[last] ?? "Tooth") : "Bone", draft: true },
-    trail: [...groupTrail(e.group), e.name],
-    meshAvailable: e.meshAvailable,
-    note: e.meshAvailable ? null : NO_MODEL_NOTE,
-    sections: SECTION_TITLES.map((title) => ({ title, text: NOT_WRITTEN })),
-    opposite,
-    pair: opposite === null ? null : e.side === "left" ? { left: id, right: opposite } : { left: opposite, right: id },
-  };
-}
+/** False for kinds whose name says the side already (teeth). */
+const sideInName = (e: IdEntry) => kindDescriptor(e.kind).sideInName !== false;
 
 type Isolated = { sel: string | null; tier: 0 | 1 | 2 };
 
 /** "Femur, left" (teeth name their side already). */
 function spoken(e: IdEntry): string {
-  const side = e.side === "midline" || e.kind === "tooth" ? "" : `, ${e.side}`;
+  const side = e.side === "midline" || !sideInName(e) ? "" : `, ${e.side}`;
   return `${e.name}${side}`;
 }
 
@@ -103,7 +47,7 @@ function listed(id: string, focusSide: Side): string {
   const e = BY_ID.get(id);
   if (!e) return id;
   const name = /^[A-Z][a-z]/.test(e.name) ? e.name[0]!.toLowerCase() + e.name.slice(1) : e.name;
-  return e.side === "midline" || e.kind === "tooth" || e.side === focusSide ? name : `${name} (${e.side})`;
+  return e.side === "midline" || !sideInName(e) || e.side === focusSide ? name : `${name} (${e.side})`;
 }
 
 /**
@@ -125,9 +69,9 @@ export function announcement(
   if (now.tier === 1) {
     const names = related(now.sel).map((id) => listed(id, e.side));
     const list = names.length ? ` ${names.join(", ")}.` : " None.";
-    return `${spoken(e)}: related bones shown.${list.replace(/^ ([a-z])/, (_, c: string) => ` ${c.toUpperCase()}`)}`;
+    return `${spoken(e)}: ${tierWording(e.kind, "t1")!.label} shown.${list.replace(/^ ([a-z])/, (_, c: string) => ` ${c.toUpperCase()}`)}`;
   }
-  if (now.tier === 2) return `${spoken(e)}: region shown, ${visible} bones.`;
+  if (now.tier === 2) return `${spoken(e)}: ${tierWording(e.kind, "t2")!.label} shown, ${visible} ${kindNoun(e.kind, visible)}.`;
   if (prev && prev.sel === now.sel && prev.tier > 0) return `${spoken(e)}, ${e.meshAvailable ? "isolated" : "no 3D model"}.`;
   return `${spoken(e)}, selected. ${e.meshAvailable ? "Isolated." : "No 3D model."}`;
 }

@@ -14,7 +14,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { parseAst } from "rolldown/parseAst";
 import { describe, expect, it } from "vitest";
-import { OVERLAYS, REGISTRY, SYSTEMS } from "../src/systems/registry";
+import { EDGE_TYPES, OVERLAYS, REGISTRY, SYSTEMS } from "../src/systems/registry";
 
 type Allowlist = {
   files: Record<string, { milestone: string; reason: string }>;
@@ -24,12 +24,13 @@ type Allowlist = {
 const root = join(__dirname, "..");
 const allowlist = JSON.parse(readFileSync(join(root, "tests/registry-allowlist.json"), "utf8")) as Allowlist;
 
-/** Every ID the registry defines. */
+/** Every ID the registry defines, and the edge types' IDs and inverse labels (M12 plan decision 1: the graph engine names none). */
 const IDS = new Set<string>([
   ...SYSTEMS.map((s) => s.id),
   ...REGISTRY.map((l) => l.id),
   ...REGISTRY.flatMap((l) => l.kinds.map((k) => k.id)),
   ...OVERLAYS.map((o) => o.id),
+  ...EDGE_TYPES.flatMap((t) => [t.id, ...(t.inverse === null ? [] : [t.inverse])]),
 ]);
 
 /** Property names count only for layers, and member accesses only on a map keyed by layer (`s.layers.muscles`, `modes.bones`). */
@@ -112,6 +113,7 @@ const hits = new Map(files.map((f) => [f, idHits(f)] as const));
 describe("registry isolation", () => {
   it("scans the code (sanity: the IDs and files are there)", () => {
     expect(IDS.has(REGISTRY[0].id)).toBe(true);
+    expect(IDS.has(EDGE_TYPES[0]!.id)).toBe(true);
     expect(files.length).toBeGreaterThan(100);
     // The parser sees literals and literal types, not comments.
     const probe = tsStrings("probe.ts", 'const a: "x" | `y` = "z"; // "w"\n/* "v" */ const b = { bones: o.layers.muscles, x: o.cartilage, [r]: 1 }; type T = { ligaments: 1 };');

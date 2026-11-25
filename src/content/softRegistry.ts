@@ -1,39 +1,19 @@
-// The soft-tissue ID table as the main chunk sees it (M7 plan decisions 11 to 13).
-// The table itself (`virtual:skeleton-soft-ids`) lives in a lazy chunk; it is
-// registered here when that chunk loads (the first time a layer is turned on,
-// or when a link selects a soft-tissue structure). Until then every lookup
-// says "unknown", which is right: nothing of a layer can be on screen before
-// its table is loaded.
+// The lazy layers' structures as the main chunk sees them (M7 plan decisions
+// 11 to 13), read off the always-loaded ID index (`src/content/index.ts`, M12
+// plan decision 7): every lookup answers from the first frame.
 
 import type { SoftId } from "../layers/softIds";
 import type { LazyLayerId } from "../systems/registry";
+import { lazyEntries, lazyEntry, lazyLayerOf } from "./index";
 import { peeled } from "./muscleDepth";
 
-let table: Map<string, SoftId> | null = null;
-let order: readonly SoftId[] = [];
-
-/** Called by the lazy chunk (`src/layers/softTable.ts`). Idempotent. */
-export function registerSoftIds(entries: readonly SoftId[]): void {
-  if (table) return;
-  table = new Map(entries.map((e) => [e.id, e]));
-  order = entries;
-}
-
-/** For tests: forget the table. */
-export function resetSoftIds(): void {
-  table = null;
-  order = [];
-  peelCache.clear();
-}
-
-export const softEntry = (id: string): SoftId | undefined => table?.get(id);
-export const isSoftId = (id: string): boolean => table?.has(id) ?? false;
-/** Every registered entry, in table order. */
-export const softEntries = (): readonly SoftId[] => order;
-export const softTableLoaded = (): boolean => table !== null;
+export const softEntry = (id: string): SoftId | undefined => lazyEntry(id);
+export const isSoftId = (id: string): boolean => lazyEntry(id) !== undefined;
+/** Every lazy layer's entry, in the ID files' order. */
+export const softEntries = (): readonly SoftId[] => lazyEntries();
 
 /** The layer a soft-tissue structure is drawn in, or null for an unknown ID. */
-export const softLayerOf = (id: string): LazyLayerId | null => softEntry(id)?.layer ?? null;
+export const softLayerOf = (id: string): LazyLayerId | null => lazyLayerOf(id);
 
 /** "Biceps brachii (left)"; midline structures have no side. */
 export function softDisplayName(e: SoftId): string {
@@ -56,14 +36,14 @@ export function hideTargets(id: string): string[] {
 
 /**
  * The muscles (and parts) peeled away at a depth stop (spec §6.2): hidden,
- * not ghosted. Empty until the table is loaded. Cached per stop.
+ * not ghosted. Cached per stop.
  */
 const peelCache = new Map<number, ReadonlySet<string>>();
 export function peeledAt(stop: 0 | 1 | 2): ReadonlySet<string> {
-  if (stop === 0 || !table) return EMPTY;
+  if (stop === 0) return EMPTY;
   let s = peelCache.get(stop);
   if (!s) {
-    s = new Set(order.filter((e) => e.mesh && peeled(e.depth, stop)).map((e) => e.id));
+    s = new Set(lazyEntries().filter((e) => e.mesh && peeled(e.depth, stop)).map((e) => e.id));
     peelCache.set(stop, s);
   }
   return s;

@@ -1,15 +1,38 @@
 // M9 session AE: nested muscle → part selection (spec §5.1; plan decisions 1 and 2).
 import { readFileSync } from "node:fs";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import hierarchy from "../content/muscle-hierarchy.json";
-import { registerSoftIds, resetSoftIds } from "../src/content/softRegistry";
-import { MUSCLE_REGION_LABELS, partLabel, softAnnouncement, softPanelModel } from "../src/content/softPanel";
+import { softSelectionAnnouncement } from "../src/content/announce";
+import { MUSCLE_REGION_LABELS, partLabel } from "../src/systems/musculoskeletal/muscles/panel";
+import { panelModel as generic, type LayerContent, type SectionModel } from "../src/panel/model";
+import { isEagerId } from "../src/content/index";
+import { softEntry, softOpposite } from "../src/content/softRegistry";
 import type { SoftLayerContent } from "../src/content/softCompile";
-import { trimSoftIds, type RawSoftId } from "../src/layers/softIds";
+import { type RawSoftId } from "../src/layers/softIds";
 import { maxPartsOf, NESTED_LAYER } from "../src/systems/registry";
 import { isolationView, sceneView, shownIn } from "../src/scene/isolation";
 import { FULL_SKELETON, isolationStep, levelOf, resolveClick, type Isolation, type IsolationAction, type ParentOf } from "../src/state/isolation";
 import { DEFAULT_MODES } from "../src/systems/registry";
+
+// M12 BG deleted softPanel.ts's softAnnouncement; its tier-0 wording is announce.ts' own.
+const softAnnouncement = (id: string) => softSelectionAnnouncement(id, 0, null, {});
+
+// M12 BE: the M9 soft panel shape (softPanel.ts's `softPanelModel`, deleted) read off the generic model.
+function softPanelModel(id: string, content: SoftLayerContent | null = null) {
+  const layer = softEntry(id)?.layer;
+  if (isEagerId(id) || !layer) return null;
+  const m = generic(id, { content: (l) => (l === layer ? (content as unknown as LayerContent) : null), opposite: softOpposite })!;
+  const summary = m.sections[0] as Extract<SectionModel, { render: "text" }>;
+  return {
+    ...m,
+    badges: { layer: m.badges[0], kind: m.badges[1] },
+    partOf: m.partOf ?? null,
+    parentCrumb: m.parentCrumb ?? null,
+    latin: m.subtitle.latin ? m.subtitle.text : null,
+    summary: summary.value,
+  };
+}
+
 
 const RAW = JSON.parse(readFileSync("content/soft-ids.json", "utf8")) as RawSoftId[];
 
@@ -89,8 +112,6 @@ describe("the reducer's part level (plan decision 2)", () => {
 });
 
 describe("views, panel and announcements with the real table", () => {
-  beforeAll(() => registerSoftIds(trimSoftIds(RAW)));
-  afterAll(() => resetSoftIds());
   const meshes = new Set(RAW.filter((e) => e.meshAvailable).map((e) => e.id));
   const hasMesh = (id: string) => meshes.has(id) || id === "femur_left";
   const heads = ["triceps_brachii_lateral_head_left", "triceps_brachii_long_head_left", "triceps_brachii_medial_head_left"];

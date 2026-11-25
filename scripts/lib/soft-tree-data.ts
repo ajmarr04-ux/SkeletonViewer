@@ -1,19 +1,22 @@
-// The soft-tissue tree's input, read from disk (M9 plan decision 11): the
-// soft-tissue table, the muscle hierarchy, each ligament's and cartilage's
-// `joint`, the functional joints and joint names, and the group synonyms that
-// define their own set. Shared by the Vite plugin, the search index and the tests.
+// The lazy layers' sidebar trees, read from disk and built by the builders their
+// `TreeSpec`s name (src/tree/; M12 plan decision 10). Shared by the Vite plugin,
+// the search index, validate-content and the tests.
 import { splitFrontMatter } from "../../src/content/frontmatter";
 import { splitSynonyms, type SynonymsFile } from "../../src/content/schema";
-import { buildSoftTree, type SoftSet, type SoftTreeData } from "../../src/content/softTree";
+import { LAZY_LAYERS } from "../../src/systems/registry";
+import { buildSoftTrees } from "../../src/tree/build";
+import type { FunctionalJoint, TreeEntry } from "../../src/tree/leaves";
+import type { SoftSet, SoftTreeData } from "../../src/tree/types";
 import { readJointNames, readJson, readSoftFiles, readSoftIds } from "./content-files";
 
-export function readJointOf(): Record<string, string | null> {
+/** Every lazy structure's front matter, by ID. */
+function readFrontMatter(): Map<string, Record<string, unknown>> {
   const files = readSoftFiles();
-  const out: Record<string, string | null> = {};
-  for (const layer of ["ligaments", "cartilage"] as const)
+  const out = new Map<string, Record<string, unknown>>();
+  for (const layer of LAZY_LAYERS)
     for (const [name, text] of files[layer]) {
-      const fm = splitFrontMatter(text).data as { id?: string; joint?: string | null };
-      out[fm.id ?? name] = fm.joint ?? null;
+      const fm = splitFrontMatter(text).data as Record<string, unknown>;
+      out.set((fm.id as string | undefined) ?? name, fm);
     }
   return out;
 }
@@ -25,12 +28,15 @@ export function readSoftSets(): SoftSet[] {
 }
 
 export function readSoftTree(): SoftTreeData {
-  return buildSoftTree({
-    softIds: readSoftIds() as Parameters<typeof buildSoftTree>[0]["softIds"],
-    muscleHierarchy: readJson("content/muscle-hierarchy.json") as Parameters<typeof buildSoftTree>[0]["muscleHierarchy"],
-    jointOf: readJointOf(),
-    functionalJoints: readJson("content/joints.json") as Parameters<typeof buildSoftTree>[0]["functionalJoints"],
-    jointNames: readJointNames(),
-    sets: readSoftSets(),
-  });
+  const fm = readFrontMatter();
+  return buildSoftTrees(
+    {
+      entries: readSoftIds() as unknown as TreeEntry[],
+      readJson,
+      field: (id, name) => fm.get(id)?.[name] ?? null,
+      functionalJoints: readJson("content/joints.json") as FunctionalJoint[],
+      jointNames: readJointNames(),
+    },
+    readSoftSets(),
+  );
 }

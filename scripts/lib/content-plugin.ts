@@ -14,7 +14,7 @@ import { marked } from "marked";
 import type { Plugin } from "vite";
 import { compileContent } from "../../src/content/compile";
 import { LAZY_LAYERS, NESTED_LAYER, layerDescriptor } from "../../src/systems/registry";
-import { bonesDir, compileAllSoftFromDisk, readBoneAttached, readContentFiles, root, softDir } from "./content-files";
+import { bonesDir, compileAllSoftFromDisk, readContentFiles, readEagerContentEdges, readEagerEdges, root, softDir } from "./content-files";
 import { readSearchData, readSoftSearchData } from "./search-data";
 import { readSoftTree } from "./soft-tree-data";
 
@@ -36,19 +36,25 @@ const synonymsFile = join(root, "content/synonyms.json");
 /** The soft tree (M9 plan decision 11) and the soft-tissue search index (decision 12): one lazy chunk each. */
 const SOFT_TREE = "virtual:skeleton-soft-tree";
 const SOFT_SEARCH = "virtual:skeleton-search-soft";
+/** The eager layer's edges (M12 plan decision 3), in the main chunk: imported by src/content/indexData.ts. */
+const GRAPH = "virtual:skeleton-graph";
 const softExtra = new Map<string, () => unknown>([
   ["\0" + SOFT_TREE, readSoftTree],
   ["\0" + SOFT_SEARCH, readSoftSearchData],
+  ["\0" + GRAPH, readEagerEdges],
 ]);
 /** Each lazy layer's content chunk, by resolved ID. */
 const softModules = new Map(LAZY_LAYERS.map((l) => ["\0" + layerDescriptor(l).contentChunk!, l]));
 /** `{ <layer>: () => import("<contentChunk>"), … }` for src/content/softContentLoader.ts. */
 const IMPORTERS = "virtual:skeleton-layer-importers";
 const RESOLVED_IMPORTERS = "\0" + IMPORTERS;
-export const importersModule = (): string =>
-  `export default {\n${LAZY_LAYERS.map((l) => `  ${JSON.stringify(l)}: () => import(${JSON.stringify(layerDescriptor(l).contentChunk!)}),\n`).join("")}};\n`;
+export const importersModule = (layers: readonly { id: string; contentChunk?: string }[] = LAZY_LAYERS.map(layerDescriptor)): string =>
+  `export default {\n${layers
+    .filter((l) => l.contentChunk !== undefined)
+    .map((l) => `  ${JSON.stringify(l.id)}: () => import(${JSON.stringify(l.contentChunk)}),\n`)
+    .join("")}};\n`;
 /** Files the soft-tissue chunks are built from, besides the content folders. */
-const softDeps = ["content/soft-ids.json", "content/articulations.json", "content/joints.json", "content/movements.json", "assets/mapping/soft-to-id.json"].map((f) => join(root, f));
+const softDeps = ["content/soft-ids.json", "content/articulations.json", "content/regions.json", "content/joints.json", "content/movements.json", "assets/mapping/soft-to-id.json"].map((f) => join(root, f));
 
 export function contentPlugin(): Plugin {
   return {
@@ -78,7 +84,7 @@ export function contentPlugin(): Plugin {
         const dir = softDir(layer);
         this.addWatchFile(dir);
         softDeps.forEach((f) => this.addWatchFile(f));
-        LAZY_LAYERS.forEach((l) => this.addWatchFile(softDir(l))); // tier sets read every layer
+        LAZY_LAYERS.forEach((l) => this.addWatchFile(softDir(l))); // the edges read every layer
         return `export default ${JSON.stringify(compileAllSoftFromDisk()[layer])};`;
       }
       if (id === RESOLVED_ATTRIBUTION) {
@@ -90,11 +96,11 @@ export function contentPlugin(): Plugin {
       const files = readContentFiles();
       for (const name of files.keys()) this.addWatchFile(`${bonesDir}/${name}.md`);
       if (id === RESOLVED_CONTENT) {
-        // The bones' muscle lists are derived from the muscles layer's files (M8 session AD).
+        // The bones' attached muscles are edges from the muscles layer's files (M8 session AD; M12 BD).
         this.addWatchFile(softDir(NESTED_LAYER));
         softDeps.forEach((f) => this.addWatchFile(f));
       }
-      if (id === RESOLVED_CONTENT) return `export default ${JSON.stringify(compileContent(files, readBoneAttached()))};`;
+      if (id === RESOLVED_CONTENT) return `export default ${JSON.stringify(compileContent(files))};\nexport const edges = ${JSON.stringify(readEagerContentEdges())};`;
       this.addWatchFile(synonymsFile);
       return `export default ${JSON.stringify(readSearchData())};`;
     },

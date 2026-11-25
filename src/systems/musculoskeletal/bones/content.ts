@@ -1,7 +1,14 @@
-// The bones layer's authoring half. Its validation and compiler stay on their
-// M10 code (`src/content/validate.ts`, `compile.ts`) until M12 (M11 plan decision 3).
-import { BODY_WORDS, frontMatterSchema } from "../../../content/schema";
-import { defineLayerContent } from "../../contentTypes";
+// The bones layer's authoring half: the front matter schema (`./schema.ts`) and
+// the `adjacent_tooth` rule. Its validator is `./validate.ts` (M12 plan decision
+// 13); its compiler stays `src/content/compile.ts`.
+import { BODY_WORDS, frontMatterSchema } from "./schema";
+import { adjacentTeeth } from "./teeth";
+import type { Edge } from "../../../graph/types";
+import { defineLayerContent, type GraphContext } from "../../contentTypes";
+
+/** `adjacent_tooth` (M12 plan decision 2): each tooth's neighbours in its arch, in the panel's order (mesial first). */
+export const adjacentToothEdges = (_: readonly Edge[], ctx: GraphContext): Edge[] =>
+  ctx.nodes.filter((id) => ctx.kindOf(id) === "tooth").flatMap((id) => adjacentTeeth(id).map((to) => ({ from: id, type: "adjacent_tooth", to })));
 
 export const bonesContent = defineLayerContent({
   folder: "bones",
@@ -9,4 +16,5 @@ export const bonesContent = defineLayerContent({
     bone: { schema: frontMatterSchema, bodyWords: BODY_WORDS },
     tooth: { schema: frontMatterSchema, bodyWords: BODY_WORDS },
   },
+  rules: [adjacentToothEdges],
 });

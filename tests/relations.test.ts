@@ -2,7 +2,20 @@ import { describe, expect, it } from "vitest";
 import articulations from "../content/articulations.json";
 import ids from "../content/ids.json";
 import { oppositeOf } from "../src/content/placeholder";
-import { adjacentTeeth, buildRelations, relations } from "../src/content/relations";
+import { appGraph } from "../src/content/appGraph";
+import { EAGER_ONLY, relatedAt } from "../src/scene/isolation";
+import { adjacentTeeth } from "../src/systems/musculoskeletal/bones/teeth";
+
+// M12 BC: the bones' tiers come from their tier rules over the graph (was src/content/relations.ts); with only bones showing they are M8's sets.
+const relations = {
+  tier1: (id: string) => relatedAt(id, 1, EAGER_ONLY),
+  regionOf: (id: string) => relatedAt(id, 2, EAGER_ONLY).filter((x) => !relatedAt(id, 1, EAGER_ONLY).includes(x)),
+  visibleAt: (id: string, tier: 0 | 1 | 2) => [id, ...relatedAt(id, tier, EAGER_ONLY)],
+  articulationsOf: (id: string) =>
+    appGraph()
+      .out(id, "articulates_with")
+      .map((e) => ({ joint: e.meta?.joint, other: e.from === id ? e.to : e.from })),
+};
 
 const sorted = (a: string[]) => [...a].sort();
 const ALL = (ids as { id: string; side: string }[]).map((e) => e.id);
@@ -59,9 +72,4 @@ describe("tier sets (spec §6)", () => {
     }
   });
 
-  it("buildRelations works on any data", () => {
-    const r = buildRelations([{ a: "x", b: "y", joint: "j", name: "J" }], { x: ["z"] });
-    expect(r.visibleAt("x", 2)).toEqual(["x", "y", "z"]);
-    expect(r.visibleAt("y", 1)).toEqual(["y", "x"]);
-  });
 });

@@ -1,12 +1,9 @@
 import { useSyncExternalStore } from "react";
 import { crumbGroups, ancestorsOf, groupAncestors, groupOf, softTreeVersion, subscribeSoftTree } from "../content/groups";
-import { panelModel } from "../content/placeholder";
-import { softPanelModel } from "../content/softPanel";
-import { useSoftContent } from "../content/softContentLoader";
-import { softLayerOf } from "../content/softRegistry";
 import { goBack, isolateGroup, selectObject } from "../state/selection";
 import { useViewer } from "../state/store";
 import { focusCanvas } from "./canvasFocus";
+import { usePanelModel } from "./usePanelModel";
 
 /**
  * Breadcrumb (spec §7): `Skeleton › Lower limb › Femur`, top left (one line on
@@ -26,22 +23,18 @@ export function Breadcrumb() {
   const sel = useViewer((s) => s.sel);
   const tier = useViewer((s) => s.tier);
   const grp = useViewer((s) => s.grp);
-  const softLayer = sel === null ? null : softLayerOf(sel);
-  const softContent = useSoftContent(softLayer);
+  const model = usePanelModel(sel);
   // Soft groups (M9) can be crumbs once the soft tree has loaded (it isn't fetched for this).
   useSyncExternalStore(subscribeSoftTree, softTreeVersion);
   let up: string | null = null;
   let trail: string[];
   let links: (string | null)[];
   if (sel !== null) {
-    const bone = panelModel(sel);
-    const soft = bone ? null : softPanelModel(sel, softContent);
-    const model = bone ?? soft;
     if (!model) return null;
     trail = tier > 0 ? [...model.trail, TIER_CRUMBS[tier]] : model.trail;
-    up = soft?.partOf?.id ?? null;
+    up = model.partOf?.id ?? null;
     const groups = crumbGroups(trail, ancestorsOf(sel));
-    links = bone ? groups : trail.map((_, i) => (i === soft!.parentCrumb ? UP : groups[i]!));
+    links = trail.map((_, i) => (i === model.parentCrumb ? UP : groups[i]!));
   } else if (grp !== null) {
     const g = groupOf(grp);
     if (!g) return null;

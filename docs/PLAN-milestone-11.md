@@ -52,7 +52,7 @@ Triggers: "begin session AS" to "begin session AY". Every session follows `docs/
 - [x] Registry isolation test and fixture layer passing.
 - [x] Golden snapshots unchanged; bench and main-chunk parity recorded.
 - [x] No regression: every existing unit and e2e test passes, changed only where step 5 lists why (spec §2.1).
-- [ ] **Hosted copy is live and linked below** (extra requirement for every milestone).
+- [x] **Hosted copy is live and linked below** (extra requirement for every milestone). *(https://ajmarr04-ux.github.io/SkeletonViewer/m11/, confirmed by the user at M12 planning, 2026-11-25.)*
 
 ---
 
@@ -292,4 +292,4 @@ The head was benched twice: the first run (2.3 / 0.7) had one run with a 0.5 FPS
 
 **e2e:** the full suite in one background run (`npx playwright test --trace off`, both projects, log in the session scratchpad): **173 of 173 passed** in 36.7 min, no retries. `keyboard.spec.ts:242`, which timed out in AX's batch, passed (the keyboard file took 12.2 min in all). Tests changed in M11 are only those listed in steps 2 (debug view order) and 5 (grouped panel), plus the new fixture spec.
 
-**Merge and freeze:** [PR #25](https://github.com/ajmarr04-ux/SkeletonViewer/pull/25) merged as `a2709f6`; Deploy ran on it (`/m11/` built from `main`). A follow-up PR freezes `m11` at `a2709f6` and sets `"current": null` until M12's planning sets 12 (as M5 and M10 did; `scripts/build-pages.sh` builds no `/m<current>/` then). **Left for the user:** a glance at https://ajmarr04-ux.github.io/SkeletonViewer/m11/ (the container can't reach `github.io`); then tick "Hosted copy is live" above.
+**Merge and freeze:** [PR #25](https://github.com/ajmarr04-ux/SkeletonViewer/pull/25) merged as `a2709f6`; Deploy ran on it (`/m11/` built from `main`). A follow-up PR freezes `m11` at `a2709f6` and sets `"current": null` until M12's planning sets 12 (as M5 and M10 did; `scripts/build-pages.sh` builds no `/m<current>/` then). **Left for the user:** a glance at https://ajmarr04-ux.github.io/SkeletonViewer/m11/ (the container can't reach `github.io`); then tick "Hosted copy is live" above. *(Confirmed live by the user, 2026-11-25; ticked in M12 planning.)*
