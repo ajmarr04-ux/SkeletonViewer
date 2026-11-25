@@ -7,7 +7,7 @@ import { Color } from "three";
 import { applyBaseColours, applyLayerView, boneAccent, drawnColourMode, isPickableIn, PLAIN, viewOf, visibleCount, type BaseTint, type SceneView } from "./isolation";
 import { subscribeSoftTiers } from "../content/softRelations";
 import { useLayerBatches, usePatchBatch, type LayerBatches, type PatchBatch } from "./layerRegistry";
-import { TISSUE_LAYERS, type TissueLayer } from "../state/url";
+import { EAGER_LAYER, LAZY_LAYERS, type LazyLayerId } from "../systems/registry";
 import { tintFor } from "./material";
 import { TINT_COLOURS, TINT_ROLES, type TintRole } from "./tints";
 import { REGIONS, regionColour, regionOf, type ColourMode, type Region } from "./regionColours";
@@ -63,7 +63,7 @@ export type IsolationStats = {
   /** The colour mode the instance colours were last written for. */
   colour: ColourMode;
   /** Solid and ghost counts of each loaded soft-tissue layer (M7). */
-  layers: Partial<Record<TissueLayer, { solid: number; ghost: number }>>;
+  layers: Partial<Record<LazyLayerId, { solid: number; ghost: number }>>;
   /** Structures hidden one by one (`hid=`). */
   hidden: number;
   /** Structures drawn in a tint, by role, sorted (M9). */
@@ -147,9 +147,9 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
         colour = mode;
       }
       const previous = [...focusIds, ...joint, ...tinted];
-      applyLayerView("bones", scene.skeleton, scene.ghost, view, previous, base, boneAccent(), boneTint());
+      applyLayerView(EAGER_LAYER, scene.skeleton, scene.ghost, view, previous, base, boneAccent(), boneTint());
       const batches = useLayerBatches.getState();
-      for (const layer of TISSUE_LAYERS) {
+      for (const layer of LAZY_LAYERS) {
         const b = batches[layer];
         if (!b) continue;
         const fresh = !applied.has(b);
@@ -177,7 +177,7 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
       const targets: { outlines: SkeletonScene["outlines"]; more: readonly Outline[]; batch: BatchedSkeleton }[] = [
         { outlines: scene.outlines, more: [], batch: scene.skeleton },
       ];
-      for (const layer of TISSUE_LAYERS) {
+      for (const layer of LAZY_LAYERS) {
         const b = batches[layer];
         if (b) targets.push({ outlines: b.outlines, more: b.moreSelected, batch: b.solid });
       }

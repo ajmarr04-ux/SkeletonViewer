@@ -1,6 +1,8 @@
 // `?bench` mode (spec §8, plan step 10): orbit 360° over a fixed time and
 // summarise the frame times. Pure, so Vitest covers it.
 
+import { DEPTH_LAYER, LAYER_IDS, LAZY_LAYERS, type LayerId, type LazyLayerId } from "../systems/registry";
+
 /** One full turn takes this long. */
 export const BENCH_DURATION_MS = 10_000;
 /** Frames in the first moments after the start are dropped (shader warm-up). */
@@ -65,9 +67,6 @@ export function recordLabelLayout(ms: number): void {
   if (labelLayoutMs.length < LABEL_TIMES_CAP) labelLayoutMs.push(ms);
 }
 
-/** The soft-tissue layers, in the spec's order (kept here so the bench needs no layer chunk). */
-const BENCH_TISSUE = ["cartilage", "ligaments", "muscles"] as const;
-type BenchTissue = (typeof BENCH_TISSUE)[number];
 type BenchLayerLoad = { status: "loading" | "ready" | "error"; lod: "low" | "high" | null; fetching: "low" | "high" | null };
 
 /**
@@ -77,12 +76,12 @@ type BenchLayerLoad = { status: "loading" | "ready" | "error"; lod: "low" | "hig
  * bench doesn't run, and the panel says why).
  */
 export function benchLayersState(
-  layers: Readonly<Record<BenchTissue, "on" | "ghost" | "off">>,
-  load: Readonly<Partial<Record<BenchTissue, BenchLayerLoad>>>,
+  layers: Readonly<Record<LazyLayerId, "on" | "ghost" | "off">>,
+  load: Readonly<Partial<Record<LazyLayerId, BenchLayerLoad>>>,
   finalLod: "low" | "high" | null,
 ): "ready" | "waiting" | "error" {
   let waiting = false;
-  for (const layer of BENCH_TISSUE) {
+  for (const layer of LAZY_LAYERS) {
     if (layers[layer] === "off") continue;
     const l = load[layer];
     if (l?.status === "error") return "error";
@@ -92,9 +91,7 @@ export function benchLayersState(
 }
 
 /** The layer setting the bench ran with, for the panel: "bones on · muscles ghost (depth 1)". */
-export function benchLayersLabel(layers: Readonly<Record<"bones" | BenchTissue, "on" | "ghost" | "off">>, depth: number): string {
-  const parts = (["bones", ...BENCH_TISSUE] as const)
-    .filter((l) => layers[l] !== "off")
-    .map((l) => `${l} ${layers[l]}${l === "muscles" && depth > 0 ? ` (depth ${depth})` : ""}`);
+export function benchLayersLabel(layers: Readonly<Record<LayerId, "on" | "ghost" | "off">>, depth: number): string {
+  const parts = LAYER_IDS.filter((l) => layers[l] !== "off").map((l) => `${l} ${layers[l]}${l === DEPTH_LAYER && depth > 0 ? ` (depth ${depth})` : ""}`);
   return parts.length === 0 ? "none" : parts.join(" · ");
 }

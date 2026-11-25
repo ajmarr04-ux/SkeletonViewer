@@ -15,6 +15,7 @@
 // - Reverse: for each structure named above (bones above all), the structures
 //   of this layer that name it, so a bone's related set can gain them.
 
+import { LAZY_LAYERS, layerOfKind, type LazyLayerId } from "../systems/registry";
 import type { Attachment, SoftFm } from "./softSchema";
 
 /** One structure's tier additions: tier 1 (not the structure itself), then tier 2 on top of tier 1. Null `t2`: no tier 2. */
@@ -35,9 +36,7 @@ export type SoftTierInput = {
   functionalJoints: Record<string, readonly string[]>;
 };
 
-export type SoftLayerName = "muscles" | "ligaments" | "cartilage";
-export const layerOfKind = (kind: SoftFm["kind"]): SoftLayerName =>
-  kind === "muscle" || kind === "muscle_part" ? "muscles" : kind === "ligament" ? "ligaments" : "cartilage";
+const softLayerOfKind = (kind: SoftFm["kind"]): LazyLayerId => layerOfKind(kind) as LazyLayerId;
 
 /**
  * The functional joint a joint ID belongs to, as a set of pair joints: a
@@ -66,7 +65,7 @@ export function jointScope(pairJoints: Iterable<string>, functionalJoints: Recor
 const structuresIn = (list: readonly Attachment[] | "inherit"): string[] =>
   list === "inherit" ? [] : list.flatMap((a) => ("structure" in a ? [a.structure] : []));
 
-export function buildSoftTiers(input: SoftTierInput): Record<SoftLayerName, SoftTierData> {
+export function buildSoftTiers(input: SoftTierInput): Record<LazyLayerId, SoftTierData> {
   const { fm } = input;
   const partsOf = (id: string): string[] => {
     const f = fm[id];
@@ -105,11 +104,7 @@ export function buildSoftTiers(input: SoftTierInput): Record<SoftLayerName, Soft
     return jointed.filter((o) => o.id !== self && [...o.scope].some((p) => mine.has(p))).map((o) => o.id);
   };
 
-  const out: Record<SoftLayerName, SoftTierData> = {
-    muscles: { tiers: {}, reverse: {} },
-    ligaments: { tiers: {}, reverse: {} },
-    cartilage: { tiers: {}, reverse: {} },
-  };
+  const out: Record<LazyLayerId, SoftTierData> = Object.fromEntries(LAZY_LAYERS.map((l) => [l, { tiers: {}, reverse: {} }])) as Record<LazyLayerId, SoftTierData>;
   const finish = (self: string, t1: Iterable<string>, t2: Iterable<string> | null): SoftTierEntry => {
     const one = new Set(t1);
     one.delete(self);
@@ -119,14 +114,14 @@ export function buildSoftTiers(input: SoftTierInput): Record<SoftLayerName, Soft
     for (const x of one) two.delete(x);
     return { t1: [...one].sort(), t2: [...two].sort() };
   };
-  const reverseOf = (layer: SoftLayerName, structure: string, id: string) => {
+  const reverseOf = (layer: LazyLayerId, structure: string, id: string) => {
     const r = out[layer].reverse;
     (r[structure] ??= []).push(id);
   };
 
   for (const id of Object.keys(fm).sort()) {
     const f = fm[id]!;
-    const layer = layerOfKind(f.kind);
+    const layer = softLayerOfKind(f.kind);
     if (f.kind === "muscle" || f.kind === "muscle_part") {
       const t1 = [...partsOf(id), ...attachmentsOf(id).flatMap(expand)];
       const t2 = (input.synergists[id] ?? []).flatMap((s) => [...expand(s), ...attachmentsOf(s).flatMap(expand)]);

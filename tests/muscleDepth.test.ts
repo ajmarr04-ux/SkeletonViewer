@@ -6,7 +6,7 @@ import { peeledAt, peeledMuscleCount, registerSoftIds, resetSoftIds } from "../s
 import { trimSoftIds, type RawSoftId } from "../src/layers/softIds";
 import { FULL_VIEW, shownIn, viewOf } from "../src/scene/isolation";
 import { depthAnnouncement } from "../src/content/announce";
-import { DEFAULT_LAYERS } from "../src/state/url";
+import { DEFAULT_MODES } from "../src/systems/registry";
 
 // M7 session V, step 7 (plan decisions 9 and 10): muscle depth.
 
@@ -70,7 +70,7 @@ describe("peeling in the view", () => {
     ghostMode: "ghost" as const,
     grp: null,
     joint: null,
-    layers: { ...DEFAULT_LAYERS, muscles: "on" as const },
+    layers: { ...DEFAULT_MODES, muscles: "on" as const },
     hidden: new Set<string>(),
     muscleDepth,
   });

@@ -198,7 +198,17 @@ test.describe("keyboard only", () => {
     await page.keyboard.press("Enter");
     await expect(page.getByTestId("layers-panel")).toBeVisible();
     const rowOfFocus = () => page.evaluate(() => (document.activeElement?.closest(".layer-row") as HTMLElement | null)?.dataset.layer ?? null);
-    for (let i = 0; i < 12 && (await rowOfFocus()) !== "muscles"; i++) await page.keyboard.press("Tab");
+    // M11 (plan decision 5): two more stops on the way, the system's disclosure button and its group control, each with a ring.
+    const passed: string[] = [];
+    for (let i = 0; i < 12 && (await rowOfFocus()) !== "muscles"; i++) {
+      await page.keyboard.press("Tab");
+      const id = await page.evaluate(() => (document.activeElement as HTMLElement | null)?.dataset.testid ?? "");
+      if (id.startsWith("system-musculoskeletal-")) {
+        passed.push(id === "system-musculoskeletal-toggle" ? "toggle" : "group");
+        expect((await focused(page))?.ring, `focus ring on ${id}`).toBe(true);
+      }
+    }
+    expect(passed).toEqual(["toggle", "group"]);
     expect(await rowOfFocus()).toBe("muscles");
     expect((await focused(page))?.ring, "focus ring on the radio").toBe(true);
     await page.keyboard.press("ArrowLeft");

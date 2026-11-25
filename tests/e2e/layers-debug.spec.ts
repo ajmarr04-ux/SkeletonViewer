@@ -1,17 +1,17 @@
 import { expect, test, type Page } from "@playwright/test";
 import softIds from "../../content/soft-ids.json" with { type: "json" };
 import softMap from "../../assets/mapping/soft-to-id.json" with { type: "json" };
-import { LAYER_BUDGETS, SOFT_LAYERS, type SoftLayer } from "../../scripts/lib/model-checks";
+import { LAYER_FILES, lodBudget, type LayerFile } from "../../scripts/lib/model-checks";
 
 // M6 plan step 9: the debug layer view (`?debug&layers=all`) and no regression without it.
 
-const EXPECTED_NODES: Record<SoftLayer, number> = {
+const EXPECTED_NODES: Record<LayerFile, number> = {
   muscles: 0,
   ligaments: 0,
   cartilage: 0,
   attachments: Object.keys((softMap as { attachments: Record<string, unknown> }).attachments).length,
 };
-for (const e of softIds as { layer: SoftLayer; meshAvailable: boolean }[]) {
+for (const e of softIds as { layer: LayerFile; meshAvailable: boolean }[]) {
   if (e.meshAvailable) EXPECTED_NODES[e.layer]++;
 }
 
@@ -33,8 +33,8 @@ for (const lod of ["low", "high"] as const) {
     // About 1.3M triangles at high LOD under a software renderer, sharing the CPU with another worker.
     test.setTimeout(240_000);
     const { errors, panel } = await openLayers(page, `?lod=${lod}&debug&layers=all`);
-    await expect(panel).toHaveAttribute("data-layers", SOFT_LAYERS.join(","));
-    for (const layer of SOFT_LAYERS) {
+    await expect(panel).toHaveAttribute("data-layers", LAYER_FILES.join(","));
+    for (const layer of LAYER_FILES) {
       const row = panel.locator(`[data-layer=${layer}]`);
       await expect(row).toHaveAttribute("data-lod", lod);
       // Node counts equal the meshAvailable IDs of the layer (and the patches' map).
@@ -44,7 +44,7 @@ for (const lod of ["low", "high"] as const) {
       await expect(row, (await row.getAttribute("data-errors")) ?? "").toHaveAttribute("data-bounds-ok", "true");
       expect(Number(await row.getAttribute("data-bounds-max-delta-mm"))).toBeLessThan(1);
       const tris = Number(await row.getAttribute("data-triangles"));
-      const { targetTris } = LAYER_BUDGETS[layer][lod];
+      const { targetTris } = lodBudget(layer, lod);
       expect(Math.abs(tris - targetTris) / targetTris, `${layer} ${lod} triangles`).toBeLessThan(0.15);
     }
     // The bones are untouched by the layers.
@@ -66,7 +66,7 @@ test("layers=l,c loads only the ligament and cartilage files", async ({ page }) 
     }
   });
   const { panel } = await openLayers(page, "?lod=low&debug&layers=l,c");
-  await expect(panel).toHaveAttribute("data-layers", "ligaments,cartilage");
+  await expect(panel).toHaveAttribute("data-layers", "cartilage,ligaments"); // registry order since M11 AV
   await expect(panel.locator("[data-layer]")).toHaveCount(2);
   expect(files.sort()).toEqual(["cartilage-low", "ligaments-low"]);
 });

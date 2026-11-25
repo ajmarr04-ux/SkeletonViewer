@@ -11,6 +11,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { splitFrontMatter } from "../../src/content/frontmatter";
 import { compileSoftFromDisk, readContentFiles, readIds, readSoftIds, root } from "../lib/content-files";
+import { NESTED_LAYER } from "../../src/systems/registry";
 import { checkMigration, type MigrationRow, type SoftEntry } from "./attachment-check";
 import { matchAttachment, nameIndex, type Match } from "./attachment-match";
 
@@ -55,7 +56,7 @@ const summary = `${Object.keys(rows).length} strings: ${counts.name} by name, ${
 if (frozen) for (const r of Object.values(rows)) for (const [bone, ids] of Object.entries(r.bones)) for (const id of ids) if (!known.has(id)) errors.push(`${bone}: ${id} is not a muscle or part in soft-ids.json`);
 
 // Two-way check (plan decision 13): each matched string's muscle really attaches to the bone.
-const derived = compileSoftFromDisk("muscles").derived!;
+const derived = compileSoftFromDisk(NESTED_LAYER).derived!;
 const questions = readFileSync(join(root, "content/QUESTIONS.md"), "utf8");
 const answered = (n: number) => new RegExp(`^${n}\\. .*answered by the user`, "mi").test(questions);
 const two = checkMigration(rows, soft as SoftEntry[], (s) => derived.attached[s] ?? { origins: [], insertions: [] }, answered);

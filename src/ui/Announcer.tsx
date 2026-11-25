@@ -4,16 +4,16 @@ import { jointAnnouncement } from "../content/placeholder";
 import { peeledMuscleCount, softTableLoaded } from "../content/softRegistry";
 import { hasMesh } from "../state/selection";
 import { useViewer, type ViewerState } from "../state/store";
-import { TISSUE_LAYERS, type TissueLayer } from "../state/url";
+import { LAZY_LAYERS, type LazyLayerId } from "../systems/registry";
 
 /** The part of the store the announcements compare (M10 plan decision 4). */
 function snapshot(s: ViewerState): AnnounceState {
   const load: AnnounceState["load"] = {};
-  for (const l of TISSUE_LAYERS) {
+  for (const l of LAZY_LAYERS) {
     const x = s.layerLoad[l];
     if (x) load[l] = { shown: x.lod !== null, status: x.status, attempt: x.attempt };
   }
-  return { sel: s.sel, tier: s.tier, grp: s.grp, antagonists: s.antagonists, layers: s.layers, depth: s.muscleDepth, load };
+  return { sel: s.sel, tier: s.tier, grp: s.grp, antagonists: s.antagonists, layers: s.layers, layersVia: s.layersVia, depth: s.muscleDepth, load };
 }
 
 const DEPS: AnnounceDeps = {
@@ -38,7 +38,7 @@ export function Announcer() {
     let said: string | null = null;
     let hushed = false;
     let pending = false;
-    const awaiting = new Set<TissueLayer>();
+    const awaiting = new Set<LazyLayerId>();
     const flush = () => {
       pending = false;
       const now = snapshot(useViewer.getState());

@@ -4,14 +4,15 @@
 import { writeFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 import { compileContent } from "../src/content/compile";
-import { SOFT_LAYERS, compileAllSoftFromDisk, readBoneAttached, readContentFiles } from "./lib/content-files";
+import { LAZY_LAYERS } from "../src/systems/registry";
+import { compileAllSoftFromDisk, readBoneAttached, readContentFiles } from "./lib/content-files";
 
 const compiled = compileContent(readContentFiles(), readBoneAttached());
 const json = JSON.stringify(compiled);
 const kb = (n: number) => `${(n / 1024).toFixed(1)} KB`;
 console.log(`content: ${Object.keys(compiled).length} file(s), ${kb(json.length)} raw, ${kb(gzipSync(json).length)} gzipped`);
 const soft = compileAllSoftFromDisk();
-for (const layer of SOFT_LAYERS) {
+for (const layer of LAZY_LAYERS) {
   const c = soft[layer];
   const j = JSON.stringify(c);
   console.log(`content (${layer}): ${Object.keys(c.entries).length} file(s), ${kb(j.length)} raw, ${kb(gzipSync(j).length)} gzipped (tier sets ${kb(JSON.stringify(c.tiers).length)} raw)`);

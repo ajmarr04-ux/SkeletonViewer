@@ -380,6 +380,14 @@ dialog.manual-share form { margin-top: 12px; text-align: right; }
 /* "Show antagonists" while on (M9): the same pressed look as the layer presets, plus a tick. */
 .panel-actions .button[aria-pressed="true"] { outline: 2px solid #3d8bfd; outline-offset: 1px; }
 .panel-actions .button[aria-pressed="true"]::before { content: "✓ "; }
+.layer-system { border-top: 1px solid #3c4043; padding-top: 4px; }
+.layer-system-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px 10px; }
+.layer-system-toggle { display: flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 4px 0 0; border: 0; background: none; color: inherit; font: inherit; font-weight: 700; cursor: pointer; }
+.layer-system-chevron { display: inline-block; width: 1em; text-align: center; }
+.layer-system-modes { border: 0; margin: 0; padding: 0; align-items: center; }
+.layer-system-mixed { font-size: 12px; font-style: italic; }
+.layer-system-rows { padding-left: 12px; }
+.layer-system-rows > .layer-row:first-child { border-top-style: dashed; }
 .layer-row { border: 0; border-top: 1px solid #3c4043; margin: 0; padding: 6px 0; }
 .layer-row > legend { font-weight: 600; padding: 0; float: left; width: 100%; margin-bottom: 2px; }
 .layer-modes { clear: both; display: flex; flex-wrap: wrap; gap: 4px 14px; }

@@ -22,20 +22,15 @@ declare module "virtual:skeleton-soft-ids" {
   const table: import("../layers/softIds").SoftId[];
   export default table;
 }
-declare module "virtual:skeleton-soft-content-muscles" {
-  /** content/muscles/*.md compiled (src/content/softCompile.ts; M8 plan decision 11). */
+declare module "virtual:skeleton-soft-content-*" {
+  /** A lazy layer's content chunk, its descriptor's `contentChunk`: content/<folder>/*.md compiled (src/content/softCompile.ts; M8 plan decision 11). */
   const content: import("./softCompile").SoftLayerContent;
   export default content;
 }
-declare module "virtual:skeleton-soft-content-ligaments" {
-  /** content/ligaments/*.md compiled (src/content/softCompile.ts; M8 plan decision 11). */
-  const content: import("./softCompile").SoftLayerContent;
-  export default content;
-}
-declare module "virtual:skeleton-soft-content-cartilage" {
-  /** content/cartilage/*.md compiled (src/content/softCompile.ts; M8 plan decision 11). */
-  const content: import("./softCompile").SoftLayerContent;
-  export default content;
+declare module "virtual:skeleton-layer-importers" {
+  /** Layer → its content chunk's `import()`, generated from the registry (scripts/lib/content-plugin.ts, M11 AV); none for a layer without a `contentChunk`. */
+  const importers: Partial<Record<import("../systems/registry").LazyLayerId, () => Promise<{ default: import("./softCompile").SoftLayerContent }>>>;
+  export default importers;
 }
 declare module "virtual:skeleton-soft-tree" {
   /** The sidebar's Muscles, Ligaments and Cartilage roots (src/content/softTree.ts; M9 plan decision 11). */

@@ -22,26 +22,8 @@ import { useLayerBatches } from "../scene/layerRegistry";
 import { FULL_SKELETON, isolationStep, resolveClick, type HistoryStep, type Isolation, type IsolationAction, type ParentOf } from "./isolation";
 import { COLOUR_MODE_KEY, type ColourMode } from "../scene/regionColours";
 import { LAYERS_KEY, storedFlag, useViewer } from "./store";
-import {
-  DEFAULT_LAYER_SETTING,
-  formatLayers,
-  isDefaultLayers,
-  isUserLayersValue,
-  LAYERS,
-  HIDDEN_URL_CAP,
-  TISSUE_LAYERS,
-  parseHidden,
-  parseLayers,
-  parseUrlState,
-  serialiseUrlState,
-  type GhostMode,
-  type Layer,
-  type LayerMode,
-  type LayerSetting,
-  type MuscleDepth,
-  type TissueLayer,
-  type UrlState,
-} from "./url";
+import { DEFAULT_LAYER_SETTING, formatLayers, isDefaultLayers, isUserLayersValue, HIDDEN_URL_CAP, parseHidden, parseLayers, parseUrlState, serialiseUrlState, type GhostMode, type Layer, type LayerMode, type LayerSetting, type MuscleDepth, type UrlState } from "./url";
+import { EAGER_LAYER, isLazyLayer, LAZY_LAYERS, layersOfSystem, NESTED_LAYER, presetDescriptor, presetModes, type LazyLayerId, type PresetId, type SystemId } from "../systems/registry";
 
 type IdEntry = { id: string; meshAvailable: boolean };
 const ENTRIES = ids as IdEntry[];
@@ -53,7 +35,7 @@ export const isKnownId = (id: string): boolean => KNOWN.has(id) || isSoftId(id);
 /** False for the four wisdom teeth, the parent muscles and the structures the source lacks. */
 export const hasMesh = (id: string): boolean => WITH_MESH.has(id) || softEntry(id)?.mesh === true;
 /** The layer an object is drawn in: bones (and teeth), or its soft-tissue layer; null if unknown. */
-export const layerOfId = (id: string): Layer | null => (KNOWN.has(id) ? "bones" : softLayerOf(id));
+export const layerOfId = (id: string): Layer | null => (KNOWN.has(id) ? EAGER_LAYER : softLayerOf(id));
 /** A muscle part's muscle (spec §5.1), else null. */
 export const parentOf: ParentOf = (id) => softEntry(id)?.parent ?? null;
 /** The structures drawn for a selection: itself if it has a mesh, else its parts that do (a muscle with parts). */
@@ -119,7 +101,7 @@ export const clickObject = (id: string): void => selectObject(resolveClick(id, u
 /** A soft-tissue structure is selected with its layer showing: an Off layer is turned On (plan decision 12). */
 function showLayerOf(id: string): void {
   const layer = layerOfId(id);
-  if (layer && layer !== "bones" && useViewer.getState().layers[layer] === "off") setLayerMode(layer, "on");
+  if (layer && isLazyLayer(layer) && useViewer.getState().layers[layer] === "off") setLayerMode(layer, "on");
 }
 export const goBack = (): void => dispatchIsolation({ type: "back" });
 /**
@@ -176,7 +158,7 @@ function showLayerForGroup(grp: string | null): void {
 }
 
 /** Resolves once a layer's batch is on screen. */
-function whenLayerShown(layer: TissueLayer): Promise<void> {
+function whenLayerShown(layer: LazyLayerId): Promise<void> {
   return new Promise<void>((resolve) => {
     if (useLayerBatches.getState()[layer]) return resolve();
     const off = useLayerBatches.subscribe((b) => {
@@ -187,18 +169,18 @@ function whenLayerShown(layer: TissueLayer): Promise<void> {
   });
 }
 
-async function frameWhenLayerShown(layer: TissueLayer, key: string): Promise<void> {
+async function frameWhenLayerShown(layer: LazyLayerId, key: string): Promise<void> {
   await whenLayerShown(layer);
   if (useViewer.getState().grp === key) frameSoon();
 }
 
 async function frameWhenMusclesReady(key: string): Promise<void> {
   try {
-    await loadSoftContent("muscles");
+    await loadSoftContent(NESTED_LAYER);
   } catch {
     return;
   }
-  await frameWhenLayerShown("muscles", key);
+  await frameWhenLayerShown(NESTED_LAYER, key);
 }
 
 /**
@@ -220,7 +202,7 @@ export async function selectAndFrame(id: string): Promise<void> {
     } else dispatchIsolation({ type: "select", id });
   }
   if (!isDrawn(id)) return;
-  if (layer !== null && layer !== "bones") await whenLayerShown(layer);
+  if (layer !== null && isLazyLayer(layer)) await whenLayerShown(layer);
   if (useViewer.getState().sel === id) frameSoon();
 }
 /** Why "Show related" / "Expand" wait for a soft structure's content chunk (M9 plan decision 4). */
@@ -240,8 +222,8 @@ export function tierBlockedReason(id: string | null, tier: 1 | 2): string | null
   return null;
 }
 
-/** A muscle or muscle part: its tiers are "Show attachments" and "Show functional group" (M9 plan decision 5). */
-export const isMuscleKind = (id: string): boolean => softLayerOf(id) === "muscles";
+/** A muscle or muscle part (the layer with parts): its tiers are "Show attachments" and "Show functional group" (M9 plan decision 5). */
+export const isMuscleKind = (id: string): boolean => softLayerOf(id) === NESTED_LAYER;
 
 /** Can the antagonist toggle be used now? Only at a muscle's or part's tier 2 (M9 plan decision 7). */
 export const antagonistsAvailable = (st: { sel: string | null; tier: number }): boolean => st.tier === 2 && st.sel !== null && isMuscleKind(st.sel);
@@ -361,17 +343,18 @@ function storedLayers(): LayerSetting | null {
 /**
  * Change the layers (M7 plan decision 1): store, localStorage and the URL
  * (`layers=b:on,…`, no new history entry). Ignored while M6's debug layer
- * view is on (plan decision 2).
+ * view is on (plan decision 2). `via`: the system whose group control made
+ * the change (announced as one group change, M11 plan decision 5).
  */
-export function setLayerSetting(next: LayerSetting): void {
+export function setLayerSetting(next: LayerSetting, via: SystemId | null = null): void {
   const st = useViewer.getState();
   if (st.debugLayersView) return;
   storeLayers(next);
   const prev = currentLayers();
   if (formatLayers(prev) === formatLayers(next)) return;
-  st.setLayerSetting(next.layers, next.depth);
+  st.setLayerSetting(next.layers, next.depth, via);
   // Explode is bones only and off while a soft-tissue layer shows (plan decision 14).
-  if (TISSUE_LAYERS.some((l) => next.layers[l] !== "off")) st.setExplode(0);
+  if (LAZY_LAYERS.some((l) => next.layers[l] !== "off")) st.setExplode(0);
   window.history.replaceState(window.history.state, "", urlWith({ layers: next }));
 }
 
@@ -384,19 +367,22 @@ export function setMuscleDepth(depth: MuscleDepth): void {
   setLayerSetting({ ...currentLayers(), depth });
 }
 
-/** The two presets above the toggles (spec §6.1). */
-export type LayerPreset = "skeleton" | "full";
-export function applyLayerPreset(preset: LayerPreset): void {
+/**
+ * A system's group control (M11 plan decision 5): every layer of the system
+ * in one mode, as one change (one URL update, one announcement). The depth is kept.
+ */
+export function setSystemMode(system: SystemId, mode: LayerMode): void {
   const cur = currentLayers();
-  if (preset === "skeleton") setLayerSetting({ ...cur, layers: { ...DEFAULT_LAYER_SETTING.layers } });
-  else setLayerSetting({ layers: Object.fromEntries(LAYERS.map((l) => [l, "on"])) as LayerSetting["layers"], depth: 0 });
+  const layers = { ...cur.layers };
+  for (const l of layersOfSystem(system)) layers[l] = mode;
+  setLayerSetting({ ...cur, layers }, system);
 }
 
-/** Which preset the layers match, if any. */
-export function presetOf(layers: LayerSetting["layers"]): LayerPreset | null {
-  if (LAYERS.every((l) => layers[l] === DEFAULT_LAYER_SETTING.layers[l])) return "skeleton";
-  if (LAYERS.every((l) => layers[l] === "on")) return "full";
-  return null;
+/** A preset above the groups (spec §6.1; from the registry since M11). */
+export function applyLayerPreset(preset: PresetId): void {
+  const cur = currentLayers();
+  const depth = presetDescriptor(preset).depth;
+  setLayerSetting({ layers: presetModes(preset), depth: depth === undefined ? cur.depth : (depth as MuscleDepth) });
 }
 
 /**

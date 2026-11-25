@@ -17,8 +17,9 @@ import {
   type FrontMatter,
   type HierarchyNode,
 } from "./schema";
+import type { EagerKind } from "../systems/registry";
 
-export type IdEntry = { id: string; name: string; kind: "bone" | "tooth"; side: "left" | "right" | "midline"; group: string[]; meshAvailable: boolean };
+export type IdEntry = { id: string; name: string; kind: EagerKind; side: "left" | "right" | "midline"; group: string[]; meshAvailable: boolean };
 
 export type ContentInput = {
   ids: IdEntry[];

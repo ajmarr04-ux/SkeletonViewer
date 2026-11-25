@@ -1,12 +1,13 @@
 import { useEffect } from "react";
 import { EXPLODE, releaseValue } from "../scene/explode";
 import { useViewer } from "../state/store";
-import { TISSUE_LAYERS, type LayerModes } from "../state/url";
+import { type LayerModes } from "../state/url";
+import { LAZY_LAYERS } from "../systems/registry";
 
 /** Why Explode is off (M7 plan decision 14). */
 export const EXPLODE_LAYERS_NOTE = "Turn off the soft-tissue layers to explode";
 /** Is any soft-tissue layer On or Ghost? */
-export const anyTissueLayer = (layers: LayerModes): boolean => TISSUE_LAYERS.some((l) => layers[l] !== "off");
+export const anyTissueLayer = (layers: LayerModes): boolean => LAZY_LAYERS.some((l) => layers[l] !== "off");
 
 let releaseToken = 0;
 

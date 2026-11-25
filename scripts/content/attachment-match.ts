@@ -4,6 +4,8 @@
 // so the tests can check it; scripts/content/migrate-attachments.ts runs it on
 // every bone file.
 
+import { NESTED_LAYER } from "../../src/systems/registry";
+
 export type MatchRule = "name" | "variant" | "unmatched";
 export type Match = {
   /** Side-free muscle or part IDs (`triceps_brachii_long_head`). Empty when unmatched. */
@@ -137,7 +139,7 @@ export function nameIndex(entries: readonly { id: string; name: string; layer: s
   const out = new Map<string, string>();
   const dup = new Set<string>();
   for (const e of entries) {
-    if (e.layer !== "muscles" || e.side === "right") continue;
+    if (e.layer !== NESTED_LAYER || e.side === "right") continue;
     const key = e.name.toLowerCase();
     const id = e.id.replace(/_left$/, "");
     if (out.has(key) && out.get(key) !== id) dup.add(key);

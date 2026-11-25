@@ -4,25 +4,24 @@
 // layer off.
 
 import { useEffect, useSyncExternalStore } from "react";
-import type { TissueLayer } from "../state/url";
+// One `import()` per lazy layer's `contentChunk`, generated from the registry (scripts/lib/content-plugin.ts).
+import importers from "virtual:skeleton-layer-importers";
+import type { LazyLayerId } from "../systems/registry";
 import type { SoftLayerContent } from "./softCompile";
 import { registerSoftTiers } from "./softRelations";
 
-const importers: Record<TissueLayer, () => Promise<{ default: SoftLayerContent }>> = {
-  muscles: () => import("virtual:skeleton-soft-content-muscles"),
-  ligaments: () => import("virtual:skeleton-soft-content-ligaments"),
-  cartilage: () => import("virtual:skeleton-soft-content-cartilage"),
-};
-
-const loaded: Partial<Record<TissueLayer, SoftLayerContent>> = {};
-const pending: Partial<Record<TissueLayer, Promise<SoftLayerContent>>> = {};
+const loaded: Partial<Record<LazyLayerId, SoftLayerContent>> = {};
+const pending: Partial<Record<LazyLayerId, Promise<SoftLayerContent>>> = {};
+const NO_CONTENT: SoftLayerContent = { entries: {}, derived: null };
 const listeners = new Set<() => void>();
 let version = 0;
 
-export function loadSoftContent(layer: TissueLayer): Promise<SoftLayerContent> {
+export function loadSoftContent(layer: LazyLayerId): Promise<SoftLayerContent> {
   const done = loaded[layer];
   if (done) return Promise.resolve(done);
-  pending[layer] ??= importers[layer]().then((m) => {
+  // A layer without a `contentChunk` (the fixture layer, M11 plan decision 8) has no content: the placeholder panel.
+  const importer = importers[layer] ?? (() => Promise.resolve({ default: NO_CONTENT }));
+  pending[layer] ??= importer().then((m) => {
     loaded[layer] = m.default;
     registerSoftTiers(layer, m.default.tiers, m.default.roles, m.default.derived?.attached);
     version++;
@@ -33,7 +32,7 @@ export function loadSoftContent(layer: TissueLayer): Promise<SoftLayerContent> {
 }
 
 /** The content loaded so far for a layer, else null. */
-export const softContentOf = (layer: TissueLayer): SoftLayerContent | null => loaded[layer] ?? null;
+export const softContentOf = (layer: LazyLayerId): SoftLayerContent | null => loaded[layer] ?? null;
 
 const subscribe = (l: () => void) => {
   listeners.add(l);
@@ -41,7 +40,7 @@ const subscribe = (l: () => void) => {
 };
 
 /** A layer's content once loaded, else null (and starts the load). Null layer: nothing. */
-export function useSoftContent(layer: TissueLayer | null): SoftLayerContent | null {
+export function useSoftContent(layer: LazyLayerId | null): SoftLayerContent | null {
   useSyncExternalStore(subscribe, () => version);
   const c = layer ? (loaded[layer] ?? null) : null;
   useEffect(() => {

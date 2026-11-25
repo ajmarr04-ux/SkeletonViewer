@@ -4,7 +4,8 @@
 // summary (M8 plan decision 11). The kind-specific sections are M9's. Nothing is
 // invented here (spec §12).
 
-import { LAYER_LABELS, softEntry, softOpposite } from "./softRegistry";
+import { layerLabel } from "../systems/registry";
+import { softEntry, softOpposite } from "./softRegistry";
 import type { SoftKind, SoftId } from "../layers/softIds";
 import type { SoftLayerContent } from "./softCompile";
 import type { Action, Attachment } from "./softSchema";
@@ -95,7 +96,7 @@ export function softPanelModel(id: string, content: SoftLayerContent | null = nu
     id,
     name: e.name,
     side: e.side,
-    badges: { layer: LAYER_LABELS[e.layer], kind },
+    badges: { layer: layerLabel(e.layer), kind },
     partOf: parent ? { id: parent.id, name: parent.name } : null,
     ...trailOf(e, parent, content),
     pair: opposite === null ? null : e.side === "left" ? { left: id, right: opposite } : { left: opposite, right: id },
@@ -108,7 +109,7 @@ export function softPanelModel(id: string, content: SoftLayerContent | null = nu
 }
 
 function trailOf(e: SoftId, parent: SoftId | undefined, content: SoftLayerContent | null): { trail: string[]; parentCrumb: number | null } {
-  const layer = LAYER_LABELS[e.layer];
+  const layer = layerLabel(e.layer);
   if (e.layer !== "muscles") return { trail: [layer, e.name], parentCrumb: null };
   const muscle = parent ?? e;
   const region = regionLabel(muscle.id, content);

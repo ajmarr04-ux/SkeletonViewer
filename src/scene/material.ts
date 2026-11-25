@@ -1,4 +1,5 @@
 import { Color, MeshStandardMaterial } from "three";
+import { EAGER_LAYER, layerColour } from "../systems/registry";
 
 /**
  * Baked AO (COLOR_0, 1 = unoccluded) is remapped to [AO_FLOOR, 1] before it
@@ -11,8 +12,8 @@ export const AO_FLOOR = 0.4;
 /** The scene's background (sRGB): ghosts are seen over it (tests/colourVision.test.ts). */
 export const SCENE_BACKGROUND = "#1d2126";
 
-/** Ivory bone colour (sRGB). */
-export const BONE_COLOUR = "#d8cdb8";
+/** Ivory bone colour (sRGB): the eager layer's descriptor colour. */
+export const BONE_COLOUR = layerColour(EAGER_LAYER);
 
 /**
  * Accent colour for the selected bone (sRGB). A pale blue (the user found the

@@ -1,6 +1,9 @@
 // Pure helpers for the URL query string (spec §7, "URL state").
 // No React or three.js here, so Vitest covers them directly.
 
+import { DEFAULT_MODES, isLayerId, LAYER_IDS, layerByCode, layerDescriptor, REGISTRY, type LayerId } from "../systems/registry";
+import type { LayerMode as RegistryLayerMode } from "../systems/types";
+
 export type Vec3 = [number, number, number];
 /**
  * A camera pose. `target` is the orbit pivot; `position` is where the camera
@@ -59,28 +62,22 @@ function keyOf(piece: string): string {
 export type GhostMode = "ghost" | "hide";
 
 /**
- * Layers (musculoskeletal spec §6.1, M7 plan decision 1). The order is the
- * Layers panel's (spec §6.1 table) and the URL's.
+ * Layers (musculoskeletal spec §6.1, M7 plan decision 1) come from the
+ * registry (M11): its order is the Layers panel's and the URL's.
  */
-export const LAYERS = ["bones", "cartilage", "ligaments", "muscles"] as const;
-export type Layer = (typeof LAYERS)[number];
-/** The soft-tissue layers, each with its own pair of files (M6). */
-export const TISSUE_LAYERS = ["cartilage", "ligaments", "muscles"] as const satisfies readonly Layer[];
-export type TissueLayer = (typeof TISSUE_LAYERS)[number];
-export type LayerMode = "on" | "ghost" | "off";
+export type Layer = LayerId;
+export type LayerMode = RegistryLayerMode;
 export type LayerModes = Record<Layer, LayerMode>;
 /**
- * Muscle depth control (spec §6.2, three stops as the user chose in session V):
- * 0 = all, 1 = hide superficial, 2 = hide superficial + intermediate (deep only).
+ * The depth control (spec §6.2, three stops as the user chose in session V) on
+ * the layer whose descriptor has `depth` (the muscles): 0 = all, 1 = hide
+ * superficial, 2 = hide superficial + intermediate (deep only).
  */
 export type MuscleDepth = 0 | 1 | 2;
 export type LayerSetting = { layers: LayerModes; depth: MuscleDepth };
 
-export const DEFAULT_LAYERS: LayerModes = { bones: "on", cartilage: "off", ligaments: "off", muscles: "off" };
-export const DEFAULT_LAYER_SETTING: LayerSetting = { layers: DEFAULT_LAYERS, depth: 0 };
+export const DEFAULT_LAYER_SETTING: LayerSetting = { layers: DEFAULT_MODES, depth: 0 };
 
-const LAYER_CODE: Record<Layer, string> = { bones: "b", cartilage: "c", ligaments: "l", muscles: "m" };
-const CODE_LAYER: Record<string, Layer> = { b: "bones", c: "cartilage", l: "ligaments", m: "muscles" };
 const MODES: readonly string[] = ["on", "ghost", "off"];
 
 /**
@@ -93,37 +90,38 @@ export function isUserLayersValue(value: string | null | undefined): boolean {
 
 /**
  * Parse the user format. Missing layers keep their default, unknown codes and
- * modes are ignored, and the muscles entry may carry the depth (`m:on:2`).
+ * modes are ignored, and the entry of the layer with a depth control may
+ * carry the depth (`m:on:2`).
  * Null when the value isn't the user format or has no valid entry.
  */
 export function parseLayers(value: string | null | undefined): LayerSetting | null {
   if (!isUserLayersValue(value)) return null;
-  const layers: LayerModes = { ...DEFAULT_LAYERS };
+  const layers: LayerModes = { ...DEFAULT_MODES };
   let depth: MuscleDepth = 0;
   let any = false;
   for (const piece of value!.split(",")) {
     const [code = "", mode = "", extra] = piece.trim().toLowerCase().split(":");
-    const layer = CODE_LAYER[code] ?? ((LAYERS as readonly string[]).includes(code) ? (code as Layer) : undefined);
+    const layer = layerByCode(code) ?? (isLayerId(code) ? code : undefined);
     if (!layer || !MODES.includes(mode)) continue;
     layers[layer] = mode as LayerMode;
     any = true;
-    if (layer === "muscles" && extra !== undefined) {
+    const spec = layerDescriptor(layer).depth;
+    if (spec && extra !== undefined) {
       const d = Number(extra);
-      // `3` was "Deep only" while the control had four stops (session V's first build): the same as 2.
-      if (d === 1 || d === 2) depth = d;
-      else if (d === 3) depth = 2;
+      const stop = Number.isInteger(d) && d > 0 && d < spec.stops.length ? d : spec.legacy?.[d];
+      if (stop !== undefined) depth = stop as MuscleDepth;
     }
   }
   return any ? { layers, depth } : null;
 }
 
 export function isDefaultLayers(s: LayerSetting): boolean {
-  return s.depth === 0 && LAYERS.every((l) => s.layers[l] === DEFAULT_LAYERS[l]);
+  return s.depth === 0 && LAYER_IDS.every((l) => s.layers[l] === DEFAULT_MODES[l]);
 }
 
-/** Every layer in panel order, the depth on the muscles entry when it isn't 0. */
+/** Every layer in panel order, the depth on the depth layer's entry when it isn't 0. */
 export function formatLayers(s: LayerSetting): string {
-  return LAYERS.map((l) => `${LAYER_CODE[l]}:${s.layers[l]}${l === "muscles" && s.depth !== 0 ? `:${s.depth}` : ""}`).join(",");
+  return REGISTRY.map((l) => `${l.code}:${s.layers[l.id]}${"depth" in l && s.depth !== 0 ? `:${s.depth}` : ""}`).join(",");
 }
 
 /** At most this many hidden structures are kept in the URL (spec §5.5); the rest are dropped with a toast. */

@@ -4,14 +4,11 @@
 
 import type { Color } from "three";
 import { create } from "zustand";
-import type { TissueLayer } from "../state/url";
+import type { LazyLayerId } from "../systems/registry";
 import type { BatchedSkeleton } from "./batchSkeleton";
 import type { Lod } from "./lod";
 import type { Outline } from "./outline";
 import type { TintRole } from "./tints";
-
-/** The most parts any muscle has (checked against content/soft-ids.json in tests/nestedSelection.test.ts). */
-export const MAX_PARTS = 3;
 
 export type LayerBatches = {
   lod: Lod;
@@ -21,8 +18,8 @@ export type LayerBatches = {
   outlines: { selected: Outline; hover: Outline };
   /**
    * More selection outlines, for a selected muscle's other parts (spec §5.1,
-   * §8: one hull per selected part). `MAX_PARTS - 1` for the muscles layer,
-   * none for the others; each costs a draw call only while it has a target.
+   * §8: one hull per selected part). `maxPartsOf(layer) - 1` (the
+   * registry: 2 for the muscles, none for the others); each costs a draw call only while it has a target.
    */
   moreSelected: Outline[];
   /** A structure's own instance colour (white, or the tendon tint). */
@@ -43,4 +40,4 @@ export type PatchBatch = { lod: Lod; solid: BatchedSkeleton; tint: Record<"origi
 export const usePatchBatch = create<{ batch: PatchBatch | null; failed: boolean }>(() => ({ batch: null, failed: false }));
 
 /** The batches on screen per layer. Set by `LayerScenes`, read by `Isolation` and the camera rig. */
-export const useLayerBatches = create<Partial<Record<TissueLayer, LayerBatches>>>(() => ({}));
+export const useLayerBatches = create<Partial<Record<LazyLayerId, LayerBatches>>>(() => ({}));
