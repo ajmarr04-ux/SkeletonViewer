@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import hierarchy from "../content/muscle-hierarchy.json";
-import { softAnnouncement } from "../src/content/softPanel";
+import { softSelectionAnnouncement } from "../src/content/announce";
 import { MUSCLE_REGION_LABELS, partLabel } from "../src/systems/musculoskeletal/muscles/panel";
 import { panelModel as generic, type LayerContent, type SectionModel } from "../src/panel/model";
 import { isEagerId } from "../src/content/index";
@@ -13,6 +13,9 @@ import { maxPartsOf, NESTED_LAYER } from "../src/systems/registry";
 import { isolationView, sceneView, shownIn } from "../src/scene/isolation";
 import { FULL_SKELETON, isolationStep, levelOf, resolveClick, type Isolation, type IsolationAction, type ParentOf } from "../src/state/isolation";
 import { DEFAULT_MODES } from "../src/systems/registry";
+
+// M12 BG deleted softPanel.ts's softAnnouncement; its tier-0 wording is announce.ts' own.
+const softAnnouncement = (id: string) => softSelectionAnnouncement(id, 0, null, {});
 
 // M12 BE: the M9 soft panel shape (softPanel.ts's `softPanelModel`, deleted) read off the generic model.
 function softPanelModel(id: string, content: SoftLayerContent | null = null) {

@@ -7,6 +7,15 @@ import type { KindTiers } from "../../graph/types";
 
 export const jointTiers = (named: string) =>
   ({
-    t1: { steps: [{ follow: named }], order: "id" },
-    t2: { steps: [{ tier: "t1" }, { follow: "shares_joint_with" }], order: "id", requires: "member_of_joint" },
+    t1: {
+      steps: [{ follow: named }],
+      order: "id",
+      wording: { label: "related structures", button: { text: "Show related", title: "Show the structures it joins", shown: "Shown" } },
+    },
+    t2: {
+      steps: [{ tier: "t1" }, { follow: "shares_joint_with" }],
+      order: "id",
+      requires: "member_of_joint",
+      wording: { label: "joint", button: { text: "Expand region", title: "Show the joint's other structures", shown: "Shown" } },
+    },
   }) as const satisfies KindTiers;

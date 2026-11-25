@@ -33,7 +33,7 @@ Session kinds: **design** = strong model (graph, engine, descriptor shapes); **r
 | BD | design | Panel sections as data and one generic panel model for every kind, bones included (step 5) | none | decision 11 | `panel.ts`, `placeholder.ts`, `softPanel.ts`' switches deleted; the panel golden produced by the new model unchanged | **Done.** See session notes |
 | BE | routine | `InfoPanel.tsx` renders the sections in descriptor order (step 6) | none | BD's model | per-kind views deleted; panel, soft-content, attached, nested, a11y e2e pass unchanged | **Done.** See session notes |
 | BF | routine | Tree builders from `TreeSpec` for all four layers, bones included (step 7) | none | decision 10 | `softTree.ts`' roots and builders, `soft-tree-data.ts`, `groups.ts`' literals gone; tree golden unchanged; sidebar e2e pass | **Done.** See session notes |
-| BG | routine | Announcements, tier wording, display names and label priority from descriptors (step 8) | none | decision 12 | `announce.ts`, `names.ts` off the allowlist; `announce.test.ts` unchanged and passing | |
+| BG | routine | Announcements, tier wording, display names and label priority from descriptors (step 8) | none | decision 12 | `announce.ts`, `names.ts` off the allowlist; `announce.test.ts` unchanged and passing | **Done.** See session notes |
 | BH | routine | Validation and compile rules per kind onto the content halves (step 9) | none | decision 13 | `schema.ts`, `validate.ts`, `softValidate.ts`, `softCompile.ts`, `patch-check.ts` off the allowlist; `validate-content` and `content:patch-check` output unchanged | |
 | BI | design | The fixture layer gains edges, tier rules, a panel and a tree; the allowlist's M12 entries are all gone (step 10) | none | decision 14 | fixture Vitest and e2e prove graph, tiers, panel and tree; allowlist has no M12 entry | |
 | BJ | routine | Wrap-up: goldens, parity table, full e2e in the background, `/m12/` (step 11) | none | everything above | exit criteria ticked; `/m12/` live | |
@@ -269,6 +269,15 @@ Decision 14. The allowlist ends with M14 (1) and M15 (6) entries only.
 - **Tests changed (spec §2.1):** imports only: `softTree.test.ts` (`looksLikeSoftGroup` is the registry's `looksLikeTreeGroup`, aliased), `search.test.ts`, the golden harness (`src/tree/types`). Same expectations.
 - **Sizes (`gzip -9`):** main chunk `index` 307.9 → 307.7 kB (the tree specs in, `softTree.ts`' tables and the old bone builder out); the soft tree chunk 12.1 kB (each set's new `root` field costs a few bytes).
 - `npm run check`: pass (652 tests, the five goldens unchanged, the tree golden included). E2E `sidebar`, `soft-sidebar`, `keyboard`, `fixture`: 19 pass.
+
+### BG (routine, 2026-11-25)
+
+- **Built:** `TierWording` on `TierRule` (`src/graph/types.ts`): `label` (announced "<name>: <label> shown, …") and `button` (`text`, `title`, `shown`). Wording on every rule: bones `t1` "related bones" / Show related, `t2` "region" / Expand region; muscles and parts `t1` "attachments", `t2` "functional group", `ant` "Antagonists" (the toggle's text and both titles); `jointTiers` `t1` "related structures", `t2` "joint". Registry: `tierWording(kind, tier)` (`t1`/`t2` fall back to a generic wording for a kind whose rules don't say, the fixture's widgets), `hasTier`, `tierCountKind(tier)` (the first non-part kind with the rule: the antagonists count as muscles), `depthKind()` (the depth layer's first kind). ID index: `kindOfId`.
+- **Switched:** `announce.ts`: the soft tier label from the rule; the antagonist heading and noun from the `ant` rule; the depth messages from the depth layer's label and kind noun; `countByKind` counts a folded part by its parent's own kind (was the literal), `antagonistCount` sums the counts. `placeholder.ts`' bone announcement reads the bone rules' labels and the kind's noun (the region count now says "1 bone" for one; no set has one). `names.ts`: `sideInName === false` instead of the tooth literal. `InfoPanel.tsx`: `tierWords` reads the rules' buttons by `kindOfId`; the antagonist toggle shows for a kind with an `ant` rule and takes its wording from it (`isMuscleKind` no longer imported there).
+- **Label priority:** already `labelPriority` plus on-screen size (M11 AU, M10 AK); no literal was left in `labels.ts`.
+- **Deleted:** `src/content/softPanel.ts` (`softAnnouncement`; the app never called it). Allowlist: `announce.ts`, `names.ts`, `softPanel.ts` removed (4 M12 entries left: schema, softValidate, validate, patch-check).
+- **Tests changed (spec §2.1):** `nestedSelection.test.ts` and `sceneView.test.ts` imported `softAnnouncement`; each has a local shim of the same name over `softSelectionAnnouncement(id, 0, null, {})`, expectations as written. `announce.test.ts` unchanged.
+- `npm run check`: pass (652 tests, the five goldens unchanged). E2E `announce`, `labels-layers`, `tiers`: 12 pass; `fixture`: 2 pass.
 
 | Approved golden difference | File | Why |
 | --- | --- | --- |

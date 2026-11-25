@@ -26,10 +26,11 @@ import type { LayerId, LazyLayerId } from "../systems/registry";
  */
 export type IndexData = { eager: LayerId; entries: SoftId[]; nodes: GraphNode[] };
 
-type EagerEntry = { id: string; meshAvailable: boolean };
+type EagerEntry = { id: string; kind: string; meshAvailable: boolean };
 const EAGER = ids as EagerEntry[];
 const KNOWN = new Set(EAGER.map((e) => e.id));
 const WITH_MESH = new Set(EAGER.filter((e) => e.meshAvailable).map((e) => e.id));
+const EAGER_KIND = new Map(EAGER.map((e) => [e.id, e.kind]));
 
 let eagerLayer: LayerId | null = null;
 let lazy = new Map<string, SoftId>();
@@ -68,4 +69,7 @@ export const hasMesh = (id: string): boolean => WITH_MESH.has(id) || lazy.get(id
 /** The layer a structure is drawn in, or null if unknown. */
 export const layerOfId = (id: string): LayerId | null => (KNOWN.has(id) ? eagerLayer : (lazy.get(id)?.layer ?? null));
 /** The lazy layer a structure is drawn in, or null for an unknown or eager ID. */
+/** A structure's kind, from the first frame; null for an unknown ID or a joint node. */
+export const kindOfId = (id: string): string | null => EAGER_KIND.get(id) ?? lazy.get(id)?.kind ?? null;
+
 export const lazyLayerOf = (id: string): LazyLayerId | null => lazy.get(id)?.layer ?? null;

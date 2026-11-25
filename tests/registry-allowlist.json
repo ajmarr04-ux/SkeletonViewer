@@ -32,21 +32,9 @@
       "milestone": "M14",
       "reason": "Times turning on the largest layer (the muscles), named as the result field; M14's real-device and perf runs choose the layer from the registry (its budgets)."
     },
-    "src/content/announce.ts": {
-      "milestone": "M12",
-      "reason": "Wording for muscles (attachments, functional group, antagonist counts) and the part \u2192 muscle count fallback; M12 re-expresses tiers and antagonists as edges with their own wording."
-    },
-    "src/content/names.ts": {
-      "milestone": "M12",
-      "reason": "Bone display names (teeth have no side suffix); M12 moves display names onto the panel descriptor."
-    },
     "src/content/schema.ts": {
       "milestone": "M12",
       "reason": "The bone front-matter schema (bone/tooth kinds); M12 moves the bones onto the content halves' per-kind schemas."
-    },
-    "src/content/softPanel.ts": {
-      "milestone": "M12",
-      "reason": "Only softAnnouncement is left (M12 BE deleted the panel adapters): its muscle/part tier wording moves onto the tier rules in BG."
     },
     "src/content/softValidate.ts": {
       "milestone": "M12",

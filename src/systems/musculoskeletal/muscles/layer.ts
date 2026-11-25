@@ -24,9 +24,23 @@ const ATTACHMENTS = ["originates_on", "inserts_on"];
  * aren't synergists, a muscle replaced by its parts (the tints, spec §5.3).
  */
 const MUSCLE_TIERS = {
-  t1: { steps: [{ self: true }, { follow: ATTACHMENTS, from: "self+parts" }], order: "id" },
-  t2: { steps: [{ tier: "t1" }, { follow: "synergist_of" }, { follow: ATTACHMENTS, from: "previous" }], order: "id" },
-  ant: { steps: [{ follow: "antagonist_of", exclude: "synergist_of" }], order: "id", parts: "instead" },
+  t1: {
+    steps: [{ self: true }, { follow: ATTACHMENTS, from: "self+parts" }],
+    order: "id",
+    wording: { label: "attachments", button: { text: "Show attachments", title: "Show the structures it attaches to", shown: "Shown" } },
+  },
+  t2: {
+    steps: [{ tier: "t1" }, { follow: "synergist_of" }, { follow: ATTACHMENTS, from: "previous" }],
+    order: "id",
+    wording: { label: "functional group", button: { text: "Show functional group", title: "Show the muscles that work with it", shown: "Shown" } },
+  },
+  ant: {
+    steps: [{ follow: "antagonist_of", exclude: "synergist_of" }],
+    order: "id",
+    parts: "instead",
+    // The toggle's title once on is what pressing it does then.
+    wording: { label: "Antagonists", button: { text: "Show antagonists", title: "Show the muscles that oppose it, in their own colour", shown: "Hide the antagonists" } },
+  },
 } as const satisfies KindTiers;
 
 /** Origin and insertion tints from the graph and the attachment patches (M12 plan decision 8). */

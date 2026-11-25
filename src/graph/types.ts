@@ -67,8 +67,18 @@ export type TierStep =
   /** Keep only what matches, of everything so far. */
   | { filter: { kind?: readonly string[]; layer?: readonly string[] } };
 
+/** What a tier is called (M12 plan decision 12): in announcements, and on its button in the info panel. */
+export type TierWording = {
+  /** "<name>: <label> shown, …" ("attachments", "functional group", "related bones"); a feature's set its own heading ("Antagonists"). */
+  label: string;
+  /** The button that shows the set: its text, its title while it can be pressed, and its title once the set is shown. */
+  button: { text: string; title: string; shown: string };
+};
+
 export type TierRule = {
   steps: readonly TierStep[];
+  /** Its wording (announcements and the panel's tier buttons). */
+  wording?: TierWording;
   /** Sort what the rule adds itself (everything after its `tier` steps' results) in this order. */
   order?: TierOrder;
   /** A structure with parts in the result: followed by its parts (`with`, default) or replaced by them (`instead`). */

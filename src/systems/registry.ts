@@ -6,7 +6,7 @@ import { REGISTRY, SYSTEMS } from "./registered";
 import type { Graph } from "../graph/graph";
 import type { TierContext } from "../graph/query";
 import { edgeTypeIndex } from "../graph/edgeTypes";
-import type { EdgeTypeDescriptor } from "../graph/types";
+import type { EdgeTypeDescriptor, TierWording } from "../graph/types";
 import type { HierarchyTreeSpec, KindDescriptor, LayerDescriptor, LayerMode, OverlaySpec, PresetDescriptor, RolesSpec, SystemDescriptor, TreeSpec } from "./types";
 
 export { REGISTRY, SYSTEMS };
@@ -162,6 +162,24 @@ export const COUNT_ORDER: readonly KindId[] = [
 ]
   .map((k) => k.id as KindId)
   .filter((k) => countKind(k) === k);
+
+/** What `t1` and `t2` are called for a kind whose rules don't say (the fixture's widgets). */
+const DEFAULT_WORDING: Readonly<Record<string, TierWording>> = {
+  t1: { label: "related structures", button: { text: "Show related", title: "Show the related structures", shown: "Shown" } },
+  t2: { label: "region", button: { text: "Expand region", title: "Show the surrounding region", shown: "Shown" } },
+};
+/** A kind's tier wording (M12 plan decision 12: announcements and the panel's tier buttons); `t1`/`t2` fall back to a generic wording, any other tier is undefined without its own. */
+export const tierWording = (kind: string, tier: string): TierWording | undefined => KIND.get(kind)?.tiers?.[tier]?.wording ?? DEFAULT_WORDING[tier];
+/** Whether a kind has a tier rule by this name (`ant`: the antagonist toggle). */
+export const hasTier = (kind: string, tier: string): boolean => KIND.get(kind)?.tiers?.[tier] !== undefined;
+const CHILD_KINDS = new Set([...KIND.values()].flatMap((k) => (k.parentOf ? [k.parentOf.childKind] : [])));
+/** What a tier's set is counted as: the first kind (by `labelPriority`) with the rule that isn't a part kind (parts count as their parent: the antagonists are "4 muscles"). */
+export function tierCountKind(tier: string): KindId | undefined {
+  const k = [...KIND.values()].filter((x) => x.tiers?.[tier] !== undefined && !CHILD_KINDS.has(x.id)).sort(byPriority)[0];
+  return k ? countKind(k.id as KindId) : undefined;
+}
+/** What the depth stops peel, counted: the depth layer's first kind by `labelPriority` ("41 muscles"). */
+export const depthKind = (): KindId => countKind(([...layerDescriptor(DEPTH_LAYER).kinds] as KindDescriptor[]).sort(byPriority)[0]!.id as KindId);
 
 /** Layers in label order: the topmost first (the labels' focus layer when nothing is selected). */
 const layerRank = (l: LayerDescriptor) => Math.min(...l.kinds.map((k) => k.labelPriority));

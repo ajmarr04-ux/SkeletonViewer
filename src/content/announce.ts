@@ -9,7 +9,7 @@ import ids from "../../content/ids.json";
 import { EAGER_ONLY, isolationView, relatedAt, withTints } from "../scene/isolation";
 import type { Tier } from "../state/isolation";
 import { type Layer, type LayerMode, type LayerModes, type MuscleDepth } from "../state/url";
-import { COUNT_ORDER, countKind, isLazyLayer, kindNoun, LAYER_IDS, LAZY_LAYERS, layerLabel, presetDescriptor, presetOf, systemDescriptor, systemMode, type KindId, type LazyLayerId, type SystemId } from "../systems/registry";
+import { COUNT_ORDER, countKind, DEPTH_LAYER, depthKind, isLazyLayer, kindNoun, LAYER_IDS, LAZY_LAYERS, layerLabel, presetDescriptor, presetOf, systemDescriptor, systemMode, tierCountKind, tierWording, type KindId, type LazyLayerId, type SystemId } from "../systems/registry";
 import { groupAnnouncement, groupOf } from "./groups";
 import { displayName } from "./names";
 import { announcement as boneAnnouncement } from "./placeholder";
@@ -48,7 +48,8 @@ export function countKindOf(id: string): CountKind | null {
 /**
  * Count structures by kind. A part counts as a part only when it belongs to
  * `ownMuscle` (the focus muscle, or a focus part's muscle); any other part
- * counts once as its muscle, so a functional group is "6 muscles", not their heads.
+ * counts once as its parent, by the parent's kind, so a functional group is
+ * "6 muscles", not their heads.
  */
 export function countByKind(idsIn: Iterable<string>, ownMuscle: string | null = null, kindOf: (id: string) => CountKind | null = countKindOf, parentOf: (id: string) => string | null = (id) => softEntry(id)?.parent ?? null): KindCounts {
   const seen = new Set<string>();
@@ -58,7 +59,7 @@ export function countByKind(idsIn: Iterable<string>, ownMuscle: string | null = 
     const key = parent !== null && parent !== ownMuscle ? parent : id;
     if (seen.has(key)) continue;
     seen.add(key);
-    const kind = key === id ? kindOf(id) : "muscle";
+    const kind = kindOf(key);
     if (kind === null) continue;
     counts[kind] = (counts[kind] ?? 0) + 1;
   }
@@ -114,9 +115,11 @@ export function layersAnnouncement(before: LayerModes, now: LayerModes, loading:
  * muscles." Without the count (the table not loaded yet) the first sentence only.
  */
 export function depthAnnouncement(stop: MuscleDepth, count: number | null): string {
-  if (stop === 0) return "All muscles shown.";
-  const what = stop === 1 ? "Superficial muscles hidden" : "Superficial and intermediate muscles hidden, deep muscles only";
-  return count === null ? `${what}.` : `${what}: ${counted(count, "muscle")}.`;
+  const kind = depthKind();
+  const many = kindNoun(kind, 2);
+  if (stop === 0) return `All ${lower(DEPTH_LAYER)} shown.`;
+  const what = stop === 1 ? `Superficial ${many} hidden` : `Superficial and intermediate ${many} hidden, deep ${many} only`;
+  return count === null ? `${what}.` : `${what}: ${counted(count, kind)}.`;
 }
 
 /** A layer's files: "Muscles loaded." once the low LOD shows; "Muscles failed to load. Retry available."; "Muscles loading again." on Retry. */
@@ -133,10 +136,15 @@ export function layerLoadAnnouncement(layer: LazyLayerId, what: "loaded" | "fail
 export const hiddenAnnouncement = (id: string, total: number): string => `${spokenName(id)}, hidden. ${total} hidden.`;
 export const ALL_SHOWN_ANNOUNCEMENT = "All hidden structures shown.";
 
-/** "Antagonists shown: 4 muscles." / "Antagonists hidden."; none in a layer that shows: says so. */
-export function antagonistAnnouncement(on: boolean, muscles: number): string {
-  if (!on) return "Antagonists hidden.";
-  return muscles === 0 ? "Antagonists shown: none in the layers showing." : `Antagonists shown: ${counted(muscles, "muscle")}.`;
+/** The antagonist set's tier rule. */
+const ANT = "ant";
+
+/** "Antagonists shown: 4 muscles." / "Antagonists hidden."; none in a layer that shows: says so. Heading and noun from the `ant` rule and its kind. */
+export function antagonistAnnouncement(on: boolean, count: number): string {
+  const kind = tierCountKind(ANT)!;
+  const label = tierWording(kind, ANT)!.label;
+  if (!on) return `${label} hidden.`;
+  return count === 0 ? `${label} shown: none in the layers showing.` : `${label} shown: ${counted(count, kind)}.`;
 }
 
 // ---------------------------------------------------------------------------
@@ -160,8 +168,7 @@ export function softSelectionAnnouncement(id: string, tier: Tier, prev: Isolated
   if (!e) return null;
   const name = spokenName(id);
   if (tier > 0) {
-    const muscle = e.layer === "muscles";
-    const what = tier === 1 ? (muscle ? "attachments" : "related structures") : muscle ? "functional group" : "joint";
+    const what = tierWording(e.kind, `t${tier}`)!.label;
     const list = countsPhrase(others);
     return `${name}: ${what} shown, ${list || "nothing else in the layers showing"}.`;
   }
@@ -242,13 +249,13 @@ export function isolationAnnouncement(
   return boneSelectionAnnouncement(now, prev, (id) => relatedAt(id, 1, EAGER_ONLY), countByKind(all));
 }
 
-/** How many muscles the antagonist toggle adds (parts count once, as their muscle). */
+/** How many structures the antagonist toggle adds (parts count once, as their parent). */
 export function antagonistCount(sel: string | null, tier: Tier, modes: LayerModes, hasMesh: (id: string) => boolean): number {
   if (sel === null || tier !== 2) return 0;
   const view = isolationView(sel, tier, "ghost", hasMesh, null, undefined, undefined, modes);
   const tinted = withTints(view, sel, tier, true, hasMesh, modes);
   const ant = [...(tinted.tints ?? new Map()).entries()].filter(([, r]) => r === "antagonist").map(([x]) => x);
-  return countByKind(ant).muscle ?? 0;
+  return Object.values(countByKind(ant)).reduce((a, b) => a + (b ?? 0), 0);
 }
 
 // ---------------------------------------------------------------------------

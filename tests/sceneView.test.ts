@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { BufferAttribute, BufferGeometry, Color, Matrix4, MeshStandardMaterial } from "three";
 import ids from "../content/ids.json";
 import { hideTargets, softDisplayName, softEntry, softOpposite } from "../src/content/softRegistry";
-import { softAnnouncement } from "../src/content/softPanel";
+import { softSelectionAnnouncement } from "../src/content/announce";
 import { panelModel as generic, type LayerContent, type SectionModel } from "../src/panel/model";
 import { isEagerId } from "../src/content/index";
 import type { SoftLayerContent } from "../src/content/softCompile";
@@ -26,6 +26,9 @@ import {
 } from "../src/scene/isolation";
 import { type LayerModes } from "../src/state/url";
 import { DEFAULT_MODES, LAYER_IDS } from "../src/systems/registry";
+
+// M12 BG deleted softPanel.ts's softAnnouncement; its tier-0 wording is announce.ts' own.
+const softAnnouncement = (id: string) => softSelectionAnnouncement(id, 0, null, {});
 
 // M12 BE: the M9 soft panel shape (softPanel.ts's `softPanelModel`, deleted) read off the generic model.
 function softPanelModel(id: string, content: SoftLayerContent | null = null) {

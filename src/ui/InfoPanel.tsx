@@ -2,10 +2,11 @@ import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type 
 import { NO_PANEL } from "../camera/math";
 import { groupCounts, groupOf, type Group } from "../content/groups";
 import { displayName } from "../content/names";
-import { isEagerId } from "../content/index";
+import { kindOfId } from "../content/index";
+import { hasTier, tierWording } from "../systems/registry";
 import { NOT_WRITTEN, type ActionRow, type PanelLink, type PanelModel, type SectionModel } from "../panel/model";
 import type { AttachmentList } from "../systems/musculoskeletal/muscles/panel";
-import { expandRegion, goBack, hasMesh, hideSelected, isMuscleKind, isolateAttached, selectLink, setAntagonists, showRelated, switchSide, tierBlockedReason } from "../state/selection";
+import { expandRegion, goBack, hasMesh, hideSelected, isolateAttached, selectLink, setAntagonists, showRelated, switchSide, tierBlockedReason } from "../state/selection";
 import { useGraphVersion } from "../content/appGraph";
 import { useViewer, type JointHighlight } from "../state/store";
 import { focusCanvas } from "./canvasFocus";
@@ -630,14 +631,16 @@ function HideButton() {
   );
 }
 
-/** The tier buttons' wording: bones (spec §6), muscles and parts (M9 plan decision 5), the other structures. BG moves it onto the tier rules. */
+/** The tier buttons' wording, from the kind's tier rules (M12 plan decision 12). */
 function tierWords(id: string) {
-  if (isMuscleKind(id))
-    return { related: "Show attachments", expand: "Show functional group", relatedTitle: "Show the structures it attaches to", expandTitle: "Show the muscles that work with it", relatedShown: "Shown", expandShown: "Shown" };
-  if (isEagerId(id))
-    return { related: "Show related", expand: "Expand region", relatedTitle: "Show the bones it articulates with", expandTitle: "Show the surrounding region", relatedShown: "Related bones are shown", expandShown: "The region is shown" };
-  return { related: "Show related", expand: "Expand region", relatedTitle: "Show the structures it joins", expandTitle: "Show the joint's other structures", relatedShown: "Shown", expandShown: "Shown" };
+  const kind = kindOfId(id) ?? "";
+  const t1 = tierWording(kind, "t1")!.button;
+  const t2 = tierWording(kind, "t2")!.button;
+  return { related: t1.text, expand: t2.text, relatedTitle: t1.title, expandTitle: t2.title, relatedShown: t1.shown, expandShown: t2.shown };
 }
+
+/** The antagonist set's tier rule: a kind that has it shows the toggle at tier 2. */
+const ANT = "ant";
 
 /**
  * Tier 1 and 2 (spec §6; M9 plan decisions 4 and 5). Disabled, with the
@@ -677,24 +680,25 @@ function TierButtons({ id }: { id: string }) {
       >
         {w.expand}
       </button>
-      {isMuscleKind(id) && tier === 2 && <AntagonistToggle />}
+      {hasTier(kindOfId(id) ?? "", ANT) && tier === 2 && <AntagonistToggle id={id} />}
     </>
   );
 }
 
-/** "Show antagonists" (spec §5.2, M9 plan decision 7): only at a muscle's tier 2, off by default; `ant=1`. */
-function AntagonistToggle() {
+/** "Show antagonists" (spec §5.2, M9 plan decision 7): only at tier 2 of a kind with an `ant` rule, off by default; `ant=1`. */
+function AntagonistToggle({ id }: { id: string }) {
   const on = useViewer((s) => s.antagonists);
+  const w = tierWording(kindOfId(id) ?? "", ANT)!.button;
   return (
     <button
       type="button"
       className="button"
       data-testid="show-antagonists"
       aria-pressed={on}
-      title={on ? "Hide the antagonists" : "Show the muscles that oppose it, in their own colour"}
+      title={on ? w.shown : w.title}
       onClick={() => setAntagonists(!on)}
     >
-      Show antagonists
+      {w.text}
     </button>
   );
 }

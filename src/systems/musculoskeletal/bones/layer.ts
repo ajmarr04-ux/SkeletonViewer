@@ -14,8 +14,14 @@ const PARTNERS = { follow: ["articulates_with", "adjacent_tooth"], order: "anato
  * those bones in turn. With only the bones layer on, the bones alone.
  */
 const BONE_TIERS = {
-  t1: { steps: [PARTNERS, { follow: NAMED_BY, order: "anatomical" }] },
-  t2: { steps: [PARTNERS, { follow: "region_neighbour", order: "written" }, { follow: NAMED_BY, from: "result", order: "anatomical" }] },
+  t1: {
+    steps: [PARTNERS, { follow: NAMED_BY, order: "anatomical" }],
+    wording: { label: "related bones", button: { text: "Show related", title: "Show the bones it articulates with", shown: "Related bones are shown" } },
+  },
+  t2: {
+    steps: [PARTNERS, { follow: "region_neighbour", order: "written" }, { follow: NAMED_BY, from: "result", order: "anatomical" }],
+    wording: { label: "region", button: { text: "Expand region", title: "Show the surrounding region", shown: "The region is shown" } },
+  },
 } as const satisfies KindTiers;
 
 export const bones = defineLayer({

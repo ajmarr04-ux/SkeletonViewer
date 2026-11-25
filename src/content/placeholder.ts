@@ -1,9 +1,9 @@
 // The bones' side pairing and their aria-live wording (spec §10). The panel
 // itself is the generic model (src/panel/model.ts, M12 BD/BE); the
-// announcements move onto the descriptors in BG.
+// tier wording and nouns come from the descriptors (M12 BG).
 
 import ids from "../../content/ids.json";
-import { kindDescriptor, type EagerKind } from "../systems/registry";
+import { kindDescriptor, kindNoun, tierWording, type EagerKind } from "../systems/registry";
 
 export type Side = "left" | "right" | "midline";
 export type IdEntry = { id: string; name: string; kind: EagerKind; side: Side; group: string[]; meshAvailable: boolean };
@@ -69,9 +69,9 @@ export function announcement(
   if (now.tier === 1) {
     const names = related(now.sel).map((id) => listed(id, e.side));
     const list = names.length ? ` ${names.join(", ")}.` : " None.";
-    return `${spoken(e)}: related bones shown.${list.replace(/^ ([a-z])/, (_, c: string) => ` ${c.toUpperCase()}`)}`;
+    return `${spoken(e)}: ${tierWording(e.kind, "t1")!.label} shown.${list.replace(/^ ([a-z])/, (_, c: string) => ` ${c.toUpperCase()}`)}`;
   }
-  if (now.tier === 2) return `${spoken(e)}: region shown, ${visible} bones.`;
+  if (now.tier === 2) return `${spoken(e)}: ${tierWording(e.kind, "t2")!.label} shown, ${visible} ${kindNoun(e.kind, visible)}.`;
   if (prev && prev.sel === now.sel && prev.tier > 0) return `${spoken(e)}, ${e.meshAvailable ? "isolated" : "no 3D model"}.`;
   return `${spoken(e)}, selected. ${e.meshAvailable ? "Isolated." : "No 3D model."}`;
 }
