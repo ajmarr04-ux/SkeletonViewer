@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { antagonistCount, composeAnnouncement, isolationAnnouncement, type AnnounceDeps, type AnnounceState } from "../content/announce";
 import { jointAnnouncement } from "../content/placeholder";
-import { peeledMuscleCount, softTableLoaded } from "../content/softRegistry";
+import { peeledMuscleCount } from "../content/softRegistry";
 import { hasMesh } from "../state/selection";
 import { useViewer, type ViewerState } from "../state/store";
 import { LAZY_LAYERS, type LazyLayerId } from "../systems/registry";
@@ -19,7 +19,7 @@ function snapshot(s: ViewerState): AnnounceState {
 const DEPS: AnnounceDeps = {
   isolation: (now, prev) => isolationAnnouncement(now, prev, useViewer.getState().layers, hasMesh),
   antagonists: (now) => antagonistCount(now.sel, now.tier, now.layers, hasMesh),
-  peeled: (stop) => (softTableLoaded() ? peeledMuscleCount(stop) : null),
+  peeled: (stop) => peeledMuscleCount(stop),
 };
 
 /**

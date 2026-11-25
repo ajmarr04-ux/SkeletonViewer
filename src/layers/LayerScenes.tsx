@@ -22,12 +22,8 @@ import { LAZY_LAYERS, layerColour, layerDescriptor, maxPartsOf, OVERLAYS, type L
 import { TENDON_COLOUR } from "./colours";
 import { loadSoftContent } from "../content/softContentLoader";
 import { loadLayerParts } from "./loadLayer";
-import { isTendinous, type SoftId } from "./softIds";
-import { SOFT_IDS } from "./softTable";
-
-export { SOFT_IDS };
-const BY_ID = new Map(SOFT_IDS.map((e) => [e.id, e]));
-export const softIdOf = (id: string): SoftId | undefined => BY_ID.get(id);
+import { isTendinous } from "./softIds";
+import { lazyEntry } from "../content/index";
 
 /** `?debug`: one bounds report per layer (the overlay line). */
 export const useLayerReports = create<Partial<Record<LazyLayerId, LayerReport>>>(() => ({}));
@@ -54,7 +50,7 @@ const TINTS = Object.fromEntries(
   LAZY_LAYERS.map((l) => [l, Object.fromEntries(TINT_ROLES.map((r) => [r, tintFor(TINT_COLOURS[r], layerColour(l))])) as Record<TintRole, Color>]),
 ) as Record<LazyLayerId, Record<TintRole, Color>>;
 export function layerBaseTint(id: string): Color {
-  const e = softIdOf(id);
+  const e = lazyEntry(id);
   return e && isTendinous(e) ? TENDON_TINTS[e.layer] : WHITE;
 }
 

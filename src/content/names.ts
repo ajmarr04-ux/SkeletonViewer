@@ -11,7 +11,7 @@ const BY_ID = new Map((ids as Entry[]).map((e) => [e.id, e]));
 export function displayName(id: string): string {
   const e = BY_ID.get(id);
   if (!e) {
-    // M7: a soft-tissue structure, once its table is loaded ("Biceps brachii (left)").
+    // M7: a soft-tissue structure (from the ID index; unknown in the build scripts, which never load it) ("Biceps brachii (left)").
     const soft = softEntry(id);
     return soft ? softDisplayName(soft) : id;
   }

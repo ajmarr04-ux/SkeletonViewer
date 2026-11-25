@@ -1,21 +1,18 @@
 // M9 session AH: the info panel's kind-specific sections (spec §7; plan
 // decision 9) and "Show attached muscles" (spec §5.4; plan decision 10), on the
 // real content.
-import { readFileSync } from "node:fs";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import ids from "../content/ids.json";
 import { compileAllSoftFromDisk } from "../scripts/lib/content-files";
 import { attachedBoneOf, attachedKey, groupAncestors, groupOf, isGroupKey, ancestorsOf } from "../src/content/groups";
 import { groupIsolationAnnouncement } from "../src/content/announce";
-import { registerSoftIds, resetSoftIds, softEntry } from "../src/content/softRegistry";
+import { softEntry } from "../src/content/softRegistry";
 import { attachedTo, registerSoftTiers, resetSoftTiers } from "../src/content/softRelations";
 import { softSections, structureLabel, type MuscleSections, type JoinSections } from "../src/content/softPanel";
-import { trimSoftIds, type RawSoftId } from "../src/layers/softIds";
 import { groupView, isolationView, withJoint } from "../src/scene/isolation";
 import { isolationStep, FULL_SKELETON } from "../src/state/isolation";
 import { parseUrlState, serialiseUrlState } from "../src/state/url";
 
-const RAW = JSON.parse(readFileSync("content/soft-ids.json", "utf8")) as RawSoftId[];
 const BONES = ids as { id: string; meshAvailable: boolean }[];
 const BONE_MESH = new Set(BONES.filter((e) => e.meshAvailable).map((e) => e.id));
 const hasMesh = (id: string) => BONE_MESH.has(id) || softEntry(id)?.mesh === true;
@@ -23,9 +20,7 @@ const SOFT = compileAllSoftFromDisk();
 const muscle = (id: string) => softSections(id, SOFT.muscles) as MuscleSections;
 const ids_ = (l: { id: string }[]) => l.map((x) => x.id);
 
-beforeAll(() => registerSoftIds(trimSoftIds(RAW)));
 afterAll(() => {
-  resetSoftIds();
   resetSoftTiers();
 });
 

@@ -17,10 +17,10 @@ declare module "virtual:skeleton-model-versions" {
   /** File stem → size in bytes. */
   export const sizes: Record<string, number>;
 }
-declare module "virtual:skeleton-soft-ids" {
-  /** content/soft-ids.json, trimmed (scripts/lib/soft-ids-plugin.ts). */
-  const table: import("../layers/softIds").SoftId[];
-  export default table;
+declare module "virtual:skeleton-index" {
+  /** The always-loaded ID index's lazy half: the lazy layers' trimmed entries and the joint nodes, packed (scripts/lib/index-plugin.ts, src/content/indexCodec.ts; M12 plan decision 7). */
+  const data: import("./indexCodec").PackedIndex;
+  export default data;
 }
 declare module "virtual:skeleton-soft-content-*" {
   /** A lazy layer's content chunk, its descriptor's `contentChunk`: content/<folder>/*.md compiled (src/content/softCompile.ts; M8 plan decision 11). */

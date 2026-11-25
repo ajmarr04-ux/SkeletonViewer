@@ -1,11 +1,11 @@
 import { readFileSync } from "node:fs";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { BufferAttribute, BufferGeometry, Color, Matrix4, MeshStandardMaterial } from "three";
 import ids from "../content/ids.json";
-import { hideTargets, registerSoftIds, resetSoftIds, softDisplayName, softEntry, softOpposite } from "../src/content/softRegistry";
+import { hideTargets, softDisplayName, softEntry, softOpposite } from "../src/content/softRegistry";
 import { softAnnouncement, softPanelModel } from "../src/content/softPanel";
 import { displayName } from "../src/content/names";
-import { trimSoftIds, type RawSoftId } from "../src/layers/softIds";
+import { type RawSoftId } from "../src/layers/softIds";
 import { batchSkeleton, type BonePart } from "../src/scene/batchSkeleton";
 import {
   FULL_VIEW,
@@ -133,8 +133,6 @@ describe("applyLayerView", () => {
 
 describe("soft-tissue registry and placeholder (plan decisions 12, 13)", () => {
   const raw = JSON.parse(readFileSync("content/soft-ids.json", "utf8")) as RawSoftId[];
-  beforeAll(() => registerSoftIds(trimSoftIds(raw)));
-  afterAll(() => resetSoftIds());
   it("names, opposite side and hide targets", () => {
     expect(displayName("biceps_brachii_left")).toBe("Biceps brachii (left)");
     expect(displayName("linea_alba")).toBe("Linea alba");

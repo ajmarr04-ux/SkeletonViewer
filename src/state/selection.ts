@@ -9,14 +9,13 @@
 // app, so the history stays in step; on an entry the page was loaded with,
 // it replaces the entry instead (history.back() would leave the site).
 
-import ids from "../../content/ids.json";
 import { attachedBoneOf, attachedKey, groupLayer, isGroupKey } from "../content/groups";
 import { looksLikeSoftGroup } from "../content/softTree";
 import { loadSoftTree } from "../content/softTreeLoader";
 import { loadSoftContent } from "../content/softContentLoader";
 import { ALL_SHOWN_ANNOUNCEMENT, hiddenAnnouncement } from "../content/announce";
 import { hideTargets, isSoftId, softEntry, softLayerOf } from "../content/softRegistry";
-import { loadSoftIds } from "../content/loadSoftIds";
+import { hasMesh, isEagerId, isKnownId, layerOfId } from "../content/index";
 import { hasSoftTier2, softTiersLoaded } from "../content/softRelations";
 import { useLayerBatches } from "../scene/layerRegistry";
 import { FULL_SKELETON, isolationStep, resolveClick, type HistoryStep, type Isolation, type IsolationAction, type ParentOf } from "./isolation";
@@ -25,17 +24,7 @@ import { LAYERS_KEY, storedFlag, useViewer } from "./store";
 import { DEFAULT_LAYER_SETTING, formatLayers, isDefaultLayers, isUserLayersValue, HIDDEN_URL_CAP, parseHidden, parseLayers, parseUrlState, serialiseUrlState, type GhostMode, type Layer, type LayerMode, type LayerSetting, type MuscleDepth, type UrlState } from "./url";
 import { EAGER_LAYER, isLazyLayer, LAZY_LAYERS, layersOfSystem, NESTED_LAYER, presetDescriptor, presetModes, type LazyLayerId, type PresetId, type SystemId } from "../systems/registry";
 
-type IdEntry = { id: string; meshAvailable: boolean };
-const ENTRIES = ids as IdEntry[];
-const KNOWN = new Set(ENTRIES.map((e) => e.id));
-const WITH_MESH = new Set(ENTRIES.filter((e) => e.meshAvailable).map((e) => e.id));
-
-/** A bone or tooth, or (once its table is loaded) a soft-tissue structure. */
-export const isKnownId = (id: string): boolean => KNOWN.has(id) || isSoftId(id);
-/** False for the four wisdom teeth, the parent muscles and the structures the source lacks. */
-export const hasMesh = (id: string): boolean => WITH_MESH.has(id) || softEntry(id)?.mesh === true;
-/** The layer an object is drawn in: bones (and teeth), or its soft-tissue layer; null if unknown. */
-export const layerOfId = (id: string): Layer | null => (KNOWN.has(id) ? EAGER_LAYER : softLayerOf(id));
+export { hasMesh, isKnownId, layerOfId };
 /** A muscle part's muscle (spec §5.1), else null. */
 export const parentOf: ParentOf = (id) => softEntry(id)?.parent ?? null;
 /** The structures drawn for a selection: itself if it has a mesh, else its parts that do (a muscle with parts). */
@@ -124,11 +113,9 @@ export async function isolateGroup(key: string): Promise<void> {
 }
 /**
  * A link to a soft-tissue structure from a bone's panel (M9 plan decision 9):
- * the soft-tissue table may not be loaded yet (every new layer off), so load
- * it first, then select (turning the structure's layer on, as any selection does).
+ * select it, turning the structure's layer on, as any selection does.
  */
 export async function selectLink(id: string): Promise<void> {
-  if (!isKnownId(id)) await loadSoftIds();
   selectObject(id);
 }
 
@@ -188,8 +175,7 @@ async function frameWhenMusclesReady(key: string): Promise<void> {
  * as `F` would after a click. The one place where a selection moves the camera.
  */
 export async function selectAndFrame(id: string): Promise<void> {
-  // A soft-tissue result (M9 plan decision 12): load the table, turn the layer on, frame once it shows.
-  if (!isKnownId(id)) await loadSoftIds();
+  // A soft-tissue result (M9 plan decision 12): turn the layer on, frame once it shows.
   if (!isKnownId(id)) return;
   showLayerOf(id);
   const layer = layerOfId(id);
@@ -216,7 +202,7 @@ export const NO_JOINT_REASON = "Not part of a joint";
  * has loaded, and tier 2 only if it has one.
  */
 export function tierBlockedReason(id: string | null, tier: 1 | 2): string | null {
-  if (id === null || KNOWN.has(id) || !isSoftId(id)) return null;
+  if (id === null || isEagerId(id) || !isSoftId(id)) return null;
   if (!softTiersLoaded(id)) return LOADING_CONTENT_REASON;
   if (tier === 2 && !hasSoftTier2(id)) return NO_JOINT_REASON;
   return null;
@@ -391,7 +377,9 @@ export function applyLayerPreset(preset: PresetId): void {
  * then written to the URL, so the address always shows what is on screen).
  */
 export function initSelectionFromUrl(): UrlState {
-  const url = parseUrlState(window.location.search, isKnownId, isGroupKey);
+  // A soft-tissue `sel=` is known at once (the ID index, M12 decision 7) but still
+  // goes through `selectSoftFromUrl`, which turns its layer on and waits for it.
+  const url = parseUrlState(window.location.search, isEagerId, isGroupKey);
   const st = useViewer.getState();
   st.setIsolation({ sel: url.sel, tier: url.tier, grp: url.grp, ant: url.ant });
   st.setGhostMode(url.ghost);
@@ -425,13 +413,11 @@ export function initSelectionFromUrl(): UrlState {
 }
 
 /**
- * `sel=` naming a soft-tissue structure (plan decision 12): load the table; if
- * the ID is real, turn its layer on (if Off) and select it once that layer is
+ * `sel=` naming a soft-tissue structure (plan decision 12): if the ID is real, turn its layer on (if Off) and select it once that layer is
  * on screen, at the link's tier (M9; with `ant=1` at a muscle's tier 2), framed unless the link carries a camera. An unknown ID
  * is dropped from the URL, as for bones.
  */
 export async function selectSoftFromUrl(id: string, hasCam: boolean): Promise<void> {
-  await loadSoftIds();
   const st = useViewer.getState();
   if (!isSoftId(id) || st.sel !== null) {
     if (!isSoftId(id)) window.history.replaceState(window.history.state, "", urlWith({ sel: st.sel }));
@@ -495,7 +481,9 @@ export function onPopState(): void {
     });
     return;
   }
-  const url = parseUrlState(window.location.search, isKnownId, isGroupKey);
+  // A soft-tissue `sel=` is known at once (the ID index, M12 decision 7) but still
+  // goes through `selectSoftFromUrl`, which turns its layer on and waits for it.
+  const url = parseUrlState(window.location.search, isEagerId, isGroupKey);
   const st = useViewer.getState();
   // Colour-by-region isn't history: an older entry keeps today's colours, and its URL is brought up to date.
   const colour = st.colourMode === "region" ? "region" : null;

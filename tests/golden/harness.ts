@@ -19,10 +19,9 @@ const hash = (s: string | null | undefined): string | null => (s == null ? null 
 /** Load the bone content, the soft-tissue table and every soft layer's content, through the app's loaders. */
 async function loadEverything() {
   const { loadContent } = await import("../../src/content/loader");
-  const { loadSoftIds } = await import("../../src/content/loadSoftIds");
   const { loadSoftContent } = await import("../../src/content/softContentLoader");
   const bones = await loadContent();
-  await loadSoftIds();
+  // The soft-tissue table is the always-loaded ID index since M12 BB (tests/setup.ts loads it).
   const soft = {
     cartilage: await loadSoftContent("cartilage"),
     ligaments: await loadSoftContent("ligaments"),
@@ -330,10 +329,9 @@ const tick = (ms = 0) => new Promise((r) => setTimeout(r, ms));
 /** Wait until the page is idle: the lazy chunks the app may have asked for are in, and nothing has changed for 300 ms. */
 async function settle(snapshot: () => string): Promise<void> {
   const { loadSoftTree } = await import("../../src/content/softTreeLoader");
-  const { loadSoftIds } = await import("../../src/content/loadSoftIds");
   const { loadSoftContent } = await import("../../src/content/softContentLoader");
   // Loading a chunk only registers data; it never changes the store or the address by itself.
-  await Promise.allSettled([loadSoftTree(), loadSoftIds(), loadSoftContent("cartilage"), loadSoftContent("ligaments"), loadSoftContent("muscles")]);
+  await Promise.allSettled([loadSoftTree(), loadSoftContent("cartilage"), loadSoftContent("ligaments"), loadSoftContent("muscles")]);
   let last = snapshot();
   for (let still = 0; still < 30; ) {
     await tick(10);
@@ -344,8 +342,14 @@ async function settle(snapshot: () => string): Promise<void> {
 }
 
 /** Open one URL as a fresh page and record what the app ends up with. */
-async function openUrl(search: string): Promise<Golden> {
+/** A new module graph, with the always-loaded ID index handed over first, as the app's entry (src/main.tsx) does (M12 BB). */
+async function freshModules(): Promise<void> {
   vi.resetModules();
+  await import("../../src/content/indexData");
+}
+
+async function openUrl(search: string): Promise<Golden> {
+  await freshModules();
   const win = fakeWindow(search);
   vi.stubGlobal("window", win);
   vi.stubGlobal("requestAnimationFrame", (f: (t: number) => void) => setTimeout(() => f(0), 0));
@@ -400,7 +404,7 @@ export async function buildUrls(): Promise<Golden> {
   const out: Golden = {};
   for (const u of URLS) out[u === "" ? "(none)" : u] = await openUrl(u);
   await tick(200);
-  vi.resetModules();
+  await freshModules();
   if (lateWrites.length > 0) throw new Error(`a page wrote its address after it was recorded:\n${lateWrites.join("\n")}`);
   return out;
 }

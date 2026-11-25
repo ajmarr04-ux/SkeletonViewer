@@ -100,7 +100,7 @@ export type ViewerState = {
   say: (text: string) => void;
   /**
    * Grows by one when the changes made in the same task are part of opening the
-   * page (a soft `sel=` or `grp=` from the link, applied once its table loads):
+   * page (a soft `sel=` or `grp=` from the link, applied once its layer is on screen):
    * the live region says nothing for them (M10 plan decision 4).
    */
   hushed: number;

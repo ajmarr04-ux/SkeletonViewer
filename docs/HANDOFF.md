@@ -1,21 +1,20 @@
-# Handoff — written 2026-11-25 at the end of M12 BA
+# Handoff — written 2026-11-25 at the end of M12 BB
 
 ## Next session
-BB (design): the always-loaded ID index (plan decision 7, step 3). `virtual:skeleton-index` (plugin from the registry's ID files and the joint nodes), `src/content/index.ts` lookups; `softRegistry.ts` reads the index; `softTable.ts`, `loadSoftIds.ts`, `registerSoftIds`, `virtual:skeleton-soft-ids` deleted; the fixture build's ID file joins the index through the same plugin.
-Done when: `isKnownId`, `hasMesh`, `displayName`, `layerOfId` answer at once (no "unknown until the table loads"); goldens unchanged (`urls.json` especially); the `nested`, `layers`, `select`, `tiers` e2e specs pass; main chunk measured against the 12 kB budget (decision 7); `npm run check` green.
+BC (design): ship the graph in the chunks and switch tiers, roles and tints onto it (plan decisions 3 and 8, step 4). The content plugin emits each layer's edges into its content chunk and the eager layer's into the main chunk; `softContentLoader.ts` registers them with the graph; `relatedAt` asks `query.ts`; `hasSoftTier2`, `softTiersLoaded`, `tierBlockedReason` and `withTints` read the graph. Delete `relations.ts`, `softTiers.ts`, `softRelations.ts`, `softRoles.ts` and the chunks' `tiers`/`reverse`/`roles` fields.
+Done when: those modules are gone; goldens unchanged (harness imports only); content chunk sizes before/after in the notes; e2e `tiers`, `tints`, `related`, `attached`, `joints`, `nested`, `labels-layers` pass; `npm run check` green.
 
 ## State
-- Last commit: M12 BA: tier engine and tier rules (see `git log`); AZ's graph core is `dcae4f7`.
-- `npm run check`: pass (638 tests, the five goldens unchanged). Main chunk about 473.0 kB (registry chunk +0.3 kB for the tier rules).
+- Last commit: M12 BB: the always-loaded ID index (see `git log`).
+- `npm run check`: pass (645 tests, the five goldens unchanged). Main chunk 483.1 kB `gzip -9` (+10.1 kB for the index, inside decision 7's 12 kB budget).
 - Open fan-out work: none
 
 ## Waiting on the user
-none (the user approved BA's amendment to decision 5 in the session: source-by-source order, a rule's own `order`, `anatomical` over soft IDs, and the `result`/`exclude`/`parts`/`requires` options; see the plan's BA notes)
+none
 
 ## Things the next session must know
-- Engine: `src/graph/graph.ts` (`createGraph`, `add(chunk, edges)`), `src/graph/query.ts` (`tierEngine(ctx)`: `evaluate`, `related(id, tier, modes)`, `hasTier`). Rules: `KindDescriptor.tiers` in each layer's `layer.ts` (ligaments and cartilage share `src/systems/musculoskeletal/jointTiers.ts`). Context: registry `tierContext(graph, { kindOf, rank })`.
-- **`anatomical` order = the ID index's order:** the eager layer as `ids.json` lists it, then each other layer in registry order with its IDs sorted (`indexRank(entries)` in the registry). BB should build `virtual:skeleton-index` in that order (or keep using `indexRank`) so BC's `rank` comes from the index.
-- Parts come from `parentOf.via` (`part_of` edges without meta `also`): an `alsoServes` part isn't a muscle's part.
-- A missing tier (ligament or cartilage with no joint) falls back to tier 1 at tier 2 in the caller, as `relatedAt` does today; BC keeps that in the app's wrapper.
-- The app still runs on `relations.ts`, `softTiers.ts`, `softRelations.ts` until BC switches and deletes them.
-- Goldens: never `--write --force` without the user's approval. QUESTIONS: next is 140.
+- The index: `src/content/index.ts` (`isKnownId`, `hasMesh`, `layerOfId`, `lazyEntry`, `lazyEntries`, `isEagerId`, `indexNode` for joint names). It is handed over by `src/content/indexData.ts`, which `src/main.tsx` and `tests/setup.ts` import first. Scripts and Vite plugins never load it, so `index.ts` must not import a virtual module (or the registry at run time).
+- The golden harness's `freshModules()` re-imports `indexData` after `vi.resetModules`; any new harness builder that resets modules must use it.
+- `anatomical` order: keep `indexRank([...ids.json, ...lazyEntries()])` (the index is in file order, not ID-sorted).
+- A soft `sel=` still goes through `selectSoftFromUrl` (`initSelectionFromUrl` parses with `isEagerId`), which keeps `urls.json`.
+- The app still runs on `relations.ts`, `softTiers.ts`, `softRelations.ts` until BC. Goldens: never `--write --force` without the user's approval. QUESTIONS: next is 140.

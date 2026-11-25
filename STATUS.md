@@ -69,7 +69,7 @@ There are two specs. `SPEC (2).md` is the bone spec (it calls itself `SPEC.md`, 
 │  ├─ content/               mirror.ts, build-hierarchy.ts; attachment-match.ts, migrate-attachments.ts,
 │  │                         attachment-check.ts (M8); patch-check.ts (M9)
 │  ├─ lib/                   content-plugin.ts, search-data.ts, content-files.ts, model-checks.ts,
-│  │                         model-versions-plugin.ts, soft-ids-plugin.ts, soft-tree-data.ts
+│  │                         model-versions-plugin.ts, index-plugin.ts (M12), soft-tree-data.ts
 │  ├─ setup-blender.sh, build-models.sh, build-soft-tissue.sh, compress-models.sh, check-models.ts
 │  ├─ validate-content.ts, build-content.ts, build-search-index.ts
 │  ├─ build-pages.sh         live site plus frozen /m<N>/ snapshots
@@ -131,7 +131,7 @@ Each node is named by its stable ID and has one unnamed child holding the quanti
 2. The low model is parsed and shown.
 3. The high model's download starts as soon as the low one is parsed (`prefetchModel`), then the batches are swapped.
 4. The automatic choice (`chooseLod`) stops at low on small screens, low device memory or weak or software GPUs. `?lod=low|high|both` and the Settings menu override it.
-5. **Layers** (M7): nothing for a layer is fetched until it is first turned On or Ghost. Then the lazy `LayerScenes` chunk mounts one `TissueLayerScene` per layer, which follows the same LOD plan, with content-hashed file URLs (`virtual:skeleton-model-versions`) and byte progress (`src/layers/urls.ts`, `loadLayer.ts`). The store's `layerLoad[layer]` holds status, LOD, bytes and errors; the Layers panel shows progress and Retry. A scene stays mounted after its layer is turned off. The soft-tissue ID table (`virtual:skeleton-soft-ids`, 11 kB) is one lazy chunk for all three layers. Layer files are **not** prefetched (the fallback planned for a real-device miss was never needed or taken).
+5. **Layers** (M7): nothing for a layer is fetched until it is first turned On or Ghost. Then the lazy `LayerScenes` chunk mounts one `TissueLayerScene` per layer, which follows the same LOD plan, with content-hashed file URLs (`virtual:skeleton-model-versions`) and byte progress (`src/layers/urls.ts`, `loadLayer.ts`). The store's `layerLoad[layer]` holds status, LOD, bytes and errors; the Layers panel shows progress and Retry. A scene stays mounted after its layer is turned off. The soft-tissue ID table is part of the always-loaded ID index (`virtual:skeleton-index`, about 9.5 kB gzip, main chunk) since M12 BB; it was a lazy 11 kB chunk until then. Layer files are **not** prefetched (the fallback planned for a real-device miss was never needed or taken).
 
 ### Rendering: `THREE.BatchedMesh`
 - **Bones** (`src/scene/batchSkeleton.ts`): all 234 in one solid `BatchedMesh` with per-instance visibility and colour, plus a **second batch for the ghosts** (translucent, sorted back to front, no depth writes). The instance matrix is the glTF mesh's world matrix; vertices are copied still quantised and never moved.

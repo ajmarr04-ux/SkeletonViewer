@@ -1,11 +1,10 @@
 // M9 session AE: nested muscle → part selection (spec §5.1; plan decisions 1 and 2).
 import { readFileSync } from "node:fs";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import hierarchy from "../content/muscle-hierarchy.json";
-import { registerSoftIds, resetSoftIds } from "../src/content/softRegistry";
 import { MUSCLE_REGION_LABELS, partLabel, softAnnouncement, softPanelModel } from "../src/content/softPanel";
 import type { SoftLayerContent } from "../src/content/softCompile";
-import { trimSoftIds, type RawSoftId } from "../src/layers/softIds";
+import { type RawSoftId } from "../src/layers/softIds";
 import { maxPartsOf, NESTED_LAYER } from "../src/systems/registry";
 import { isolationView, sceneView, shownIn } from "../src/scene/isolation";
 import { FULL_SKELETON, isolationStep, levelOf, resolveClick, type Isolation, type IsolationAction, type ParentOf } from "../src/state/isolation";
@@ -89,8 +88,6 @@ describe("the reducer's part level (plan decision 2)", () => {
 });
 
 describe("views, panel and announcements with the real table", () => {
-  beforeAll(() => registerSoftIds(trimSoftIds(RAW)));
-  afterAll(() => resetSoftIds());
   const meshes = new Set(RAW.filter((e) => e.meshAvailable).map((e) => e.id));
   const hasMesh = (id: string) => meshes.has(id) || id === "femur_left";
   const heads = ["triceps_brachii_lateral_head_left", "triceps_brachii_long_head_left", "triceps_brachii_medial_head_left"];

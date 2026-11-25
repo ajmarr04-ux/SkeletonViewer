@@ -1,13 +1,13 @@
 // `vite build --mode fixture` (M11 plan decision 8): the app built with the test
 // registry. Three things differ from the real build, and nothing else:
 //   1. src/systems/registered.ts resolves to ./registry.ts (real layers + `widgets`);
-//   2. the soft-ids plugin reads the test registry, so the widgets' IDs are in the table;
+//   2. the index plugin reads the test registry, so the widgets' IDs are in the ID index;
 //   3. the widgets' model files are served (dev) and emitted (build) at models/.
 // Output goes to dist-fixture/, so the real dist/ is never touched.
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Plugin } from "vite";
-import type { RegistryOption } from "../../../scripts/lib/soft-ids-plugin";
+import type { RegistryOption } from "../../../scripts/lib/index-plugin";
 import { FIXTURE_CONTENT } from "./registry.content";
 import { REGISTRY } from "./registry";
 

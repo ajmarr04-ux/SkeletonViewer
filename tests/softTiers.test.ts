@@ -6,10 +6,10 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import ids from "../content/ids.json";
 import { compileAllSoftFromDisk, makeOpposite } from "../scripts/lib/content-files";
 import { relations } from "../src/content/relations";
-import { registerSoftIds, resetSoftIds, softEntry } from "../src/content/softRegistry";
+import { softEntry } from "../src/content/softRegistry";
 import { hasSoftTier2, registerSoftTiers, resetSoftTiers, reverseRelated, softRelated, softTiersLoaded } from "../src/content/softRelations";
 import { jointScope } from "../src/content/softTiers";
-import { trimSoftIds, type RawSoftId } from "../src/layers/softIds";
+import { type RawSoftId } from "../src/layers/softIds";
 import { isolationView, relatedAt, sceneView, shownIn } from "../src/scene/isolation";
 import { type LayerMode, type LayerModes } from "../src/state/url";
 import { DEFAULT_MODES, LAYER_IDS } from "../src/systems/registry";
@@ -28,9 +28,7 @@ const m8Solid = (id: string, tier: 0 | 1 | 2) => new Set(relations.visibleAt(id,
 const solidOf = (sel: string, tier: 0 | 1 | 2, m: LayerModes) => isolationView(sel, tier, "ghost", hasMesh, null, undefined, undefined, m).solid;
 const layerOf = (id: string) => (BONES.some((b) => b.id === id) ? "bones" : softEntry(id)?.layer);
 
-beforeAll(() => registerSoftIds(trimSoftIds(RAW)));
 afterAll(() => {
-  resetSoftIds();
   resetSoftTiers();
 });
 

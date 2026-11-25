@@ -53,7 +53,7 @@ const softParts: PartsOf = (id) => softEntry(id)?.parts ?? [];
 const softParent = (id: string): string | null => softEntry(id)?.parent ?? null;
 
 const BONES = new Set((idsJson as { id: string }[]).map((e) => e.id));
-/** The layer a structure is drawn in: the eager layer for bones (and teeth), its soft-tissue layer once the table is loaded, else null. */
+/** The layer a structure is drawn in: the eager layer for bones (and teeth), its soft-tissue layer, else null. */
 const layerOfAny = (id: string): Layer | null => (BONES.has(id) ? EAGER_LAYER : softLayerOf(id));
 
 /**

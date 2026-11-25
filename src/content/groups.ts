@@ -122,7 +122,7 @@ function attachedGroup(key: string, bone: string): Group {
 const SOFT_GROUPS = new Map<string, Group>();
 /** Structure → the soft group it sits in (a part → its muscle's group). */
 const SOFT_PARENT = new Map<string, string>();
-/** Soft structures with something drawn (from the tree, so counts are right before the ID table loads). */
+/** Soft structures with something drawn (from the soft tree's chunk). */
 const SOFT_DRAWN = new Set<string>();
 let softTreeData: SoftTreeData | null = null;
 const softListeners = new Set<() => void>();

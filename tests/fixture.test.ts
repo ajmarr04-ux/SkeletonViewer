@@ -38,7 +38,7 @@ import {
   type LayerId,
   type SystemId,
 } from "../src/systems/registry";
-import { idFiles, readLayerIds } from "../scripts/lib/soft-ids-plugin";
+import { idFiles, readLayerIds } from "../scripts/lib/index-plugin";
 import { fixtureRegistry } from "./fixtures/systems/vite";
 import { FIXTURE_CONTENT } from "./fixtures/systems/registry.content";
 import { WIDGET_IDS, widgets } from "./fixtures/systems/demo/widgets/layer";

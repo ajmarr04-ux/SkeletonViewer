@@ -4,11 +4,11 @@ import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import ids from "../content/ids.json";
 import { compileAllSoftFromDisk, readPatches } from "../scripts/lib/content-files";
-import { registerSoftIds, resetSoftIds, softEntry } from "../src/content/softRegistry";
+import { softEntry } from "../src/content/softRegistry";
 import { registerSoftTiers, resetSoftTiers } from "../src/content/softRelations";
 import { bothSynergistAndAntagonist, buildMuscleRoles, muscleModel, patchAgreement, type MuscleRoles } from "../src/content/softRoles";
 import type { SoftFm } from "../src/content/softSchema";
-import { trimSoftIds, type RawSoftId } from "../src/layers/softIds";
+import { type RawSoftId } from "../src/layers/softIds";
 import { isolationView, sceneView, withTints } from "../src/scene/isolation";
 import { type LayerModes } from "../src/state/url";
 import { DEFAULT_MODES } from "../src/systems/registry";
@@ -35,11 +35,9 @@ function view(sel: string, tier: 0 | 1 | 2, m: LayerModes, opts: { ant?: boolean
 }
 
 beforeAll(() => {
-  registerSoftIds(trimSoftIds(RAW));
   for (const l of ["muscles", "ligaments", "cartilage"] as const) registerSoftTiers(l, SOFT[l].tiers, SOFT[l].roles);
 });
 afterAll(() => {
-  resetSoftIds();
   resetSoftTiers();
 });
 
