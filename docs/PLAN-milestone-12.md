@@ -204,7 +204,7 @@ Main chunk **+13.7 kB** on M11 (the ID index and the graph's eager edges, +11.0 
 
 **e2e:** the full suite in one background run (`npx playwright test --trace off`, both projects, log in the session scratchpad): **171 of 174 passed** in 45.4 min. The three failures were timeouts under load: `keyboard.spec.ts:191` (3.0 min, page closed at the time limit), `keyboard.spec.ts:242` (the 7-minute keys-only journey, as in AX) and `nested.spec.ts:34` (a panel title not found within 5 s). Re-run alone, **all three pass** (8.7 min). Tests changed in M12 are only those listed in the session notes, plus the fixture spec's new test.
 
-**Merge and freeze:** see below.
+**Merge and freeze:** [PR #27](https://github.com/ajmarr04-ux/SkeletonViewer/pull/27) merged as `3d8adef`; Deploy ran on it. A follow-up PR freezes `m12` at `3d8adef` and sets `"current": null` until M13's planning sets 13 (as after M11). **Left for the user:** a glance at https://ajmarr04-ux.github.io/SkeletonViewer/m12/ (the container can't reach `github.io`); then tick "Hosted copy is live" above.
 
 ## Session notes
 
