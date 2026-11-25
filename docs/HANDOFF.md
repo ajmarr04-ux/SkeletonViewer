@@ -1,19 +1,19 @@
-# Handoff — written 2026-11-25 at the end of M11 session AY
+# Handoff — written 2026-11-25 at the end of M12 planning
 
 ## Next session
-M12 planning (`SPEC-platform.md` §11, M12: relationship graph, tier rules as data, descriptor-driven panels, tree builders, announcement wording). Start with `CLAUDE.md`'s milestone handover: `m11` is already frozen at `a2709f6`, so only set `current` to 12, confirm `/m11/` is live (ask the user), tick "Hosted copy is live" in `docs/PLAN-milestone-11.md`, then write `docs/PLAN-milestone-12.md`.
+AZ (design): commit `tests/golden/tree.json` first (decision 9), then the graph core: edge types, the edge compiler from the authoring files, derived edges (incl. `adjacent_tooth`, `shares_joint_with`), compiler checks; delete `src/content/derive.ts`.
+Done when: tree golden committed before any `src/`/`scripts/` change; the compiled graph reproduces today's derived synergists, antagonists and attached muscles for every muscle and part; isolation test also scans edge type IDs; `npm run check` green.
 
 ## State
-- M11 merged to `main` as `a2709f6` ([PR #25](https://github.com/ajmarr04-ux/SkeletonViewer/pull/25)); the freeze (`m11`, `"current": null`) goes in a follow-up PR from this branch.
-- `npm run check`: pass (41 files, 606 tests incl. goldens). Full e2e: 173 of 173 (36.7 min).
-- Parity against `317b445` (step 7's table): bench and perf-load the same within noise; main chunk 472.3 kB (+2.3; budget 500.1).
+- Planning commit on `claude/keen-clarke-32a10a`: `deploy/pages.json` `current` 12; M11 "Hosted copy is live" ticked; README M12 row; `docs/PLAN-milestone-12.md` written.
+- `npm run check`: not re-run (docs and `deploy/pages.json` only changed).
 - Open fan-out work: none
 
 ## Waiting on the user
-- A glance at https://ajmarr04-ux.github.io/SkeletonViewer/m11/ (plan checkpoint "after AY").
+- Decisions 1–14 in `docs/PLAN-milestone-12.md` (say if any should change). Notable: two extra derived edge types (decision 2), the ID index in the main chunk (~+11 kB, decision 7), the sidebar's system grouping deferred to M14 (decision 10), Origin/Insertion as the two allowed `custom` panel sections (decision 11).
 
 ## Things the next session must know
-- The registry allowlist (`tests/registry-allowlist.json`) names 17 files for M12: that list is M12's work queue, and each file removed must leave the goldens unchanged.
-- Goldens: `npm run golden` compares; never `--write --force` without the user's approval. When M12 moves a function, change `tests/golden/harness.ts`'s import, never the snapshot.
-- `npm run bench-container [runs] [dist dir]` takes the dist dir **relative** to the working directory (it joins it onto cwd).
+- Order is behaviour: soft tier lists are ID-sorted, bone partners in `ids.json` order, region neighbours as written (decision 5).
+- Goldens: never `--write --force` without the user's approval; `--write` for the new `tree.json` only.
+- Shipping invariant (decision 3): a structure's panel and tiers need the main chunk, its own layer's chunk and the showing layers' chunks, nothing else.
 - QUESTIONS: 1–139, the next is 140.
