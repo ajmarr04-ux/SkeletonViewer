@@ -18,8 +18,9 @@ import { ensureBoundsTrees, instanceWorldBounds, type BatchedSkeleton } from "..
 import { nearestPickable, PROXY_RADIUS_PX, pickWithProxies, tinyObjects, type Proxy, type RealHit } from "../scene/pick";
 import ids from "../../content/ids.json";
 import { displayName } from "../content/names";
-import { clickObject, drawnIds, expandRegion, goBack, hasMesh, hideSelected, hideStructure, layerOfId, parentOf, selectObject, showAllHidden, showRelated } from "../state/selection";
+import { clickObject, drawnIds, expandRegion, focusRegion, goBack, leaveRegion, hasMesh, hideSelected, hideStructure, layerOfId, parentOf, selectObject, showAllHidden, showRelated } from "../state/selection";
 import { isolationView, isPickableIn, viewOf } from "../scene/isolation";
+import { memberSet } from "../regions/index";
 import { useLayerBatches } from "../scene/layerRegistry";
 import { softEntries } from "../content/softRegistry";
 import { type Layer } from "../state/url";
@@ -34,7 +35,9 @@ function framingInset() {
 /** The box around everything solid in the current isolation (tiers 1 and 2: the focus and its related bones). */
 function isolationBox(boxOf: (id: string) => Box | undefined, sel: string | null, tier: 0 | 1 | 2, grp: string | null = null): Box | undefined {
   // The related set follows the layers showing (M9 plan decision 3).
-  const view = isolationView(sel, tier, "ghost", hasMesh, grp, undefined, undefined, useViewer.getState().layers);
+  // Inside a body region, only what is drawn of the isolation there (M13 plan decision 7).
+  const st = useViewer.getState();
+  const view = isolationView(sel, tier, "ghost", hasMesh, grp, undefined, undefined, st.layers, memberSet(st.reg));
   if (!view.solid) return undefined;
   const boxes = [...view.solid].map((id) => boxOf(id)).filter((b): b is Box => b !== undefined);
   return boxes.length ? unionBoxes(boxes) : undefined;
@@ -144,12 +147,15 @@ export type ViewerDebugApi = {
   click: (id: string) => void;
   /** Step back one isolation level (as Esc). */
   back: () => void;
+  /** Focus on a body region (M13; no UI until BN), and leave it. */
+  focusRegion: (key: string) => void;
+  leaveRegion: () => void;
   /**
    * Frame a bone without selecting it (instant, as `F` would): from a preset
    * direction, or the current one. For the all-objects e2e test.
    */
   frameBone: (id: string | string[], from?: Preset) => boolean;
-  state: () => { sel: string | null; tier: number; grp: string | null; hovered: string | null; cursor: string | null };
+  state: () => { sel: string | null; tier: number; grp: string | null; reg: string | null; hovered: string | null; cursor: string | null };
   /** A bone's box centre where it is drawn now (moves with Explode; `bone` gives the rest position). */
   boneNow: (id: string) => Vec3 | null;
   /** A bone's instance colour in the solid batch (linear RGB), for the colour-by-region tests. */
@@ -659,7 +665,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     el.addEventListener("pointermove", onCursorPointer);
     el.addEventListener("pointerdown", onCursorPointer);
     const unsubscribeCursor = useViewer.subscribe((s, prev) => {
-      if (s.sel !== prev.sel || s.tier !== prev.tier || s.grp !== prev.grp) clearCursor();
+      if (s.sel !== prev.sel || s.tier !== prev.tier || s.grp !== prev.grp || s.reg !== prev.reg) clearCursor();
     });
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -867,6 +873,8 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
         select: (id) => selectObject(id),
         click: (id) => clickObject(id),
         back: () => goBack(),
+        focusRegion: (key) => focusRegion(key),
+        leaveRegion: () => leaveRegion(),
         frameBone: (id, from) => {
           const boxes = (Array.isArray(id) ? id : [id]).map((i) => boxOf(i));
           if (boxes.length === 0 || boxes.some((b) => !b)) return false;
@@ -880,7 +888,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
         },
         state: () => {
           const s = useViewer.getState();
-          return { sel: s.sel, tier: s.tier, grp: s.grp, hovered: s.hovered, cursor: s.keyCursor?.id ?? null };
+          return { sel: s.sel, tier: s.tier, grp: s.grp, reg: s.reg, hovered: s.hovered, cursor: s.keyCursor?.id ?? null };
         },
         boneNow: (id) => {
           const sk = live.current.skeleton;

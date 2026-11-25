@@ -79,6 +79,8 @@ export type ViewerState = {
   tier: Tier;
   /** Isolated group (Milestone 5, plan decision 5), or null. Never set together with `sel`. */
   grp: string | null;
+  /** Body region in focus (M13 plan decision 7): a fine or coarse region key, or null for the whole body. Combines with `sel` or `grp`. */
+  reg: string | null;
   /** Antagonists shown in their tint (M9 plan decision 7): only at a muscle's tier 2; cleared by every isolation change. */
   antagonists: boolean;
   ghostMode: GhostMode;
@@ -142,7 +144,8 @@ export type ViewerState = {
   inputAt: number | null;
   markInput: (t: number | null) => void;
   /** Set the isolation; `ant` (default false) only sticks at tier 2. */
-  setIsolation: (iso: { sel: string | null; tier: Tier; grp?: string | null; ant?: boolean }) => void;
+  /** `reg` left out keeps the current body region. */
+  setIsolation: (iso: { sel: string | null; tier: Tier; grp?: string | null; ant?: boolean; reg?: string | null }) => void;
   setAntagonists: (on: boolean) => void;
   setGhostMode: (mode: GhostMode) => void;
   setGhostOpacity: (opacity: number) => void;
@@ -191,6 +194,7 @@ export const useViewer = create<ViewerState>()((set) => ({
   sel: null,
   tier: 0,
   grp: null,
+  reg: null,
   antagonists: false,
   ghostMode: "ghost",
   ghostOpacity: typeof window === "undefined" ? GHOST_OPACITY.default : storedGhostOpacity(),
@@ -237,11 +241,12 @@ export const useViewer = create<ViewerState>()((set) => ({
     ),
   inputAt: null,
   markInput: (inputAt) => set({ inputAt }),
-  setIsolation: ({ sel, tier, grp = null, ant = false }) =>
+  setIsolation: ({ sel, tier, grp = null, ant = false, reg }) =>
     set((s) => {
       const antagonists = tier === 2 && sel !== null && ant;
-      if (s.sel === sel && s.tier === tier && s.grp === grp) return s.antagonists === antagonists ? s : { antagonists };
-      return { sel, tier, grp, antagonists, joint: null, explode: 0 };
+      const region = reg === undefined ? s.reg : reg;
+      if (s.sel === sel && s.tier === tier && s.grp === grp && s.reg === region) return s.antagonists === antagonists ? s : { antagonists };
+      return { sel, tier, grp, reg: region, antagonists, joint: null, explode: 0 };
     }),
   setAntagonists: (on) => set((s) => (s.antagonists === on ? s : { antagonists: on && s.tier === 2 && s.sel !== null })),
   setGhostMode: (ghostMode) => set({ ghostMode }),

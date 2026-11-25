@@ -14,6 +14,7 @@ import type { Tier } from "../state/isolation";
 import { type GhostMode, type Layer, type LayerModes, type MuscleDepth } from "../state/url";
 import { DEFAULT_MODES, EAGER_LAYER, LAYER_IDS } from "../systems/registry";
 import { peeledAt, softEntry, softLayerOf } from "../content/softRegistry";
+import { memberSet } from "../regions/index";
 import type { BatchedSkeleton } from "./batchSkeleton";
 import { usePatchBatch } from "./layerRegistry";
 import { accentTint as makeAccentTint } from "./material";
@@ -81,6 +82,11 @@ export function relatedAt(id: string, tier: Tier, modes: LayerModes = DEFAULT_MO
  * without a mesh are left out: a wisdom tooth isolates nothing at tier 0, and
  * at tiers 1 and 2 shows its related bones with no focus. `modes` defaults to
  * only the bones layer on (M8's view).
+ *
+ * `region` (M13 plan decision 7): the members of the body region in focus.
+ * The solid set is intersected with it, keeping the focus (a selection made
+ * from outside the region is still drawn). An isolation left with nothing
+ * solid stays an isolation (nothing of it lies in the region).
  */
 export function isolationView(
   sel: string | null,
@@ -91,8 +97,9 @@ export function isolationView(
   partsOf: PartsOf = softParts,
   parentOf: (id: string) => string | null = softParent,
   modes: LayerModes = DEFAULT_MODES,
+  region: ReadonlySet<string> | null = null,
 ): IsolationView {
-  if (sel === null) return grp === null ? FULL_VIEW : groupView(grp, ghostMode, hasMesh, partsOf);
+  if (sel === null) return grp === null ? FULL_VIEW : groupView(grp, ghostMode, hasMesh, partsOf, region);
   // A muscle with parts is drawn as its parts (spec §5.1 rule 1); a selected part keeps its siblings solid,
   // in the muscle colour (rule 2).
   const focusIds = hasMesh(sel) ? [sel] : partsOf(sel).filter(hasMesh);
@@ -101,7 +108,13 @@ export function isolationView(
   const solid = new Set([sel, ...relatedAt(sel, tier, modes), ...focusIds, ...siblings].filter(hasMesh));
   if (solid.size === 0) return FULL_VIEW;
   const focus = focusIds.length > 0 ? sel : null;
-  return { isolated: true, focus, focusIds, solid, ghosts: ghostMode === "ghost", joint: [], jointPartner: null };
+  return { isolated: true, focus, focusIds, solid: inRegion(solid, region, focusIds), ghosts: ghostMode === "ghost", joint: [], jointPartner: null };
+}
+
+/** A solid set intersected with a body region's members, plus `keep` (the focus); unchanged with no region. */
+function inRegion(solid: Set<string>, region: ReadonlySet<string> | null, keep: readonly string[] = []): Set<string> {
+  if (region === null) return solid;
+  return new Set([...solid].filter((id) => region.has(id) || keep.includes(id)));
 }
 
 /**
@@ -109,12 +122,19 @@ export function isolationView(
  * with no focus (normal bone colour, no outline); the rest ghosted or hidden as
  * at tier 0.
  */
-export function groupView(grp: string, ghostMode: GhostMode, hasMesh: (id: string) => boolean, partsOf: PartsOf = softParts): IsolationView {
+export function groupView(
+  grp: string,
+  ghostMode: GhostMode,
+  hasMesh: (id: string) => boolean,
+  partsOf: PartsOf = softParts,
+  region: ReadonlySet<string> | null = null,
+): IsolationView {
   const g = groupOf(grp);
   // A muscle with parts (an attached-muscles group, M9) is drawn as its parts.
   const solid = new Set((g?.members ?? []).flatMap((id) => (hasMesh(id) ? [id] : partsOf(id).filter(hasMesh))));
   if (solid.size === 0) return FULL_VIEW;
-  return { isolated: true, focus: null, focusIds: [], solid, ghosts: ghostMode === "ghost", joint: [], jointPartner: null };
+  // Inside a body region, only the group's members in it (M13 plan decision 7).
+  return { isolated: true, focus: null, focusIds: [], solid: inRegion(solid, region), ghosts: ghostMode === "ghost", joint: [], jointPartner: null };
 }
 
 /**
@@ -211,6 +231,8 @@ export type SceneView = {
   focusIds: readonly string[];
   layers: Record<Layer, LayerShow>;
   hidden: ReadonlySet<string>;
+  /** The body region's members (M13 plan decision 7): anything else is hidden, on every layer; null = the whole body. */
+  region: ReadonlySet<string> | null;
   joint: readonly string[];
   jointPartner: string | null;
   /** Structures drawn in a tint instead of their own colour (origin, insertion, antagonist). */
@@ -236,12 +258,19 @@ const NO_PATCHES: ReadonlyMap<string, Role> = new Map();
  *   solid, like the focus. The rest is a ghost if its layer is Ghost, or if
  *   the layer is On and isolation ghosts (ghost mode); otherwise hidden.
  * Hidden structures (`hidden`) are never drawn, except the focus itself and the
- * bones of a highlighted joint (see `shownIn`).
+ * bones of a highlighted joint (see `shownIn`). Nor is anything outside the
+ * body region (`region`, M13 plan decision 7), with the same exceptions: a
+ * third source of "hidden", so solid sets and ghosts are both cut to the region.
  *
  * With only the bones layer on and nothing hidden, the bones' `LayerShow` is
  * exactly M6's view: `solid` as isolation gives it, `rest` ghost or hidden.
  */
-export function sceneView(iso: IsolationView, modes: LayerModes, hidden: ReadonlySet<string> = NO_IDS): SceneView {
+export function sceneView(
+  iso: IsolationView,
+  modes: LayerModes,
+  hidden: ReadonlySet<string> = NO_IDS,
+  region: ReadonlySet<string> | null = null,
+): SceneView {
   const layers = {} as Record<Layer, LayerShow>;
   for (const layer of LAYER_IDS) {
     const mode = modes[layer];
@@ -258,6 +287,7 @@ export function sceneView(iso: IsolationView, modes: LayerModes, hidden: Readonl
     focusIds: iso.focusIds,
     layers,
     hidden,
+    region,
     joint: iso.joint,
     jointPartner: iso.jointPartner,
     tints: iso.tints ?? NO_TINTS,
@@ -279,12 +309,13 @@ export function sceneView(iso: IsolationView, modes: LayerModes, hidden: Readonl
 export function shownIn(view: SceneView, layer: Layer, id: string): Shown {
   if (view.focusIds.includes(id) || view.joint.includes(id)) return "solid";
   if (view.hidden.has(id)) return "hidden";
+  if (view.region !== null && !view.region.has(id)) return "hidden";
   const show = view.layers[layer];
   if (show.solid === null || show.solid.has(id)) return "solid";
   return show.rest;
 }
 
-/** Can this structure be picked (clicked, tapped, hovered)? Only solid ones can (spec §5.5). */
+/** Can this structure be picked (clicked, tapped, hovered)? Only solid ones can (spec §5.5): inside a body region, its members and the focus. */
 export const isPickableIn = (view: SceneView, layer: Layer, id: string): boolean => shownIn(view, layer, id) === "solid";
 
 /**
@@ -297,6 +328,8 @@ export function viewOf(
     tier: Tier;
     ghostMode: GhostMode;
     grp: string | null;
+    /** The body region in focus (M13), or null / absent for the whole body. */
+    reg?: string | null;
     antagonists?: boolean;
     joint: { a: string; b: string } | null;
     layers: LayerModes;
@@ -306,10 +339,11 @@ export function viewOf(
   hasMesh: (id: string) => boolean,
   peel: (stop: MuscleDepth) => ReadonlySet<string> = peeledAt,
 ): SceneView {
-  const base = isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp, softParts, softParent, st.layers);
+  const region = memberSet(st.reg ?? null);
+  const base = isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp, softParts, softParent, st.layers, region);
   const tinted = withTints(base, st.sel, st.tier, st.antagonists ?? false, hasMesh, st.layers, rolesOf, usePatchBatch.getState().failed);
   const iso = withJoint(tinted, st.joint, hasMesh);
-  return sceneView(iso, st.layers, withPeeled(st.hidden, peel(st.muscleDepth ?? 0)));
+  return sceneView(iso, st.layers, withPeeled(st.hidden, peel(st.muscleDepth ?? 0)), region);
 }
 
 /**

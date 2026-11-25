@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { FULL_SKELETON, isolationStep, levelOf, type Isolation, type IsolationAction } from "../src/state/isolation";
 
-const s = (sel: string | null, tier: 0 | 1 | 2 = 0): Isolation => ({ sel, tier, grp: null });
-const g = (grp: string): Isolation => ({ sel: null, tier: 0, grp });
+const s = (sel: string | null, tier: 0 | 1 | 2 = 0): Isolation => ({ sel, tier, grp: null, reg: null });
+const g = (grp: string): Isolation => ({ sel: null, tier: 0, grp, reg: null });
 
 describe("isolation reducer (spec §6 state diagram)", () => {
   const table: [string, Isolation, IsolationAction, Isolation, string][] = [

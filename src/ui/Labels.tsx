@@ -76,7 +76,7 @@ export function LabelProbe({ skeleton }: { skeleton: BatchedSkeleton | null }) {
   useEffect(
     () =>
       useViewer.subscribe((s, p) => {
-        if (s.sel !== p.sel || s.tier !== p.tier || s.grp !== p.grp || s.ghostMode !== p.ghostMode || s.explode !== p.explode || s.panelInset !== p.panelInset || s.sidebarLeft !== p.sidebarLeft || s.colourMode !== p.colourMode || s.layers !== p.layers || s.hidden !== p.hidden || s.muscleDepth !== p.muscleDepth) last.current.dirty = true;
+        if (s.sel !== p.sel || s.tier !== p.tier || s.grp !== p.grp || s.reg !== p.reg || s.ghostMode !== p.ghostMode || s.explode !== p.explode || s.panelInset !== p.panelInset || s.sidebarLeft !== p.sidebarLeft || s.colourMode !== p.colourMode || s.layers !== p.layers || s.hidden !== p.hidden || s.muscleDepth !== p.muscleDepth) last.current.dirty = true;
       }),
     [],
   );

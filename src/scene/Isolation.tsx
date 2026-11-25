@@ -270,6 +270,7 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
         s.sel !== prev.sel ||
         s.tier !== prev.tier ||
         s.grp !== prev.grp ||
+        s.reg !== prev.reg ||
         s.antagonists !== prev.antagonists ||
         s.ghostMode !== prev.ghostMode ||
         s.ghostOpacity !== prev.ghostOpacity ||

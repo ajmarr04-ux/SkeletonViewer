@@ -1,22 +1,21 @@
-# Handoff — written 2026-11-25 at the end of M13 session BL
+# Handoff — written 2026-11-25 at the end of M13 session BM
 
 ## Next session
-BM (design): region focus state: the reducer's `reg`, `focusRegion` / `leaveRegion`, `levelOf` and Back, URL `reg=`, history (`skvDepth`), `sceneView` / `isolationView` intersections with the region's members, `isPickable` (`docs/PLAN-milestone-13.md` step 3, decision 7).
-Done when: unit tests for every transition; the five goldens and `regions.json` unchanged; `select`, `related`, `nested`, `layers` e2e pass.
+BN (routine): the region UI: toolbar "Body region" button, lazy picker (ARIA tree list + generated front/back SVG maps), camera framing on the region, breadcrumb, announcements (`docs/PLAN-milestone-13.md` step 4, decision 8).
+Done when: new tests in `tests/e2e/regions.spec.ts` (exists, 4 tests from BM: extend it) and the a11y pass for the picker; `polish`, `a11y` and `keyboard` e2e unchanged and passing.
 
 ## State
-- Last commit: see `git log` (M13 BL: body-region membership, located_in, regions golden)
-- `npm run check`: pass (690 tests; now also runs `regions:membership -- --check`)
-- e2e run this session: `fixture` (3), `smoke` + `related` (12), all pass
+- Last commit: see `git log` (M13 BM: region focus state)
+- `npm run check`: pass (714 tests; the six goldens unchanged)
+- e2e run this session: `regions`, `select`, `related`, `nested`, `layers` (see the plan's BM notes for the result)
 - Open fan-out work: none
 
 ## Waiting on the user
-Nothing blocking. After BL the plan asks for a skim of `assets/build/REPORT-regions.md` (structures in many regions, the 63 overrides); it isn't a gate.
+Nothing blocking.
 
 ## Things the next session must know
-- Runtime lookups for BM: `src/regions/index.ts`: `regionInfo(key)` (fine/coarse, name, coarse parent, side), `isRegionKey`, `membersOf(key)` (a coarse key = the union of its fine regions' members), `isInRegion(id, key)`, `regionsOf(id)`. All available from the first frame (Vitest setup and the app entry load them via `indexData.ts`).
-- `src/regions/index.ts` must not import the registry at run time (Vitest's setup loads it before tests mock `registered.ts`).
-- Members include structures without a mesh (parent muscles, wisdom teeth): filter with `hasMesh` when drawing, as `isolationView` does.
-- `located_in` is in the app graph (chunk `regions`) and last in `EDGE_TYPES`; no tier rule or panel follows it (decision 5).
-- Goldens: never `--write --force` without the user's approval; `regions.json` now counts as a golden.
-- Main chunk 489.3 kB (`gzip -9`, index + modulepreloads; budget 500.1).
+- Actions: `focusRegion(key)` / `leaveRegion()` in `src/state/selection.ts` (also `window.__viewer.focusRegion/leaveRegion`, `state().reg`). Store `reg`; URL `reg=`. `leaveRegion` with something isolated keeps the isolation (replace), with nothing isolated pops: a deliberate departure, in the BM notes.
+- The view: `memberSet(key)` (`src/regions/index.ts`), `isolationView(…, region)`, `sceneView(…, region)`, `shownIn` hides non-members (focus and joint bones excepted). Everything that goes through `viewOf` already follows the region.
+- Not done, BN's: announcements (a region step is announced today only via its `sel`/`grp` change; `announce.ts` counts use `isolationView` without a region), the breadcrumb's region crumb, framing on the region volume, the "outside the body region" wording.
+- BK's lesson for the lazy picker: a lazy chunk importing `three` or `react` but not `meshoptimizer` can cost ~1 kB of main chunk; measure index + modulepreloads (`gzip -9`), now 489.5 kB of 500.1.
+- Goldens: never `--write --force` without the user's approval.

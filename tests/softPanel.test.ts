@@ -279,8 +279,8 @@ describe('"Show attached muscles": grp=attached:<bone>', () => {
 
   it("the reducer treats it as a group: a level, Back to the full skeleton; a member from it is a new entry", () => {
     const r = isolationStep(FULL_SKELETON, { type: "group", key: "attached:femur_left" });
-    expect(r).toEqual({ state: { sel: null, tier: 0, grp: "attached:femur_left" }, history: "push" });
-    const from = isolationStep({ sel: "femur_left", tier: 0, grp: null }, { type: "group", key: "attached:femur_left" });
+    expect(r).toEqual({ state: { sel: null, tier: 0, grp: "attached:femur_left", reg: null }, history: "push" });
+    const from = isolationStep({ sel: "femur_left", tier: 0, grp: null, reg: null }, { type: "group", key: "attached:femur_left" });
     expect(from.history).toBe("push");
     expect(isolationStep(r.state, { type: "back" })).toEqual({ state: FULL_SKELETON, history: "pop" });
     expect(isolationStep(r.state, { type: "select", id: "gluteus_maximus_left" }).history).toBe("push");

@@ -12,6 +12,7 @@ import type { RegionIndexData, RegionInfo } from "./codec";
 let data: RegionIndexData = { regions: [], located: new Map(), tris: new Map() };
 let byKey = new Map<string, RegionInfo>();
 let members = new Map<string, readonly string[]>();
+let memberSets = new Map<string, ReadonlySet<string>>();
 const NONE: readonly string[] = [];
 
 /** Called once by src/content/indexData.ts. */
@@ -29,6 +30,7 @@ export function setRegionIndex(d: RegionIndexData): void {
     for (const c of coarse) m.get(c)?.push(id);
   }
   members = m;
+  memberSets = new Map();
 }
 
 /** Every region, fine then coarse, in file order. */
@@ -40,6 +42,13 @@ export const isRegionKey = (key: string): boolean => byKey.has(key);
 export const regionsOf = (id: string): readonly string[] => data.located.get(id) ?? NONE;
 /** A region's member structures (a coarse region: every member of its fine regions, once), in index order. */
 export const membersOf = (key: string): readonly string[] => members.get(key) ?? NONE;
+/** A region's members as a set (cached; the same object each call), or null for an unknown key or null. */
+export function memberSet(key: string | null): ReadonlySet<string> | null {
+  if (key === null || !byKey.has(key)) return null;
+  let set = memberSets.get(key);
+  if (!set) memberSets.set(key, (set = new Set(membersOf(key))));
+  return set;
+}
 /** Is the structure in the region (fine or coarse)? */
 export const isInRegion = (id: string, key: string): boolean => {
   const info = byKey.get(key);
