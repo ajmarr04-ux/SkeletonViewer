@@ -28,3 +28,54 @@ export type EdgeTypeDescriptor = {
 
 /** A graph node that isn't a structure (a joint): named so the endpoint check passes and a panel can show it. */
 export type GraphNode = { id: string; node: string; name: string };
+
+// --- Tier rules (SPEC-platform §4.3; M12 plan decisions 5 and 6) ---
+
+/**
+ * How a step lists each source's targets: `id` sorted by ID; `anatomical` in
+ * the ID index's order (the eager layer as its ID file is written, then each
+ * other layer in registry order, IDs sorted); `written` as the edges were
+ * written.
+ */
+export type TierOrder = "id" | "anatomical" | "written";
+
+/** Where a `follow` step starts. */
+export type TierFrom =
+  /** The structure itself (default). */
+  | "self"
+  /** The structure and its parts. */
+  | "self+parts"
+  /** What the step before it gave. */
+  | "previous"
+  /** The structure and everything the steps before it gave. */
+  | "result";
+
+export type TierStep =
+  /** The structure itself (removed from the final result; a source for the next step). */
+  | { self: true }
+  | {
+      /** Edge type IDs (forward), inverse labels (backward) or symmetric types. */
+      follow: string | readonly string[];
+      from?: TierFrom;
+      /** Each source's targets in this order, source by source (default `written`). */
+      order?: TierOrder;
+      /** Leave out what these step names reach from the structure (with their parts). */
+      exclude?: string | readonly string[];
+    }
+  /** Another tier of the same kind, evaluated in full. */
+  | { tier: string }
+  /** Keep only what matches, of everything so far. */
+  | { filter: { kind?: readonly string[]; layer?: readonly string[] } };
+
+export type TierRule = {
+  steps: readonly TierStep[];
+  /** Sort what the rule adds itself (everything after its `tier` steps' results) in this order. */
+  order?: TierOrder;
+  /** A structure with parts in the result: followed by its parts (`with`, default) or replaced by them (`instead`). */
+  parts?: "with" | "instead";
+  /** The tier exists only for a structure with an edge along this step name (a ligament's tier 2 needs a joint). */
+  requires?: string;
+};
+
+/** A kind's tiers by name (`t1`, `t2`, and any other set a feature asks for, such as `ant`). */
+export type KindTiers = Readonly<Record<string, TierRule>>;

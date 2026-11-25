@@ -1,5 +1,8 @@
 // The cartilage layer: articular and costal cartilage, discs and menisci (M6).
 import { defineLayer } from "../../types";
+import { jointTiers } from "../jointTiers";
+
+const TIERS = jointTiers("attached_to");
 
 export const cartilage = defineLayer({
   id: "cartilage",
@@ -19,8 +22,8 @@ export const cartilage = defineLayer({
   contentChunk: "virtual:skeleton-soft-content-cartilage",
   defaultSetting: "off",
   kinds: [
-    { id: "cartilage", noun: { one: "cartilage", many: "cartilages" }, labelPriority: 3 },
-    { id: "disc", noun: { one: "disc", many: "discs" }, labelPriority: 4 },
-    { id: "meniscus", noun: { one: "meniscus", many: "menisci" }, labelPriority: 5 },
+    { id: "cartilage", noun: { one: "cartilage", many: "cartilages" }, labelPriority: 3, tiers: TIERS },
+    { id: "disc", noun: { one: "disc", many: "discs" }, labelPriority: 4, tiers: TIERS },
+    { id: "meniscus", noun: { one: "meniscus", many: "menisci" }, labelPriority: 5, tiers: TIERS },
   ],
 });

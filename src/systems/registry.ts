@@ -3,6 +3,8 @@
 // else asks instead of naming a layer or kind. Main chunk: data only.
 
 import { REGISTRY, SYSTEMS } from "./registered";
+import type { Graph } from "../graph/graph";
+import type { TierContext } from "../graph/query";
 import type { EdgeTypeDescriptor } from "../graph/types";
 import type { KindDescriptor, LayerDescriptor, LayerMode, OverlaySpec, PresetDescriptor, SystemDescriptor } from "./types";
 
@@ -66,6 +68,51 @@ export const layerOfKind = (kind: string): LayerId | undefined => KIND_LAYER.get
 
 const KIND = new Map<string, KindDescriptor>(REGISTRY.flatMap((l) => (l.kinds as readonly KindDescriptor[]).map((k) => [k.id, k] as const)));
 export const kindDescriptor = (kind: KindId): KindDescriptor => KIND.get(kind)!;
+
+// ---------------------------------------------------------------------------
+// Tier rules over the graph (M12 plan decisions 5 and 6)
+
+/**
+ * The ID index's order (`anatomical` in tier rules): the eager layer's
+ * structures as its ID file lists them, then each other layer in registry
+ * order, its IDs sorted. `entries` = every structure with its kind, in any order
+ * apart from the eager layer's.
+ */
+export function indexRank(entries: readonly { id: string; kind: string }[]): (id: string) => number {
+  const layerIndex = (kind: string) => LAYER_IDS.indexOf(layerOfKind(kind) ?? ("" as LayerId));
+  const ordered = entries
+    .map((e, i) => ({ ...e, i, l: layerIndex(e.kind) }))
+    .sort((a, b) => a.l - b.l || (a.l === LAYER_IDS.indexOf(EAGER_LAYER) ? a.i - b.i : a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  const rank = new Map(ordered.map((e, i) => [e.id, i]));
+  return (id) => rank.get(id) ?? Infinity;
+}
+
+/** The tier engine's context: each structure's kind (its rules, its parts) and layer from the registry. */
+export function tierContext(graph: Graph, lookup: { kindOf(id: string): string | undefined; rank(id: string): number }): TierContext {
+  const partsOf = (id: string): readonly string[] => {
+    const k = lookup.kindOf(id);
+    const via = k === undefined ? undefined : KIND.get(k)?.parentOf?.via;
+    if (!via) return [];
+    return graph
+      .in(id, via.type)
+      .filter((e) => via.except === undefined || e.meta?.[via.except] === undefined)
+      .map((e) => e.from);
+  };
+  return {
+    graph,
+    rulesOf: (id) => {
+      const k = lookup.kindOf(id);
+      return k === undefined ? undefined : KIND.get(k)?.tiers;
+    },
+    partsOf,
+    kindOf: lookup.kindOf,
+    layerOf: (id) => {
+      const k = lookup.kindOf(id);
+      return k === undefined ? undefined : layerOfKind(k);
+    },
+    rank: lookup.rank,
+  };
+}
 
 /** Does the layer have kinds whose parts are selected through their parent (muscles → parts)? */
 export const hasNestedParts = (id: LayerId): boolean => layerDescriptor(id).kinds.some((k) => "parentOf" in k);

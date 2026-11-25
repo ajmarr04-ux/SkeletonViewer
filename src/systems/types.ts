@@ -5,7 +5,7 @@
 // (AV); fields later milestones fill (`tiers`, `panel`, `searchFields`, the
 // tree builder) are optional until then.
 
-import type { EdgeTypeDescriptor } from "../graph/types";
+import type { EdgeTypeDescriptor, KindTiers } from "../graph/types";
 
 export type LayerMode = "on" | "ghost" | "off";
 export type Lod = "low" | "high";
@@ -79,8 +79,13 @@ export type KindDescriptor = {
    * in this order.
    */
   labelPriority: number;
-  /** Muscle → part: a click selects the parent first, then the part (spec §5.1); `maxParts` = the most parts any parent has (one outline each). */
-  parentOf?: { childKind: string; selection: "nested"; maxParts: number };
+  /**
+   * Muscle → part: a click selects the parent first, then the part (spec §5.1); `maxParts` = the most parts any parent has (one outline each).
+   * `via`: the parts are the structures with a `type` edge to the parent, except edges whose meta has `except` (M12: tier rules' parts expansion).
+   */
+  parentOf?: { childKind: string; selection: "nested"; maxParts: number; via: { type: string; except?: string } };
+  /** Tier rules (SPEC-platform §4.3; M12 plan decision 6): `t1`, `t2`, and other sets a feature asks for (`ant`). */
+  tiers?: KindTiers;
   /** The values of the entries' `partType`, in order. */
   partTypes?: readonly PartTypeSpec[];
 };

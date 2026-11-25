@@ -1,20 +1,21 @@
-# Handoff — written 2026-11-25 at the end of M12 AZ
+# Handoff — written 2026-11-25 at the end of M12 BA
 
 ## Next session
-BA (design): the query engine (`src/graph/graph.ts` runtime index, `src/graph/query.ts`) and tier rules as data on every `KindDescriptor` (plan decisions 5–6), proven offline against `tests/golden/tiers.json`.
-Done when: the engine over the Node-compiled graph (`compileGraphFromDisk`) gives `tiers.json` exactly for all 1,138 IDs (t1, t2 all On, `bonesOnly`, `ant`); engine unit tests (step types, `from` modes, three orders, parts expansion, Off-layer filter, memoisation); the app still runs on the old tier code until BC; `npm run check` green.
+BB (design): the always-loaded ID index (plan decision 7, step 3). `virtual:skeleton-index` (plugin from the registry's ID files and the joint nodes), `src/content/index.ts` lookups; `softRegistry.ts` reads the index; `softTable.ts`, `loadSoftIds.ts`, `registerSoftIds`, `virtual:skeleton-soft-ids` deleted; the fixture build's ID file joins the index through the same plugin.
+Done when: `isKnownId`, `hasMesh`, `displayName`, `layerOfId` answer at once (no "unknown until the table loads"); goldens unchanged (`urls.json` especially); the `nested`, `layers`, `select`, `tiers` e2e specs pass; main chunk measured against the 12 kB budget (decision 7); `npm run check` green.
 
 ## State
-- Last commit: dcae4f7 M12 AZ: graph core; tree golden in `5dc9ec8`.
-- `npm run check`: pass (618 tests, five goldens unchanged). Main chunk 472.7 kB.
+- Last commit: M12 BA: tier engine and tier rules (see `git log`); AZ's graph core is `dcae4f7`.
+- `npm run check`: pass (638 tests, the five goldens unchanged). Main chunk about 473.0 kB (registry chunk +0.3 kB for the tier rules).
 - Open fan-out work: none
 
 ## Waiting on the user
-none (AZ amended decisions 2 and 4: `synergist_of`, `antagonist_of`, `adjacent_tooth` are directed to keep today's behaviour; see the plan's AZ notes)
+none (the user approved BA's amendment to decision 5 in the session: source-by-source order, a rule's own `order`, `anatomical` over soft IDs, and the `result`/`exclude`/`parts`/`requires` options; see the plan's BA notes)
 
 ## Things the next session must know
-- Graph core: `src/graph/{types,edgeTypes,compile}.ts`; edge types `src/systems/musculoskeletal/edges.ts`; extractors `KindContent.edges`, rules `LayerContent.rules`, system half `src/systems/musculoskeletal/content.ts`; `compileContentGraph` (registry.content), `compileGraphFromDisk` (scripts/lib/content-files.ts). 17,640 edges, 0 errors.
-- Parts' `inherit` is resolved into the part's own `originates_on`/`inserts_on` with meta `inherited: "true"`; `derivedLists` (attached muscles) ignores those, tiers should include them.
-- Order is behaviour: soft tier lists ID-sorted, bone partners in `ids.json` order, region neighbours as written (edges keep written order). Today's ligament/cartilage t2 = `shares_joint_with` minus t1; `t2: null` when the structure has no `member_of_joint`.
-- The isolation test now also flags edge type IDs and inverse labels: `src/graph/` must name none (tier rules live in descriptors).
+- Engine: `src/graph/graph.ts` (`createGraph`, `add(chunk, edges)`), `src/graph/query.ts` (`tierEngine(ctx)`: `evaluate`, `related(id, tier, modes)`, `hasTier`). Rules: `KindDescriptor.tiers` in each layer's `layer.ts` (ligaments and cartilage share `src/systems/musculoskeletal/jointTiers.ts`). Context: registry `tierContext(graph, { kindOf, rank })`.
+- **`anatomical` order = the ID index's order:** the eager layer as `ids.json` lists it, then each other layer in registry order with its IDs sorted (`indexRank(entries)` in the registry). BB should build `virtual:skeleton-index` in that order (or keep using `indexRank`) so BC's `rank` comes from the index.
+- Parts come from `parentOf.via` (`part_of` edges without meta `also`): an `alsoServes` part isn't a muscle's part.
+- A missing tier (ligament or cartilage with no joint) falls back to tier 1 at tier 2 in the caller, as `relatedAt` does today; BC keeps that in the app's wrapper.
+- The app still runs on `relations.ts`, `softTiers.ts`, `softRelations.ts` until BC switches and deletes them.
 - Goldens: never `--write --force` without the user's approval. QUESTIONS: next is 140.

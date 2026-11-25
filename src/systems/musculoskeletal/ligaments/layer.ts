@@ -1,5 +1,6 @@
 // The ligaments layer (M6).
 import { defineLayer } from "../../types";
+import { jointTiers } from "../jointTiers";
 
 export const ligaments = defineLayer({
   id: "ligaments",
@@ -18,5 +19,5 @@ export const ligaments = defineLayer({
   },
   contentChunk: "virtual:skeleton-soft-content-ligaments",
   defaultSetting: "off",
-  kinds: [{ id: "ligament", noun: { one: "ligament", many: "ligaments" }, labelPriority: 2 }],
+  kinds: [{ id: "ligament", noun: { one: "ligament", many: "ligaments" }, labelPriority: 2, tiers: jointTiers("connects") }],
 });
