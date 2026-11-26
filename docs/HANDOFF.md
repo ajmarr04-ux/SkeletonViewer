@@ -7,7 +7,7 @@ Done when: the exit criteria are ticked and `/m13/` is live.
 ## State
 - Last commit: see `git log` (M13 BQ: Tab cursor in regions, `[` / `]`, label thinning)
 - `npm run check`: pass (763 tests; the six goldens unchanged)
-- e2e this session: see the BQ notes in the plan (keyboard + sidebar + polish + labels-layers + regions)
+- e2e this session: keyboard + sidebar + polish + labels-layers + regions 38/41 with a bench running alongside (three `keyboard` timeouts); `keyboard` alone 5/5. Don't run a bench and e2e together.
 - Open fan-out work: none
 
 ## Waiting on the user
