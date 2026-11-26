@@ -7,7 +7,7 @@ Done when: `keyboard`, `sidebar`, `polish` and `labels-layers` e2e pass; new reg
 ## State
 - Last commit: see `git log` (M13 BP: budget governor)
 - `npm run check`: pass (756 tests; the six goldens unchanged)
-- e2e this session: `budget` 6/6 (new), `fixture` 6/6 (one new); regression batch (smoke, viewer, layers, regions, a11y, tints): see the BP notes
+- e2e this session: `budget` 6/6 (new), `fixture` 6/6 (one new); smoke + viewer + layers + regions + a11y + tints + budget 82/82
 - Open fan-out work: none
 
 ## Waiting on the user

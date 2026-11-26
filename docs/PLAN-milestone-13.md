@@ -365,4 +365,4 @@ None yet.
 - **Fixture.** The widgets' two LODs are the same boxes, so the governor never caps them; the fixture test caps the bones in `reg=head` and checks the chunked layer fetches only `widgets-head-{low,high}` (bounds OK, 4 nodes), the bones stay low and the prompt shows.
 - **Parity.** `tests/budget.test.ts` asserts the index's whole-layer totals are the manifests' (1,499,634 / 449,623), that they fit both budgets, and that `govern` and `heldLayers` do nothing on them; the e2e parity test checks the same in the app (all four layers On, Auto high: no caps, no prompt; phone: no picker).
 - **Main chunk: 490.4 kB** `gzip -9` (index + modulepreloads), +1.8 kB over BO's 488.6 (re-measured at BO's commit in a worktree the same way). Budget 500.1.
-
+- **e2e:** `budget` 6/6 and `fixture` 6/6 (one new); smoke + viewer + layers + regions + a11y + tints + budget **82/82**, first run. No existing e2e test was edited. `npm run check`: pass (756 tests; the six goldens unchanged).
