@@ -7,7 +7,7 @@ Done when: pure governor unit tests; e2e with `?debug&budget=`; the parity unit 
 ## State
 - Last commit: see `git log` (M13 BO: region chunking)
 - `npm run check`: pass (737 tests; the six goldens unchanged; it now also runs `SKV_REGISTRY=fixture npm run check-models`)
-- e2e this session: `fixture` 5/5 (two new); `layers` + `smoke` + `tints` + `regions`: see the BO notes
+- e2e this session: `fixture` 5/5 (two new); `layers` + `smoke` + `tints` + `regions` 40/40
 - Open fan-out work: none
 
 ## Waiting on the user
