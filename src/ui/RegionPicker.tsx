@@ -153,7 +153,6 @@ export default function RegionPicker({ regions, current: reg, count: countOf, on
                 aria-setsize={r.size}
                 aria-expanded={r.level === 1 ? isOpen : undefined}
                 aria-selected={reg === key}
-                aria-label={`${r.info.name}, ${count}`}
                 tabIndex={key === active ? 0 : -1}
                 data-region={key}
                 onFocus={() => setActive(key)}
@@ -173,9 +172,8 @@ export default function RegionPicker({ regions, current: reg, count: countOf, on
                   </span>
                 )}
                 <span className="tree-label">{r.info.name}</span>
-                <span className="tree-count" aria-hidden="true">
-                  {count}
-                </span>
+                <span className="visually-hidden">, </span>
+                <span className="tree-count">{count}</span>
               </li>
             );
           })}

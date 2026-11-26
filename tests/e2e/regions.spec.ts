@@ -162,7 +162,7 @@ test("pick from the body maps: a click on the back view, the arrow keys and Ente
   // The same region has the same name in the list and on the map.
   await page.getByTestId("region-tool").click();
   const name = await front.locator(`[data-region=${next}]`).getAttribute("aria-label");
-  await expect(picker(page).getByRole("treeitem", { selected: true })).toHaveAttribute("aria-label", new RegExp(`^${name!.replace(/[()]/g, "\\$&")}, \\d+$`));
+  await expect(picker(page).getByRole("treeitem", { selected: true })).toHaveAccessibleName(new RegExp(`^${name!.replace(/[()]/g, "\\$&")}\\s*, \\d+$`));
 });
 
 test("select inside, tiers inside, Back × 4; breadcrumb crumbs and the announcements", async ({ page }) => {
