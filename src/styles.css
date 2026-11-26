@@ -431,3 +431,14 @@ dialog.region-picker::backdrop { background: rgb(0 0 0 / 0.5); }
   .region-picker-body { grid-template-columns: 1fr; }
   .region-map svg { max-height: 44dvh; }
 }
+
+/* Budget prompt (M13 plan decision 10): above the toolbar, beside the panels, never blocking. */
+.budget-prompt {
+  position: fixed; left: calc(50% + (var(--sidebar-left, 0px) - var(--panel-right, 0px)) / 2);
+  bottom: calc(max(40px, var(--panel-bottom, 0px) + 8px) + 62px); transform: translateX(-50%); z-index: 4;
+  box-sizing: border-box; width: max-content; max-width: min(420px, calc(100vw - 24px)); padding: 10px 14px; border-radius: 8px;
+  background: #2f3540; border: 1px solid #8ab4f8; color: #e8eaed; font-size: 14px;
+}
+.budget-prompt p { margin: 0 0 8px; }
+.budget-prompt-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.debug .debug-budget { margin: 6px 0 0; }

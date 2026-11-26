@@ -4,7 +4,8 @@ import type { Lod, LodSetting } from "../scene/lod";
 import { NO_PANEL, type Box, type PanelInset, type Preset } from "../camera/math";
 import type { Tier } from "./isolation";
 import { DEFAULT_LAYER_SETTING, type CameraState, type GhostMode, type Layer, type LayerMode, type LayerModes, type MuscleDepth } from "./url";
-import { LAZY_LAYERS, type LazyLayerId, type SystemId } from "../systems/registry";
+import { LAZY_LAYERS, type LayerId, type LazyLayerId, type SystemId } from "../systems/registry";
+import type { LodSource } from "../scene/budget";
 import type { ColourMode } from "../scene/regionColours";
 import type { PlacedLabel } from "../scene/labels";
 
@@ -198,6 +199,30 @@ export type ViewerState = {
   /** Structures hidden one by one (spec §5.5, `hid=`). */
   hidden: ReadonlySet<string>;
   setHidden: (ids: Iterable<string>) => void;
+  /** The budget governor's state (M13 plan decision 10; src/state/budget.ts), null until the viewer starts it. */
+  budget: BudgetState | null;
+  /** Layers held back by the phone's start until a body region or "Whole body" is chosen (decision 10): not drawn. */
+  budgetHeld: readonly LayerId[];
+  /** The view the "heavy view" prompt is shown for (its key), or null when it is not shown. */
+  budgetPrompt: string | null;
+  /** The view whose prompt was dismissed (or answered): it isn't shown again until the layers or region change. */
+  budgetDismissed: string | null;
+};
+
+/** What the budget governor decided for the current view. */
+export type BudgetState = {
+  /** The triangle budget and where it came from (`?debug&budget=` or the device class). */
+  limit: number;
+  limitSource: "device" | "url";
+  phone: boolean;
+  /** The viewer's plan: its final LOD and source. */
+  planLod: Lod;
+  source: LodSource;
+  /** Layers capped to low (step 1). */
+  caps: readonly LayerId[];
+  /** The drawn total (index estimate, overlays not counted) and whether it is still over (step 2). */
+  drawn: number;
+  over: boolean;
 };
 
 export const useViewer = create<ViewerState>()((set) => ({
@@ -308,6 +333,10 @@ export const useViewer = create<ViewerState>()((set) => ({
       const prev: LayerLoad = s.layerLoad[layer] ?? { status: "loading", lod: null, fetching: null, received: 0, total: 0, error: null, attempt: 0, shownAt: {} };
       return { layerLoad: { ...s.layerLoad, [layer]: { ...prev, ...load } } };
     }),
+  budget: null,
+  budgetHeld: [],
+  budgetPrompt: null,
+  budgetDismissed: null,
   hidden: new Set(),
   setHidden: (ids) =>
     set((s) => {

@@ -1,5 +1,5 @@
 import type { Group } from "three";
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { loadContent } from "../content/loader";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import ids from "../../content/ids.json";
@@ -23,7 +23,10 @@ import { BenchPanel } from "../ui/BenchPanel";
 import { benchLayersState } from "./bench";
 import { Toolbar } from "../ui/Toolbar";
 import { RegionPickerHost } from "../ui/RegionPickerHost";
-import { LOD_SETTING_KEY, lodPlan, lodsToLoad, parseLodSetting, summariseObjects, withoutLodParam, type Lod } from "./lod";
+import { LOD_SETTING_KEY, lodPlan, lodsToLoad, parseLodSetting, SMALL_SCREEN_PX, summariseObjects, withoutLodParam, type Lod } from "./lod";
+import { initBudget, layerLods, setBudgetPlan, watchBudget } from "../state/budget";
+import { BudgetPrompt } from "../ui/BudgetPrompt";
+import { BudgetDebug } from "../ui/BudgetDebug";
 import { createBoneMaterial, createGhostMaterial, SCENE_BACKGROUND } from "./material";
 import { Explode } from "./Explode";
 import { Isolation, type IsolationStats, type SkeletonScene } from "./Isolation";
@@ -40,7 +43,7 @@ import { Toast } from "../ui/Toast";
 import { ScreenshotService } from "./ScreenshotService";
 import { probeDevice, readStoredSetting } from "./webgl";
 import type { LayerFile } from "./debugLayers";
-import { LAZY_LAYERS } from "../systems/registry";
+import { EAGER_LAYER, LAZY_LAYERS } from "../systems/registry";
 
 // M6 debug layer view (`?debug&layers=…`): lazy chunks, never fetched without the parameter.
 const DebugLayersScene = lazy(() => import("./DebugLayers").then((m) => ({ default: m.DebugLayersScene })));
@@ -104,8 +107,14 @@ export function Viewer() {
   const [plan, setPlan] = useState(() => {
     const setting = parseLodSetting(readStoredSetting(LOD_SETTING_KEY));
     useViewer.getState().setLodSetting(setting);
-    return lodPlan(window.location.search, setting, probe);
+    const p = lodPlan(window.location.search, setting, probe);
+    // The budget governor (M13 decision 10), before anything is drawn: caps, and the phone's start.
+    initBudget(Math.min(probe.width, probe.height) < SMALL_SCREEN_PX, window.location.search, p);
+    return p;
   });
+  // The bones' plan with the governor's cap applied.
+  const bonesKey = useViewer((s) => layerLods(plan.lods, EAGER_LAYER, s.budget?.caps ?? []).join(","));
+  const bonesPlan = useMemo(() => ({ ...plan, lods: bonesKey.split(",") as Lod[] }), [plan, bonesKey]);
   const [material] = useState(createBoneMaterial);
   const [ghostMaterial] = useState(() => createGhostMaterial(useViewer.getState().ghostOpacity));
   const [isoStats, setIsoStats] = useState<IsolationStats | null>(null);
@@ -133,6 +142,7 @@ export function Viewer() {
 
   useEffect(() => watchReducedMotion(), []);
   useEffect(() => watchHistory(), []);
+  useEffect(() => watchBudget(), []);
   useEffect(() => () => material.dispose(), [material]);
   useEffect(() => () => ghostMaterial.dispose(), [ghostMaterial]);
 
@@ -145,7 +155,9 @@ export function Viewer() {
         if (search !== window.location.search) {
           window.history.replaceState(window.history.state, "", `${window.location.pathname}${search}${window.location.hash}`);
         }
-        setPlan(lodPlan(search, s.lodSetting, probe));
+        const next = lodPlan(search, s.lodSetting, probe);
+        setBudgetPlan(next);
+        setPlan(next);
       }),
     [probe],
   );
@@ -154,7 +166,7 @@ export function Viewer() {
     let cancelled = false;
     let current: BatchedSkeleton | null = shownRef.current?.skeleton ?? null;
     (async () => {
-      const queue = lodsToLoad(plan.lods, shownRef.current?.lod ?? null);
+      const queue = lodsToLoad(bonesPlan.lods, shownRef.current?.lod ?? null);
       for (const [i, lod] of queue.entries()) {
         const loaded = await loadSkeleton(lod);
         // Fetch the next level now, while this one is batched and drawn (plan step 12).
@@ -196,7 +208,7 @@ export function Viewer() {
     return () => {
       cancelled = true;
     };
-  }, [plan, material, ghostMaterial, debug]);
+  }, [bonesPlan, material, ghostMaterial, debug]);
 
   // Free a skeleton once it is off screen: this cleanup runs after the commit
   // that swapped the next one into the scene (or on unmount), never while it
@@ -207,10 +219,10 @@ export function Viewer() {
   }, [shown]);
 
   const objects = shown ? summariseObjects(shown.skeleton.boneIds, ids) : null;
-  const finalLod = plan.lods[plan.lods.length - 1] ?? null;
+  const finalLod = bonesPlan.lods[bonesPlan.lods.length - 1] ?? null;
   const finalShown = shown !== null && shown.lod === finalLod;
   // `?bench` (M7 step 9): the orbit starts once every layer the link turns on has its final LOD on screen too.
-  const benchLayers = useViewer((s) => (bench ? benchLayersState(s.layers, s.layerLoad, finalLod) : "ready"));
+  const benchLayers = useViewer((s) => (bench ? benchLayersState(s.layers, s.layerLoad, (l) => layerLods(plan.lods, l, s.budget?.caps ?? []).at(-1) ?? null) : "ready"));
 
   return (
     <>
@@ -257,6 +269,7 @@ export function Viewer() {
       <RegionPickerHost />
       <Legend />
       <Toast />
+      <BudgetPrompt />
       <Tooltip />
       <Announcer />
       {error && !debug && (
@@ -267,7 +280,7 @@ export function Viewer() {
       {bench && <BenchPanel layersState={benchLayers} />}
       {debug && (
       <DebugOverlay
-        plan={plan}
+        plan={bonesPlan}
         current={shown?.lod ?? null}
         loadTimes={loadTimes}
         objects={objects}
@@ -288,6 +301,7 @@ export function Viewer() {
             <DebugLayersPanel layers={layers} lod={shown?.lod ?? null} />
           </Suspense>
         )}
+        <BudgetDebug />
         {debugRegions && (
           <p className="debug-regions" data-testid="debug-regions" data-regions={debugRegions.keys.join(",")}>
             Body regions: {debugRegions.keys.length} of {debugRegions.total} drawn

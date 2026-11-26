@@ -5,6 +5,7 @@
 // functions, and `composeAnnouncement` folds what one user action changed into
 // one message (risk 3: the selection wins, the layer change is folded in).
 
+import { BUDGET_PROMPT } from "../scene/budget";
 import ids from "../../content/ids.json";
 import { EAGER_ONLY, isolationView, relatedAt, withTints } from "../scene/isolation";
 import type { Tier } from "../state/isolation";
@@ -312,6 +313,8 @@ export type AnnounceState = Isolated & {
   depth: MuscleDepth;
   /** Per tissue layer: is a LOD on screen yet, and is its load failing. */
   load: Partial<Record<LazyLayerId, { shown: boolean; status: "loading" | "ready" | "error"; attempt: number }>>;
+  /** The budget prompt's view key while it is shown (M13 decision 10; store `budgetPrompt`). */
+  prompt?: string | null;
 };
 
 export type AnnounceDeps = {
@@ -372,5 +375,7 @@ export function composeAnnouncement(
       out.push(layerLoadAnnouncement(t, "retry"));
     }
   }
+  // The budget prompt, last, once each time it appears for a new view.
+  if (now.prompt && now.prompt !== before.prompt) out.push(BUDGET_PROMPT);
   return out.length ? out.join(" ") : null;
 }

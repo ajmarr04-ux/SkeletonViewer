@@ -194,3 +194,35 @@ test("a region with no member in a chunked layer fetches none of its chunks", as
   await expect(page.getByTestId("layers-panel").getByRole("button", { name: "Retry" })).toHaveCount(0);
   expect(files).toEqual([]);
 });
+
+test("budget governor (M13 BP) with a chunked layer: the bones are capped, the widgets fetch only the region's chunk at each LOD", async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const files: string[] = [];
+  page.on("request", (r) => {
+    const m = /\/models\/(widgets-[a-z_]+|skeleton)-(low|high)[.-]/.exec(r.url());
+    if (m) files.push(`${m[1]}-${m[2]}`);
+  });
+  // Headless Chromium's SwiftShader plans low; report a capable GPU so Auto plans high.
+  await page.addInitScript(() => {
+    const get = WebGL2RenderingContext.prototype.getParameter;
+    WebGL2RenderingContext.prototype.getParameter = function (this: WebGL2RenderingContext, p: number) {
+      return p === this.RENDERER ? "Test GPU" : get.call(this, p);
+    };
+  });
+  await page.goto("./?debug&budget=1000&layers=b:on,w:on&reg=head");
+  const budget = page.getByTestId("debug-budget");
+  // The bones are the heaviest layer; the widgets' two LODs are the same boxes, so capping them would save nothing.
+  await expect(budget).toHaveAttribute("data-caps", "bones");
+  await expect(budget).toHaveAttribute("data-over", "true");
+  await expect(page.getByTestId("budget-prompt")).toBeVisible();
+  const row = page.getByTestId("layers-report").locator("[data-layer=widgets]");
+  await expect(row).toHaveAttribute("data-lod", "high", { timeout: 60_000 });
+  await expect(row).toHaveAttribute("data-nodes", "4");
+  await expect(row).toHaveAttribute("data-bounds-ok", "true");
+  await expect(page.getByTestId("debug")).toHaveAttribute("data-lod", "low");
+  expect(files.filter((f) => f.startsWith("widgets")).sort()).toEqual(["widgets-head-high", "widgets-head-low"]);
+  expect(files).not.toContain("skeleton-high");
+  expect(errors).toEqual([]);
+});

@@ -12,6 +12,7 @@ import { allInstanceBounds, batchLayer, disposeBatchedSkeleton, ensureBoundsTree
 import { layerReport, loadLayerManifest, type LayerManifest, type LayerReport } from "../scene/debugLayers";
 import { disposeParts } from "../scene/loadSkeleton";
 import { lodsToLoad, type Lod } from "../scene/lod";
+import { cappedLods } from "../scene/budget";
 import { accentTint, createBoneMaterial, createGhostMaterial, tintFor } from "../scene/material";
 import { useLayerBatches, usePatchBatch, type LayerBatches, type PatchBatch } from "../scene/layerRegistry";
 import { TINT_COLOURS, TINT_ROLES, type TintRole } from "../scene/tints";
@@ -59,7 +60,7 @@ export function layerBaseTint(id: string): Color {
 
 /**
  * In the Canvas. `lods` is the viewer's LOD plan (the same for every layer,
- * plan decision 3); `ready` is true once the bones are on screen, so a layer
+ * plan decision 3, unless the M13 budget governor caps a layer to low); `ready` is true once the bones are on screen, so a layer
  * asked for in the URL never delays the first skeleton.
  */
 export function LayerScenes({ lods, ready, debug }: { lods: Lod[]; ready: boolean; debug: boolean }) {
@@ -186,7 +187,9 @@ function TissueLayerScene({
   const shownRef = useRef<LayerBatches | null>(null);
   shownRef.current = shown;
   const attempt = useViewer((s) => s.layerLoad[layer]?.attempt ?? 0);
-  const lodKey = lods.join(",");
+  // The budget governor's cap (M13 decision 10): low only, whatever the viewer's plan.
+  const capped = useViewer((s) => s.budget?.caps.includes(layer) ?? false);
+  const lodKey = cappedLods(lods, capped).join(",");
   const chunked = layerChunksOf(layer) !== undefined;
   const wantKey = useViewer((s) => (chunked ? wantedChunks(layer, s.reg, s.sel) : ""));
   // A chunked layer keeps the parts it has fetched at the LOD on screen, so a
@@ -210,7 +213,7 @@ function TissueLayerScene({
     const want = chunked ? (wantKey === "" ? [] : wantKey.split(",")) : [""];
     const have = (lod: Lod) => loaded.current.get(lod) ?? new Map<string, BonePart[]>();
     const shownLod = shownRef.current?.lod ?? null;
-    let queue = lodsToLoad(lods, shownLod);
+    let queue = lodsToLoad(lodKey.split(",") as Lod[], shownLod);
     // On the final LOD already: a new body region may still want more chunks at it.
     if (chunked && queue.length === 0 && shownLod !== null && want.some((c) => !have(shownLod).has(c))) queue = [shownLod];
     if (queue.length === 0) return;
@@ -314,7 +317,7 @@ function TissueLayerScene({
     return () => {
       cancelled = true;
     };
-    // `lodKey` stands for `lods` (a new array on each plan).
+    // `lodKey` stands for `lods` (a new array on each plan) with the cap applied.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [layer, lodKey, ready, attempt, materials, debug, wantKey]);
 

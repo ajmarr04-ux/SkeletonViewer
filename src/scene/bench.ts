@@ -78,14 +78,15 @@ type BenchLayerLoad = { status: "loading" | "ready" | "error"; lod: "low" | "hig
 export function benchLayersState(
   layers: Readonly<Record<LazyLayerId, "on" | "ghost" | "off">>,
   load: Readonly<Partial<Record<LazyLayerId, BenchLayerLoad>>>,
-  finalLod: "low" | "high" | null,
+  finalLod: "low" | "high" | null | ((layer: LazyLayerId) => "low" | "high" | null),
 ): "ready" | "waiting" | "error" {
+  const finalOf = typeof finalLod === "function" ? finalLod : () => finalLod;
   let waiting = false;
   for (const layer of LAZY_LAYERS) {
     if (layers[layer] === "off") continue;
     const l = load[layer];
     if (l?.status === "error") return "error";
-    if (!l || l.status !== "ready" || l.lod !== finalLod || l.fetching !== null) waiting = true;
+    if (!l || l.status !== "ready" || l.lod !== finalOf(layer) || l.fetching !== null) waiting = true;
   }
   return waiting ? "waiting" : "ready";
 }

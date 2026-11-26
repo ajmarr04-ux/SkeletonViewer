@@ -15,6 +15,7 @@ import { type GhostMode, type Layer, type LayerModes, type MuscleDepth } from ".
 import { DEFAULT_MODES, EAGER_LAYER, LAYER_IDS } from "../systems/registry";
 import { peeledAt, softEntry, softLayerOf } from "../content/softRegistry";
 import { memberSet } from "../regions/index";
+import { drawnModes } from "./budget";
 import type { BatchedSkeleton } from "./batchSkeleton";
 import { usePatchBatch } from "./layerRegistry";
 import { accentTint as makeAccentTint } from "./material";
@@ -335,10 +336,13 @@ export function viewOf(
     layers: LayerModes;
     hidden: ReadonlySet<string>;
     muscleDepth?: MuscleDepth;
+    /** Layers held back by the budget's phone start (M13 decision 10): drawn as Off. */
+    budgetHeld?: readonly string[];
   },
   hasMesh: (id: string) => boolean,
   peel: (stop: MuscleDepth) => ReadonlySet<string> = peeledAt,
 ): SceneView {
+  if (st.budgetHeld && st.budgetHeld.length > 0) st = { ...st, layers: drawnModes(st.layers, st.budgetHeld), budgetHeld: [] };
   const region = memberSet(st.reg ?? null);
   const base = isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp, softParts, softParent, st.layers, region);
   const tinted = withTints(base, st.sel, st.tier, st.antagonists ?? false, hasMesh, st.layers, rolesOf, usePatchBatch.getState().failed);
