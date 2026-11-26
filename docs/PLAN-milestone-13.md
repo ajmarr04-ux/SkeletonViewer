@@ -68,11 +68,11 @@ Triggers: "begin session BK" to "begin session BR". Every session follows `docs/
 
 - [x] Region list and volumes; `?debug&regions` view; user checkpoint on the list (approved 2026-11-25).
 - [x] Membership computed into `located_in` edges, with overrides and checks (BL).
-- [ ] Region focus UI, breadcrumb, URL, history; combined with isolation and Back.
+- [x] Region focus UI, breadcrumb, URL, history; combined with isolation and Back (BM, BN).
 - [x] Region chunking in the build and loader, proven on the fixture layer (BO).
-- [ ] Budget governor; phones start in region mode only when over budget.
-- [ ] Keyboard cursor and label thinning scoped by region.
-- [ ] Every golden unchanged (`tiers`, `panels`, `urls`, `search`, `tree`); `regions.json` added; old URLs open the same view.
+- [x] Budget governor; phones start in region mode only when over budget (BP; on Auto only since BR).
+- [x] Keyboard cursor and label thinning scoped by region (BQ).
+- [x] Every golden unchanged (`tiers`, `panels`, `urls`, `search`, `tree`); `regions.json` added; old URLs open the same view (BR: `git diff 3d8adef -- tests/golden/` only adds `regions.json` and the harness's region keys).
 - [ ] No regression: every existing unit and e2e test passes unchanged, except where a step lists why (spec §2.1). Performance parity with no region chosen (bench, perf-load, main chunk ≤ 500.1 kB).
 - [ ] **Hosted copy is live and linked below** (an extra requirement for every milestone).
 

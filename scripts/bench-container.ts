@@ -64,7 +64,7 @@ async function main() {
           draws: Number(await attr("data-bench-draw-calls")),
           tris: Number(((await page.getByTestId("bench-triangles").textContent()) ?? "").replace(/[^\d]/g, "")),
           lod: await attr("data-bench-lod"),
-          labels: LABELS ? `${((await page.getByTestId("bench-labels").textContent()) ?? "").trim()}, ${await page.evaluate(() => window.__viewer?.labelCandidates() ?? 0)} candidates` : "",
+          labels: LABELS ? `${((await page.getByTestId("bench-labels").textContent()) ?? "").trim()}, ${await page.evaluate(() => window.__viewer?.labelCandidates?.() ?? "n/a")} candidates` : "",
         });
         await page.close();
       }
