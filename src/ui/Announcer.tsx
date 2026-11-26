@@ -13,7 +13,7 @@ function snapshot(s: ViewerState): AnnounceState {
     const x = s.layerLoad[l];
     if (x) load[l] = { shown: x.lod !== null, status: x.status, attempt: x.attempt };
   }
-  return { sel: s.sel, tier: s.tier, grp: s.grp, antagonists: s.antagonists, layers: s.layers, layersVia: s.layersVia, depth: s.muscleDepth, load };
+  return { sel: s.sel, tier: s.tier, grp: s.grp, reg: s.reg, antagonists: s.antagonists, layers: s.layers, layersVia: s.layersVia, depth: s.muscleDepth, load, prompt: s.budgetPrompt };
 }
 
 const DEPS: AnnounceDeps = {
@@ -34,7 +34,8 @@ const DEPS: AnnounceDeps = {
 export function Announcer() {
   const [text, setText] = useState("");
   useEffect(() => {
-    let before = snapshot(useViewer.getState());
+    // The budget prompt (M13 decision 10) is said even when the page opens with it: it asks for an answer.
+    let before: AnnounceState = { ...snapshot(useViewer.getState()), prompt: null };
     let said: string | null = null;
     let hushed = false;
     let pending = false;

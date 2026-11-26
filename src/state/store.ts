@@ -1,10 +1,11 @@
 import { create } from "zustand";
 import type { BenchResult, LayoutTimes } from "../scene/bench";
 import type { Lod, LodSetting } from "../scene/lod";
-import { NO_PANEL, type PanelInset, type Preset } from "../camera/math";
+import { NO_PANEL, type Box, type PanelInset, type Preset } from "../camera/math";
 import type { Tier } from "./isolation";
 import { DEFAULT_LAYER_SETTING, type CameraState, type GhostMode, type Layer, type LayerMode, type LayerModes, type MuscleDepth } from "./url";
-import { LAZY_LAYERS, type LazyLayerId, type SystemId } from "../systems/registry";
+import { LAZY_LAYERS, type LayerId, type LazyLayerId, type SystemId } from "../systems/registry";
+import type { LodSource } from "../scene/budget";
 import type { ColourMode } from "../scene/regionColours";
 import type { PlacedLabel } from "../scene/labels";
 
@@ -28,7 +29,13 @@ export type JointHighlight = { a: string; b: string; name: string; text?: string
 export type CameraCommand =
   | { kind: "preset"; preset: Preset }
   | { kind: "reset" }
-  | { kind: "frame" }
+  /**
+   * Frame the isolation beside the panels. `region` (M13 plan decision 8): a
+   * body region was chosen, so the box is its volume's (`box`, from the picker)
+   * joined with its drawn members, and leaving the region later restores the
+   * camera from before it if the user hasn't moved it since.
+   */
+  | { kind: "frame"; region?: { box: Box | null } }
   | { kind: "repivot"; id: string }
   | { kind: "centre"; id: string }
   | { kind: "goto"; cam: CameraState | null };
@@ -79,6 +86,8 @@ export type ViewerState = {
   tier: Tier;
   /** Isolated group (Milestone 5, plan decision 5), or null. Never set together with `sel`. */
   grp: string | null;
+  /** Body region in focus (M13 plan decision 7): a fine or coarse region key, or null for the whole body. Combines with `sel` or `grp`. */
+  reg: string | null;
   /** Antagonists shown in their tint (M9 plan decision 7): only at a muscle's tier 2; cleared by every isolation change. */
   antagonists: boolean;
   ghostMode: GhostMode;
@@ -111,6 +120,16 @@ export type ViewerState = {
    */
   keyCursor: { id: string; x: number; y: number } | null;
   setKeyCursor: (c: ViewerState["keyCursor"]) => void;
+  /** Whether the body-region picker (M13 plan decision 8) is open. */
+  regionPickerOpen: boolean;
+  setRegionPickerOpen: (open: boolean) => void;
+  /**
+   * The camera before a body region was framed and the pose it was framed to
+   * (M13 plan decision 8): leaving the region goes back to `before` if the
+   * camera is still at `after`. Null when no region framing is pending.
+   */
+  regionFrame: { before: CameraState; after: CameraState } | null;
+  setRegionFrame: (f: ViewerState["regionFrame"]) => void;
   /** Whether the sidebar (search and tree, Milestone 5) is open. */
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
@@ -142,7 +161,8 @@ export type ViewerState = {
   inputAt: number | null;
   markInput: (t: number | null) => void;
   /** Set the isolation; `ant` (default false) only sticks at tier 2. */
-  setIsolation: (iso: { sel: string | null; tier: Tier; grp?: string | null; ant?: boolean }) => void;
+  /** `reg` left out keeps the current body region. */
+  setIsolation: (iso: { sel: string | null; tier: Tier; grp?: string | null; ant?: boolean; reg?: string | null }) => void;
   setAntagonists: (on: boolean) => void;
   setGhostMode: (mode: GhostMode) => void;
   setGhostOpacity: (opacity: number) => void;
@@ -179,6 +199,30 @@ export type ViewerState = {
   /** Structures hidden one by one (spec §5.5, `hid=`). */
   hidden: ReadonlySet<string>;
   setHidden: (ids: Iterable<string>) => void;
+  /** The budget governor's state (M13 plan decision 10; src/state/budget.ts), null until the viewer starts it. */
+  budget: BudgetState | null;
+  /** Layers held back by the phone's start until a body region or "Whole body" is chosen (decision 10): not drawn. */
+  budgetHeld: readonly LayerId[];
+  /** The view the "heavy view" prompt is shown for (its key), or null when it is not shown. */
+  budgetPrompt: string | null;
+  /** The view whose prompt was dismissed (or answered): it isn't shown again until the layers or region change. */
+  budgetDismissed: string | null;
+};
+
+/** What the budget governor decided for the current view. */
+export type BudgetState = {
+  /** The triangle budget and where it came from (`?debug&budget=` or the device class). */
+  limit: number;
+  limitSource: "device" | "url";
+  phone: boolean;
+  /** The viewer's plan: its final LOD and source. */
+  planLod: Lod;
+  source: LodSource;
+  /** Layers capped to low (step 1). */
+  caps: readonly LayerId[];
+  /** The drawn total (index estimate, overlays not counted) and whether it is still over (step 2). */
+  drawn: number;
+  over: boolean;
 };
 
 export const useViewer = create<ViewerState>()((set) => ({
@@ -191,6 +235,7 @@ export const useViewer = create<ViewerState>()((set) => ({
   sel: null,
   tier: 0,
   grp: null,
+  reg: null,
   antagonists: false,
   ghostMode: "ghost",
   ghostOpacity: typeof window === "undefined" ? GHOST_OPACITY.default : storedGhostOpacity(),
@@ -222,6 +267,10 @@ export const useViewer = create<ViewerState>()((set) => ({
   sidebarOpen: false,
   setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
   sidebarLeft: 0,
+  regionPickerOpen: false,
+  setRegionPickerOpen: (open) => set({ regionPickerOpen: open }),
+  regionFrame: null,
+  setRegionFrame: (f) => set({ regionFrame: f }),
   setSidebarLeft: (sidebarLeft) => set((s) => (s.sidebarLeft === sidebarLeft ? s : { sidebarLeft })),
   joint: null,
   explode: 0,
@@ -237,11 +286,12 @@ export const useViewer = create<ViewerState>()((set) => ({
     ),
   inputAt: null,
   markInput: (inputAt) => set({ inputAt }),
-  setIsolation: ({ sel, tier, grp = null, ant = false }) =>
+  setIsolation: ({ sel, tier, grp = null, ant = false, reg }) =>
     set((s) => {
       const antagonists = tier === 2 && sel !== null && ant;
-      if (s.sel === sel && s.tier === tier && s.grp === grp) return s.antagonists === antagonists ? s : { antagonists };
-      return { sel, tier, grp, antagonists, joint: null, explode: 0 };
+      const region = reg === undefined ? s.reg : reg;
+      if (s.sel === sel && s.tier === tier && s.grp === grp && s.reg === region) return s.antagonists === antagonists ? s : { antagonists };
+      return { sel, tier, grp, reg: region, antagonists, joint: null, explode: 0 };
     }),
   setAntagonists: (on) => set((s) => (s.antagonists === on ? s : { antagonists: on && s.tier === 2 && s.sel !== null })),
   setGhostMode: (ghostMode) => set({ ghostMode }),
@@ -283,6 +333,10 @@ export const useViewer = create<ViewerState>()((set) => ({
       const prev: LayerLoad = s.layerLoad[layer] ?? { status: "loading", lod: null, fetching: null, received: 0, total: 0, error: null, attempt: 0, shownAt: {} };
       return { layerLoad: { ...s.layerLoad, [layer]: { ...prev, ...load } } };
     }),
+  budget: null,
+  budgetHeld: [],
+  budgetPrompt: null,
+  budgetDismissed: null,
   hidden: new Set(),
   setHidden: (ids) =>
     set((s) => {

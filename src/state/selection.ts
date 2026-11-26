@@ -16,10 +16,12 @@ import { ALL_SHOWN_ANNOUNCEMENT, hiddenAnnouncement } from "../content/announce"
 import { hideTargets, isSoftId, softEntry, softLayerOf } from "../content/softRegistry";
 import { hasMesh, isEagerId, isKnownId, layerOfId } from "../content/index";
 import { structureLoaded, tiers } from "../content/appGraph";
+import { isRegionKey } from "../regions/index";
 import { useLayerBatches } from "../scene/layerRegistry";
 import { FULL_SKELETON, isolationStep, resolveClick, type HistoryStep, type Isolation, type IsolationAction, type ParentOf } from "./isolation";
 import { COLOUR_MODE_KEY, type ColourMode } from "../scene/regionColours";
-import { LAYERS_KEY, storedFlag, useViewer } from "./store";
+import { LAYERS_KEY, storedFlag, useViewer, type CameraCommand } from "./store";
+import type { Box } from "../camera/math";
 import { DEFAULT_LAYER_SETTING, formatLayers, isDefaultLayers, isUserLayersValue, HIDDEN_URL_CAP, parseHidden, parseLayers, parseUrlState, serialiseUrlState, type GhostMode, type Layer, type LayerMode, type LayerSetting, type MuscleDepth, type UrlState } from "./url";
 import { EAGER_LAYER, isLazyLayer, LAZY_LAYERS, layersOfSystem, looksLikeTreeGroup, NESTED_LAYER, presetDescriptor, presetModes, type LazyLayerId, type PresetId, type SystemId } from "../systems/registry";
 
@@ -44,7 +46,7 @@ function urlWith(state: Partial<UrlState>): string {
 /** Apply an isolation action: store, URL and history, and move the pivot to a newly selected bone. */
 export function dispatchIsolation(action: IsolationAction): void {
   const st = useViewer.getState();
-  const { state, history, via } = isolationStep({ sel: st.sel, tier: st.tier, grp: st.grp }, action, parentOf);
+  const { state, history, via } = isolationStep({ sel: st.sel, tier: st.tier, grp: st.grp, reg: st.reg }, action, parentOf);
   if (history === "none") return;
   if (history === "pop" && depthNow() > 0) {
     window.history.back(); // `popstate` applies the previous entry
@@ -52,7 +54,7 @@ export function dispatchIsolation(action: IsolationAction): void {
   }
   st.setIsolation(state);
   const write = (step: HistoryStep, s: Isolation) => {
-    const url = urlWith({ sel: s.sel, tier: s.tier, grp: s.grp, ant: false });
+    const url = urlWith({ sel: s.sel, tier: s.tier, grp: s.grp, reg: s.reg, ant: false });
     if (step === "push") window.history.pushState({ ...window.history.state, skvDepth: depthNow() + 1 }, "", url);
     else window.history.replaceState(window.history.state, "", url);
   };
@@ -70,8 +72,8 @@ export function dispatchIsolation(action: IsolationAction): void {
  * Frame the isolation once the panel that opens with it has laid out and
  * reported the area it covers, so the bones end up beside it.
  */
-function frameSoon(): void {
-  requestAnimationFrame(() => requestAnimationFrame(() => useViewer.getState().requestCamera({ kind: "frame" })));
+function frameSoon(command: CameraCommand = { kind: "frame" }): void {
+  requestAnimationFrame(() => requestAnimationFrame(() => useViewer.getState().requestCamera(command)));
 }
 
 export const selectObject = (id: string): void => {
@@ -92,6 +94,32 @@ function showLayerOf(id: string): void {
   if (layer && isLazyLayer(layer) && useViewer.getState().layers[layer] === "off") setLayerMode(layer, "on");
 }
 export const goBack = (): void => dispatchIsolation({ type: "back" });
+
+/**
+ * Focus on a body region (M13 plan decision 7, spec §6.4): structures outside
+ * it are hidden on every layer. From the whole body a new history entry, from
+ * another region the same entry, from an isolation a new entry at the region
+ * level with the selection or group cleared. An unknown key does nothing.
+ */
+export const focusRegion = (key: string): void => {
+  if (isRegionKey(key)) dispatchIsolation({ type: "focusRegion", key });
+};
+/** Leave the body region: one step back with nothing isolated, else the isolation stays (over the whole body). */
+export const leaveRegion = (): void => dispatchIsolation({ type: "leaveRegion" });
+/**
+ * A choice in the region picker (M13 plan decision 8): focus on the region and
+ * frame the camera on it (`box`: its volume's bounds, joined with its drawn
+ * members), or, for `null` ("Whole body"), leave the region.
+ */
+export function chooseRegion(key: string | null, box: Box | null = null): void {
+  if (key === null) {
+    if (useViewer.getState().reg !== null) leaveRegion();
+    return;
+  }
+  if (!isRegionKey(key)) return;
+  dispatchIsolation({ type: "focusRegion", key });
+  frameSoon({ kind: "frame", region: { box } });
+}
 /**
  * Isolate a whole group from the tree, the legend or a search result (plan
  * decision 5). A soft-tissue group (M9 plan decision 11) turns its layer On if
@@ -256,7 +284,8 @@ export function hideStructure(id: string): void {
   const all = [...hidden];
   const selected = st.sel === id;
   st.setHidden(all);
-  if (selected) st.setIsolation(FULL_SKELETON);
+  // The body region stays (M13 plan decision 7): hiding is not a step out of it.
+  if (selected) st.setIsolation({ sel: null, tier: 0, grp: null });
   const url = selected ? urlWith({ sel: null, tier: 0, grp: null, hid: all.slice(0, HIDDEN_URL_CAP) }) : urlWith({ hid: all.slice(0, HIDDEN_URL_CAP) });
   window.history.pushState({ ...window.history.state, skvDepth: depthNow() + 1 }, "", url);
   if (all.length > HIDDEN_URL_CAP) st.showToast(`Only the first ${HIDDEN_URL_CAP} hidden structures are kept in the link`);
@@ -378,9 +407,13 @@ export function applyLayerPreset(preset: PresetId): void {
 export function initSelectionFromUrl(): UrlState {
   // A soft-tissue `sel=` is known at once (the ID index, M12 decision 7) but still
   // goes through `selectSoftFromUrl`, which turns its layer on and waits for it.
-  const url = parseUrlState(window.location.search, isEagerId, isGroupKey);
+  const url = parseUrlState(window.location.search, isEagerId, isGroupKey, isRegionKey);
   const st = useViewer.getState();
-  st.setIsolation({ sel: url.sel, tier: url.tier, grp: url.grp, ant: url.ant });
+  st.setIsolation({ sel: url.sel, tier: url.tier, grp: url.grp, ant: url.ant, reg: url.reg });
+  // An unknown body region is dropped from the URL, as an unknown `sel` is (M13 plan decision 7).
+  if (url.reg === null && new URLSearchParams(window.location.search).has("reg")) {
+    window.history.replaceState(window.history.state, "", urlWith({ reg: null }));
+  }
   st.setGhostMode(url.ghost);
   const colour: ColourMode = url.color === "region" || storedFlag(COLOUR_MODE_KEY) ? "region" : "bone";
   st.setColourMode(colour);
@@ -480,7 +513,7 @@ export function onPopState(): void {
     });
     return;
   }
-  const url = parseUrlState(window.location.search, isKnownId, isGroupKey);
+  const url = parseUrlState(window.location.search, isKnownId, isGroupKey, isRegionKey);
   const st = useViewer.getState();
   // Colour-by-region isn't history: an older entry keeps today's colours, and its URL is brought up to date.
   const colour = st.colourMode === "region" ? "region" : null;
@@ -495,13 +528,13 @@ export function onPopState(): void {
   // Hidden structures belong to the history entry (spec §5.5: Back un-hides).
   st.setHidden(url.hid);
   const isolationChanged =
-    url.sel !== st.sel || url.tier !== st.tier || url.grp !== st.grp || url.ghost !== st.ghostMode || url.ant !== st.antagonists;
+    url.sel !== st.sel || url.tier !== st.tier || url.grp !== st.grp || url.reg !== st.reg || url.ghost !== st.ghostMode || url.ant !== st.antagonists;
   if (!isolationChanged) {
     st.requestCamera({ kind: "goto", cam: url.cam });
     return;
   }
   const newSel = url.sel !== st.sel ? url.sel : null;
-  st.setIsolation({ sel: url.sel, tier: url.tier, grp: url.grp, ant: url.ant });
+  st.setIsolation({ sel: url.sel, tier: url.tier, grp: url.grp, ant: url.ant, reg: url.reg });
   st.setGhostMode(url.ghost);
   showLayerForGroup(url.grp);
   if (st.camera) window.history.replaceState(window.history.state, "", urlWith({ cam: st.camera }));

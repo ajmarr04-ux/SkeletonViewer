@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { focusLayerOf, labelKey, labelOrder, labelPriority, layoutLabels, leaderEnd, LABEL, type LabelCandidate, type PlacedLabel } from "../src/scene/labels";
+import { focusLayerOf, labelKey, labelOrder, labelPriority, layoutLabels, leaderEnd, LABEL, MAX_LABEL_CANDIDATES, thinCandidates, type LabelCandidate, type PlacedLabel } from "../src/scene/labels";
 
 const AREA = { left: 0, top: 0, right: 800, bottom: 600 };
 
@@ -143,5 +143,34 @@ describe("labels for every kind (M10 plan decisions 1 and 2)", () => {
     expect(focusLayerOf(null, modes)).toBe("ligaments");
     expect(focusLayerOf(null, { ...modes, muscles: "on" })).toBe("muscles");
     expect(focusLayerOf(null, { bones: "on", cartilage: "off", ligaments: "off", muscles: "off" })).toBe("bones");
+  });
+});
+
+describe("thinCandidates (M13 plan decision 12)", () => {
+  const c = (id: string, priority: number, sizePx: number, layer = "b") => ({ id, priority, sizePx, layer });
+  it("drops small priority-3 candidates as the layout would, keeping order", () => {
+    const all = [c("a", 3, 40), c("b", 3, 10), c("f", 0, 1), c("t", 1, 5)];
+    expect(thinCandidates(all, 10, 32).map((x) => x.id)).toEqual(["a", "f", "t"]);
+  });
+  it("keeps the best `max` in labelOrder's order, input order among them", () => {
+    const all = [c("small", 3, 50), c("big", 3, 90), c("focus", 0, 1), c("mid", 3, 70), c("tier1", 1, 2)];
+    expect(thinCandidates(all, 3, 32).map((x) => x.id)).toEqual(["big", "focus", "tier1"]);
+  });
+  it("the focus layer wins ties of equal size", () => {
+    const all = [c("bone", 3, 50, "b"), c("muscle", 3, 49, "m")];
+    expect(thinCandidates(all, 1, 0, "m").map((x) => x.id)).toEqual(["muscle"]);
+    expect(thinCandidates(all, 1, 0, null).map((x) => x.id)).toEqual(["bone"]);
+  });
+  it("under the cap, the layout is exactly what it was without thinning", () => {
+    const all = crowd(150);
+    const minSizePx = 32;
+    const kept = thinCandidates(all, MAX_LABEL_CANDIDATES * 10, minSizePx);
+    expect(layoutLabels(kept, AREA, { minSizePx })).toEqual(layoutLabels(all, AREA, { minSizePx }));
+  });
+  it("cut to N, the first N the layout tries are unchanged", () => {
+    const all = crowd(300).map((x, i) => ({ ...x, priority: i % 7 === 0 ? 1 : 3 }));
+    const kept = thinCandidates(all, 40, 0);
+    expect(kept).toHaveLength(40);
+    expect(labelOrder(kept)).toEqual(labelOrder(all).slice(0, 40));
   });
 });

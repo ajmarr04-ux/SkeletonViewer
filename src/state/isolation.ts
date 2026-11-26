@@ -24,9 +24,9 @@
 // the-whole-muscle rule, applied by the caller to picks only.
 
 export type Tier = 0 | 1 | 2;
-export type Isolation = { sel: string | null; tier: Tier; grp: string | null };
+export type Isolation = { sel: string | null; tier: Tier; grp: string | null; reg: string | null };
 
-export const FULL_SKELETON: Isolation = { sel: null, tier: 0, grp: null };
+export const FULL_SKELETON: Isolation = { sel: null, tier: 0, grp: null, reg: null };
 
 /** A muscle part's muscle, else null (bones, muscles, ligaments, cartilage). */
 export type ParentOf = (id: string) => string | null;
@@ -52,7 +52,9 @@ export type IsolationAction =
   | { type: "switchSide"; id: string }
   | { type: "related" }
   | { type: "region" }
-  | { type: "back" };
+  | { type: "back" }
+  | { type: "focusRegion"; key: string }
+  | { type: "leaveRegion" };
 
 /**
  * What the change does to the browser history:
@@ -69,20 +71,26 @@ export type HistoryStep = "push" | "pop" | "replace" | "none";
  */
 export type IsolationResult = { state: Isolation; history: HistoryStep; via?: Isolation };
 
+/** Is anything isolated (a selection or a group)? A body region alone is not an isolation. */
+export const isIsolated = (s: Pick<Isolation, "sel" | "grp">): boolean => s.sel !== null || s.grp !== null;
+
 /**
  * Depth of a state: 0 for the full skeleton, 1 for tier 0 or a group, 2 for
- * tier 1, 3 for tier 2; a muscle part counts one more than its muscle.
+ * tier 1, 3 for tier 2; a muscle part counts one more than its muscle. A body
+ * region counts one level, under everything else (M13 plan decision 7).
  */
 export function levelOf(s: Isolation, parentOf: ParentOf = NO_PARENT): number {
-  if (s.sel === null) return s.grp === null ? 0 : 1;
-  return s.tier + 1 + (parentOf(s.sel) === null ? 0 : 1);
+  const region = s.reg === null ? 0 : 1;
+  if (s.sel === null) return region + (s.grp === null ? 0 : 1);
+  return region + s.tier + 1 + (parentOf(s.sel) === null ? 0 : 1);
 }
 
 export function isolationStep(s: Isolation, a: IsolationAction, parentOf: ParentOf = NO_PARENT): IsolationResult {
+  const reg = s.reg;
   switch (a.type) {
     case "select": {
       if (s.sel === a.id) return { state: s, history: "none" };
-      const state: Isolation = { sel: a.id, tier: 0, grp: null };
+      const state: Isolation = { sel: a.id, tier: 0, grp: null, reg };
       const parent = parentOf(a.id);
       if (parent !== null && s.tier === 0 && s.sel !== null) {
         // Down from the muscle to its part, or across to a sibling part (spec §5.1 rules 2 and 3).
@@ -94,32 +102,51 @@ export function isolationStep(s: Isolation, a: IsolationAction, parentOf: Parent
       const history: HistoryStep = s.sel === null ? "push" : s.tier === 0 ? "replace" : "push";
       // A switch of focus at tier 0 stays at that level; from tier 1 or 2 it is a new focus at tier 0 (a new entry).
       // A part from anywhere else goes via its muscle, so Back walks part → muscle → here.
-      if (parent !== null) return { state, history, via: { sel: parent, tier: 0, grp: null } };
+      if (parent !== null) return { state, history, via: { sel: parent, tier: 0, grp: null, reg } };
       return { state, history };
     }
     case "switchSide":
       // The same level on the other side (plan decision 8): replace the entry.
       if (s.sel === null) return isolationStep(s, { type: "select", id: a.id }, parentOf);
       if (s.sel === a.id) return { state: s, history: "none" };
-      return { state: { sel: a.id, tier: s.tier, grp: null }, history: "replace" };
+      return { state: { sel: a.id, tier: s.tier, grp: null, reg }, history: "replace" };
     case "group": {
       if (s.sel === null && s.grp === a.key) return { state: s, history: "none" };
-      const state: Isolation = { sel: null, tier: 0, grp: a.key };
+      const state: Isolation = { sel: null, tier: 0, grp: a.key, reg };
       // Another group from a group stays at that level; from anywhere else it is a new entry.
       return { state, history: s.sel === null && s.grp !== null ? "replace" : "push" };
     }
     case "related":
       if (s.sel === null || s.tier !== 0) return { state: s, history: "none" };
-      return { state: { sel: s.sel, tier: 1, grp: null }, history: "push" };
+      return { state: { sel: s.sel, tier: 1, grp: null, reg }, history: "push" };
     case "region":
       if (s.sel === null || s.tier !== 1) return { state: s, history: "none" };
-      return { state: { sel: s.sel, tier: 2, grp: null }, history: "push" };
-    case "back":
-      if (s.sel === null) return s.grp === null ? { state: s, history: "none" } : { state: FULL_SKELETON, history: "pop" };
+      return { state: { sel: s.sel, tier: 2, grp: null, reg }, history: "push" };
+    case "back": {
+      const region: Isolation = { ...FULL_SKELETON, reg };
+      // Out of the isolation first, with the region kept; then out of the region.
+      if (s.sel === null) {
+        if (s.grp !== null) return { state: region, history: "pop" };
+        return reg === null ? { state: s, history: "none" } : { state: FULL_SKELETON, history: "pop" };
+      }
       if (s.tier === 0) {
         const parent = parentOf(s.sel);
-        return { state: parent === null ? FULL_SKELETON : { sel: parent, tier: 0, grp: null }, history: "pop" };
+        return { state: parent === null ? region : { sel: parent, tier: 0, grp: null, reg }, history: "pop" };
       }
-      return { state: { sel: s.sel, tier: (s.tier - 1) as Tier, grp: null }, history: "pop" };
+      return { state: { sel: s.sel, tier: (s.tier - 1) as Tier, grp: null, reg }, history: "pop" };
+    }
+    case "focusRegion": {
+      const state: Isolation = { ...FULL_SKELETON, reg: a.key };
+      // From an isolation: a new entry at the region level, the selection or group cleared ("pick a region, then choose").
+      if (isIsolated(s)) return { state, history: "push" };
+      if (reg === a.key) return { state: s, history: "none" };
+      // From the whole body a new entry; from another region the same level.
+      return { state, history: reg === null ? "push" : "replace" };
+    }
+    case "leaveRegion":
+      if (reg === null) return { state: s, history: "none" };
+      // Nothing isolated: one level back. An isolation inside the region stays, shown over the whole body, at the same level.
+      if (!isIsolated(s)) return { state: FULL_SKELETON, history: "pop" };
+      return { state: { ...s, reg: null }, history: "replace" };
   }
 }

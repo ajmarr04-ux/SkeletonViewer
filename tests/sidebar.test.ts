@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cursorStops, tabCursor } from "../src/camera/input";
+import { cursorStops, focusLayerFirst, layerJump, tabCursor } from "../src/camera/input";
 import { ancestorsOf, crumbGroups, GROUPS, groupAnnouncement, groupCounts, groupOf, isGroupKey } from "../src/content/groups";
 import { SOFT_ROOT_KEYS, TOP_KEYS, treeKey, typeAhead, visibleRows } from "../src/content/tree";
 import { groupView, isolationView } from "../src/scene/isolation";
@@ -7,6 +7,31 @@ import ids from "../content/ids.json";
 
 const meshed = new Set((ids as { id: string; meshAvailable: boolean }[]).filter((e) => e.meshAvailable).map((e) => e.id));
 const hasMesh = (id: string) => meshed.has(id);
+
+describe("the Tab cursor in a body region and [ / ] (M13 plan decision 12)", () => {
+  const LAYER: Record<string, string> = { femur: "b", tibia: "b", tri_long: "m", tri_lat: "m", deltoid: "m", acl: "l", tri: "m" };
+  const layerOf = (id: string) => LAYER[id] ?? null;
+  const PARENT: Record<string, string> = { tri_long: "tri", tri_lat: "tri" };
+  const parentOf = (id: string) => PARENT[id] ?? null;
+  const solid = ["femur", "tibia", "tri_long", "tri_lat", "deltoid", "acl"];
+  it("the focus layer's members first, each layer keeping its order; no focus layer = today's order", () => {
+    expect(focusLayerFirst(solid, layerOf, null)).toEqual(solid);
+    expect(focusLayerFirst(solid, layerOf, "m")).toEqual(["tri_long", "tri_lat", "deltoid", "femur", "tibia", "acl"]);
+    expect(cursorStops(focusLayerFirst(solid, layerOf, "l"), null, parentOf)).toEqual(["acl", "femur", "tibia", "tri", "deltoid"]);
+  });
+  it("] and [ go to the first stop of the next / previous layer, without wrapping", () => {
+    const stops = cursorStops(focusLayerFirst(solid, layerOf, "m"), null, parentOf); // tri deltoid femur tibia acl
+    expect(layerJump(stops, layerOf, null, 1)).toBe("tri");
+    expect(layerJump(stops, layerOf, null, -1)).toBe("acl");
+    expect(layerJump(stops, layerOf, "deltoid", 1)).toBe("femur");
+    expect(layerJump(stops, layerOf, "tibia", 1)).toBe("acl");
+    expect(layerJump(stops, layerOf, "tibia", -1)).toBe("tri");
+    expect(layerJump(stops, layerOf, "acl", 1)).toBeNull();
+    expect(layerJump(stops, layerOf, "tri", -1)).toBeNull();
+    expect(layerJump(stops, layerOf, "gone", 1)).toBe("tri");
+    expect(layerJump([], layerOf, null, 1)).toBeNull();
+  });
+});
 
 describe("cursorStops (M10 plan decision 5)", () => {
   // A bone, a muscle with three parts, a muscle without parts, a ligament.

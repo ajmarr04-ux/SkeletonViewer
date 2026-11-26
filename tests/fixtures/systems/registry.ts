@@ -8,9 +8,13 @@ import { cartilage } from "../../../src/systems/musculoskeletal/cartilage/layer"
 import { ligaments } from "../../../src/systems/musculoskeletal/ligaments/layer";
 import { muscles } from "../../../src/systems/musculoskeletal/muscles/layer";
 import { musculoskeletal } from "../../../src/systems/musculoskeletal/system";
-import type { LayerDescriptor, SystemDescriptor } from "../../../src/systems/types";
+import { regions } from "../../../src/systems/regions";
+import type { LayerDescriptor, RegionsDescriptor, SystemDescriptor } from "../../../src/systems/types";
 import { demo } from "./demo/system";
 import { widgets } from "./demo/widgets/layer";
 
 export const SYSTEMS = [musculoskeletal, demo] as const satisfies readonly SystemDescriptor[];
 export const REGISTRY = [bones, cartilage, ligaments, muscles, widgets] as const satisfies readonly LayerDescriptor[];
+
+/** The body regions (M13): the `located_in` edge type and the membership file. */
+export const REGIONS = regions satisfies RegionsDescriptor;

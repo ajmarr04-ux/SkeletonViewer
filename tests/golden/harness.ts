@@ -469,3 +469,25 @@ export async function buildTree(): Promise<Golden> {
   for (const id of [...bones, ...soft]) out[`ancestors:${id}`] = groups.ancestorsOf(id);
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// regions.json (M13 BL, plan decision 4)
+
+/**
+ * For every ID: its fine regions (`located_in`, as the main chunk ships them);
+ * for every region (fine, then coarse): name, coarse parent and members per
+ * layer, in index order; and the graph's view of one ID per kind of entry.
+ */
+export async function buildRegions(): Promise<Golden> {
+  const { regionList, regionsOf, membersOf } = await import("../../src/regions/index");
+  const { layerOfId } = await import("../../src/content/index");
+  const { bones, soft } = await allIds();
+  const out: Golden = {};
+  for (const id of [...bones, ...soft]) out[id] = regionsOf(id);
+  for (const r of regionList()) {
+    const byLayer: Record<string, string[]> = {};
+    for (const id of membersOf(r.key)) (byLayer[layerOfId(id) ?? "?"] ??= []).push(id);
+    out[`region:${r.key}`] = { name: r.name, coarse: r.coarse, members: byLayer };
+  }
+  return out;
+}

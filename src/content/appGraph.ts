@@ -17,9 +17,13 @@ import ids from "../../content/ids.json";
 import { decodeEdges, type EdgeWire } from "../graph/codec";
 import { createGraph, type Graph } from "../graph/graph";
 import { tierEngine, type TierEngine } from "../graph/query";
-import { EAGER_LAYER, EDGE_TYPES, indexRank, rolesSpecOf, tierContext, type LayerId } from "../systems/registry";
+import { EAGER_LAYER, EDGE_TYPES, REGIONS, indexRank, rolesSpecOf, tierContext, type LayerId } from "../systems/registry";
 import type { Patch, Roles, RolesSpec } from "../systems/types";
 import { eagerEdges, lazyEntries, lazyEntry, layerOfId } from "./index";
+import { locatedInEdges } from "../regions/index";
+
+/** The graph chunk of the body regions' edges. */
+const REGION_CHUNK = "regions";
 
 /** A structure's tints: origin and insertion (patches and whole-structure fallbacks) and its antagonists (spec §5.3). */
 export type TintRoles = Roles & { ant: readonly string[] };
@@ -46,6 +50,8 @@ export function appGraph(): Graph {
     graph.subscribe(notify);
     loaded.add(EAGER_LAYER);
     graph.add(EAGER_LAYER, decodeEdges(eagerEdges()));
+    // The body regions' `located_in` edges (M13 plan decision 5): every layer's, with the index.
+    graph.add(REGION_CHUNK, locatedInEdges(REGIONS.edgeType.id));
     for (const [chunk, wire] of extra) graph.add(chunk, decodeEdges(wire));
   }
   return graph;

@@ -67,6 +67,13 @@ export function recordLabelLayout(ms: number): void {
   if (labelLayoutMs.length < LABEL_TIMES_CAP) labelLayoutMs.push(ms);
 }
 
+/** How many candidates the last label layout was given, after thinning (M13 BQ; `__viewer.labelCandidates`, `?bench`). */
+let labelCandidatesNow = 0;
+export function recordLabelCandidates(n: number): void {
+  labelCandidatesNow = n;
+}
+export const labelCandidates = (): number => labelCandidatesNow;
+
 type BenchLayerLoad = { status: "loading" | "ready" | "error"; lod: "low" | "high" | null; fetching: "low" | "high" | null };
 
 /**
@@ -78,14 +85,15 @@ type BenchLayerLoad = { status: "loading" | "ready" | "error"; lod: "low" | "hig
 export function benchLayersState(
   layers: Readonly<Record<LazyLayerId, "on" | "ghost" | "off">>,
   load: Readonly<Partial<Record<LazyLayerId, BenchLayerLoad>>>,
-  finalLod: "low" | "high" | null,
+  finalLod: "low" | "high" | null | ((layer: LazyLayerId) => "low" | "high" | null),
 ): "ready" | "waiting" | "error" {
+  const finalOf = typeof finalLod === "function" ? finalLod : () => finalLod;
   let waiting = false;
   for (const layer of LAZY_LAYERS) {
     if (layers[layer] === "off") continue;
     const l = load[layer];
     if (l?.status === "error") return "error";
-    if (!l || l.status !== "ready" || l.lod !== finalLod || l.fetching !== null) waiting = true;
+    if (!l || l.status !== "ready" || l.lod !== finalOf(layer) || l.fetching !== null) waiting = true;
   }
   return waiting ? "waiting" : "ready";
 }

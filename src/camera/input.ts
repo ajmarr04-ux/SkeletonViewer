@@ -236,6 +236,38 @@ export function cursorStops(solid: readonly string[], sel: string | null, parent
   return out;
 }
 
+/**
+ * The Tab cursor's walking order in a body region (M13 plan decision 12): the
+ * focus layer's structures first, then the other layers', each keeping its
+ * order (a stable partition). With no focus layer (no region) the order is
+ * unchanged.
+ */
+export function focusLayerFirst<T extends string>(solid: readonly string[], layerOf: (id: string) => T | null, focusLayer: T | null): string[] {
+  if (focusLayer === null) return [...solid];
+  return [...solid.filter((id) => layerOf(id) === focusLayer), ...solid.filter((id) => layerOf(id) !== focusLayer)];
+}
+
+/**
+ * `[` and `]` (M13 plan decision 12, spec §8): the first stop of the previous
+ * (`dir` −1) or next (+1) layer that has stops, layers taken in the order the
+ * stops walk them. With no cursor, `]` goes to the first layer and `[` to the
+ * last. Null when there is no such layer (no wrapping, as Tab stops at the ends).
+ */
+export function layerJump<T extends string>(stops: readonly string[], layerOf: (id: string) => T | null, current: string | null, dir: 1 | -1): string | null {
+  const firsts: string[] = [];
+  const order: (T | null)[] = [];
+  for (const id of stops) {
+    const l = layerOf(id);
+    if (order.includes(l)) continue;
+    order.push(l);
+    firsts.push(id);
+  }
+  if (firsts.length === 0) return null;
+  const at = current === null || !stops.includes(current) ? -1 : order.indexOf(layerOf(current));
+  if (at < 0) return dir === 1 ? firsts[0]! : firsts[firsts.length - 1]!;
+  return firsts[at + dir] ?? null;
+}
+
 export function tabCursor(visibleIds: readonly string[], current: string | null, shift: boolean): string | null {
   if (visibleIds.length === 0) return null;
   const i = current === null ? -1 : visibleIds.indexOf(current);

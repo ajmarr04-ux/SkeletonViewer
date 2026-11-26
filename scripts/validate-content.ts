@@ -10,8 +10,11 @@ import { validateContent } from "../src/systems/musculoskeletal/bones/validate";
 import type { DepthEntry } from "../src/content/muscleDepth";
 import { validateMuscleDepth } from "../src/content/muscleDepthRules";
 import { checkNoJointLists, validateSoftContent } from "../src/content/softValidate";
-import { edgeCounts } from "../src/graph/compile";
-import { EDGE_TYPES, LAZY_LAYERS, layerDescriptor } from "../src/systems/registry";
+import { compileGraph, edgeCounts } from "../src/graph/compile";
+import { checkMembership, type LocatedInFile, type Overrides } from "../src/regions/membership";
+import { checkRegionsFile, type RegionsFile } from "../src/regions/volume";
+import { meshLayers, takenKeys } from "./lib/region-files";
+import { EDGE_TYPES, LAZY_LAYERS, REGIONS, layerDescriptor } from "../src/systems/registry";
 import { DEPTH_FILE } from "../src/systems/registry.content";
 import {
   compileGraphFromDisk,
@@ -97,6 +100,27 @@ if (report.errors.length === 0) {
   graphLine = `graph: ${g.edges.length} edges (${edgeCounts(g.edges, EDGE_TYPES).map(([t, n]) => `${t} ${n}`).join(", ")}), ${g.joints.length} joint nodes`;
 }
 
+// Body regions (SPEC-platform §10; M13 plan decisions 4 and 6): the authoring file's keys (none reuses an ID or
+// group key), every structure with a mesh in a region, every region holding one, every override with a reason
+// that names a real structure and region and changes something; the located_in edges' endpoints.
+const regionsFile = readJson("content/regions/regions.json") as RegionsFile;
+report.errors.push(...checkRegionsFile(regionsFile, new Set(meshLayers().keys()), takenKeys()).map((e) => `content/regions/regions.json: ${e}`));
+const located = readJson(REGIONS.membershipFile) as LocatedInFile;
+const regionKeys = (readJson(REGIONS.volumesFile) as { regions: { key: string }[] }).regions.map((r) => r.key);
+const allStructures = [...readIds().map((e) => e.id), ...softIds.map((e) => e.id)];
+report.errors.push(
+  ...checkMembership({
+    file: located,
+    overrides: readJson("content/regions/overrides.json") as Overrides,
+    ids: allStructures,
+    meshIds: new Set(meshLayers().keys()),
+    regionKeys,
+  }),
+);
+const locatedEdges = Object.entries(located.structures).flatMap(([id, m]) => m.regions.map((to) => ({ from: id, type: REGIONS.edgeType.id, to })));
+report.errors.push(...compileGraph({ nodes: [...allStructures, ...regionKeys], types: [REGIONS.edgeType], sources: [{ where: REGIONS.membershipFile, edges: locatedEdges }], rules: [] }).errors.map((e) => `regions: ${e}`));
+const regionsLine = `regions: ${regionKeys.length} fine regions, ${locatedEdges.length} ${REGIONS.edgeType.id} edges`;
+
 for (const w of report.warnings) console.warn(`warning: ${w}`);
 if (report.errors.length) {
   console.error(`validate-content FAILED (${report.errors.length}):\n  ${report.errors.join("\n  ")}`);
@@ -108,3 +132,4 @@ console.log(
     `${report.warnings.length} warning(s))`,
 );
 console.log(graphLine);
+console.log(regionsLine);

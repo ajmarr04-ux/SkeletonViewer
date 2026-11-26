@@ -1,0 +1,321 @@
+{
+ "$comment": "Hand overrides of body-region membership (M13 plan decision 4; SPEC-platform \u00a76.2). Each entry: {id, region, reason}; the reason is one line. `npm run regions` applies them; validate-content checks that each names a real structure and fine region and changes something. BL's policy: bones only, where a region's box reaches a bone that anatomy places elsewhere; soft tissue keeps what its vertices say.",
+ "add": [],
+ "remove": [
+  {
+   "id": "malleus_left",
+   "region": "posterior_neck",
+   "reason": "The ossicles lie in the middle ear; the posterior neck's box reaches up to the skull base."
+  },
+  {
+   "id": "incus_left",
+   "region": "posterior_neck",
+   "reason": "The ossicles lie in the middle ear; the posterior neck's box reaches up to the skull base."
+  },
+  {
+   "id": "stapes_left",
+   "region": "posterior_neck",
+   "reason": "The ossicles lie in the middle ear; the posterior neck's box reaches up to the skull base."
+  },
+  {
+   "id": "malleus_right",
+   "region": "posterior_neck",
+   "reason": "The ossicles lie in the middle ear; the posterior neck's box reaches up to the skull base."
+  },
+  {
+   "id": "incus_right",
+   "region": "posterior_neck",
+   "reason": "The ossicles lie in the middle ear; the posterior neck's box reaches up to the skull base."
+  },
+  {
+   "id": "stapes_right",
+   "region": "posterior_neck",
+   "reason": "The ossicles lie in the middle ear; the posterior neck's box reaches up to the skull base."
+  },
+  {
+   "id": "temporal_bone_left",
+   "region": "posterior_neck",
+   "reason": "A skull bone (head); the posterior neck's box reaches up past the mastoid and the nuchal lines."
+  },
+  {
+   "id": "temporal_bone_right",
+   "region": "posterior_neck",
+   "reason": "A skull bone (head); the posterior neck's box reaches up past the mastoid and the nuchal lines."
+  },
+  {
+   "id": "occipital_bone",
+   "region": "posterior_neck",
+   "reason": "A skull bone (head); the posterior neck's box reaches up past the mastoid and the nuchal lines."
+  },
+  {
+   "id": "hyoid_bone",
+   "region": "face",
+   "reason": "The hyoid is in the anterior neck; the face's box reaches below the mandible."
+  },
+  {
+   "id": "mandible",
+   "region": "anterior_neck",
+   "reason": "The mandible is in the face; the anterior neck's box reaches up to the hyoid under it."
+  },
+  {
+   "id": "vertebra_c3",
+   "region": "anterior_neck",
+   "reason": "Vertebrae are in the posterior neck and back; the anterior neck's box is deep enough to reach the vertebral bodies."
+  },
+  {
+   "id": "vertebra_c4",
+   "region": "anterior_neck",
+   "reason": "Vertebrae are in the posterior neck and back; the anterior neck's box is deep enough to reach the vertebral bodies."
+  },
+  {
+   "id": "vertebra_c5",
+   "region": "anterior_neck",
+   "reason": "Vertebrae are in the posterior neck and back; the anterior neck's box is deep enough to reach the vertebral bodies."
+  },
+  {
+   "id": "vertebra_c6",
+   "region": "anterior_neck",
+   "reason": "Vertebrae are in the posterior neck and back; the anterior neck's box is deep enough to reach the vertebral bodies."
+  },
+  {
+   "id": "vertebra_c7",
+   "region": "anterior_neck",
+   "reason": "Vertebrae are in the posterior neck and back; the anterior neck's box is deep enough to reach the vertebral bodies."
+  },
+  {
+   "id": "vertebra_t1",
+   "region": "anterior_neck",
+   "reason": "Vertebrae are in the posterior neck and back; the anterior neck's box is deep enough to reach the vertebral bodies."
+  },
+  {
+   "id": "vertebra_l1",
+   "region": "thoracic_wall",
+   "reason": "A lumbar vertebra; the thoracic wall's box reaches down to the twelfth ribs."
+  },
+  {
+   "id": "vertebra_l2",
+   "region": "thoracic_wall",
+   "reason": "A lumbar vertebra; the thoracic wall's box reaches down to the twelfth ribs."
+  },
+  {
+   "id": "vertebra_l3",
+   "region": "thoracic_wall",
+   "reason": "A lumbar vertebra; the thoracic wall's box reaches down to the twelfth ribs."
+  },
+  {
+   "id": "vertebra_l1",
+   "region": "abdominal_wall",
+   "reason": "Vertebrae are in the posterior abdominal wall and the lumbar back, not the anterolateral wall."
+  },
+  {
+   "id": "vertebra_l2",
+   "region": "abdominal_wall",
+   "reason": "Vertebrae are in the posterior abdominal wall and the lumbar back, not the anterolateral wall."
+  },
+  {
+   "id": "vertebra_l3",
+   "region": "abdominal_wall",
+   "reason": "Vertebrae are in the posterior abdominal wall and the lumbar back, not the anterolateral wall."
+  },
+  {
+   "id": "vertebra_l4",
+   "region": "abdominal_wall",
+   "reason": "Vertebrae are in the posterior abdominal wall and the lumbar back, not the anterolateral wall."
+  },
+  {
+   "id": "vertebra_l5",
+   "region": "abdominal_wall",
+   "reason": "Vertebrae are in the posterior abdominal wall and the lumbar back, not the anterolateral wall."
+  },
+  {
+   "id": "vertebra_l4",
+   "region": "pelvis",
+   "reason": "A lumbar vertebra lies between the iliac crests, above the bony pelvis."
+  },
+  {
+   "id": "vertebra_l5",
+   "region": "pelvis",
+   "reason": "A lumbar vertebra lies between the iliac crests, above the bony pelvis."
+  },
+  {
+   "id": "sacrum",
+   "region": "posterior_abdominal_wall",
+   "reason": "The sacrum is in the pelvis and the sacral back."
+  },
+  {
+   "id": "sacrum",
+   "region": "back_lumbar",
+   "reason": "The sacrum is in the sacral back; the lumbar back's box reaches its base."
+  },
+  {
+   "id": "rib_1_left",
+   "region": "shoulder_left",
+   "reason": "A rib belongs to the thoracic wall; the scapula lies on it, so the shoulder's box takes it in."
+  },
+  {
+   "id": "rib_2_left",
+   "region": "shoulder_left",
+   "reason": "A rib belongs to the thoracic wall; the scapula lies on it, so the shoulder's box takes it in."
+  },
+  {
+   "id": "rib_3_left",
+   "region": "shoulder_left",
+   "reason": "A rib belongs to the thoracic wall; the scapula lies on it, so the shoulder's box takes it in."
+  },
+  {
+   "id": "rib_4_left",
+   "region": "shoulder_left",
+   "reason": "A rib belongs to the thoracic wall; the scapula lies on it, so the shoulder's box takes it in."
+  },
+  {
+   "id": "rib_5_left",
+   "region": "shoulder_left",
+   "reason": "A rib belongs to the thoracic wall; the scapula lies on it, so the shoulder's box takes it in."
+  },
+  {
+   "id": "rib_6_left",
+   "region": "shoulder_left",
+   "reason": "A rib belongs to the thoracic wall; the scapula lies on it, so the shoulder's box takes it in."
+  },
+  {
+   "id": "rib_7_left",
+   "region": "shoulder_left",
+   "reason": "A rib belongs to the thoracic wall; the scapula lies on it, so the shoulder's box takes it in."
+  },
+  {
+   "id": "rib_1_right",
+   "region": "shoulder_right",
+   "reason": "A rib belongs to the thoracic wall; the scapula lies on it, so the shoulder's box takes it in."
+  },
+  {
+   "id": "rib_2_right",
+   "region": "shoulder_right",
+   "reason": "A rib belongs to the thoracic wall; the scapula lies on it, so the shoulder's box takes it in."
+  },
+  {
+   "id": "rib_3_right",
+   "region": "shoulder_right",
+   "reason": "A rib belongs to the thoracic wall; the scapula lies on it, so the shoulder's box takes it in."
+  },
+  {
+   "id": "rib_4_right",
+   "region": "shoulder_right",
+   "reason": "A rib belongs to the thoracic wall; the scapula lies on it, so the shoulder's box takes it in."
+  },
+  {
+   "id": "rib_5_right",
+   "region": "shoulder_right",
+   "reason": "A rib belongs to the thoracic wall; the scapula lies on it, so the shoulder's box takes it in."
+  },
+  {
+   "id": "rib_6_right",
+   "region": "shoulder_right",
+   "reason": "A rib belongs to the thoracic wall; the scapula lies on it, so the shoulder's box takes it in."
+  },
+  {
+   "id": "rib_7_right",
+   "region": "shoulder_right",
+   "reason": "A rib belongs to the thoracic wall; the scapula lies on it, so the shoulder's box takes it in."
+  },
+  {
+   "id": "rib_6_left",
+   "region": "abdominal_wall",
+   "reason": "A rib belongs to the thoracic wall; the abdominal wall's box reaches up to the costal margin."
+  },
+  {
+   "id": "rib_7_left",
+   "region": "abdominal_wall",
+   "reason": "A rib belongs to the thoracic wall; the abdominal wall's box reaches up to the costal margin."
+  },
+  {
+   "id": "rib_8_left",
+   "region": "abdominal_wall",
+   "reason": "A rib belongs to the thoracic wall; the abdominal wall's box reaches up to the costal margin."
+  },
+  {
+   "id": "rib_9_left",
+   "region": "abdominal_wall",
+   "reason": "A rib belongs to the thoracic wall; the abdominal wall's box reaches up to the costal margin."
+  },
+  {
+   "id": "rib_10_left",
+   "region": "abdominal_wall",
+   "reason": "A rib belongs to the thoracic wall; the abdominal wall's box reaches up to the costal margin."
+  },
+  {
+   "id": "rib_11_left",
+   "region": "abdominal_wall",
+   "reason": "A rib belongs to the thoracic wall; the abdominal wall's box reaches up to the costal margin."
+  },
+  {
+   "id": "rib_6_right",
+   "region": "abdominal_wall",
+   "reason": "A rib belongs to the thoracic wall; the abdominal wall's box reaches up to the costal margin."
+  },
+  {
+   "id": "rib_7_right",
+   "region": "abdominal_wall",
+   "reason": "A rib belongs to the thoracic wall; the abdominal wall's box reaches up to the costal margin."
+  },
+  {
+   "id": "rib_8_right",
+   "region": "abdominal_wall",
+   "reason": "A rib belongs to the thoracic wall; the abdominal wall's box reaches up to the costal margin."
+  },
+  {
+   "id": "rib_9_right",
+   "region": "abdominal_wall",
+   "reason": "A rib belongs to the thoracic wall; the abdominal wall's box reaches up to the costal margin."
+  },
+  {
+   "id": "rib_10_right",
+   "region": "abdominal_wall",
+   "reason": "A rib belongs to the thoracic wall; the abdominal wall's box reaches up to the costal margin."
+  },
+  {
+   "id": "rib_11_right",
+   "region": "abdominal_wall",
+   "reason": "A rib belongs to the thoracic wall; the abdominal wall's box reaches up to the costal margin."
+  },
+  {
+   "id": "femur_left",
+   "region": "pelvis",
+   "reason": "The femoral head sits in the acetabulum; the femur belongs to the hip, thigh and knee."
+  },
+  {
+   "id": "femur_right",
+   "region": "pelvis",
+   "reason": "The femoral head sits in the acetabulum; the femur belongs to the hip, thigh and knee."
+  },
+  {
+   "id": "scapula_left",
+   "region": "thoracic_wall",
+   "reason": "The scapula belongs to the shoulder; it lies on the thoracic wall's box."
+  },
+  {
+   "id": "scapula_right",
+   "region": "thoracic_wall",
+   "reason": "The scapula belongs to the shoulder; it lies on the thoracic wall's box."
+  },
+  {
+   "id": "clavicle_left",
+   "region": "thoracic_wall",
+   "reason": "The clavicle belongs to the shoulder and the root of the neck; the thoracic wall's box reaches up to it."
+  },
+  {
+   "id": "clavicle_right",
+   "region": "thoracic_wall",
+   "reason": "The clavicle belongs to the shoulder and the root of the neck; the thoracic wall's box reaches up to it."
+  },
+  {
+   "id": "articularis_genus_left",
+   "region": "hip_gluteal_left",
+   "reason": "No mesh; it inherits the femur's regions, but it lies above the knee (distal thigh), not at the hip."
+  },
+  {
+   "id": "articularis_genus_right",
+   "region": "hip_gluteal_right",
+   "reason": "No mesh; it inherits the femur's regions, but it lies above the knee (distal thigh), not at the hip."
+  }
+ ]
+}

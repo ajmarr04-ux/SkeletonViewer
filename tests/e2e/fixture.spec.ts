@@ -27,7 +27,7 @@ test("the demo layer is turned on from its system group, loads 12 instances, is 
   page.on("pageerror", (e) => errors.push(e.message));
   const files: string[] = [];
   page.on("request", (r) => {
-    const m = /\/models\/(widgets-(?:low|high))\.glb/.exec(r.url());
+    const m = /\/models\/(widgets-[a-z_]+-(?:low|high))\.glb/.exec(r.url());
     if (m) files.push(m[1]!);
   });
   await page.goto("./?lod=low&debug");
@@ -49,7 +49,8 @@ test("the demo layer is turned on from its system group, loads 12 instances, is 
   const row = page.getByTestId("layers-report").locator("[data-layer=widgets]");
   await expect(row).toHaveAttribute("data-nodes", String(WIDGETS.length), { timeout: 60_000 });
   await expect(row).toHaveAttribute("data-bounds-ok", "true");
-  expect(files).toContain("widgets-low");
+  // M13: the layer is chunked by body region; with no region, every chunk.
+  expect(files.sort()).toEqual(["widgets-head-low", "widgets-lower_limb_left-low", "widgets-thorax-low"]);
 
   // Picking: a click on a box selects it.
   await page.keyboard.press("Escape");
@@ -132,5 +133,96 @@ test("a widget's panel shows its links from the graph, its tiers follow its rule
   await row("widgets.gear").click();
   await row("widgets.gear.rear_train").click();
   await expect(row("widget_gear_4")).toHaveText(/Gear 4/);
+  expect(errors).toEqual([]);
+});
+
+// M13 session BO (plan decisions 9 and 11): the widgets are chunked by coarse
+// body region (gears in the head, springs in the thorax, levers in the left
+// lower limb), and the loader fetches only the chunks a region needs, more as
+// the focus moves, and the rest for the whole body. Each step adds instances
+// to the layer's batch, still where the manifest says.
+test("a chunked layer fetches only the chunks of the body region in focus, then more as the focus moves", async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const files: string[] = [];
+  page.on("request", (r) => {
+    const m = /\/models\/widgets-([a-z_]+)-(low|high)\.glb/.exec(r.url());
+    if (m) files.push(`${m[1]}-${m[2]}`);
+  });
+  const row = page.getByTestId("layers-report").locator("[data-layer=widgets]");
+  const solid = () => page.evaluate((ids) => ids.filter((id) => window.__viewer!.solidNow(id)), WIDGETS);
+
+  await page.goto("./?lod=low&debug&layers=b:on,w:on&reg=head");
+  await bonesShown(page);
+  await expect(row).toHaveAttribute("data-nodes", "4", { timeout: 60_000 });
+  await expect(row).toHaveAttribute("data-bounds-ok", "true");
+  expect(files).toEqual(["head-low"]);
+  await expect.poll(solid).toEqual(["widget_gear_1", "widget_gear_2", "widget_gear_3", "widget_gear_4"]);
+
+  // The thorax: its chunk is added to the batch; the head's stays loaded (drawn only in the head).
+  await page.evaluate(() => window.__viewer!.focusRegion("thorax"));
+  await expect(row).toHaveAttribute("data-nodes", "8", { timeout: 30_000 });
+  await expect(row).toHaveAttribute("data-bounds-ok", "true");
+  expect(files).toEqual(["head-low", "thorax-low"]);
+  await expect.poll(solid).toEqual(["widget_spring_1", "widget_spring_2", "widget_spring_3", "widget_spring_4"]);
+
+  // Back to the head: nothing new to fetch.
+  await page.evaluate(() => window.__viewer!.focusRegion("head"));
+  await expect.poll(solid).toEqual(["widget_gear_1", "widget_gear_2", "widget_gear_3", "widget_gear_4"]);
+  expect(files).toEqual(["head-low", "thorax-low"]);
+
+  // The whole body: the last chunk.
+  await page.evaluate(() => window.__viewer!.leaveRegion());
+  await expect(row).toHaveAttribute("data-nodes", "12", { timeout: 30_000 });
+  await expect(row).toHaveAttribute("data-bounds-ok", "true");
+  expect(files).toEqual(["head-low", "thorax-low", "lower_limb_left-low"]);
+  await expect.poll(solid).toEqual(WIDGETS);
+  expect(errors).toEqual([]);
+});
+
+test("a region with no member in a chunked layer fetches none of its chunks", async ({ page }) => {
+  const files: string[] = [];
+  page.on("request", (r) => /\/models\/widgets-/.test(r.url()) && files.push(r.url()));
+  await page.goto("./?lod=low&debug&layers=b:on,w:on&reg=forearm_left");
+  await bonesShown(page);
+  await openPanel(page);
+  await expect(page.getByTestId("layer-widgets-on")).toBeChecked();
+  // Neither loading nor failed: the Layers panel shows no progress or Retry for it.
+  await page.waitForTimeout(1000);
+  await expect(page.getByTestId("layer-widgets-progress")).toHaveCount(0);
+  await expect(page.getByTestId("layers-panel").getByRole("button", { name: "Retry" })).toHaveCount(0);
+  expect(files).toEqual([]);
+});
+
+test("budget governor (M13 BP) with a chunked layer: the bones are capped, the widgets fetch only the region's chunk at each LOD", async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const files: string[] = [];
+  page.on("request", (r) => {
+    const m = /\/models\/(widgets-[a-z_]+|skeleton)-(low|high)[.-]/.exec(r.url());
+    if (m) files.push(`${m[1]}-${m[2]}`);
+  });
+  // Headless Chromium's SwiftShader plans low; report a capable GPU so Auto plans high.
+  await page.addInitScript(() => {
+    const get = WebGL2RenderingContext.prototype.getParameter;
+    WebGL2RenderingContext.prototype.getParameter = function (this: WebGL2RenderingContext, p: number) {
+      return p === this.RENDERER ? "Test GPU" : get.call(this, p);
+    };
+  });
+  await page.goto("./?debug&budget=1000&layers=b:on,w:on&reg=head");
+  const budget = page.getByTestId("debug-budget");
+  // The bones are the heaviest layer; the widgets' two LODs are the same boxes, so capping them would save nothing.
+  await expect(budget).toHaveAttribute("data-caps", "bones");
+  await expect(budget).toHaveAttribute("data-over", "true");
+  await expect(page.getByTestId("budget-prompt")).toBeVisible();
+  const row = page.getByTestId("layers-report").locator("[data-layer=widgets]");
+  await expect(row).toHaveAttribute("data-lod", "high", { timeout: 60_000 });
+  await expect(row).toHaveAttribute("data-nodes", "4");
+  await expect(row).toHaveAttribute("data-bounds-ok", "true");
+  await expect(page.getByTestId("debug")).toHaveAttribute("data-lod", "low");
+  expect(files.filter((f) => f.startsWith("widgets")).sort()).toEqual(["widgets-head-high", "widgets-head-low"]);
+  expect(files).not.toContain("skeleton-high");
   expect(errors).toEqual([]);
 });

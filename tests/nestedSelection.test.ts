@@ -45,7 +45,7 @@ const PARENTS: Record<string, string> = {
   biceps_short: "biceps",
 };
 const parentOf: ParentOf = (id) => PARENTS[id] ?? null;
-const s = (sel: string, tier: 0 | 1 | 2 = 0): Isolation => ({ sel, tier, grp: null });
+const s = (sel: string, tier: 0 | 1 | 2 = 0): Isolation => ({ sel, tier, grp: null, reg: null });
 
 describe("resolveClick (spec §5.1 rules 1, 3 and 6)", () => {
   it("a part selects its whole muscle first", () => {

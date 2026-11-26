@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { Box3, Matrix4, Sphere, Vector3, type PerspectiveCamera } from "three";
+import { Box3, Frustum, Matrix4, Sphere, Vector3, type PerspectiveCamera } from "three";
 import { displayName } from "../content/names";
 import { softEntry, softLayerOf } from "../content/softRegistry";
 import { subscribeGraph } from "../content/appGraph";
 import type { BatchedSkeleton } from "../scene/batchSkeleton";
 import { relatedAt, viewOf } from "../scene/isolation";
-import { recordLabelLayout } from "../scene/bench";
-import { focusLayerOf, LABEL, labelKey, labelPriority, layoutLabels, leaderEnd, type LabelCandidate, type PlacedLabel, type Rect } from "../scene/labels";
+import { recordLabelCandidates, recordLabelLayout } from "../scene/bench";
+import { focusLayerOf, LABEL, labelKey, labelPriority, layoutLabels, leaderEnd, MAX_LABEL_CANDIDATES, thinCandidates, type LabelCandidate, type PlacedLabel, type Rankable, type Rect } from "../scene/labels";
 import { hasMesh } from "../state/selection";
 import { useLayerBatches } from "../scene/layerRegistry";
 import { type Layer } from "../state/url";
@@ -44,6 +44,15 @@ const _m = new Matrix4();
 const _c = new Vector3();
 const _sphere = new Sphere();
 const _camPos = new Vector3();
+const _frustum = new Frustum();
+const _pv = new Matrix4();
+/** `?debug&labelmax=<n>` overrides the thinning cap (BQ measured N with it; 0 = no cap). */
+const maxCandidates = ((): number => {
+  if (typeof location === "undefined") return MAX_LABEL_CANDIDATES;
+  const q = new URLSearchParams(location.search);
+  const n = Number(q.get("labelmax"));
+  return q.has("debug") && q.has("labelmax") && Number.isInteger(n) && n >= 0 ? n || Infinity : MAX_LABEL_CANDIDATES;
+})();
 
 /**
  * Lays out the floating labels (plan decision 7), inside the Canvas: projects
@@ -76,7 +85,7 @@ export function LabelProbe({ skeleton }: { skeleton: BatchedSkeleton | null }) {
   useEffect(
     () =>
       useViewer.subscribe((s, p) => {
-        if (s.sel !== p.sel || s.tier !== p.tier || s.grp !== p.grp || s.ghostMode !== p.ghostMode || s.explode !== p.explode || s.panelInset !== p.panelInset || s.sidebarLeft !== p.sidebarLeft || s.colourMode !== p.colourMode || s.layers !== p.layers || s.hidden !== p.hidden || s.muscleDepth !== p.muscleDepth) last.current.dirty = true;
+        if (s.sel !== p.sel || s.tier !== p.tier || s.grp !== p.grp || s.reg !== p.reg || s.ghostMode !== p.ghostMode || s.explode !== p.explode || s.panelInset !== p.panelInset || s.sidebarLeft !== p.sidebarLeft || s.colourMode !== p.colourMode || s.layers !== p.layers || s.hidden !== p.hidden || s.muscleDepth !== p.muscleDepth) last.current.dirty = true;
       }),
     [],
   );
@@ -125,8 +134,24 @@ function rectOf(el: Element): Rect {
   return { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
 }
 
-/** One layer's solid batch and its instances' local bounding spheres. */
-type Source = { layer: Layer; batch: BatchedSkeleton; spheres: Sphere[] };
+/**
+ * One layer's solid batch, its instances' local bounding spheres and, once
+ * read, their world spheres. The instance matrices move only with Explode
+ * (written synchronously when the slider moves, restored at 0), so with
+ * Explode at 0 the world spheres are read once per batch (M13 BQ: most of the
+ * layout's cost with every layer On was this pass, not the layout).
+ */
+type Source = { layer: Layer; batch: BatchedSkeleton; spheres: Sphere[]; world?: Sphere[] };
+
+function worldSpheres(src: Source, cache: boolean): Sphere[] {
+  if (cache && src.world) return src.world;
+  const out = src.spheres.map((sp, i) => {
+    src.batch.mesh.getMatrixAt(i, _m);
+    return sp.clone().applyMatrix4(_m);
+  });
+  if (cache) src.world = out;
+  return out;
+}
 
 const parentOf = (id: string): string | null => softEntry(id)?.parent ?? null;
 
@@ -151,13 +176,14 @@ function computeLayout(sources: readonly Source[], camera: PerspectiveCamera, ca
   const groups = new Map<string, Group>();
   // Occlusion isn't tested (as in M5): with the topmost layer (the muscles) solid, a bone is labelled only when isolation keeps it solid.
   const topSolid = st.layers[LABEL_ORDER[0]!] === "on";
-  for (const { layer, batch: skeleton, spheres } of sources) {
+  for (const src of sources) {
+    const { layer, batch: skeleton } = src;
     if (!skeleton.mesh.visible) continue;
+    const world = worldSpheres(src, st.explode === 0);
     skeleton.boneIds.forEach((id, i) => {
       if (!skeleton.mesh.getVisibleAt(i)) return;
       if (layer === EAGER_LAYER && topSolid && !(view.isolated && view.layers[EAGER_LAYER].solid?.has(id))) return;
-      skeleton.mesh.getMatrixAt(i, _m);
-      _sphere.copy(spheres[i]!).applyMatrix4(_m);
+      _sphere.copy(world[i]!);
       const key = hasNestedParts(layer) ? labelKey(id, parentOf, partLevelMuscle) : id;
       const priority = Math.min(labelPriority(id, view.focus, tier1, tier2), labelPriority(key, view.focus, tier1, tier2));
       const g = groups.get(key);
@@ -167,28 +193,37 @@ function computeLayout(sources: readonly Source[], camera: PerspectiveCamera, ca
       } else groups.set(key, { sphere: _sphere.clone(), layer, priority });
     });
   }
-  const candidates: LabelCandidate[] = [];
+  // M13 plan decision 12: thinned before projection: the structures in view (centre inside the frustum, as the layout's own area test),
+  // ranked by priority and size on screen (radius over distance needs no projection), the best MAX_LABEL_CANDIDATES kept.
+  const minSizePx = view.isolated ? LABEL.minSizeIsolatedPx : LABEL.minSizePx;
+  const focusLayer = focusLayerOf(st.sel === null ? null : (softLayerOf(st.sel) ?? EAGER_LAYER), st.layers);
+  camera.updateMatrixWorld();
+  _frustum.setFromProjectionMatrix(_pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+  // Bones only over the whole body keeps every candidate (plan decision 12: today's set exactly); a region or a second layer drawn thins.
+  const thinned = st.reg !== null || sources.some((src) => src.layer !== EAGER_LAYER && src.batch.mesh.visible);
+  const ranked: (Rankable & { sphere: Sphere })[] = [];
   for (const [id, { sphere, layer, priority }] of groups) {
+    if (!_frustum.containsPoint(sphere.center)) continue;
+    const dist = _camPos.distanceTo(sphere.center);
+    ranked.push({ id, priority, layer, sphere, sizePx: dist > 0 ? (sphere.radius / dist) * pxPerUnit : Infinity });
+  }
+  const candidates: LabelCandidate[] = [];
+  for (const { id, sphere, layer, priority, sizePx } of thinCandidates(ranked, thinned ? maxCandidates : Infinity, minSizePx, focusLayer)) {
     _c.copy(sphere.center).project(camera);
     if (_c.z < -1 || _c.z > 1) continue;
-    const dist = _camPos.distanceTo(sphere.center);
     candidates.push({
       id,
       text: displayName(id),
       x: area.left + ((_c.x + 1) / 2) * width,
       y: area.top + ((1 - _c.y) / 2) * height,
-      sizePx: dist > 0 ? (sphere.radius / dist) * pxPerUnit : Infinity,
+      sizePx,
       priority,
       layer,
     });
   }
+  recordLabelCandidates(candidates.length);
   const obstacles = [...document.querySelectorAll(OBSTACLES)].map(rectOf).filter((r) => r.right > r.left && r.bottom > r.top);
-  return layoutLabels(candidates, area, {
-    minSizePx: view.isolated ? LABEL.minSizeIsolatedPx : LABEL.minSizePx,
-    measure: measureText,
-    obstacles,
-    focusLayer: focusLayerOf(st.sel === null ? null : (softLayerOf(st.sel) ?? EAGER_LAYER), st.layers),
-  });
+  return layoutLabels(candidates, area, { minSizePx, measure: measureText, obstacles, focusLayer });
 }
 
 /**

@@ -23,6 +23,18 @@ declare module "virtual:skeleton-index" {
   /** The always-loaded ID index's lazy half: the lazy layers' trimmed entries and the joint nodes, packed (scripts/lib/index-plugin.ts, src/content/indexCodec.ts; M12 plan decision 7). */
   const data: import("./indexCodec").PackedIndex;
   export default data;
+  /** The body regions and every structure's `located_in` (src/regions/codec.ts; M13 plan decision 5). */
+  export const regions: import("../regions/codec").PackedRegions;
+}
+declare module "virtual:skeleton-region-map" {
+  /** The region picker's front and back body maps and each region's box (src/regions/bodyMap.ts; M13 plan decision 8). Lazy: the picker's chunk only. */
+  const map: import("../regions/bodyMap").BodyMap;
+  export default map;
+}
+declare module "virtual:skeleton-chunks" {
+  /** The chunked layers' chunk table (src/regions/chunks.ts, scripts/lib/index-plugin.ts; M13 plan decision 9): `{}` when no layer is chunked. Lazy: the layer chunk only. */
+  const table: import("../regions/chunks").ChunkTable;
+  export default table;
 }
 declare module "virtual:skeleton-graph" {
   /** The eager layer's edges, for the main chunk (scripts/lib/content-plugin.ts, src/graph/codec.ts; M12 plan decision 3). */

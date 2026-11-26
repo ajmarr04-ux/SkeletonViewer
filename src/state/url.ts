@@ -127,6 +127,8 @@ export function formatLayers(s: LayerSetting): string {
 /** At most this many hidden structures are kept in the URL (spec §5.5); the rest are dropped with a toast. */
 export const HIDDEN_URL_CAP = 100;
 const ID_PATTERN = /^[a-z0-9_]+$/;
+/** Region keys are snake_case, as IDs are. */
+const KEY_PATTERN = ID_PATTERN;
 
 /** `hid=a,b,c`: well-formed IDs, no repeats, capped. `dropped` counts what the cap cut off. */
 export function parseHidden(value: string | null | undefined, isId: (id: string) => boolean = () => true): { ids: string[]; dropped: number } {
@@ -157,19 +159,22 @@ export type UrlState = {
   hid: string[];
   /** Antagonists shown (`ant=1`, M9 plan decision 7). Only with a selection at tier 2 (a muscle's: the view checks the kind). */
   ant: boolean;
+  /** Body region in focus (`reg=`, M13 plan decision 7), or null. Combines with `sel` or `grp`. */
+  reg: string | null;
 };
 
-const MANAGED = ["sel", "tier", "ant", "grp", "ghost", "color", "hid", "cam"] as const;
+const MANAGED = ["sel", "tier", "ant", "grp", "reg", "ghost", "color", "hid", "cam"] as const;
 
 /**
  * Read the app's parameters. `isId` says which IDs exist: an unknown `sel` is
  * dropped (and with it the tier). `isGroup` does the same for `grp`, which is
- * ignored when `sel` is set (the two are exclusive).
+ * ignored when `sel` is set (the two are exclusive), and `isRegion` for `reg`.
  */
 export function parseUrlState(
   search: string,
   isId: (id: string) => boolean = () => true,
   isGroup: (key: string) => boolean = () => true,
+  isRegion: (key: string) => boolean = () => true,
 ): UrlState {
   const q = new URLSearchParams(search);
   const rawSel = q.get("sel");
@@ -183,14 +188,16 @@ export function parseUrlState(
   const layers = parseLayers(q.get("layers"));
   const hid = parseHidden(q.get("hid")).ids;
   const ant = tier === 2 && q.get("ant") === "1";
-  return { cam: parseCam(q.get("cam")), sel, tier, grp, ghost, color, layers, hid, ant };
+  const rawReg = q.get("reg");
+  const reg = rawReg && KEY_PATTERN.test(rawReg) && isRegion(rawReg) ? rawReg : null;
+  return { cam: parseCam(q.get("cam")), sel, tier, grp, ghost, color, layers, hid, ant, reg };
 }
 
 /**
  * Write the given parts of the state into `search`. Parts not given keep their
  * value from `search`; every other parameter is kept verbatim (including bare
  * flags such as `?debug`). The app's own parameters go last, in the order
- * sel, tier, ant (or grp), ghost, color, layers, hid, cam, and only when they differ from the defaults.
+ * sel, tier, ant (or grp), reg, ghost, color, layers, hid, cam, and only when they differ from the defaults.
  * `layers` in M6's debug format (`layers=all`) is kept verbatim unless `state` sets the layers.
  * Returns "" or a string starting with "?".
  */
@@ -207,6 +214,7 @@ export function serialiseUrlState(state: Partial<UrlState>, search: string): str
     if (merged.tier !== 0) kept.push(`tier=${merged.tier}`);
     if (merged.tier === 2 && merged.ant) kept.push("ant=1");
   } else if (merged.grp !== null) kept.push(`grp=${encodeURIComponent(merged.grp).replace(/%3A/g, ":")}`); // `grp=attached:femur_left` (M9)
+  if (merged.reg !== null) kept.push(`reg=${merged.reg}`);
   if (merged.ghost === "hide") kept.push("ghost=0");
   if (merged.color === "region") kept.push("color=region");
   if (ownLayers && merged.layers && !isDefaultLayers(merged.layers)) kept.push(`layers=${formatLayers(merged.layers)}`);

@@ -1,6 +1,6 @@
 # Skeleton Viewer: project status
 
-Written 2026-11-19 after Milestone 5; brought up to date for Milestones 6 to 10 on 2026-11-24 (M10 session AQ); relationships (§4, §5) updated for M12's graph on 2026-11-25 (session BJ). This file is for whoever writes the next spec. It records what exists, how it works, what was measured, and where the build departs from the two specs.
+Written 2026-11-19 after Milestone 5; brought up to date for Milestones 6 to 10 on 2026-11-24 (M10 session AQ); relationships (§4, §5) updated for M12's graph on 2026-11-25 (session BJ); body regions (§5, "How regions work") added for M13 on 2026-11-26 (session BR). This file is for whoever writes the next spec. It records what exists, how it works, what was measured, and where the build departs from the two specs.
 
 There are two specs. `SPEC (2).md` is the bone spec (it calls itself `SPEC.md`, but the file was never renamed) and covers M1–M5. `SPEC-musculoskeletal.md` extends it with muscle, ligament and cartilage layers and covers M6–M10; it wins where the two conflict. `/m1/` to `/m9/` are live and frozen on GitHub Pages (`README.md` has the links), and the main site at https://ajmarr04-ux.github.io/SkeletonViewer/ follows `main`.
 
@@ -481,6 +481,32 @@ Three soft roots beside the bone tree, loaded lazily (`virtual:skeleton-soft-tre
 
   Counts are by kind; parts count as parts only for the focus's own muscle, otherwise once as their muscle.
 - **Keyboard** (AN, `src/camera/input.ts`): M5's keys plus `R` (tier 1), `E` (tier 2), `X` (hide the Tab cursor's structure, else the selection), `Shift+X` (show all hidden). The Tab cursor (`cursorStops`) visits layers in panel order (bones, cartilage, ligaments, muscles) and makes a muscle **one stop** until it or one of its parts is selected; then its parts are stops. The panel buttons and the hidden chip carry `aria-keyshortcuts`. axe-core (WCAG 2.2 A/AA, no rules disabled) runs on every UI state, including the Layers panel while loading, the depth control, a muscle tier with antagonists and every soft panel.
+
+### How regions work (M13: body regions)
+
+"Region" already meant two things before M13: the bones' tier 2 (`content/regions.json`, "Expand region") and colour-by-region (`src/scene/regionColours.ts`). Neither changed. The **body regions** are new and live in their own folders: `content/regions/`, `src/regions/`, `scripts/regions/`, with the descriptor in `src/systems/regions.ts`. The UI always says "body region".
+
+| Piece | Where |
+| --- | --- |
+| The list: 10 coarse regions, 35 fine (limbs per side; orbit and ear are one region of two boxes) | `content/regions/regions.json` (authored; approved by the user at the BK gate); `content/regions/README.md` says which `regions.json` is which |
+| Volumes: oriented boxes fitted round named anchor bones (`fit`, with `span`, axes and pads), never typed coordinates | resolved by `scripts/regions/volumes.ts` (`npm run regions:volumes`) from `skeleton-high.glb` into `assets/build/region-volumes.json` (generated, checked in `npm run check`); `?debug&regions[=key]` draws them |
+| Membership: a structure is `located_in` every fine region holding ≥ 15 % of its vertices, else its best one; no-mesh structures inherit (a muscle: its parts' union; wisdom teeth: their tier-1 neighbours'); 63 bone-only overrides, each with a reason | `scripts/regions/membership.ts` (`npm run regions`) → `assets/build/located-in.json` (2,414 edges) and `REPORT-regions.md`; `content/regions/overrides.json`; the four spec §10 checks in `validate-content`; golden `tests/golden/regions.json` |
+| Shipping: `located_in` (inverse "contains") is a platform edge type, shipped **eagerly** with the ID index (an exception to M12's per-layer shipping: the region view, the governor and chunk choice need it before a layer loads), with each region's triangle totals per layer and LOD | `virtual:skeleton-index`'s `regions` export (`src/regions/codec.ts`, `index.ts`: `regionsOf`, `membersOf`, `regionTriangles`), added to `appGraph` as chunk `regions`. No tier rule or panel follows it, so `tiers.json` and `panels.json` are M12's |
+| Focus state: `reg` (fine or coarse key) in the isolation reducer, store and URL (`reg=` after `grp`) | `src/state/isolation.ts` (`focusRegion` pushes from the whole body, replaces region → region; `leaveRegion` pops); `focusRegion` / `leaveRegion` / `chooseRegion` in `src/state/selection.ts`; `memberSet` and `sceneView`'s `region` in `src/scene/isolation.ts` |
+| The picker: toolbar "Body region" → a modal dialog with "Whole body", an ARIA tree with counts, and front and back body maps projected from the volumes at build time | `src/ui/RegionPicker.tsx` (lazy; imports only React and `virtual:skeleton-region-map` from `src/regions/bodyMap.ts`), fed by props from `RegionPickerHost.tsx` |
+| Chunking: a layer may ship one file per coarse region per LOD (`ModelSpec.chunking: "region"`); the loader fetches only the chunks a region needs | `scripts/models/split-regions.ts` (run by `compress-models.sh`), `src/regions/chunks.ts`, `virtual:skeleton-chunks`, `LayerScenes.tsx`. **No real layer is chunked**; the fixture's widgets are |
+| Budget governor: drawn triangles (from the index's totals for the view) against 1.5M desktop / 450k phone | `src/scene/budget.ts` (pure), `src/state/budget.ts`, `src/ui/BudgetPrompt.tsx`; `?debug&budget=<n>` overrides the budget, `src/ui/BudgetDebug.tsx` is the `?debug` line |
+| Keyboard and labels in a region | `focusLayerFirst`, `layerJump` (`[` / `]`) in `src/camera/input.ts`; `thinCandidates` (`src/scene/labels.ts`, `MAX_LABEL_CANDIDATES` = 60) |
+
+How it behaves:
+
+- **Hiding, not ghosting.** In a region, every structure outside it is hidden on every layer, as `hid=` hides. An isolation inside a region is cut to the region's members. A selection made from outside (search, a link, a tree row) keeps the region, is drawn as the focus, and is announced "Outside the body region." The "N hidden" chip counts only `hid=`.
+- **Back** walks out of the isolation first (today's steps, which keep `reg`), then out of the region. Breadcrumb: `Skeleton › Forearm (left) › Muscles › …`; the region's crumb leaves the isolation and keeps the region.
+- **Framing.** Choosing a region frames its volume and drawn members beside the panel; leaving restores the whole-body frame only if the camera hasn't moved since.
+- **Announcements.** "Body region: forearm (left). 2 bones shown." / "Left the body region." Tier counts are cut to the region. Every message outside a region is M12's.
+- **Governor.** Over budget with Auto LOD, it caps the heaviest drawn layers to low one at a time (lifted again under 90 %, so it doesn't flap); still over, a polite prompt offers the picker ("This view is heavy for this device. Focus on a body region?"), once per change of layers or region. An explicit Settings value or `?lod=` is never overridden. On a phone opening over budget with no `reg=`, the layers that would cross it are held (loaded, drawn as Off) and the picker opens; closing it any way releases them. **On today's content nothing triggers** (366 and 377 triangles to spare; asserted in `tests/budget.test.ts`).
+- **Keyboard.** In a region the Tab cursor walks the focus layer's members first; `[` / `]` jump to the previous / next layer's first stop (no wrapping). With no region the order is M12's.
+- **Labels.** With a region in focus or a second layer drawn, candidates are thinned before projection to the best 60 by priority and size; a bones-only whole-body view is exactly M12's.
 
 ---
 

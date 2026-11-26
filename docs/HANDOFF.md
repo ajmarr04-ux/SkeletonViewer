@@ -1,18 +1,21 @@
-# Handoff — written 2026-11-25 at the end of M12 BJ
+# Handoff — written 2026-11-26 at the end of M13 session BR
 
 ## Next session
-M13 planning (design): milestone handover (`CLAUDE.md`), then `docs/PLAN-milestone-13.md` from `SPEC-platform.md` §11, M13 (`located_in` edges and regions). Set `"current": 13` in `deploy/pages.json`.
-Before that: the user confirms https://ajmarr04-ux.github.io/SkeletonViewer/m12/ is live; tick "Hosted copy is live" in `docs/PLAN-milestone-12.md`.
+BR follow-up (short), once the user has merged the M13 PR: freeze `m13` in `deploy/pages.json` at the PR's merge commit (from `git log origin/main`), set `"current": null` (until M14's planning sets 14), update `README.md`'s M13 row and `CLAUDE.md`'s status paragraph (M13 done, frozen SHAs list), check the Deploy run, and open the freeze PR.
+Done when: `m13` frozen, `/m13/` confirmed live by the user, "Hosted copy is live" ticked in `docs/PLAN-milestone-13.md`. Then M14 planning.
 
 ## State
-- M12 merged to `main` as #27 (`3d8adef`); `m12` frozen at it, `"current": null` (follow-up PR).
-- `npm run check`: pass (658 tests, the five goldens unchanged). Full e2e: 171/174 in one 45-minute run; the 3 load timeouts (`keyboard.spec.ts:191`, `:242`, `nested.spec.ts:34`) pass alone.
+- Last commit: see `git log` (M13 BR: parity table, docs, phone-start fix)
+- `npm run check`: pass (764 tests; the six goldens unchanged, no approved differences)
+- Full e2e: 193/196 under load, the 3 failures pass alone (step 8 notes)
 - Open fan-out work: none
 
 ## Waiting on the user
-- A glance at `/m12/`.
+Merge the M13 PR to `main` (link in the session's last message), then confirm https://ajmarr04-ux.github.io/SkeletonViewer/m13/ is live after the Deploy run.
 
 ## Things the next session must know
-- BJ fixed a bare JSON import in `bones/panel.ts` that made Playwright collect 0 tests (see `CLAUDE.md` environment notes): JSON imports the registry reaches need `with { type: "json" }`.
-- Parity table, main chunk (486.1 kB `gzip -9`) and chunk sizes: plan step 11.
-- Allowlist: 7 entries left (M14 ×1, M15 ×6). Goldens: never `--write --force` without the user's approval. QUESTIONS: next is 140.
+- BR fixed BP's phone start: it now holds layers only on Auto LOD (an explicit `?lod=high|both` or Settings → High held the bones on a bones-only page). Plan step 8 has the details.
+- The freeze must use the real merge commit, never a placeholder: `scripts/build-pages.sh` fails otherwise.
+- `bench-container` against an older build: run it from that build's directory with `dist` (it joins the path to the working directory).
+- Main chunk 490.9 kB `gzip -9` (budget 500.1), measured the same way as M12's 486.1.
+- Goldens: never `--write --force` without the user's approval.

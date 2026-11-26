@@ -2,14 +2,14 @@
 // The list itself is `registered.ts`; this module holds the lookups everything
 // else asks instead of naming a layer or kind. Main chunk: data only.
 
-import { REGISTRY, SYSTEMS } from "./registered";
+import { REGIONS, REGISTRY, SYSTEMS } from "./registered";
 import type { Graph } from "../graph/graph";
 import type { TierContext } from "../graph/query";
 import { edgeTypeIndex } from "../graph/edgeTypes";
 import type { EdgeTypeDescriptor, TierWording } from "../graph/types";
 import type { HierarchyTreeSpec, KindDescriptor, LayerDescriptor, LayerMode, OverlaySpec, PresetDescriptor, RolesSpec, SystemDescriptor, TreeSpec } from "./types";
 
-export { REGISTRY, SYSTEMS };
+export { REGIONS, REGISTRY, SYSTEMS };
 
 type Registered = (typeof REGISTRY)[number];
 export type LayerId = Registered["id"];
@@ -217,8 +217,13 @@ export const DEBUG_CODES: ReadonlyMap<string, string> = new Map([...REGISTRY.map
 
 /** The layers of a system, in registry order. */
 export const layersOfSystem = (system: SystemId): readonly LayerId[] => REGISTRY.filter((l) => l.system === system).map((l) => l.id);
-/** Every system's edge types, in system order (M12 plan decision 1). */
-export const EDGE_TYPES: readonly EdgeTypeDescriptor[] = SYSTEMS.flatMap((s): readonly EdgeTypeDescriptor[] => ("edgeTypes" in s ? s.edgeTypes : []));
+/** Every system's edge types, in system order (M12 plan decision 1), then the body regions' `located_in` (M13). */
+export const EDGE_TYPES: readonly EdgeTypeDescriptor[] = [
+  ...SYSTEMS.flatMap((s): readonly EdgeTypeDescriptor[] => ("edgeTypes" in s ? s.edgeTypes : [])),
+  REGIONS.edgeType,
+];
+/** The body regions' membership edge type's ID (`located_in`). */
+export const LOCATED_IN: string = REGIONS.edgeType.id;
 
 /** The edge type IDs a layer's panels read (its kinds' sections: links, groups, exclusions). */
 export function panelEdgeTypes(id: LayerId): ReadonlySet<string> {

@@ -18,12 +18,15 @@ import { ensureBoundsTrees, instanceWorldBounds, type BatchedSkeleton } from "..
 import { nearestPickable, PROXY_RADIUS_PX, pickWithProxies, tinyObjects, type Proxy, type RealHit } from "../scene/pick";
 import ids from "../../content/ids.json";
 import { displayName } from "../content/names";
-import { clickObject, drawnIds, expandRegion, goBack, hasMesh, hideSelected, hideStructure, layerOfId, parentOf, selectObject, showAllHidden, showRelated } from "../state/selection";
-import { isolationView, isPickableIn, viewOf } from "../scene/isolation";
+import { clickObject, drawnIds, expandRegion, focusRegion, goBack, leaveRegion, hasMesh, hideSelected, hideStructure, layerOfId, parentOf, selectObject, showAllHidden, showRelated } from "../state/selection";
+import { isolationView, isPickableIn, shownIn, viewOf } from "../scene/isolation";
+import { memberSet, membersOf } from "../regions/index";
 import { useLayerBatches } from "../scene/layerRegistry";
 import { softEntries } from "../content/softRegistry";
 import { type Layer } from "../state/url";
-import { EAGER_LAYER, LAYER_IDS, LAZY_LAYERS, NESTED_LAYER } from "../systems/registry";
+import { EAGER_LAYER, LAYER_IDS, LAZY_LAYERS, layerLabel, NESTED_LAYER } from "../systems/registry";
+import { focusLayerOf } from "../scene/labels";
+import { drawnModes } from "../scene/budget";
 
 /** Everything that covers the canvas for framing: the info panel, the breadcrumb and the sidebar. */
 function framingInset() {
@@ -31,15 +34,37 @@ function framingInset() {
   return st.sidebarLeft > 0 ? { ...st.panelInset, left: st.sidebarLeft } : st.panelInset;
 }
 
+/**
+ * The box around a body region (M13 plan decision 8): its drawn members
+ * (every layer showing), joined with `extra` (the region's volume, from the
+ * picker). Undefined outside a region or with nothing to frame.
+ */
+function regionBox(boxOf: (id: string) => Box | undefined, extra: Box | null = null): Box | undefined {
+  const st = useViewer.getState();
+  if (st.reg === null) return undefined;
+  const view = viewOf(st, hasMesh);
+  const boxes: Box[] = [];
+  for (const id of membersOf(st.reg)) {
+    const layer = layerOfId(id);
+    if (layer === null || shownIn(view, layer, id) === "hidden") continue;
+    const b = boxOf(id);
+    if (b) boxes.push(b);
+  }
+  if (extra) boxes.push(extra);
+  return boxes.length ? unionBoxes(boxes) : undefined;
+}
+
 /** The box around everything solid in the current isolation (tiers 1 and 2: the focus and its related bones). */
 function isolationBox(boxOf: (id: string) => Box | undefined, sel: string | null, tier: 0 | 1 | 2, grp: string | null = null): Box | undefined {
   // The related set follows the layers showing (M9 plan decision 3).
-  const view = isolationView(sel, tier, "ghost", hasMesh, grp, undefined, undefined, useViewer.getState().layers);
+  // Inside a body region, only what is drawn of the isolation there (M13 plan decision 7).
+  const st = useViewer.getState();
+  const view = isolationView(sel, tier, "ghost", hasMesh, grp, undefined, undefined, st.layers, memberSet(st.reg));
   if (!view.solid) return undefined;
   const boxes = [...view.solid].map((id) => boxOf(id)).filter((b): b is Box => b !== undefined);
   return boxes.length ? unionBoxes(boxes) : undefined;
 }
-import { BENCH_DURATION_MS, BENCH_WARMUP_MS, benchAzimuth, labelLayoutMs, summariseFrames, summariseTimes } from "../scene/bench";
+import { BENCH_DURATION_MS, BENCH_WARMUP_MS, benchAzimuth, labelCandidates, labelLayoutMs, summariseFrames, summariseTimes } from "../scene/bench";
 import type { Lod } from "../scene/lod";
 import { useViewer, type CameraCommand } from "../state/store";
 import { parseUrlState, serialiseUrlState, type CameraState, type Vec3 } from "../state/url";
@@ -48,6 +73,8 @@ import {
   NO_WHEEL_MEMORY,
   classifyWheel,
   cursorStops,
+  focusLayerFirst,
+  layerJump,
   keyAction,
   tabCursor,
   tapStep,
@@ -144,18 +171,23 @@ export type ViewerDebugApi = {
   click: (id: string) => void;
   /** Step back one isolation level (as Esc). */
   back: () => void;
+  /** Focus on a body region (M13; no UI until BN), and leave it. */
+  focusRegion: (key: string) => void;
+  leaveRegion: () => void;
   /**
    * Frame a bone without selecting it (instant, as `F` would): from a preset
    * direction, or the current one. For the all-objects e2e test.
    */
   frameBone: (id: string | string[], from?: Preset) => boolean;
-  state: () => { sel: string | null; tier: number; grp: string | null; hovered: string | null; cursor: string | null };
+  state: () => { sel: string | null; tier: number; grp: string | null; reg: string | null; hovered: string | null; cursor: string | null };
   /** A bone's box centre where it is drawn now (moves with Explode; `bone` gives the rest position). */
   boneNow: (id: string) => Vec3 | null;
   /** A bone's instance colour in the solid batch (linear RGB), for the colour-by-region tests. */
   instanceColour: (id: string) => [number, number, number] | null;
   /** Is the structure drawn in its layer's solid batch right now (batch on and instance visible)? Null if not loaded. */
   solidNow: (id: string) => boolean | null;
+  /** How many candidates the last label layout was given, after thinning (M13 plan decision 12). */
+  labelCandidates: () => number;
 };
 declare global {
   interface Window {
@@ -250,7 +282,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     el.setAttribute("role", "img");
     el.setAttribute(
       "aria-label",
-      "3D skeleton. Click a bone to select it, Escape to go back. Arrow keys orbit, Shift and arrows pan, plus and minus zoom, H resets the view, F frames the selection, R and E show its related structures and its wider group, X hides it and Shift X shows everything hidden. Tab moves through the visible structures and Enter selects one (a muscle, then its parts); X hides the one Tab is on; Escape then Tab leaves the view.",
+      "3D skeleton. Click a bone to select it, Escape to go back. Arrow keys orbit, Shift and arrows pan, plus and minus zoom, H resets the view, F frames the selection, R and E show its related structures and its wider group, X hides it and Shift X shows everything hidden. Tab moves through the visible structures, left and right square brackets jump to the previous or next layer, and Enter selects one (a muscle, then its parts); X hides the one Tab is on; Escape then Tab leaves the view.",
     );
     el.style.touchAction = "none";
 
@@ -576,7 +608,10 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       const soft = live.current.layerGeoms.length ? softEntries().filter((e) => e.mesh && solidHere(view, e.layer, e.id)) : [];
       const rank = (l: Layer) => LAYER_IDS.indexOf(l);
       const ordered = soft.map((e, i) => ({ e, i })).sort((a, b) => rank(a.e.layer) - rank(b.e.layer) || a.i - b.i);
-      return cursorStops([...bones, ...ordered.map((x) => x.e.id)], st.sel, parentOf);
+      const solid = [...bones, ...ordered.map((x) => x.e.id)];
+      // M13 plan decision 12: in a body region, the focus layer's members first.
+      const first = st.reg === null ? null : (focusLayerOf(st.sel === null ? null : layerOfId(st.sel), drawnModes(st.layers, st.budgetHeld)) as Layer);
+      return cursorStops(focusLayerFirst(solid, layerOfId, first), st.sel, parentOf);
     };
     /** Where a structure's box centre is on screen (client px), and whether it is in view. */
     const onScreen = (id: string) => {
@@ -591,7 +626,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       return { x: r.left + ((p.x + 1) / 2) * r.width, y: r.top + ((1 - p.y) / 2) * r.height, inView };
     };
     const spokenName = (id: string) => displayName(id).replace(/ \((left|right)\)$/, ", $1");
-    const moveCursor = (id: string, list: string[]) => {
+    const moveCursor = (id: string, list: string[], namingLayer = false) => {
       const st = useViewer.getState();
       const at = onScreen(id);
       st.setKeyCursor({ id, x: at?.x ?? 0, y: at?.y ?? 0 });
@@ -600,10 +635,21 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       cursorHover = hasMesh(id) ? id : (drawnIds(id).find((p) => isPickableIn(view, layerOfId(p) ?? NESTED_LAYER, p)) ?? null);
       st.setHovered(cursorHover);
       const off = at && !at.inView ? " Off screen: press F to frame it." : "";
-      st.say(`${spokenName(id)}. ${list.indexOf(id) + 1} of ${list.length}.${off}`);
+      const layer = namingLayer ? layerOfId(id) : null;
+      st.say(`${layer ? `${layerLabel(layer)}: ` : ""}${spokenName(id)}. ${list.indexOf(id) + 1} of ${list.length}.${off}`);
     };
     const onTabKey = (e: KeyboardEvent): boolean => {
       if (e.target !== el || e.ctrlKey || e.metaKey || e.altKey) return false;
+      if (e.key === "[" || e.key === "]") {
+        // M13 plan decision 12: the first stop of the previous / next layer.
+        e.preventDefault();
+        passThrough = false;
+        const list = visibleIds();
+        const next = layerJump(list, layerOfId, cursorNow(), e.key === "]" ? 1 : -1);
+        if (next === null) useViewer.getState().say(list.length === 0 ? "Nothing to move to." : e.key === "]" ? "No next layer." : "No previous layer.");
+        else moveCursor(next, list, true);
+        return true;
+      }
       if (e.key === "Tab") {
         if (passThrough) {
           passThrough = false;
@@ -659,7 +705,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     el.addEventListener("pointermove", onCursorPointer);
     el.addEventListener("pointerdown", onCursorPointer);
     const unsubscribeCursor = useViewer.subscribe((s, prev) => {
-      if (s.sel !== prev.sel || s.tier !== prev.tier || s.grp !== prev.grp) clearCursor();
+      if (s.sel !== prev.sel || s.tier !== prev.tier || s.grp !== prev.grp || s.reg !== prev.reg) clearCursor();
     });
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -711,10 +757,16 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
         case "frame": {
           // The isolation (the selection, plus its related bones at tiers 1 and 2) is framed beside the info
           // panel; the skeleton (nothing selected) as before.
+          // Inside a body region with nothing isolated, the region (M13 plan decision 8).
           const st = useViewer.getState();
-          const box = g ? isolationBox(boxOf, st.sel, st.tier, st.grp) : undefined;
+          const box = isolationBox(boxOf, st.sel, st.tier, st.grp) ?? regionBox(boxOf, c.region?.box ?? null);
           const dir = sub(now.position, now.target);
           cam = box ? frameBeside(box, dir, camera.fov, sz.width, sz.height, hf, inset) : frameFrom(g.box, dir, camera.fov, asp, hf);
+          if (c.region && st.reg !== null) {
+            // Leaving the region goes back to the camera from before the first region was framed, if unmoved.
+            cam = clamped(cam);
+            st.setRegionFrame({ before: st.regionFrame?.before ?? now, after: cam });
+          }
           break;
         }
         case "goto":
@@ -743,7 +795,14 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       go(clamped(cam));
     };
     let lastSeq = useViewer.getState().cameraRequest?.seq ?? 0;
-    const unsubscribe = useViewer.subscribe((s) => {
+    const unsubscribe = useViewer.subscribe((s, prev) => {
+      // Leaving a body region (M13 plan decision 8): back to the camera from before it, only if the
+      // user hasn't moved the camera since the region was framed.
+      if (prev.reg !== null && s.reg === null && s.regionFrame) {
+        const f = s.regionFrame;
+        s.setRegionFrame(null);
+        if (sameCamera(pose(), f.after, 1e-3)) go(clamped(f.before));
+      }
       const r = s.cameraRequest;
       if (!r || r.seq === lastSeq) return;
       lastSeq = r.seq;
@@ -867,6 +926,8 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
         select: (id) => selectObject(id),
         click: (id) => clickObject(id),
         back: () => goBack(),
+        focusRegion: (key) => focusRegion(key),
+        leaveRegion: () => leaveRegion(),
         frameBone: (id, from) => {
           const boxes = (Array.isArray(id) ? id : [id]).map((i) => boxOf(i));
           if (boxes.length === 0 || boxes.some((b) => !b)) return false;
@@ -878,9 +939,10 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
           go(cam, false);
           return true;
         },
+        labelCandidates: () => labelCandidates(),
         state: () => {
           const s = useViewer.getState();
-          return { sel: s.sel, tier: s.tier, grp: s.grp, hovered: s.hovered, cursor: s.keyCursor?.id ?? null };
+          return { sel: s.sel, tier: s.tier, grp: s.grp, reg: s.reg, hovered: s.hovered, cursor: s.keyCursor?.id ?? null };
         },
         boneNow: (id) => {
           const sk = live.current.skeleton;
@@ -954,7 +1016,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     framed.current = true;
     const url = parseUrlState(window.location.search);
     const st = useViewer.getState();
-    const selBox = isolationBox((id) => boxOfRef.current(id), st.sel, st.tier, st.grp);
+    const selBox = isolationBox((id) => boxOfRef.current(id), st.sel, st.tier, st.grp) ?? regionBox((id) => boxOfRef.current(id));
     const home = defaultView(geometry.box, camera.fov, aspect, heightFraction);
     const inset = framingInset();
     const start = url.cam ?? (selBox ? frameBeside(selBox, sub(home.position, home.target), camera.fov, size.width, size.height, heightFraction, inset) : home);
