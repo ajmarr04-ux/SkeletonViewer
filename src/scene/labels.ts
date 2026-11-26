@@ -73,7 +73,10 @@ export type LayoutOptions = {
 /** Two on-screen radii count as equal size when the smaller is within 10 % of the larger (M10 plan decision 2). */
 export const EQUAL_SIZE = 0.1;
 
-const byPrioritySize = (a: LabelCandidate, b: LabelCandidate): number =>
+/** What the label order reads from a candidate: enough to rank it before it is projected (M13 plan decision 12). */
+export type Rankable = Pick<LabelCandidate, "id" | "priority" | "sizePx" | "layer">;
+
+const byPrioritySize = (a: Rankable, b: Rankable): number =>
   a.priority - b.priority || b.sizePx - a.sizePx || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 
 /**
@@ -83,10 +86,10 @@ const byPrioritySize = (a: LabelCandidate, b: LabelCandidate): number =>
  * the focus layer's candidates move to the front, each side keeping its order.
  * Runs are cut from the sorted list, so the order is deterministic.
  */
-export function labelOrder(candidates: readonly LabelCandidate[], focusLayer: string | null = null): LabelCandidate[] {
+export function labelOrder<C extends Rankable>(candidates: readonly C[], focusLayer: string | null = null): C[] {
   const sorted = [...candidates].sort(byPrioritySize);
   if (focusLayer === null) return sorted;
-  const out: LabelCandidate[] = [];
+  const out: C[] = [];
   for (let i = 0; i < sorted.length; ) {
     const head = sorted[i]!;
     let j = i + 1;
@@ -190,4 +193,30 @@ export function focusLayerOf(selLayer: string | null, modes: Readonly<Record<Lay
   if (selLayer !== null) return selLayer;
   for (const l of LABEL_ORDER) if (modes[l] === "on") return l;
   return EAGER_LAYER;
+}
+
+/**
+ * Label thinning (M13 plan decision 12): the most candidates the layout is
+ * given when a region is in focus or a layer besides the bones is drawn
+ * (a bones-only view of the whole body is never thinned). Measured in BQ
+ * (plan notes): with every layer On the uncut set is about 190 candidates
+ * and 1.3 ms a layout; 60 brings it to about 0.9 ms against the bones-only
+ * 0.55 ms, and a lower cap saves nothing more (the rest is the pass over
+ * every drawn instance).
+ */
+export const MAX_LABEL_CANDIDATES = 60;
+
+/**
+ * Cuts the candidates, before they are projected, to the ones the layout
+ * would try first: priority-3 candidates under `minSizePx` are dropped (the
+ * layout drops them too), then the best `max` in `labelOrder`'s order are
+ * kept. The input order is kept among the survivors. Fewer than `max` left
+ * after the size cut: returned unchanged in content, so the layout is
+ * exactly what it was without thinning.
+ */
+export function thinCandidates<C extends Rankable>(candidates: readonly C[], max: number, minSizePx: number, focusLayer: string | null = null): C[] {
+  const sized = candidates.filter((c) => c.priority < 3 || c.sizePx >= minSizePx);
+  if (sized.length <= max) return sized;
+  const keep = new Set(labelOrder(sized, focusLayer).slice(0, max));
+  return sized.filter((c) => keep.has(c));
 }

@@ -24,7 +24,9 @@ import { memberSet, membersOf } from "../regions/index";
 import { useLayerBatches } from "../scene/layerRegistry";
 import { softEntries } from "../content/softRegistry";
 import { type Layer } from "../state/url";
-import { EAGER_LAYER, LAYER_IDS, LAZY_LAYERS, NESTED_LAYER } from "../systems/registry";
+import { EAGER_LAYER, LAYER_IDS, LAZY_LAYERS, layerLabel, NESTED_LAYER } from "../systems/registry";
+import { focusLayerOf } from "../scene/labels";
+import { drawnModes } from "../scene/budget";
 
 /** Everything that covers the canvas for framing: the info panel, the breadcrumb and the sidebar. */
 function framingInset() {
@@ -62,7 +64,7 @@ function isolationBox(boxOf: (id: string) => Box | undefined, sel: string | null
   const boxes = [...view.solid].map((id) => boxOf(id)).filter((b): b is Box => b !== undefined);
   return boxes.length ? unionBoxes(boxes) : undefined;
 }
-import { BENCH_DURATION_MS, BENCH_WARMUP_MS, benchAzimuth, labelLayoutMs, summariseFrames, summariseTimes } from "../scene/bench";
+import { BENCH_DURATION_MS, BENCH_WARMUP_MS, benchAzimuth, labelCandidates, labelLayoutMs, summariseFrames, summariseTimes } from "../scene/bench";
 import type { Lod } from "../scene/lod";
 import { useViewer, type CameraCommand } from "../state/store";
 import { parseUrlState, serialiseUrlState, type CameraState, type Vec3 } from "../state/url";
@@ -71,6 +73,8 @@ import {
   NO_WHEEL_MEMORY,
   classifyWheel,
   cursorStops,
+  focusLayerFirst,
+  layerJump,
   keyAction,
   tabCursor,
   tapStep,
@@ -182,6 +186,8 @@ export type ViewerDebugApi = {
   instanceColour: (id: string) => [number, number, number] | null;
   /** Is the structure drawn in its layer's solid batch right now (batch on and instance visible)? Null if not loaded. */
   solidNow: (id: string) => boolean | null;
+  /** How many candidates the last label layout was given, after thinning (M13 plan decision 12). */
+  labelCandidates: () => number;
 };
 declare global {
   interface Window {
@@ -276,7 +282,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     el.setAttribute("role", "img");
     el.setAttribute(
       "aria-label",
-      "3D skeleton. Click a bone to select it, Escape to go back. Arrow keys orbit, Shift and arrows pan, plus and minus zoom, H resets the view, F frames the selection, R and E show its related structures and its wider group, X hides it and Shift X shows everything hidden. Tab moves through the visible structures and Enter selects one (a muscle, then its parts); X hides the one Tab is on; Escape then Tab leaves the view.",
+      "3D skeleton. Click a bone to select it, Escape to go back. Arrow keys orbit, Shift and arrows pan, plus and minus zoom, H resets the view, F frames the selection, R and E show its related structures and its wider group, X hides it and Shift X shows everything hidden. Tab moves through the visible structures, left and right square brackets jump to the previous or next layer, and Enter selects one (a muscle, then its parts); X hides the one Tab is on; Escape then Tab leaves the view.",
     );
     el.style.touchAction = "none";
 
@@ -602,7 +608,10 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       const soft = live.current.layerGeoms.length ? softEntries().filter((e) => e.mesh && solidHere(view, e.layer, e.id)) : [];
       const rank = (l: Layer) => LAYER_IDS.indexOf(l);
       const ordered = soft.map((e, i) => ({ e, i })).sort((a, b) => rank(a.e.layer) - rank(b.e.layer) || a.i - b.i);
-      return cursorStops([...bones, ...ordered.map((x) => x.e.id)], st.sel, parentOf);
+      const solid = [...bones, ...ordered.map((x) => x.e.id)];
+      // M13 plan decision 12: in a body region, the focus layer's members first.
+      const first = st.reg === null ? null : (focusLayerOf(st.sel === null ? null : layerOfId(st.sel), drawnModes(st.layers, st.budgetHeld)) as Layer);
+      return cursorStops(focusLayerFirst(solid, layerOfId, first), st.sel, parentOf);
     };
     /** Where a structure's box centre is on screen (client px), and whether it is in view. */
     const onScreen = (id: string) => {
@@ -617,7 +626,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       return { x: r.left + ((p.x + 1) / 2) * r.width, y: r.top + ((1 - p.y) / 2) * r.height, inView };
     };
     const spokenName = (id: string) => displayName(id).replace(/ \((left|right)\)$/, ", $1");
-    const moveCursor = (id: string, list: string[]) => {
+    const moveCursor = (id: string, list: string[], namingLayer = false) => {
       const st = useViewer.getState();
       const at = onScreen(id);
       st.setKeyCursor({ id, x: at?.x ?? 0, y: at?.y ?? 0 });
@@ -626,10 +635,21 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       cursorHover = hasMesh(id) ? id : (drawnIds(id).find((p) => isPickableIn(view, layerOfId(p) ?? NESTED_LAYER, p)) ?? null);
       st.setHovered(cursorHover);
       const off = at && !at.inView ? " Off screen: press F to frame it." : "";
-      st.say(`${spokenName(id)}. ${list.indexOf(id) + 1} of ${list.length}.${off}`);
+      const layer = namingLayer ? layerOfId(id) : null;
+      st.say(`${layer ? `${layerLabel(layer)}: ` : ""}${spokenName(id)}. ${list.indexOf(id) + 1} of ${list.length}.${off}`);
     };
     const onTabKey = (e: KeyboardEvent): boolean => {
       if (e.target !== el || e.ctrlKey || e.metaKey || e.altKey) return false;
+      if (e.key === "[" || e.key === "]") {
+        // M13 plan decision 12: the first stop of the previous / next layer.
+        e.preventDefault();
+        passThrough = false;
+        const list = visibleIds();
+        const next = layerJump(list, layerOfId, cursorNow(), e.key === "]" ? 1 : -1);
+        if (next === null) useViewer.getState().say(list.length === 0 ? "Nothing to move to." : e.key === "]" ? "No next layer." : "No previous layer.");
+        else moveCursor(next, list, true);
+        return true;
+      }
       if (e.key === "Tab") {
         if (passThrough) {
           passThrough = false;
@@ -919,6 +939,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
           go(cam, false);
           return true;
         },
+        labelCandidates: () => labelCandidates(),
         state: () => {
           const s = useViewer.getState();
           return { sel: s.sel, tier: s.tier, grp: s.grp, reg: s.reg, hovered: s.hovered, cursor: s.keyCursor?.id ?? null };

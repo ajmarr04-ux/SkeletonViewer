@@ -67,6 +67,13 @@ export function recordLabelLayout(ms: number): void {
   if (labelLayoutMs.length < LABEL_TIMES_CAP) labelLayoutMs.push(ms);
 }
 
+/** How many candidates the last label layout was given, after thinning (M13 BQ; `__viewer.labelCandidates`, `?bench`). */
+let labelCandidatesNow = 0;
+export function recordLabelCandidates(n: number): void {
+  labelCandidatesNow = n;
+}
+export const labelCandidates = (): number => labelCandidatesNow;
+
 type BenchLayerLoad = { status: "loading" | "ready" | "error"; lod: "low" | "high" | null; fetching: "low" | "high" | null };
 
 /**

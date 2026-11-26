@@ -1,21 +1,22 @@
-# Handoff — written 2026-11-26 at the end of M13 session BP
+# Handoff — written 2026-11-26 at the end of M13 session BQ
 
 ## Next session
-BQ (routine): keyboard cursor and label thinning scoped by body region, plus `[` / `]` to jump between layers (`docs/PLAN-milestone-13.md` step 7, decision 12).
-Done when: `keyboard`, `sidebar`, `polish` and `labels-layers` e2e pass; new region cases in `regions.spec.ts`; *N* and the label layout times recorded in the plan notes; `npm run check` green.
+BR (routine): the M13 wrap-up (`docs/PLAN-milestone-13.md` step 8): goldens, the parity table against M12 (`3d8adef`), full e2e in the background, `CLAUDE.md` key files and `STATUS.md` "How regions work", then the PR to `main`, the Deploy run and freezing `m13`.
+Done when: the exit criteria are ticked and `/m13/` is live.
 
 ## State
-- Last commit: see `git log` (M13 BP: budget governor)
-- `npm run check`: pass (756 tests; the six goldens unchanged)
-- e2e this session: `budget` 6/6 (new), `fixture` 6/6 (one new); smoke + viewer + layers + regions + a11y + tints + budget 82/82
+- Last commit: see `git log` (M13 BQ: Tab cursor in regions, `[` / `]`, label thinning)
+- `npm run check`: pass (763 tests; the six goldens unchanged)
+- e2e this session: see the BQ notes in the plan (keyboard + sidebar + polish + labels-layers + regions)
 - Open fan-out work: none
 
 ## Waiting on the user
-Nothing blocking.
+Nothing blocking. BR's PR merge and the `/m13/` check need the user.
 
 ## Things the next session must know
-- Held layers (the phone start) are drawn as Off through `viewOf` (`drawnModes`); anything BQ builds on `viewOf` (cursor stops, label candidates) gets that for free. Read layers through `viewOf`, not `s.layers`, when it means "drawn".
-- The governor's estimate is `viewTotals` (`src/state/budget.ts`): index totals per layer for the region, ignoring `hid=` and the depth peel (on purpose).
+- Label layout times for the parity table: `LABELS=1 npm run bench-container 3` (after `npx vite build`) prints them for bones only, all layers and all layers in `reg=thorax`; BQ's figures are in the plan notes (N = 60). For the M12 side, `labelmax=` doesn't exist there; run without `LABELMAX`.
+- `bench-container` with three links and labels takes over 10 minutes: run it in the background.
+- Thinning applies only with a region in focus or a second layer drawn; bones-only whole-body labels are exactly M12's.
 - In e2e, Auto plans low (SwiftShader); `tests/e2e/budget.spec.ts`'s `capableGpu` init script makes it plan high.
 - Main chunk **490.4 kB** `gzip -9` (budget 500.1). Lazy chunks must not import the app's own modules (BN's lesson).
 - Goldens: never `--write --force` without the user's approval.

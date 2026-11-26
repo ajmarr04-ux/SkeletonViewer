@@ -239,3 +239,67 @@ test.describe("phone: the picker under More", () => {
     expect(errors).toEqual([]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// BQ: the Tab cursor, `[` / `]` and label thinning in a region (plan decision 12)
+
+const cursorNow = async (page: Page) => (await state(page)).cursor;
+
+test("in a region, Tab walks the focus layer's members first; ] and [ jump between layers", async ({ page }) => {
+  test.setTimeout(180_000);
+  const errors = await open(page, "&layers=b:on,l:on&reg=forearm_left");
+  await expect.poll(() => solid(page, "annular_ligament_radius_left"), { timeout: 120_000 }).toBe(true);
+  await page.locator("canvas").focus();
+  // The focus layer with nothing selected is the topmost On: the ligaments.
+  await page.keyboard.press("Tab");
+  const first = await cursorNow(page);
+  expect(first).not.toBeNull();
+  expect(await page.evaluate((i) => window.__viewer!.solidNow(i), first!)).toBe(true);
+  expect(first).not.toMatch(/^(radius|ulna)_left$/);
+  // ] : the bones' first stop.
+  await page.keyboard.press("]");
+  const bone = await cursorNow(page);
+  expect(bone).toMatch(/_left$/);
+  expect(bone).not.toBe(first);
+  await expect(announced(page)).toContainText(/^Bones: /);
+  await page.keyboard.press("]");
+  expect(await cursorNow(page)).toBe(bone);
+  await expect(announced(page)).toHaveText("No next layer.");
+  await page.keyboard.press("[");
+  expect(await cursorNow(page)).toBe(first);
+  // Every stop stays inside the region: Tab to the end never reaches the humerus.
+  const seen: string[] = [];
+  for (let i = 0; i < 200; i++) {
+    await page.keyboard.press("Tab");
+    const c = await cursorNow(page);
+    if (c === null) break;
+    seen.push(c);
+  }
+  expect(seen).toContain(bone);
+  expect(seen).not.toContain("humerus_left");
+  expect(seen).not.toContain("femur_left");
+  expect(errors).toEqual([]);
+});
+
+test("labels: candidates thinned to the drawn structures of the region and to N", async ({ page }) => {
+  test.setTimeout(240_000);
+  await page.addInitScript(() => window.localStorage.setItem("skeleton-viewer:labels", "1"));
+  // Bones only, whole body: never thinned.
+  await open(page);
+  await expect(page.getByTestId("labels")).toBeVisible();
+  const whole = await page.evaluate(() => window.__viewer!.labelCandidates());
+  expect(whole).toBeGreaterThan(0);
+  // A region: only its members are labelled.
+  await page.evaluate(() => window.__viewer!.focusRegion("forearm_left"));
+  await expect.poll(() => page.locator("[data-label]").count()).toBeGreaterThan(0);
+  await expect.poll(async () => (await page.locator("[data-label]").evaluateAll((els) => els.map((e) => e.getAttribute("data-label")))).includes("radius_left")).toBe(true);
+  const labelled = await page.locator("[data-label]").evaluateAll((els) => els.map((e) => e.getAttribute("data-label")!));
+  expect(labelled).not.toContain("humerus_left");
+  for (const id of labelled) expect(await solid(page, id)).toBe(true);
+  // Every layer On over the whole body: the layout gets at most N (60) candidates.
+  await open(page, "&layers=b:on,c:on,l:on,m:on");
+  await expect(page.getByTestId("debug")).toHaveAttribute("data-complete", "true", { timeout: 180_000 });
+  await expect.poll(() => solid(page, "deltoid_clavicular_part_left"), { timeout: 180_000 }).toBe(true);
+  await expect.poll(() => page.evaluate(() => window.__viewer!.labelCandidates()), { timeout: 60_000 }).toBe(60);
+  expect(await page.locator("[data-label]").count()).toBeGreaterThan(0);
+});
