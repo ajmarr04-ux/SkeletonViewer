@@ -48,7 +48,7 @@ Session kinds: **design** = strong model; **routine** = Sonnet is fine. No subag
 | BO | design | Region chunking: split the model per coarse region after the build, the chunk checks, and a loader that fetches only the regions in view, proven on the regenerated fixture (step 5) | none | decisions 9, 11 | fixture Vitest and e2e prove that only the chunks in view are fetched; `check-models` covers the chunks; musculoskeletal files byte-identical | ✅ 2026-11-26. See BO notes |
 | BP | design | The budget governor: drawn-triangle tracking, per-layer LOD capping, the prompt, and the phone's region start (step 6) | none | decision 10 | pure governor unit tests; e2e with `?budget=`; no trigger on today's content (parity) | ✅ 2026-11-26. See BP notes |
 | BQ | routine | Keyboard cursor and label thinning scoped by region, plus `[` / `]` to jump between layers (step 7) | none | decision 12 | `keyboard`, `sidebar`, `polish` and `labels-layers` e2e pass; label layout times recorded | ✅ 2026-11-26. See BQ notes |
-| BR | routine | Wrap-up: goldens, parity table, full e2e in the background, `/m13/` (step 8) | none | everything above | exit criteria ticked; `/m13/` live | |
+| BR | routine | Wrap-up: goldens, parity table, full e2e in the background, `/m13/` (step 8) | none | everything above | exit criteria ticked; `/m13/` live | ✅ 2026-11-26 apart from the merge, Deploy and freeze (waiting on the user). See step 8 |
 
 Triggers: "begin session BK" to "begin session BR". Every session follows `docs/WORKFLOW_NEW.md` §7: read `docs/HANDOFF.md` and this file, do the one serial task, end with `npm run check` and the e2e specs it touched, commit, push to the session branch, tick the row, write `docs/HANDOFF.md`, and stop.
 
@@ -73,7 +73,7 @@ Triggers: "begin session BK" to "begin session BR". Every session follows `docs/
 - [x] Budget governor; phones start in region mode only when over budget (BP; on Auto only since BR).
 - [x] Keyboard cursor and label thinning scoped by region (BQ).
 - [x] Every golden unchanged (`tiers`, `panels`, `urls`, `search`, `tree`); `regions.json` added; old URLs open the same view (BR: `git diff 3d8adef -- tests/golden/` only adds `regions.json` and the harness's region keys).
-- [ ] No regression: every existing unit and e2e test passes unchanged, except where a step lists why (spec §2.1). Performance parity with no region chosen (bench, perf-load, main chunk ≤ 500.1 kB).
+- [x] No regression: every existing unit and e2e test passes unchanged, except where a step lists why (spec §2.1). Performance parity with no region chosen (bench, perf-load, main chunk ≤ 500.1 kB). (BR: parity table in step 8; the phone-start fix there)
 - [ ] **Hosted copy is live and linked below** (an extra requirement for every milestone).
 
 ---
@@ -284,6 +284,33 @@ Triggers: "begin session BK" to "begin session BR". Every session follows `docs/
   - `CLAUDE.md`'s key-file table (`src/regions/`, `scripts/regions/`, `src/systems/regions.ts`, `src/scene/budget.ts`, the splitter);
   - `STATUS.md` gains "How regions work".
 - `/m13/`: PR to `main`, merge, Deploy run, then freeze `m13` in `deploy/pages.json` at the merge commit, with `current` set to `null` until M14's planning.
+
+**Done** (2026-11-26, apart from the merge, the Deploy run and the freeze, which wait on the user). `npm run check` green (52 files, 764 tests); `npm run golden`: the five unchanged, `regions.json` as BL wrote it, **no approved differences**. `git diff 3d8adef HEAD -- public/models/` is empty: M13 changed no model file (`content/` only gains `content/regions/`).
+
+**Fix found by `perf-load`:** on a phone with an explicit high LOD (`?lod=high|both`, or Settings → High), the bones alone (499,981) pass the 450k phone budget, so BP's phone start **held the bones and opened the picker on a bones-only page** (perf-load's phone run timed out on the dialog). M12 drew them, and decision 10 rule 3 makes an explicit LOD the user's choice, as step 1 already did. `initBudget` now holds layers only when the plan's source is Auto (on a small screen Auto always plans low, so nothing else changes). Step 2's non-blocking prompt still applies over budget, as decided. Tests: `tests/budget.test.ts` + 1, `budget.spec.ts` + 1 (phone, `?lod=both`: nothing held, no picker); the picker waits in `budget.spec.ts` get 20 s (the lazy chunk took over 5 s under the full run's load).
+
+**Parity table.** Both builds made in this container from the same `node_modules` (`3d8adef` in a scratch worktree), measured back to back with the same scripts (`LABELS=1 npm run bench-container 3`; M12 ignores `reg=` and has no `labelCandidates`, so the script now prints "n/a" there). SwiftShader at 1280 × 800, so FPS only compares like with like.
+
+| Measure | M12 (`3d8adef`) | M13 head |
+| --- | --- | --- |
+| Triangles, bones only / all four layers (high) | 499,981 / 1,499,634 | 499,981 / 1,499,634 |
+| Draw calls, bones only / all four layers | 1 / 4 | 1 / 4 |
+| `?bench` bones only, median / 5th pct FPS (labels on) | 2.2 / 2.0 | 2.3 / 2.1 |
+| `?bench` all four layers, median / 5th pct FPS | 0.7 / 0.5 | 0.7 / 0.6 |
+| `?bench` all four layers in `reg=thorax`, triangles / FPS | n/a (whole body) | **628,779** / 0.7 |
+| Label layout median: bones only / all layers / all layers in the thorax | 0.6 / 1.4 / 1.5 ms (no thinning: every drawn structure, 191 with all layers by BQ's count) | 0.6 / 1.2 / 0.8 ms (42 / 60 / 60) |
+| `perf-load` desktop: skeleton / full detail / muscles | 2.02 / 6.64 / 10.03 s | 2.14 / 6.57 / 9.67 s |
+| `perf-load` phone: skeleton / full detail / muscles | 4.70 / 8.11 / 10.61 s | 2.14 / 6.66 / 10.30 s |
+| Main chunk, `gzip -9` of `index` + modulepreloads | **486.1 kB** (index 307.6 + meshoptimizer 167.6 + registry 9.7 + names 0.8 + runtime 0.5) | **490.9 kB** (index 476.9, meshoptimizer folded in + registry 9.8 + jsx-runtime 3.4 + names 0.8) |
+| Content chunks: bones / muscles / ligaments / cartilage | 40.0 / 114.1 / 40.5 / 8.9 kB | identical (same hashes) |
+| Soft tree / bone search / soft search | 12.1 / 9.1 / 36.8 kB | identical (same hashes) |
+| New lazy chunks: region picker / `DebugLayers` (with `?debug&regions`) | — | 4.1 / 4.7 kB |
+
+Main chunk **+4.8 kB** on M12 (region membership and triangle totals in the index, the governor, the prompt), under the 500.1 kB budget. (BQ's note said 490.4; measured here the same way as the M12 figure, which matches M12's own note.) The bones-only label layout is M12's; with all layers it is lower (thinning to 60). `perf-load` differences are within run-to-run spread (M12's phone runs all spent about 3.3 s of main thread before the skeleton this time; one desktop run of each build took over 4 s); the muscles layer FAILs its 3 s / 5 s budget in both builds, as in every container run since M7 (STATUS §6). The first M13 bench (contended by an `npm run check` run) gave bones only 1.4 FPS; the figures above are the uncontended re-run.
+
+**Docs:** `STATUS.md` gains "How regions work (M13: body regions)" at the end of §5; `CLAUDE.md`'s key-file table gains rows for BM to BQ (focus state, picker, chunking, governor, keyboard and labels), beside BK's and BL's.
+
+**e2e:** the full suite in one background run (`npx playwright test --trace off`, both projects, 2 workers): **193 of 196 passed** in 48.4 min. The three failures were under load: `keyboard.spec.ts:191` and `:242` (time limits, as in M12's run) and `budget.spec.ts:114` (the lazy picker not visible within 5 s). Re-run alone, **all three pass** (8.4 min); `budget.spec.ts` with the fix and the new test: 7/7. No pre-M13 e2e test was edited.
 
 ## Approved golden differences
 

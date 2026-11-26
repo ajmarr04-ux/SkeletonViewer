@@ -1,22 +1,21 @@
-# Handoff — written 2026-11-26 at the end of M13 session BQ
+# Handoff — written 2026-11-26 at the end of M13 session BR
 
 ## Next session
-BR (routine): the M13 wrap-up (`docs/PLAN-milestone-13.md` step 8): goldens, the parity table against M12 (`3d8adef`), full e2e in the background, `CLAUDE.md` key files and `STATUS.md` "How regions work", then the PR to `main`, the Deploy run and freezing `m13`.
-Done when: the exit criteria are ticked and `/m13/` is live.
+BR follow-up (short), once the user has merged the M13 PR: freeze `m13` in `deploy/pages.json` at the PR's merge commit (from `git log origin/main`), set `"current": null` (until M14's planning sets 14), update `README.md`'s M13 row and `CLAUDE.md`'s status paragraph (M13 done, frozen SHAs list), check the Deploy run, and open the freeze PR.
+Done when: `m13` frozen, `/m13/` confirmed live by the user, "Hosted copy is live" ticked in `docs/PLAN-milestone-13.md`. Then M14 planning.
 
 ## State
-- Last commit: see `git log` (M13 BQ: Tab cursor in regions, `[` / `]`, label thinning)
-- `npm run check`: pass (763 tests; the six goldens unchanged)
-- e2e this session: keyboard + sidebar + polish + labels-layers + regions 38/41 with a bench running alongside (three `keyboard` timeouts); `keyboard` alone 5/5. Don't run a bench and e2e together.
+- Last commit: see `git log` (M13 BR: parity table, docs, phone-start fix)
+- `npm run check`: pass (764 tests; the six goldens unchanged, no approved differences)
+- Full e2e: 193/196 under load, the 3 failures pass alone (step 8 notes)
 - Open fan-out work: none
 
 ## Waiting on the user
-Nothing blocking. BR's PR merge and the `/m13/` check need the user.
+Merge the M13 PR to `main` (link in the session's last message), then confirm https://ajmarr04-ux.github.io/SkeletonViewer/m13/ is live after the Deploy run.
 
 ## Things the next session must know
-- Label layout times for the parity table: `LABELS=1 npm run bench-container 3` (after `npx vite build`) prints them for bones only, all layers and all layers in `reg=thorax`; BQ's figures are in the plan notes (N = 60). For the M12 side, `labelmax=` doesn't exist there; run without `LABELMAX`.
-- `bench-container` with three links and labels takes over 10 minutes: run it in the background.
-- Thinning applies only with a region in focus or a second layer drawn; bones-only whole-body labels are exactly M12's.
-- In e2e, Auto plans low (SwiftShader); `tests/e2e/budget.spec.ts`'s `capableGpu` init script makes it plan high.
-- Main chunk **490.4 kB** `gzip -9` (budget 500.1). Lazy chunks must not import the app's own modules (BN's lesson).
+- BR fixed BP's phone start: it now holds layers only on Auto LOD (an explicit `?lod=high|both` or Settings → High held the bones on a bones-only page). Plan step 8 has the details.
+- The freeze must use the real merge commit, never a placeholder: `scripts/build-pages.sh` fails otherwise.
+- `bench-container` against an older build: run it from that build's directory with `dist` (it joins the path to the working directory).
+- Main chunk 490.9 kB `gzip -9` (budget 500.1), measured the same way as M12's 486.1.
 - Goldens: never `--write --force` without the user's approval.
