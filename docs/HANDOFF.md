@@ -1,21 +1,19 @@
-# Handoff — written 2026-11-26 at the end of M13 session BR
+# Handoff — written 2026-11-26 at the end of M14 planning
 
 ## Next session
-BR follow-up (short), once the user has merged the M13 PR: freeze `m13` in `deploy/pages.json` at the PR's merge commit (from `git log origin/main`), set `"current": null` (until M14's planning sets 14), update `README.md`'s M13 row and `CLAUDE.md`'s status paragraph (M13 done, frozen SHAs list), check the Deploy run, and open the freeze PR.
-Done when: `m13` frozen, `/m13/` confirmed live by the user, "Hosted copy is live" ticked in `docs/PLAN-milestone-13.md`. Then M14 planning.
+BS (design): the new search ranking (match bands, generic words, region and visibility tie-breaks) on today's two indexes, plus the `search.json` difference report.
+Done when: ranking unit tests pass; `assets/build/REPORT-search-golden.md` lists every changed query; then **stop for the gate** (the user approves the differences before the golden is rewritten).
 
 ## State
-- Last commit: see `git log` (M13 BR: parity table, docs, phone-start fix)
-- `npm run check`: pass (764 tests; the six goldens unchanged, no approved differences)
-- Full e2e: 193/196 under load, the 3 failures pass alone (step 8 notes)
+- Last commit: M14 planning (m13 frozen at `dc55686`, `current` 14, `docs/PLAN-milestone-14.md`)
+- `npm run check`: not re-run (docs and `deploy/pages.json` only; M13 BR left it green)
 - Open fan-out work: none
 
 ## Waiting on the user
-Merge the M13 PR to `main` (link in the session's last message), then confirm https://ajmarr04-ux.github.io/SkeletonViewer/m13/ is live after the Deploy run.
+Decisions 1–12 in `docs/PLAN-milestone-14.md` (the ones most worth a look: 3 generic words return nothing alone, 5 chips hidden with one system, 6 the sidebar's system row and the bones' tree staying eager).
 
 ## Things the next session must know
-- BR fixed BP's phone start: it now holds layers only on Auto LOD (an explicit `?lod=high|both` or Settings → High held the bones on a bones-only page). Plan step 8 has the details.
-- The freeze must use the real merge commit, never a placeholder: `scripts/build-pages.sh` fails otherwise.
-- `bench-container` against an older build: run it from that build's directory with `dist` (it joins the path to the working directory).
-- Main chunk 490.9 kB `gzip -9` (budget 500.1), measured the same way as M12's 486.1.
-- Goldens: never `--write --force` without the user's approval.
+- Ranking must not depend on BM25 scores (decision 1): BT splits the indexes and must leave the approved golden unchanged.
+- Main chunk 490.9 kB of 500.1 (9.2 kB for all of M14); measure as M13 did (index + modulepreloads, `gzip -9`).
+- Goldens: never `--write --force` without the user's approval; after BS's approval rewrite `search.json` only.
+- The last M14 allowlist entry (`scripts/perf-load.ts`) goes in BZ.

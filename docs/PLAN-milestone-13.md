@@ -74,7 +74,7 @@ Triggers: "begin session BK" to "begin session BR". Every session follows `docs/
 - [x] Keyboard cursor and label thinning scoped by region (BQ).
 - [x] Every golden unchanged (`tiers`, `panels`, `urls`, `search`, `tree`); `regions.json` added; old URLs open the same view (BR: `git diff 3d8adef -- tests/golden/` only adds `regions.json` and the harness's region keys).
 - [x] No regression: every existing unit and e2e test passes unchanged, except where a step lists why (spec §2.1). Performance parity with no region chosen (bench, perf-load, main chunk ≤ 500.1 kB). (BR: parity table in step 8; the phone-start fix there)
-- [ ] **Hosted copy is live and linked below** (an extra requirement for every milestone).
+- [x] **Hosted copy is live and linked below** (an extra requirement for every milestone). Merged as #29 (`dc55686`), frozen there; `/m13/` confirmed live by the user (2026-11-26): https://ajmarr04-ux.github.io/SkeletonViewer/m13/
 
 ---
 
