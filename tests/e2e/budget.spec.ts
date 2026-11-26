@@ -96,7 +96,8 @@ test.describe("phone start", () => {
     const errors = errorsOf(page);
     await page.goto(`./?debug&budget=300000&${ALL_ON}`);
     const picker = page.getByTestId("region-picker");
-    await expect(picker).toBeVisible();
+    // The picker is a lazy chunk: allow for it under load (BR full run).
+    await expect(picker).toBeVisible({ timeout: 20_000 });
     await expect(picker.getByTestId("region-whole")).toBeVisible();
     await expect(budget(page)).toHaveAttribute("data-held", "muscles");
     await expect(page.getByTestId("budget-prompt")).toHaveCount(0);
@@ -115,7 +116,8 @@ test.describe("phone start", () => {
     const errors = errorsOf(page);
     await page.goto(`./?debug&budget=300000&${ALL_ON}`);
     const picker = page.getByTestId("region-picker");
-    await expect(picker).toBeVisible();
+    // The picker is a lazy chunk: allow for it under load (BR full run).
+    await expect(picker).toBeVisible({ timeout: 20_000 });
     await picker.getByRole("treeitem", { name: /^Head\b/ }).first().tap();
     await expect.poll(() => new URL(page.url()).searchParams.get("reg")).toBe("head");
     await expect(budget(page)).toHaveAttribute("data-held", "");
@@ -131,5 +133,15 @@ test.describe("phone start", () => {
     await expect(budget(page)).toHaveAttribute("data-held", "");
     await page.waitForTimeout(500);
     await expect(page.getByTestId("region-picker")).toHaveCount(0);
+  });
+
+  test("an explicit LOD is the user's choice: ?lod=both, bones only, no picker and the bones drawn (BR)", async ({ page }) => {
+    const errors = errorsOf(page);
+    await page.goto("./?debug&lod=both");
+    await expect(page.getByTestId("debug")).toHaveAttribute("data-load-high", /\d/, { timeout: 120_000 });
+    await expect(budget(page)).toHaveAttribute("data-held", "");
+    await page.waitForTimeout(500);
+    await expect(page.getByTestId("region-picker")).toHaveCount(0);
+    expect(errors).toEqual([]);
   });
 });

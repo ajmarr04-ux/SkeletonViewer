@@ -167,6 +167,17 @@ describe("the store slice", () => {
     expect(useViewer.getState().budgetPrompt).toBeNull();
   });
 
+  it("phone start: an explicit LOD (Settings or ?lod=) holds nothing and opens no picker, even over budget", () => {
+    useViewer.setState({ layers: { ...DEFAULT_MODES } });
+    for (const source of ["setting", "url"] as const) {
+      initBudget(true, "", { lods: ["low", "high"], source });
+      const s = useViewer.getState();
+      expect(s.budget?.over).toBe(true); // the bones alone at high pass the phone budget
+      expect(s.budgetHeld).toEqual([]);
+      expect(s.regionPickerOpen).toBe(false);
+    }
+  });
+
   it("phone start: over budget with no region holds the layers that don't fit and opens the picker", () => {
     initBudget(true, "?debug&budget=300000", { lods: ["low"], source: "auto" });
     stop = watchBudget();

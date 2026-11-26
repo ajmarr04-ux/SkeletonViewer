@@ -59,13 +59,15 @@ let config: { phone: boolean; limit: { budget: number; source: "device" | "url" 
  * Start the governor (the Viewer, once, before the first render of the
  * layers). `phone` is the small-screen class; `search` gives
  * `?debug&budget=`. With no body region on a phone and the requested layers
- * over budget, the layers that don't fit are held back and the picker opens;
+ * over budget on Auto, the layers that don't fit are held back and the picker opens;
  * closing it any way (a region, "Whole body", Esc) lets them draw.
  */
 export function initBudget(phone: boolean, search: string, plan: Plan): void {
   config = { phone, limit: deviceBudget(phone, search), plan };
   const st = useViewer.getState();
-  if (phone && st.reg === null) {
+  // Only on Auto: an explicit LOD (Settings or `?lod=`) is the user's choice, as in step 1.
+  // (A phone set to High draws the bones alone over the phone budget; M12 drew them, so M13 does.)
+  if (phone && st.reg === null && plan.source === "auto") {
     const held = heldLayers(viewTotals(st.layers, null), plan.lods[plan.lods.length - 1] ?? "low", config.limit.budget) as LayerId[];
     if (held.length > 0) useViewer.setState({ budgetHeld: held, regionPickerOpen: true });
   }
