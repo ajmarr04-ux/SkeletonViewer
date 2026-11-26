@@ -13,14 +13,13 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Plugin } from "vite";
 import { importersModule } from "../../../scripts/lib/content-plugin";
-import type { RegistryOption } from "../../../scripts/lib/index-plugin";
 import { readSoftTree } from "../../../scripts/lib/soft-tree-data";
 import type { SoftTreeData } from "../../../src/tree/types";
 import { compileWidgets, widgetsTree } from "./demo/widgets/compile";
 import { WIDGETS_DIR } from "./demo/widgets/content";
 import { widgets } from "./demo/widgets/layer";
-import { FIXTURE_CONTENT } from "./registry.content";
 import { REGISTRY } from "./registry";
+import { fixtureRegistry } from "./option";
 
 const here = import.meta.dirname;
 const MODELS = join(here, "demo/widgets/models");
@@ -83,6 +82,6 @@ function fixtureContent(): Plugin {
   };
 }
 
-export const fixtureRegistry: RegistryOption = { layers: REGISTRY, content: FIXTURE_CONTENT };
+export { fixtureRegistry };
 export const fixturePlugins = (): Plugin[] => [testRegistry(), fixtureModels(), fixtureContent()];
 export const FIXTURE_OUT_DIR = "dist-fixture";

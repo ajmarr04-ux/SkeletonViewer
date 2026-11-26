@@ -9,7 +9,9 @@
 // three-section panel and a `byKind` tree: the graph compiler, the tier engine,
 // the panel model and the tree builder run on it unchanged.
 import { readFileSync } from "node:fs";
-import { NodeIO } from "@gltf-transform/core";
+import { NodeIO, getBounds } from "@gltf-transform/core";
+import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
+import { MeshoptDecoder } from "meshoptimizer";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 vi.mock("../src/systems/registered", () => import("./fixtures/systems/registry"));
@@ -45,7 +47,9 @@ import { idFiles, readLayerIds } from "../scripts/lib/index-plugin";
 import { fixtureRegistry } from "./fixtures/systems/vite";
 import { FIXTURE_CONTENT } from "./fixtures/systems/registry.content";
 import { WIDGET_IDS, widgets } from "./fixtures/systems/demo/widgets/layer";
-import { centreOf } from "./fixtures/systems/demo/widgets/generate";
+import { centres } from "./fixtures/systems/demo/widgets/generate";
+import { readChunkTable } from "../scripts/lib/index-plugin";
+import { chunkStem } from "../src/regions/chunks";
 import { compileWidgets, readWidgetFiles, widgetGraph, widgetsTree } from "./fixtures/systems/demo/widgets/compile";
 import { DEMO_GRAPH_REGISTRY, FIXTURE_GRAPH_REGISTRY } from "./fixtures/systems/registry.content";
 import { DEMO_EDGES } from "./fixtures/systems/demo/edges";
@@ -152,20 +156,32 @@ describe("fixture files and the content side", () => {
     expect(all.slice(realIds.length).every((e) => e.layer === W && e.meshAvailable && widgets.kinds.some((k) => k.id === (e.kind as string)))).toBe(true);
   });
 
-  it("the generated .glb files hold one named node per widget, where the manifest says", async () => {
+  it("the generated chunks hold one named node per widget, each in its home region's file, where the manifest says", async () => {
+    // M13 (plan decision 11): one packed file per coarse region per LOD, made by compress-models.sh with the test registry.
     const manifest = JSON.parse(readFileSync("tests/fixtures/systems/demo/widgets/models/manifest.json", "utf8")) as {
       objects: Record<string, { lods: Record<string, { bboxMin: number[]; bboxMax: number[] }> }>;
     };
     expect(Object.keys(manifest.objects)).toEqual([...WIDGET_IDS]);
+    const at = centres();
+    const table = readChunkTable(fixtureRegistry).table[W]!;
+    await MeshoptDecoder.ready;
+    const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ "meshopt.decoder": MeshoptDecoder });
     for (const lod of ["low", "high"]) {
-      const doc = await new NodeIO().read(`tests/fixtures/systems/demo/widgets/models/widgets-${lod}.glb`);
-      const nodes = doc.getRoot().listNodes();
-      expect(nodes.map((n) => n.getName())).toEqual([...WIDGET_IDS]);
-      nodes.forEach((n, i) => {
-        expect(n.getTranslation()).toEqual(centreOf(i));
-        const b = manifest.objects[n.getName()]!.lods[lod]!;
-        expect(b.bboxMin.map((x, k) => (x + b.bboxMax[k]!) / 2)).toEqual(centreOf(i).map((x) => expect.closeTo(x, 9)));
-      });
+      const seen: string[] = [];
+      for (const [i, chunk] of table.chunks.entries()) {
+        const doc = await io.read(`tests/fixtures/systems/demo/widgets/models/${chunkStem(widgets.models.file, chunk, lod)}.glb`);
+        const named = doc.getRoot().listScenes()[0]!.listChildren().filter((n) => n.getName() !== "");
+        expect(named.map((n) => n.getName())).toEqual(table.ids[i]);
+        for (const n of named) {
+          const c = at[WIDGET_IDS.indexOf(n.getName())]!;
+          const b = getBounds(n);
+          expect(b.min.map((x, k) => (x + b.max[k]!) / 2)).toEqual(c.map((x) => expect.closeTo(x, 3)));
+          const m = manifest.objects[n.getName()]!.lods[lod]!;
+          expect(m.bboxMin.map((x, k) => (x + m.bboxMax[k]!) / 2)).toEqual(c.map((x) => expect.closeTo(x, 9)));
+        }
+        seen.push(...named.map((n) => n.getName()));
+      }
+      expect(seen.sort()).toEqual([...WIDGET_IDS].sort());
     }
   });
 });

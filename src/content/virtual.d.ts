@@ -31,6 +31,11 @@ declare module "virtual:skeleton-region-map" {
   const map: import("../regions/bodyMap").BodyMap;
   export default map;
 }
+declare module "virtual:skeleton-chunks" {
+  /** The chunked layers' chunk table (src/regions/chunks.ts, scripts/lib/index-plugin.ts; M13 plan decision 9): `{}` when no layer is chunked. Lazy: the layer chunk only. */
+  const table: import("../regions/chunks").ChunkTable;
+  export default table;
+}
 declare module "virtual:skeleton-graph" {
   /** The eager layer's edges, for the main chunk (scripts/lib/content-plugin.ts, src/graph/codec.ts; M12 plan decision 3). */
   const edges: import("../graph/codec").EdgeWire;

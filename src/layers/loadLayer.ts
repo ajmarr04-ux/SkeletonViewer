@@ -37,9 +37,13 @@ export async function fetchWithProgress(url: string, expected: number, onProgres
   return out.buffer;
 }
 
-/** One layer file (`ModelSpec.file` or an overlay's) at one LOD: a part per named node, geometry plus world matrix (nothing moves). */
-export async function loadLayerParts(file: string, lod: Lod, onProgress: Progress): Promise<BonePart[]> {
-  const url = layerUrl(file, lod);
-  const data = await fetchWithProgress(url, layerBytes(file, lod), onProgress);
-  return partsFromGlb(data, `${file}-${lod}.glb`, url.replace(/[^/]*$/, ""));
+/**
+ * One layer file (`ModelSpec.file` or an overlay's) at one LOD, or one region
+ * chunk of it (`chunk`, M13): a part per named node, geometry plus world
+ * matrix (nothing moves).
+ */
+export async function loadLayerParts(file: string, lod: Lod, onProgress: Progress, chunk?: string): Promise<BonePart[]> {
+  const url = layerUrl(file, lod, chunk);
+  const data = await fetchWithProgress(url, layerBytes(file, lod, chunk), onProgress);
+  return partsFromGlb(data, url.replace(/\?.*$/, "").split("/").pop()!, url.replace(/[^/]*$/, ""));
 }

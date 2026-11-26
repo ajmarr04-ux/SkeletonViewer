@@ -8,8 +8,8 @@ import { useEffect, useRef, useState } from "react";
 import { Color, type MeshStandardMaterial } from "three";
 import { create } from "zustand";
 import type { Bounds } from "../../scripts/lib/model-checks";
-import { allInstanceBounds, batchLayer, disposeBatchedSkeleton, ensureBoundsTrees } from "../scene/batchSkeleton";
-import { layerReport, loadLayerManifest, type LayerReport } from "../scene/debugLayers";
+import { allInstanceBounds, batchLayer, disposeBatchedSkeleton, ensureBoundsTrees, type BonePart } from "../scene/batchSkeleton";
+import { layerReport, loadLayerManifest, type LayerManifest, type LayerReport } from "../scene/debugLayers";
 import { disposeParts } from "../scene/loadSkeleton";
 import { lodsToLoad, type Lod } from "../scene/lod";
 import { accentTint, createBoneMaterial, createGhostMaterial, tintFor } from "../scene/material";
@@ -22,6 +22,9 @@ import { LAZY_LAYERS, layerColour, layerDescriptor, maxPartsOf, OVERLAYS, type L
 import { TENDON_COLOUR } from "./colours";
 import { loadSoftContent } from "../content/softContentLoader";
 import { loadLayerParts } from "./loadLayer";
+import { layerChunksOf } from "./urls";
+import { chunksFor, type LayerChunks } from "../regions/chunks";
+import { membersOf } from "../regions/index";
 import { isTendinous } from "./softIds";
 import { lazyEntry } from "../content/index";
 
@@ -154,6 +157,18 @@ function PatchScene({ lods, ready }: { lods: Lod[]; ready: boolean }) {
   return shown ? <primitive object={shown.solid.mesh} /> : null;
 }
 
+/** Structures to draw from the chunks a layer has fetched at one LOD: chunk ("" for a single-file layer) → parts. */
+type LoadedParts = Map<Lod, Map<string, BonePart[]>>;
+
+/**
+ * The chunks a layer wants now (M13 plan decision 9), as a key: "" for a
+ * single-file layer; for a chunked one, the chunks holding a member of the
+ * body region in focus (all of them without one) plus the selection's.
+ */
+function wantedChunks(layer: LazyLayerId, reg: string | null, sel: string | null): string {
+  return chunksFor(layerChunksOf(layer), reg, reg === null ? [] : membersOf(reg), [sel])?.join(",") ?? "";
+}
+
 function TissueLayerScene({
   layer,
   lods,
@@ -172,32 +187,100 @@ function TissueLayerScene({
   shownRef.current = shown;
   const attempt = useViewer((s) => s.layerLoad[layer]?.attempt ?? 0);
   const lodKey = lods.join(",");
+  const chunked = layerChunksOf(layer) !== undefined;
+  const wantKey = useViewer((s) => (chunked ? wantedChunks(layer, s.reg, s.sel) : ""));
+  // A chunked layer keeps the parts it has fetched at the LOD on screen, so a
+  // chunk that arrives later is batched with them (the batches are rebuilt and
+  // swapped, as a LOD change swaps them). A single-file layer frees them at once.
+  const loaded = useRef<LoadedParts>(new Map());
+  const pending = useRef(new Map<string, Promise<BonePart[]>>());
+  const progress = useRef(new Map<string, { received: number; total: number }>());
+  useEffect(
+    () => () => {
+      for (const byChunk of loaded.current.values()) for (const parts of byChunk.values()) disposeParts(parts);
+      loaded.current.clear();
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!ready) return;
     let cancelled = false;
     const st = useViewer.getState();
-    const queue = lodsToLoad(lods, shownRef.current?.lod ?? null);
+    const want = chunked ? (wantKey === "" ? [] : wantKey.split(",")) : [""];
+    const have = (lod: Lod) => loaded.current.get(lod) ?? new Map<string, BonePart[]>();
+    const shownLod = shownRef.current?.lod ?? null;
+    let queue = lodsToLoad(lods, shownLod);
+    // On the final LOD already: a new body region may still want more chunks at it.
+    if (chunked && queue.length === 0 && shownLod !== null && want.some((c) => !have(shownLod).has(c))) queue = [shownLod];
     if (queue.length === 0) return;
     // The layer's text chunk (M8 plan decision 11), in parallel with its model file.
     void loadSoftContent(layer).catch(() => undefined);
+    const file = layerDescriptor(layer).models.file;
+    /** One chunk at one LOD, fetched once even if the wanted set changes while it downloads; kept in `loaded` when it arrives. */
+    const fetchChunk = (lod: Lod, chunk: string): Promise<BonePart[]> => {
+      const key = `${lod}:${chunk}`;
+      let p = pending.current.get(key);
+      if (!p) {
+        p = loadLayerParts(
+          file,
+          lod,
+          (received, total) => {
+            progress.current.set(key, { received, total });
+            let r = 0;
+            let t = 0;
+            for (const [k, v] of progress.current) if (k.startsWith(`${lod}:`)) (r += v.received), (t += v.total);
+            if (!cancelled) useViewer.getState().setLayerLoad(layer, { received: r, total: t });
+          },
+          chunk || undefined,
+        ).then(
+          (parts) => {
+            pending.current.delete(key);
+            if (!loaded.current.has(lod)) loaded.current.set(lod, new Map());
+            loaded.current.get(lod)!.set(chunk, parts);
+            return parts;
+          },
+          (e: unknown) => {
+            pending.current.delete(key);
+            progress.current.delete(key);
+            throw e;
+          },
+        );
+        pending.current.set(key, p);
+      }
+      return p;
+    };
     (async () => {
+      let last: LayerBatches | null = null;
       for (const lod of queue) {
-        st.setLayerLoad(layer, { status: "loading", fetching: lod, received: 0, total: 0, error: null });
-        const parts = await loadLayerParts(layerDescriptor(layer).models.file, lod, (received, total) => {
-          if (!cancelled) useViewer.getState().setLayerLoad(layer, { received, total });
-        });
-        if (cancelled) {
-          disposeParts(parts);
-          return;
+        const need = want.filter((c) => !have(lod).has(c));
+        if (need.length > 0) {
+          st.setLayerLoad(layer, { status: "loading", fetching: lod, received: 0, total: 0, error: null });
+          await Promise.all(need.map((c) => fetchChunk(lod, c)));
+          if (cancelled) return;
         }
+        // Every chunk fetched at this LOD (earlier regions' included), in the layer's chunk order.
+        const byChunk = have(lod);
+        const order = chunked ? layerChunksOf(layer)!.chunks.filter((c) => byChunk.has(c)) : [""];
+        if (order.length === 0) {
+          // Nothing of this layer in the body region: nothing to draw, nothing loading.
+          st.setLayerLoad(layer, { status: "ready", fetching: null });
+          continue;
+        }
+        const parts = order.flatMap((c) => byChunk.get(c)!);
+        for (const c of order) progress.current.delete(`${lod}:${c}`);
         const solid = batchLayer(parts, materials.solid, { name: `layer-${layer}`, instanceColours: true });
         solid.boneIds.forEach((id, i) => solid.mesh.setColorAt(i, layerBaseTint(id)));
         const ghost = batchLayer(parts, materials.ghost, { name: `ghost-${layer}` });
         // Ghosts draw after every solid (they are transparent), in the descriptors' order (plan decision 7): the outermost last.
         ghost.mesh.renderOrder = layerDescriptor(layer).ghostOrder;
         ghost.mesh.visible = false;
-        disposeParts(parts);
+        // The batches hold their own copy: a single-file layer's parts go now, a chunked layer's when another LOD replaces them.
+        for (const [l, m] of [...loaded.current]) {
+          if (chunked && l === lod) continue;
+          for (const p of m.values()) disposeParts(p);
+          loaded.current.delete(l);
+        }
         const outlines = {
           selected: createOutline(solid, OUTLINE.selected.colour, OUTLINE.selected.widthPx, `outline-selected-${layer}`),
           hover: createOutline(solid, OUTLINE.hover.colour, OUTLINE.hover.widthPx, `outline-hover-${layer}`),
@@ -206,21 +289,24 @@ function TissueLayerScene({
           createOutline(solid, OUTLINE.selected.colour, OUTLINE.selected.widthPx, `outline-selected-${layer}-${i + 2}`),
         );
         const batches: LayerBatches = { lod, solid, ghost, outlines, moreSelected, base: layerBaseTint, accent: ACCENTS[layer]!, tint: TINTS[layer]! };
+        last = batches;
         setShown(batches);
         // Isolation (main chunk) applies the view to the new batches as soon as they are registered.
         useLayerBatches.setState({ [layer]: batches });
         const now = useViewer.getState();
         const prev = now.layerLoad[layer];
-        now.setLayerLoad(layer, { status: "ready", lod, fetching: null, shownAt: { ...prev?.shownAt, [lod]: performance.now() } });
+        now.setLayerLoad(layer, { status: "ready", lod, fetching: null, shownAt: { ...prev?.shownAt, [lod]: prev?.shownAt[lod] ?? performance.now() } });
         if (debug) {
           const manifest = await loadLayerManifest(layer);
           const actual = new Map<string, Bounds>();
           for (const [id, b] of allInstanceBounds(solid)) actual.set(id, { min: b.min.toArray(), max: b.max.toArray() });
-          if (!cancelled) useLayerReports.setState({ [layer]: layerReport(layer, lod, actual, solid.triangles, manifest) });
+          // A chunked layer is checked against the chunks it has fetched.
+          const expected = chunked ? loadedManifest(manifest, layerChunksOf(layer)!, order) : manifest;
+          if (!cancelled) useLayerReports.setState({ [layer]: layerReport(layer, lod, actual, solid.triangles, expected) });
         }
       }
       // Raycasting trees for picking (session U), once the final LOD is on screen, off the critical path.
-      const final = shownRef.current;
+      const final = last;
       if (final && !cancelled) idle(() => !cancelled && ensureBoundsTrees(final.solid.mesh));
     })().catch((e: unknown) => {
       if (!cancelled) useViewer.getState().setLayerLoad(layer, { status: "error", fetching: null, error: e instanceof Error ? e.message : String(e) });
@@ -230,7 +316,7 @@ function TissueLayerScene({
     };
     // `lodKey` stands for `lods` (a new array on each plan).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layer, lodKey, ready, attempt, materials, debug]);
+  }, [layer, lodKey, ready, attempt, materials, debug, wantKey]);
 
   // Free a LOD's batches once the next one has replaced it (or on unmount).
   useEffect(() => {
@@ -258,6 +344,12 @@ function TissueLayerScene({
       <primitive object={shown.ghost.mesh} />
     </>
   );
+}
+
+/** The manifest cut to the structures of the chunks fetched (`?debug`'s bounds line for a chunked layer). */
+function loadedManifest(manifest: LayerManifest, c: LayerChunks, chunks: readonly string[]): LayerManifest {
+  const keep = new Set(chunks.flatMap((k) => c.ids[c.chunks.indexOf(k)] ?? []));
+  return { ...manifest, objects: Object.fromEntries(Object.entries(manifest.objects).filter(([id]) => keep.has(id))) };
 }
 
 function idle(fn: () => void): void {

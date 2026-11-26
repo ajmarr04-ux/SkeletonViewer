@@ -21,7 +21,8 @@ import { trimSoftIds, type RawSoftId } from "../../src/layers/softIds";
 import type { LayerContent } from "../../src/systems/contentTypes";
 import { REGIONS, REGISTRY } from "../../src/systems/registry";
 import { encodeRegions, type PackedRegions } from "../../src/regions/codec";
-import type { LocatedInFile } from "../../src/regions/membership";
+import { layerChunks, type ChunkTable } from "../../src/regions/chunks";
+import { mergeMembership, type LocatedInFile } from "../../src/regions/membership";
 import { buildBodyMap } from "../../src/regions/bodyMap";
 import type { RegionVolumes } from "../../src/regions/volume";
 import { CONTENT_REGISTRY, DEPTH_FILE, SYSTEM_CONTENT } from "../../src/systems/registry.content";
@@ -35,10 +36,17 @@ const RESOLVED = "\0" + ID;
 /** The region picker's body map and region boxes (M13 plan decision 8), for its lazy chunk only. */
 const MAP_ID = "virtual:skeleton-region-map";
 const MAP_RESOLVED = "\0" + MAP_ID;
+/** The chunked layers' chunk table (M13 plan decision 9), for the lazy layer chunk only (`{}` when no layer is chunked). */
+const CHUNKS_ID = "virtual:skeleton-chunks";
+const CHUNKS_RESOLVED = "\0" + CHUNKS_ID;
 
 export type RegistryOption = {
   layers: readonly LayerDescriptor[];
   content: Readonly<Record<string, LayerContent>>;
+  /** More membership files merged into the regions descriptor's (the fixture's widgets, M13 plan decision 11): repo paths. */
+  extraMembership?: readonly string[];
+  /** Where a test layer's model files and build manifest are (check-models with SKV_REGISTRY=fixture checks only these layers): repo paths. */
+  modelFiles?: Readonly<Record<string, { dir: string; manifest: string }>>;
 };
 const REAL: RegistryOption = { layers: REGISTRY, content: CONTENT_REGISTRY };
 
@@ -75,19 +83,54 @@ export function readIndexData(reg: RegistryOption = REAL, read: (rel: string) =>
  * registry's regions descriptor names, with the region names from the resolved
  * volumes, packed in index order (the eager ID file's IDs, then `data.entries`).
  */
-export function readRegionData(data: IndexData, read: (rel: string) => unknown = readJsonFile): PackedRegions {
-  const file = read(REGIONS.membershipFile) as LocatedInFile;
+export function readRegionData(data: IndexData, read: (rel: string) => unknown = readJsonFile, reg: RegistryOption = REAL): PackedRegions {
+  const file = readMembership(reg, read);
   const volumes = read(REGIONS.volumesFile) as { coarse: { key: string; name: string }[]; regions: { key: string; name: string }[] };
   const names = Object.fromEntries([...volumes.regions, ...volumes.coarse].map((r) => [r.key, r.name]));
   const ids = [...(read("content/ids.json") as { id: string }[]).map((e) => e.id), ...data.entries.map((e) => e.id)];
   return encodeRegions(file, names, ids);
 }
 
+/** The regions descriptor's membership file, with the registry option's extra files merged in. */
+export function readMembership(reg: RegistryOption = REAL, read: (rel: string) => unknown = readJsonFile): LocatedInFile {
+  return (reg.extraMembership ?? []).reduce((f, rel) => mergeMembership(f, read(rel) as LocatedInFile), read(REGIONS.membershipFile) as LocatedInFile);
+}
+
+/**
+ * Every chunked layer's chunks (M13 plan decision 9): its structures with a
+ * mesh, by home coarse region. Only lazy layers can be chunked (the eager
+ * layer's file is preloaded by index.html).
+ */
+export function readChunkTable(reg: RegistryOption = REAL, read: (rel: string) => unknown = readJsonFile): { table: ChunkTable; errors: string[] } {
+  const chunked = reg.layers.filter((l) => l.models.chunking === "region");
+  if (chunked.length === 0) return { table: {}, errors: [] };
+  const errors = chunked.filter((l) => l.models.eager).map((l) => `${l.id}: the eager layer can't be chunked`);
+  const file = readMembership(reg, read);
+  const ids = readLayerIds(reg, read);
+  const table: Record<string, ChunkTable[string]> = {};
+  for (const l of chunked) {
+    if (l.models.eager) continue;
+    const mine = ids.filter((e) => e.layer === l.id && e.meshAvailable).map((e) => e.id);
+    const r = layerChunks(l.models.file, mine, (id) => file.structures[id]?.home, file.coarse.map((c) => c.key));
+    table[l.id] = r.chunks;
+    errors.push(...r.errors.map((e) => `${l.id}: ${e}`));
+  }
+  return { table, errors };
+}
+
 export function indexPlugin(reg: RegistryOption = REAL): Plugin {
   return {
     name: "skeleton-index",
-    resolveId: (id) => (id === ID ? RESOLVED : id === MAP_ID ? MAP_RESOLVED : null),
+    resolveId: (id) => (id === ID ? RESOLVED : id === MAP_ID ? MAP_RESOLVED : id === CHUNKS_ID ? CHUNKS_RESOLVED : null),
     load(id) {
+      if (id === CHUNKS_RESOLVED) {
+        const { table, errors } = readChunkTable(reg, (rel) => {
+          this.addWatchFile(join(root, rel));
+          return readJsonFile(rel);
+        });
+        if (errors.length) this.error(`chunk table:\n  ${errors.join("\n  ")}`);
+        return `export default ${JSON.stringify(table)};`;
+      }
       if (id === MAP_RESOLVED) {
         this.addWatchFile(join(root, REGIONS.volumesFile));
         return `export default ${JSON.stringify(buildBodyMap(readJsonFile(REGIONS.volumesFile) as RegionVolumes))};`;
@@ -97,10 +140,14 @@ export function indexPlugin(reg: RegistryOption = REAL): Plugin {
         this.addWatchFile(join(root, rel));
         return readJsonFile(rel);
       });
-      const regions = readRegionData(data, (rel) => {
-        this.addWatchFile(join(root, rel));
-        return readJsonFile(rel);
-      });
+      const regions = readRegionData(
+        data,
+        (rel) => {
+          this.addWatchFile(join(root, rel));
+          return readJsonFile(rel);
+        },
+        reg,
+      );
       return `export default ${JSON.stringify(encodeIndex(data))};\nexport const regions = ${JSON.stringify(regions)};`;
     },
   };

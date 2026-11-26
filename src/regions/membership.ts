@@ -261,3 +261,16 @@ export function triangleTotals(
   }
   return out;
 }
+
+// ------------------------------------------------------------ merging
+
+/**
+ * Another layer set's membership (the fixture's, M13 plan decision 11) added to
+ * a file: the same regions, structures and layers that neither already has.
+ */
+export function mergeMembership(base: LocatedInFile, extra: Pick<LocatedInFile, "regions" | "coarse" | "structures" | "triangles">): LocatedInFile {
+  if (JSON.stringify([base.regions, base.coarse]) !== JSON.stringify([extra.regions, extra.coarse])) throw new Error("mergeMembership: the region lists differ (regenerate the extra file)");
+  for (const id of Object.keys(extra.structures)) if (base.structures[id]) throw new Error(`mergeMembership: ${id} is in both files`);
+  for (const l of Object.keys(extra.triangles)) if (base.triangles[l]) throw new Error(`mergeMembership: layer ${l} is in both files`);
+  return { ...base, structures: { ...base.structures, ...extra.structures }, triangles: { ...base.triangles, ...extra.triangles } };
+}

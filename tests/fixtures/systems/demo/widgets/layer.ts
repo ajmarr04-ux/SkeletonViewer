@@ -62,7 +62,8 @@ export const widgets = defineLayer({
   models: {
     file: "widgets",
     eager: false,
-    chunking: "single",
+    // M13 plan decision 11: one file per coarse body region (head, thorax, left lower limb), as a big future layer would ship.
+    chunking: "region",
     debugManifest: () => import("./models/manifest.json"),
     budgets: { high: { maxMiB: 0.1, targetTris: 144 }, low: { maxMiB: 0.1, targetTris: 144 } },
   },

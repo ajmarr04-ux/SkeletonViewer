@@ -30,8 +30,13 @@ export type ModelSpec = {
   file: string;
   /** Loaded with the main chunk, before anything else (the bones); lazy layers load the first time they aren't Off. */
   eager: boolean;
-  /** One file per LOD for the whole layer (M13 adds "region"). */
-  chunking: "single";
+  /**
+   * "single": one file per LOD for the whole layer. "region" (M13 plan
+   * decision 9): one file per coarse body region per LOD,
+   * `<file>-<coarse>-<lod>.glb`, each structure in its home region's file;
+   * the loader fetches only the regions in view.
+   */
+  chunking: "single" | "region";
   /** The build manifest, a chunk of its own fetched only by `?debug` (bounds check). */
   debugManifest?: () => Promise<unknown>;
   budgets: Readonly<Record<Lod, ModelBudget>>;
