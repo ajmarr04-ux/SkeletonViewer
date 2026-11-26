@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { BenchResult, LayoutTimes } from "../scene/bench";
 import type { Lod, LodSetting } from "../scene/lod";
-import { NO_PANEL, type PanelInset, type Preset } from "../camera/math";
+import { NO_PANEL, type Box, type PanelInset, type Preset } from "../camera/math";
 import type { Tier } from "./isolation";
 import { DEFAULT_LAYER_SETTING, type CameraState, type GhostMode, type Layer, type LayerMode, type LayerModes, type MuscleDepth } from "./url";
 import { LAZY_LAYERS, type LazyLayerId, type SystemId } from "../systems/registry";
@@ -28,7 +28,13 @@ export type JointHighlight = { a: string; b: string; name: string; text?: string
 export type CameraCommand =
   | { kind: "preset"; preset: Preset }
   | { kind: "reset" }
-  | { kind: "frame" }
+  /**
+   * Frame the isolation beside the panels. `region` (M13 plan decision 8): a
+   * body region was chosen, so the box is its volume's (`box`, from the picker)
+   * joined with its drawn members, and leaving the region later restores the
+   * camera from before it if the user hasn't moved it since.
+   */
+  | { kind: "frame"; region?: { box: Box | null } }
   | { kind: "repivot"; id: string }
   | { kind: "centre"; id: string }
   | { kind: "goto"; cam: CameraState | null };
@@ -113,6 +119,16 @@ export type ViewerState = {
    */
   keyCursor: { id: string; x: number; y: number } | null;
   setKeyCursor: (c: ViewerState["keyCursor"]) => void;
+  /** Whether the body-region picker (M13 plan decision 8) is open. */
+  regionPickerOpen: boolean;
+  setRegionPickerOpen: (open: boolean) => void;
+  /**
+   * The camera before a body region was framed and the pose it was framed to
+   * (M13 plan decision 8): leaving the region goes back to `before` if the
+   * camera is still at `after`. Null when no region framing is pending.
+   */
+  regionFrame: { before: CameraState; after: CameraState } | null;
+  setRegionFrame: (f: ViewerState["regionFrame"]) => void;
   /** Whether the sidebar (search and tree, Milestone 5) is open. */
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
@@ -226,6 +242,10 @@ export const useViewer = create<ViewerState>()((set) => ({
   sidebarOpen: false,
   setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
   sidebarLeft: 0,
+  regionPickerOpen: false,
+  setRegionPickerOpen: (open) => set({ regionPickerOpen: open }),
+  regionFrame: null,
+  setRegionFrame: (f) => set({ regionFrame: f }),
   setSidebarLeft: (sidebarLeft) => set((s) => (s.sidebarLeft === sidebarLeft ? s : { sidebarLeft })),
   joint: null,
   explode: 0,

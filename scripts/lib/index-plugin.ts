@@ -22,6 +22,8 @@ import type { LayerContent } from "../../src/systems/contentTypes";
 import { REGIONS, REGISTRY } from "../../src/systems/registry";
 import { encodeRegions, type PackedRegions } from "../../src/regions/codec";
 import type { LocatedInFile } from "../../src/regions/membership";
+import { buildBodyMap } from "../../src/regions/bodyMap";
+import type { RegionVolumes } from "../../src/regions/volume";
 import { CONTENT_REGISTRY, DEPTH_FILE, SYSTEM_CONTENT } from "../../src/systems/registry.content";
 import type { LayerDescriptor } from "../../src/systems/types";
 import type { IndexData } from "../../src/content/index";
@@ -30,6 +32,9 @@ import { root } from "./content-files";
 
 const ID = "virtual:skeleton-index";
 const RESOLVED = "\0" + ID;
+/** The region picker's body map and region boxes (M13 plan decision 8), for its lazy chunk only. */
+const MAP_ID = "virtual:skeleton-region-map";
+const MAP_RESOLVED = "\0" + MAP_ID;
 
 export type RegistryOption = {
   layers: readonly LayerDescriptor[];
@@ -81,8 +86,12 @@ export function readRegionData(data: IndexData, read: (rel: string) => unknown =
 export function indexPlugin(reg: RegistryOption = REAL): Plugin {
   return {
     name: "skeleton-index",
-    resolveId: (id) => (id === ID ? RESOLVED : null),
+    resolveId: (id) => (id === ID ? RESOLVED : id === MAP_ID ? MAP_RESOLVED : null),
     load(id) {
+      if (id === MAP_RESOLVED) {
+        this.addWatchFile(join(root, REGIONS.volumesFile));
+        return `export default ${JSON.stringify(buildBodyMap(readJsonFile(REGIONS.volumesFile) as RegionVolumes))};`;
+      }
       if (id !== RESOLVED) return null;
       const data = readIndexData(reg, (rel) => {
         this.addWatchFile(join(root, rel));

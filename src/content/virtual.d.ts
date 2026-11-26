@@ -26,6 +26,11 @@ declare module "virtual:skeleton-index" {
   /** The body regions and every structure's `located_in` (src/regions/codec.ts; M13 plan decision 5). */
   export const regions: import("../regions/codec").PackedRegions;
 }
+declare module "virtual:skeleton-region-map" {
+  /** The region picker's front and back body maps and each region's box (src/regions/bodyMap.ts; M13 plan decision 8). Lazy: the picker's chunk only. */
+  const map: import("../regions/bodyMap").BodyMap;
+  export default map;
+}
 declare module "virtual:skeleton-graph" {
   /** The eager layer's edges, for the main chunk (scripts/lib/content-plugin.ts, src/graph/codec.ts; M12 plan decision 3). */
   const edges: import("../graph/codec").EdgeWire;

@@ -14,6 +14,8 @@ import { groupAnnouncement, groupOf } from "./groups";
 import { displayName } from "./names";
 import { announcement as boneAnnouncement } from "./placeholder";
 import { softEntry } from "./softRegistry";
+import { layerOfId } from "./index";
+import { memberSet, membersOf, regionInfo } from "../regions/index";
 
 // ---------------------------------------------------------------------------
 // Names and counts
@@ -150,7 +152,8 @@ export function antagonistAnnouncement(on: boolean, count: number): string {
 // ---------------------------------------------------------------------------
 // Selections and tiers
 
-export type Isolated = { sel: string | null; tier: Tier; grp: string | null };
+/** `reg`: the body region in focus (M13), null or absent for the whole body. */
+export type Isolated = { sel: string | null; tier: Tier; grp: string | null; reg?: string | null };
 
 /**
  * A soft structure's selection (M10 plan decision 4):
@@ -220,9 +223,34 @@ export function groupIsolationAnnouncement(grp: string, back = false): string {
   return groupAnnouncement(grp, back);
 }
 
+// ---------------------------------------------------------------------------
+// Body regions (M13 plan decision 8)
+
+/** A region's members drawn on the layers showing (On or Ghost), counted by kind (parts once, as their muscle). */
+export function regionCounts(key: string, modes: LayerModes, hasMesh: (id: string) => boolean): KindCounts {
+  return countByKind(
+    membersOf(key).filter((id) => {
+      const layer = layerOfId(id);
+      return layer !== null && modes[layer] !== "off" && hasMesh(id);
+    }),
+  );
+}
+
+/** "Body region: forearm (left). 4 bones, 21 muscles and 9 ligaments shown." */
+export function regionAnnouncement(key: string, counts: KindCounts): string {
+  const name = regionInfo(key)?.name ?? key;
+  const list = countsPhrase(counts);
+  return `Body region: ${name[0]!.toLowerCase()}${name.slice(1)}. ${list ? `${list} shown.` : "Nothing in the layers showing."}`;
+}
+export const LEFT_REGION_ANNOUNCEMENT = "Left the body region.";
+export const OUTSIDE_REGION = "Outside the body region.";
+
 /**
  * What the isolation change from `prev` to `now` says, with the layers that
- * are on (they decide the tier sets, M9 plan decision 3).
+ * are on (they decide the tier sets, M9 plan decision 3). Inside a body region
+ * (M13): a new region, or a step back to the region level, says the region and
+ * its counts; leaving it says so first; a selection outside it says so last;
+ * tier counts are of what the region shows.
  */
 export function isolationAnnouncement(
   now: Isolated,
@@ -230,6 +258,20 @@ export function isolationAnnouncement(
   modes: LayerModes,
   hasMesh: (id: string) => boolean,
 ): string {
+  const reg = now.reg ?? null;
+  const prevReg = prev?.reg ?? null;
+  const atRegionLevel = now.sel === null && now.grp === null;
+  if (reg !== null && (reg !== prevReg || atRegionLevel)) return regionAnnouncement(reg, regionCounts(reg, modes, hasMesh));
+  if (reg === null && prevReg !== null) {
+    const same = prev !== null && prev.sel === now.sel && prev.tier === now.tier && prev.grp === now.grp;
+    return same || atRegionLevel ? LEFT_REGION_ANNOUNCEMENT : `${LEFT_REGION_ANNOUNCEMENT} ${wholeBodyAnnouncement(now, prev, modes, hasMesh)}`;
+  }
+  const said = wholeBodyAnnouncement(now, prev, modes, hasMesh);
+  const members = memberSet(reg);
+  return members !== null && now.sel !== null && !members.has(now.sel) ? `${said} ${OUTSIDE_REGION}` : said;
+}
+
+function wholeBodyAnnouncement(now: Isolated, prev: Isolated | null, modes: LayerModes, hasMesh: (id: string) => boolean): string {
   if (now.sel === null && now.grp !== null) {
     // "Back to" from one of its members; an attached group's own bone is where it was opened from, not a member stepped back from.
     const g = groupOf(now.grp);
@@ -237,7 +279,7 @@ export function isolationAnnouncement(
     return groupIsolationAnnouncement(now.grp, back);
   }
   if (now.sel === null) return "Full skeleton";
-  const view = isolationView(now.sel, now.tier, "ghost", hasMesh, null, undefined, undefined, modes);
+  const view = isolationView(now.sel, now.tier, "ghost", hasMesh, null, undefined, undefined, modes, memberSet(now.reg ?? null));
   const solid = [...(view.solid ?? [])].filter((x) => x !== now.sel);
   const e = softEntry(now.sel);
   if (e) {
@@ -281,7 +323,7 @@ export type AnnounceDeps = {
   peeled: (stop: MuscleDepth) => number | null;
 };
 
-const isolationChanged = (a: Isolated, b: Isolated): boolean => a.sel !== b.sel || a.tier !== b.tier || a.grp !== b.grp;
+const isolationChanged = (a: Isolated, b: Isolated): boolean => a.sel !== b.sel || a.tier !== b.tier || a.grp !== b.grp || (a.reg ?? null) !== (b.reg ?? null);
 
 /**
  * Fold everything one user action changed into one message (M10 risk 3):

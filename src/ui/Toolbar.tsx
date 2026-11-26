@@ -8,6 +8,7 @@ import { GHOST_OPACITY, useViewer } from "../state/store";
 import { takeScreenshot } from "./capture";
 import { ExplodeSlider } from "./ExplodeSlider";
 import {
+  BodyIcon,
   CameraIcon,
   ColourIcon,
   ExplodeIcon,
@@ -25,6 +26,8 @@ import {
   ViewsIcon,
 } from "./icons";
 import { LayersPanel } from "./LayersPanel";
+import { openRegionPicker } from "./RegionPickerHost";
+import { regionInfo } from "../regions/index";
 import { Popover } from "./Popover";
 import { Settings } from "./Settings";
 import { shareView } from "./share";
@@ -65,7 +68,7 @@ type Tool = ToolItem & { key: string; bar: ReactNode; more?: (close: () => void)
 /**
  * Floating toolbar, bottom centre (spec §7). Search, Home, Views, the isolation
  * button (Related / Region) and Ghosts always stay in the bar; Ghost opacity,
- * Explode, Labels, Colour by region, Screenshot, Share, Layers (M7) and Settings move into a
+ * Explode, Body region (M13), Labels, Colour by region, Screenshot, Share, Layers (M7) and Settings move into a
  * "More" menu when the bar wouldn't fit (always on phones, plan decision 12).
  * With room to spare the buttons show their labels; else icons only.
  */
@@ -80,6 +83,7 @@ export function Toolbar() {
   const labelsOn = useViewer((s) => s.labelsOn);
   const colourOn = useViewer((s) => s.colourMode === "region");
   const panelRight = useViewer((s) => s.panelInset.right);
+  const reg = useViewer((s) => s.reg);
   const sidebarLeft = useViewer((s) => s.sidebarLeft);
   const width = useWindowWidth();
   const [manualUrl, setManualUrl] = useState<string | null>(null);
@@ -271,6 +275,26 @@ export function Toolbar() {
     </button>
   );
   const none = () => {};
+  // The body-region picker (M13 plan decision 8): a dialog, in "More" on phones.
+  const regionName = reg !== null ? regionInfo(reg)?.name : undefined;
+  const regionButton = (inMore: boolean, close: () => void) => (
+    <button
+      type="button"
+      className={inMore ? "menu-item more-item" : "tool"}
+      data-testid="region-tool"
+      aria-haspopup="dialog"
+      aria-pressed={reg !== null}
+      aria-label="Body region"
+      title={regionName ? `Body region: ${regionName}` : "Focus on a body region"}
+      onClick={() => {
+        close();
+        openRegionPicker();
+      }}
+    >
+      <BodyIcon />
+      <span className={inMore ? undefined : "tool-label"}>{inMore && regionName ? `Body region: ${regionName}` : "Body region"}</span>
+    </button>
+  );
   // "N hidden · Show all" (spec §5.5, plan decision 13), while anything is hidden.
   if (hiddenCount > 0) {
     const chip = (inMore: boolean, close: () => void) => (
@@ -299,6 +323,7 @@ export function Toolbar() {
     tools.push({ key: "hidden", label: `${hiddenCount} hidden · Show all`, overflow: true, iconWidth: 24 + Math.ceil(measureLabel(`${hiddenCount} hidden`)), bar: chip(false, none), more: (c) => chip(true, c) });
   }
   tools.push(
+    { key: "bodyRegion", label: "Body region", overflow: true, bar: regionButton(false, none), more: (c) => regionButton(true, c) },
     { key: "labels", label: "Labels", overflow: true, bar: labelsButton(false), more: () => labelsButton(true) },
     { key: "colour", label: "Colour", overflow: true, bar: colourButton(false), more: () => colourButton(true) },
     { key: "screenshot", label: "Screenshot", overflow: true, bar: actionButton(false, none, "screenshot"), more: (c) => actionButton(true, c, "screenshot") },

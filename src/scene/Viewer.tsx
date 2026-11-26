@@ -22,6 +22,7 @@ import { disposeParts, loadSkeleton, prefetchModel } from "./loadSkeleton";
 import { BenchPanel } from "../ui/BenchPanel";
 import { benchLayersState } from "./bench";
 import { Toolbar } from "../ui/Toolbar";
+import { RegionPickerHost } from "../ui/RegionPickerHost";
 import { LOD_SETTING_KEY, lodPlan, lodsToLoad, parseLodSetting, summariseObjects, withoutLodParam, type Lod } from "./lod";
 import { createBoneMaterial, createGhostMaterial, SCENE_BACKGROUND } from "./material";
 import { Explode } from "./Explode";
@@ -253,6 +254,7 @@ export function Viewer() {
       <Sidebar />
       <InfoPanel />
       <Toolbar />
+      <RegionPickerHost />
       <Legend />
       <Toast />
       <Tooltip />

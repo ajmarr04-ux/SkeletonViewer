@@ -56,6 +56,13 @@ export const RegionIcon = svg(
     <rect x="3" y="3" width="18" height="18" rx="4" strokeDasharray="3 3" />
   </>,
 );
+/** The body-region picker (M13): a figure with a dashed focus box. */
+export const BodyIcon = svg(
+  <>
+    <circle cx="12" cy="5" r="2" />
+    <path d="M12 8v7M8 10h8M12 15l-3 6M12 15l3 6" />
+  </>,
+);
 export const ExplodeIcon = svg(
   <>
     <rect x="9" y="9" width="6" height="6" rx="1" />

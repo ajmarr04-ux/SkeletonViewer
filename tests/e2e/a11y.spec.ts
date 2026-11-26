@@ -297,3 +297,23 @@ test.describe("axe: M10 session AN (plan decision 5)", () => {
     expect(errors).toEqual([]);
   });
 });
+
+test.describe("axe: M13 session BN (plan decision 8)", () => {
+  test("the body-region picker (list and maps), a region with a selection and its breadcrumb", async ({ page }) => {
+    const errors = await open(page);
+    await page.getByTestId("region-tool").click();
+    const picker = page.getByRole("dialog", { name: "Body region" });
+    await expect(picker.getByTestId("region-map-front")).toBeVisible();
+    await axe(page, "region picker");
+    await picker.locator("[data-region=upper_limb_left] .tree-chevron").click();
+    await picker.getByRole("treeitem", { name: /^Forearm \(left\)/ }).click();
+    await expect.poll(() => new URL(page.url()).searchParams.get("reg")).toBe("forearm_left");
+    await page.evaluate(() => window.__viewer!.select("radius_left"));
+    await expect(page.getByTestId("info-panel").getByRole("heading", { level: 2 })).toHaveText("Radius");
+    await axe(page, "region with a selection, breadcrumb");
+    await page.getByTestId("region-tool").click();
+    await expect(picker.getByRole("treeitem", { selected: true })).toHaveAttribute("data-region", "forearm_left");
+    await axe(page, "region picker with a region chosen");
+    expect(errors).toEqual([]);
+  });
+});

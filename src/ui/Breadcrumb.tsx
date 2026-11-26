@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { crumbGroups, ancestorsOf, groupAncestors, groupOf, softTreeVersion, subscribeSoftTree } from "../content/groups";
-import { goBack, isolateGroup, selectObject } from "../state/selection";
+import { regionInfo } from "../regions/index";
+import { focusRegion, goBack, isolateGroup, leaveRegion, selectObject } from "../state/selection";
 import { useViewer } from "../state/store";
 import { focusCanvas } from "./canvasFocus";
 import { usePanelModel } from "./usePanelModel";
@@ -13,16 +14,24 @@ import { usePanelModel } from "./usePanelModel";
  * part (Milestone 9, spec §5.1) the muscle's crumb selects the muscle: one
  * level up at tier 0 (a Back step), a new focus from tiers 1 and 2. For an
  * attached-muscles group (spec §5.4) the bone's crumb selects the bone.
+ * Inside a body region (M13 plan decision 8, spec §6.4) the region's crumb
+ * comes first after "Skeleton": `Skeleton › Forearm (left) › Muscles › Flexor
+ * carpi radialis`. Its crumb leaves the isolation but keeps the region, and
+ * "Skeleton" leaves the region.
  */
 export const TIER_CRUMBS = ["", "Related", "Region"] as const;
 
 /** Marks the crumb that selects a part's muscle rather than isolating a group. */
 const UP = "\u0000up";
+/** Marks the body region's crumb (M13). */
+const REGION = "\u0000region";
 
 export function Breadcrumb() {
   const sel = useViewer((s) => s.sel);
   const tier = useViewer((s) => s.tier);
   const grp = useViewer((s) => s.grp);
+  const reg = useViewer((s) => s.reg);
+  const region = reg !== null ? regionInfo(reg) : undefined;
   const model = usePanelModel(sel);
   // Soft groups (M9) can be crumbs once the soft tree has loaded (it isn't fetched for this).
   useSyncExternalStore(subscribeSoftTree, softTreeVersion);
@@ -45,7 +54,14 @@ export function Breadcrumb() {
       up = g.attached.bone;
       links[trail.length - 2] = UP;
     }
+  } else if (region) {
+    trail = [];
+    links = [];
   } else return null;
+  if (region) {
+    trail = [region.name, ...trail];
+    links = [trail.length > 1 ? REGION : null, ...links];
+  }
   const last = trail.length - 1;
   return (
     <nav className="breadcrumb" aria-label="Breadcrumb" data-testid="breadcrumb">
@@ -55,7 +71,8 @@ export function Breadcrumb() {
             type="button"
             className="crumb-link"
             onClick={() => {
-              goBack();
+              if (region) leaveRegion();
+              else goBack();
               focusCanvas();
             }}
           >
@@ -69,7 +86,19 @@ export function Breadcrumb() {
               <span aria-hidden="true" className="crumb-sep">
                 ›
               </span>
-              {i !== last && key === UP ? (
+              {i !== last && key === REGION ? (
+                <button
+                  type="button"
+                  className="crumb-link"
+                  data-region={reg ?? undefined}
+                  onClick={() => {
+                    if (reg !== null) focusRegion(reg);
+                    focusCanvas();
+                  }}
+                >
+                  {label}
+                </button>
+              ) : i !== last && key === UP ? (
                 <button
                   type="button"
                   className="crumb-link"

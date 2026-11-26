@@ -65,7 +65,7 @@ dialog.attribution::backdrop { background: rgb(0 0 0 / 0.5); }
 .tool {
   display: inline-flex; align-items: center; gap: 6px; min-height: 44px; min-width: 44px;
   padding: 0 12px; border: 0; border-radius: 8px; background: transparent; color: #e8eaed;
-  font: inherit; font-size: 14px; cursor: pointer; justify-content: center;
+  font: inherit; font-size: 14px; cursor: pointer; justify-content: center; white-space: nowrap;
 }
 .tool:hover, .tool[aria-expanded="true"] { background: rgb(255 255 255 / 0.1); }
 .popover-anchor { position: relative; }
@@ -400,3 +400,34 @@ dialog.manual-share form { margin-top: 12px; text-align: right; }
 .layer-depth legend { font-weight: 600; padding: 0; }
 .layer-depth p { margin: 2px 0 0; }
 .more-section .layers-panel { padding: 6px 8px; }
+
+/* Body-region picker (M13 plan decision 8): a modal dialog, the list and the generated body maps. */
+dialog.region-picker {
+  width: min(860px, calc(100vw - 16px)); max-height: calc(100dvh - 16px); padding: 12px 16px 16px;
+  color: inherit; background: #26292e; border: 1px solid #444; border-radius: 8px; overflow: auto;
+}
+dialog.region-picker::backdrop { background: rgb(0 0 0 / 0.5); }
+.region-picker-head { display: flex; align-items: center; justify-content: space-between; }
+.region-picker-head h2 { margin: 0; font-size: 18px; }
+.region-picker-hint { margin: 4px 0 10px; font-size: 14px; }
+.region-whole { margin-bottom: 8px; }
+.region-whole[aria-pressed="true"] { background: #2f3540; border-color: #8ab4f8; }
+.region-picker-body { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(0, 1.3fr); gap: 16px; align-items: start; }
+.region-tree { padding: 0; }
+.region-tree .tree-count { margin-left: 8px; }
+.region-tree .tree-leaf .tree-label { padding-left: 18px; }
+.region-maps { display: flex; gap: 12px; justify-content: center; }
+.region-map { flex: 1; margin: 0; max-width: 220px; text-align: center; }
+.region-map figcaption { font-size: 14px; color: #bdc1c6; margin-bottom: 4px; }
+.region-map svg { width: 100%; height: auto; max-height: 62dvh; display: block; }
+.region-map text { fill: #bdc1c6; font-size: 40px; }
+.map-region { cursor: pointer; outline: none; }
+.map-region path { fill: #3a4f6e; fill-opacity: 0.9; stroke: #bdc1c6; stroke-width: 4; stroke-linejoin: round; } /* stroke 8.4:1 on the dialog */
+.map-region:hover path { fill: #4f6c96; }
+.map-region[aria-pressed="true"] path { fill: #2563c9; stroke: #fff; }
+.map-region:focus-visible path { stroke: #8ab4f8; stroke-width: 12; }
+@media (max-width: 599px) {
+  dialog.region-picker { padding: 10px 10px 12px; }
+  .region-picker-body { grid-template-columns: 1fr; }
+  .region-map svg { max-height: 44dvh; }
+}

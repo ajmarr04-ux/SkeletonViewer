@@ -19,8 +19,8 @@ import { nearestPickable, PROXY_RADIUS_PX, pickWithProxies, tinyObjects, type Pr
 import ids from "../../content/ids.json";
 import { displayName } from "../content/names";
 import { clickObject, drawnIds, expandRegion, focusRegion, goBack, leaveRegion, hasMesh, hideSelected, hideStructure, layerOfId, parentOf, selectObject, showAllHidden, showRelated } from "../state/selection";
-import { isolationView, isPickableIn, viewOf } from "../scene/isolation";
-import { memberSet } from "../regions/index";
+import { isolationView, isPickableIn, shownIn, viewOf } from "../scene/isolation";
+import { memberSet, membersOf } from "../regions/index";
 import { useLayerBatches } from "../scene/layerRegistry";
 import { softEntries } from "../content/softRegistry";
 import { type Layer } from "../state/url";
@@ -30,6 +30,26 @@ import { EAGER_LAYER, LAYER_IDS, LAZY_LAYERS, NESTED_LAYER } from "../systems/re
 function framingInset() {
   const st = useViewer.getState();
   return st.sidebarLeft > 0 ? { ...st.panelInset, left: st.sidebarLeft } : st.panelInset;
+}
+
+/**
+ * The box around a body region (M13 plan decision 8): its drawn members
+ * (every layer showing), joined with `extra` (the region's volume, from the
+ * picker). Undefined outside a region or with nothing to frame.
+ */
+function regionBox(boxOf: (id: string) => Box | undefined, extra: Box | null = null): Box | undefined {
+  const st = useViewer.getState();
+  if (st.reg === null) return undefined;
+  const view = viewOf(st, hasMesh);
+  const boxes: Box[] = [];
+  for (const id of membersOf(st.reg)) {
+    const layer = layerOfId(id);
+    if (layer === null || shownIn(view, layer, id) === "hidden") continue;
+    const b = boxOf(id);
+    if (b) boxes.push(b);
+  }
+  if (extra) boxes.push(extra);
+  return boxes.length ? unionBoxes(boxes) : undefined;
 }
 
 /** The box around everything solid in the current isolation (tiers 1 and 2: the focus and its related bones). */
@@ -717,10 +737,16 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
         case "frame": {
           // The isolation (the selection, plus its related bones at tiers 1 and 2) is framed beside the info
           // panel; the skeleton (nothing selected) as before.
+          // Inside a body region with nothing isolated, the region (M13 plan decision 8).
           const st = useViewer.getState();
-          const box = g ? isolationBox(boxOf, st.sel, st.tier, st.grp) : undefined;
+          const box = isolationBox(boxOf, st.sel, st.tier, st.grp) ?? regionBox(boxOf, c.region?.box ?? null);
           const dir = sub(now.position, now.target);
           cam = box ? frameBeside(box, dir, camera.fov, sz.width, sz.height, hf, inset) : frameFrom(g.box, dir, camera.fov, asp, hf);
+          if (c.region && st.reg !== null) {
+            // Leaving the region goes back to the camera from before the first region was framed, if unmoved.
+            cam = clamped(cam);
+            st.setRegionFrame({ before: st.regionFrame?.before ?? now, after: cam });
+          }
           break;
         }
         case "goto":
@@ -749,7 +775,14 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
       go(clamped(cam));
     };
     let lastSeq = useViewer.getState().cameraRequest?.seq ?? 0;
-    const unsubscribe = useViewer.subscribe((s) => {
+    const unsubscribe = useViewer.subscribe((s, prev) => {
+      // Leaving a body region (M13 plan decision 8): back to the camera from before it, only if the
+      // user hasn't moved the camera since the region was framed.
+      if (prev.reg !== null && s.reg === null && s.regionFrame) {
+        const f = s.regionFrame;
+        s.setRegionFrame(null);
+        if (sameCamera(pose(), f.after, 1e-3)) go(clamped(f.before));
+      }
       const r = s.cameraRequest;
       if (!r || r.seq === lastSeq) return;
       lastSeq = r.seq;
@@ -962,7 +995,7 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
     framed.current = true;
     const url = parseUrlState(window.location.search);
     const st = useViewer.getState();
-    const selBox = isolationBox((id) => boxOfRef.current(id), st.sel, st.tier, st.grp);
+    const selBox = isolationBox((id) => boxOfRef.current(id), st.sel, st.tier, st.grp) ?? regionBox((id) => boxOfRef.current(id));
     const home = defaultView(geometry.box, camera.fov, aspect, heightFraction);
     const inset = framingInset();
     const start = url.cam ?? (selBox ? frameBeside(selBox, sub(home.position, home.target), camera.fov, size.width, size.height, heightFraction, inset) : home);

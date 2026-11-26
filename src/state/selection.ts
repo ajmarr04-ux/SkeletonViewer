@@ -20,7 +20,8 @@ import { isRegionKey } from "../regions/index";
 import { useLayerBatches } from "../scene/layerRegistry";
 import { FULL_SKELETON, isolationStep, resolveClick, type HistoryStep, type Isolation, type IsolationAction, type ParentOf } from "./isolation";
 import { COLOUR_MODE_KEY, type ColourMode } from "../scene/regionColours";
-import { LAYERS_KEY, storedFlag, useViewer } from "./store";
+import { LAYERS_KEY, storedFlag, useViewer, type CameraCommand } from "./store";
+import type { Box } from "../camera/math";
 import { DEFAULT_LAYER_SETTING, formatLayers, isDefaultLayers, isUserLayersValue, HIDDEN_URL_CAP, parseHidden, parseLayers, parseUrlState, serialiseUrlState, type GhostMode, type Layer, type LayerMode, type LayerSetting, type MuscleDepth, type UrlState } from "./url";
 import { EAGER_LAYER, isLazyLayer, LAZY_LAYERS, layersOfSystem, looksLikeTreeGroup, NESTED_LAYER, presetDescriptor, presetModes, type LazyLayerId, type PresetId, type SystemId } from "../systems/registry";
 
@@ -71,8 +72,8 @@ export function dispatchIsolation(action: IsolationAction): void {
  * Frame the isolation once the panel that opens with it has laid out and
  * reported the area it covers, so the bones end up beside it.
  */
-function frameSoon(): void {
-  requestAnimationFrame(() => requestAnimationFrame(() => useViewer.getState().requestCamera({ kind: "frame" })));
+function frameSoon(command: CameraCommand = { kind: "frame" }): void {
+  requestAnimationFrame(() => requestAnimationFrame(() => useViewer.getState().requestCamera(command)));
 }
 
 export const selectObject = (id: string): void => {
@@ -105,6 +106,20 @@ export const focusRegion = (key: string): void => {
 };
 /** Leave the body region: one step back with nothing isolated, else the isolation stays (over the whole body). */
 export const leaveRegion = (): void => dispatchIsolation({ type: "leaveRegion" });
+/**
+ * A choice in the region picker (M13 plan decision 8): focus on the region and
+ * frame the camera on it (`box`: its volume's bounds, joined with its drawn
+ * members), or, for `null` ("Whole body"), leave the region.
+ */
+export function chooseRegion(key: string | null, box: Box | null = null): void {
+  if (key === null) {
+    if (useViewer.getState().reg !== null) leaveRegion();
+    return;
+  }
+  if (!isRegionKey(key)) return;
+  dispatchIsolation({ type: "focusRegion", key });
+  frameSoon({ kind: "frame", region: { box } });
+}
 /**
  * Isolate a whole group from the tree, the legend or a search result (plan
  * decision 5). A soft-tissue group (M9 plan decision 11) turns its layer On if
