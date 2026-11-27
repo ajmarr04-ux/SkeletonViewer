@@ -303,3 +303,29 @@ test("labels: candidates thinned to the drawn structures of the region and to N"
   await expect.poll(() => page.evaluate(() => window.__viewer!.labelCandidates()), { timeout: 60_000 }).toBe(60);
   expect(await page.locator("[data-label]").count()).toBeGreaterThan(0);
 });
+
+// M14 session BU (plan decisions 1.2 and 5): the sidebar passes the store's
+// body region and visible layers to the ranker. Inside a band, the region's
+// members come first, then structures on layers that are On or Ghost.
+test("search ranks the body region's members first in a band, then the visible layers", async ({ page }) => {
+  const errors = await open(page, "&reg=forearm_right");
+  const labels = page.getByTestId("search-results").getByRole("option").locator(".result-label");
+  await page.keyboard.press("/");
+  await page.getByTestId("search-input").fill("radius");
+  // Both radii are exact names (band 0); outside a region the left comes first (ID order).
+  await expect(labels.first()).toHaveText(/Radius \(right\)/, { timeout: 15_000 });
+  await expect(labels.nth(1)).toHaveText(/Radius \(left\)/);
+  await page.evaluate(() => window.__viewer!.focusRegion("forearm_left"));
+  await expect(labels.first()).toHaveText(/Radius \(left\)/);
+
+  // Visibility at the default layers (BS approval B): the trapezium bone (On) before the trapezius's parts (muscles Off).
+  await page.evaluate(() => window.__viewer!.leaveRegion());
+  await page.getByTestId("search-input").fill("trapezius");
+  await expect(labels.first()).toHaveText(/^Trapezius/, { timeout: 15_000 });
+  const all = await labels.allTextContents();
+  const bone = all.findIndex((t) => /Trapezium/.test(t));
+  const part = all.findIndex((t) => /part/i.test(t));
+  expect(bone, all.join(" | ")).toBeGreaterThan(-1);
+  if (part > -1) expect(bone, all.join(" | ")).toBeLessThan(part);
+  expect(errors).toEqual([]);
+});

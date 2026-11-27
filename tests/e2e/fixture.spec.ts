@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import ids from "../fixtures/systems/demo/widgets/ids.json" with { type: "json" };
 
@@ -264,5 +265,46 @@ test("budget governor (M13 BP) with a chunked layer: the bones are capped, the w
   await expect(page.getByTestId("debug")).toHaveAttribute("data-lod", "low");
   expect(files.filter((f) => f.startsWith("widgets")).sort()).toEqual(["widgets-head-high", "widgets-head-low"]);
   expect(files).not.toContain("skeleton-high");
+  expect(errors).toEqual([]);
+});
+
+// M14 session BU (plan decision 5): with two systems, filter chips under the
+// search box: a radio group, "All" by default; a chip keeps that system's
+// results only and is announced; "All" restores. axe on the row.
+test("search filter chips: one per system, a chip filters by system, All restores", async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("./?lod=low&debug");
+  await bonesShown(page);
+  await page.keyboard.press("/");
+  const chips = page.getByTestId("search-chips");
+  await expect(chips).toHaveCount(0); // only the bones' index so far: one system
+  await page.getByTestId("search-input").fill("2");
+  await expect(chips).toBeVisible({ timeout: 15_000 });
+  await expect(chips.getByRole("radio")).toHaveCount(3);
+  await expect(page.getByTestId("search-chip-all")).toBeChecked();
+  const ids = () => page.getByTestId("search-results").getByRole("option").evaluateAll((els) => els.map((e) => e.getAttribute("data-id")!));
+  const isWidget = (id: string) => id.startsWith("widget") || id.startsWith("widgets.");
+  await expect.poll(async () => (await ids()).some(isWidget)).toBe(true);
+  const before = await ids();
+  expect(before.some((id) => !isWidget(id))).toBe(true);
+
+  await page.getByTestId("search-chip-demo").check();
+  await expect.poll(async () => (await ids()).every(isWidget)).toBe(true);
+  const n = (await ids()).length;
+  await expect(page.getByTestId("announcer")).toHaveText(`Search limited to Demo. ${n} ${n === 1 ? "result" : "results"}.`);
+  // Keyboard: the arrows move within the group.
+  await page.getByTestId("search-chip-demo").focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.getByTestId("search-chip-musculoskeletal")).toBeChecked();
+  await expect.poll(async () => (await ids()).some(isWidget)).toBe(false);
+
+  const result = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22a", "wcag22aa"]).analyze();
+  expect(result.violations.map((v) => `${v.id}: ${v.nodes.map((x) => x.target.join(" ")).join(", ")}`)).toEqual([]);
+
+  await page.getByTestId("search-chip-all").check();
+  await expect.poll(ids).toEqual(before);
+  await expect(page.getByTestId("announcer")).toHaveText(/^Search in all systems\./);
   expect(errors).toEqual([]);
 });

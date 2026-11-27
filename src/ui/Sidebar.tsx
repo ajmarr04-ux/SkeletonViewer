@@ -7,7 +7,10 @@ import { loadSoftTree } from "../content/softTreeLoader";
 import { SOFT_ROOT_KEYS, TOP_KEYS, openable, treeKey, typeAhead, visibleRows, type TreeRow } from "../content/tree";
 import { hasMesh, isolateGroup, selectAndFrame, selectLink } from "../state/selection";
 import { useViewer } from "../state/store";
-import { EAGER_LAYER, LAYER_IDS, layerLabel, type LayerId } from "../systems/registry";
+import { layerOfId } from "../content/index";
+import { isInRegion } from "../regions/index";
+import type { RankContext } from "../content/searchRank";
+import { EAGER_LAYER, LAYER_IDS, SYSTEMS, isLayerId, layerDescriptor, layerLabel, type LayerId, type SystemId } from "../systems/registry";
 import { focusCanvas } from "./canvasFocus";
 import { PHONE_QUERY, useMedia } from "./useMedia";
 
@@ -142,6 +145,12 @@ function SidebarPanel() {
 /** "a", "a and b", "a, b and c". */
 const listOf = (xs: readonly string[]): string => (xs.length < 2 ? (xs[0] ?? "") : `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}`);
 
+/** A hit's layer: a structure's from the index, a group's from its key's prefix (bone groups: the eager layer's). */
+function layerOfHit(id: string): LayerId {
+  const p = id.slice(0, id.indexOf("."));
+  return layerOfId(id) ?? (isLayerId(p) ? p : EAGER_LAYER);
+}
+
 /**
  * The search field (combobox) with its results (listbox); the tree shows while
  * the field is empty. One index per layer (M14 plan decision 4): the eager
@@ -163,13 +172,32 @@ function Search({ onChosen, tree }: { onChosen: () => void; tree: React.ReactNod
       live = false;
     };
   }, [wanted]);
+  // Filter chips (M14 plan decision 5): one per system with a loaded index, shown only with two or more.
+  // A system's results are its layers' indexes' (a group's index is its tree's layer's).
+  const [system, setSystem] = useState<SystemId | null>(null);
+  const chips = SYSTEMS.filter((x) => LAYER_IDS.some((l) => loaded[l] && layerDescriptor(l).system === x.id));
+  const chosen = chips.length > 1 ? system : null;
   const searcher = useMemo(() => {
-    const list = LAYER_IDS.flatMap((l) => loaded[l] ?? []);
+    const list = LAYER_IDS.flatMap((l) => (chosen === null || layerDescriptor(l).system === chosen ? (loaded[l] ?? []) : []));
     return list.length === 0 ? null : list.length === 1 ? list[0]! : mergeSearchers(...list);
-  }, [loaded]);
+  }, [loaded, chosen]);
   const loading = LAYER_IDS.filter((l) => !loaded[l]);
-  const hits: SearchHit[] = useMemo(() => (searcher && query.trim() ? searcher(query, 30) : []), [searcher, query]);
+  // The ranking's context (decision 1.2): the body region in focus, then the layers that are On or Ghost.
+  const reg = useViewer((s) => s.reg);
+  const context = useMemo<RankContext>(
+    () => ({ inRegion: reg === null ? undefined : (id) => isInRegion(id, reg), visible: (id) => layers[layerOfHit(id)] !== "off" }),
+    [reg, layers],
+  );
+  const hits: SearchHit[] = useMemo(() => (searcher && query.trim() ? searcher(query, 30, context) : []), [searcher, query, context]);
   useEffect(() => setActive(0), [hits]);
+  const said = useRef<SystemId | null | undefined>(undefined);
+  useEffect(() => {
+    if (said.current === undefined || said.current === chosen) return void (said.current = chosen);
+    said.current = chosen;
+    const n = query.trim() ? ` ${hits.length} ${hits.length === 1 ? "result" : "results"}.` : "";
+    const label = SYSTEMS.find((x) => x.id === chosen)?.label;
+    useViewer.getState().say(`${label ? `Search limited to ${label}.` : "Search in all systems."}${n}`);
+  }, [chosen, hits, query]);
   const searching = query.trim() !== "";
   const current = hits[active];
 
@@ -233,6 +261,17 @@ function Search({ onChosen, tree }: { onChosen: () => void; tree: React.ReactNod
           onChange={(e) => setQuery(e.currentTarget.value)}
           onKeyDown={onKeyDown}
         />
+        {chips.length > 1 && (
+          <fieldset className="search-chips" data-testid="search-chips">
+            <legend className="visually-hidden">Search in</legend>
+            {[{ id: null, label: "All" }, ...chips].map((x) => (
+              <label key={x.id ?? ""}>
+                <input type="radio" name="search-system" checked={chosen === x.id} data-testid={`search-chip-${x.id ?? "all"}`} onChange={() => setSystem(x.id as SystemId | null)} />
+                {x.label}
+              </label>
+            ))}
+          </fieldset>
+        )}
         <p id="search-status" className="search-status muted" role="status" data-testid="search-status">
           {status}
         </p>
