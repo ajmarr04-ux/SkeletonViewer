@@ -1,8 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 import { ancestorsOf, groupAncestors, groupOf, softTree, softTreeVersion, subscribeSoftTree } from "../content/groups";
 import type { SearchHit, Searcher } from "../content/search";
-import { mergeSearchers } from "../content/searchMerge";
-import { loadSearch, loadSoftSearch } from "../content/searchLoader";
+import { loadSearch, loadSoftSearch, mergeSearchers } from "../content/searchLoader";
 import { isSoftId, softEntry } from "../content/softRegistry";
 import { loadSoftTree } from "../content/softTreeLoader";
 import { SOFT_ROOT_KEYS, TOP_KEYS, openable, treeKey, typeAhead, visibleRows, type TreeRow } from "../content/tree";

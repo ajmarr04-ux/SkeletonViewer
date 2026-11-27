@@ -1,19 +1,20 @@
-# Handoff — written 2026-11-26 at the end of M14 planning
+# Handoff — written 2026-11-27 at the end of M14 BS
 
 ## Next session
-BS (design): the new search ranking (match bands, generic words, region and visibility tie-breaks) on today's two indexes, plus the `search.json` difference report.
-Done when: ranking unit tests pass; `assets/build/REPORT-search-golden.md` lists every changed query; then **stop for the gate** (the user approves the differences before the golden is rewritten).
+**Gate first:** the user answers the BS questions at the end of `assets/build/REPORT-search-golden.md` (A: approve the 10 changed queries; B: visibility tie-break at the default layers; C: a generic word alone returns nothing; plus the 7 departures from decisions 1–3 listed there).
+Then, in whichever session comes next: apply any changes the user asks for, re-run `npm run search:report`, rewrite the golden with `npm run golden -- --write --force` (only `search.json` should change: check `git diff --stat tests/golden`), record the approval under "Approved golden differences" in `docs/PLAN-milestone-14.md`, tick BS. Then BT (one lazy index per layer).
 
 ## State
-- Last commit: M14 planning (m13 frozen at `dc55686`, `current` 14, `docs/PLAN-milestone-14.md`)
-- `npm run check`: not re-run (docs and `deploy/pages.json` only; M13 BR left it green)
+- Last commit: M14 BS (ranking by match bands, report)
+- `npm run check`: fails only on the `search` golden, as expected until the gate (`npx vitest run`: 781 pass, 1 fails = `golden > search`). Every other step passes. `sidebar` + `soft-sidebar` e2e: 12/12.
 - Open fan-out work: none
 
 ## Waiting on the user
-Decisions 1–12 in `docs/PLAN-milestone-14.md` (the ones most worth a look: 3 generic words return nothing alone, 5 chips hidden with one system, 6 the sidebar's system row and the bones' tree staying eager).
+The BS gate (above). Decisions 4–12 in the plan still stand unless the user says otherwise.
 
 ## Things the next session must know
-- Ranking must not depend on BM25 scores (decision 1): BT splits the indexes and must leave the approved golden unchanged.
-- Main chunk 490.9 kB of 500.1 (9.2 kB for all of M14); measure as M13 did (index + modulepreloads, `gzip -9`).
-- Goldens: never `--write --force` without the user's approval; after BS's approval rewrite `search.json` only.
+- The ranker and merge live in the search chunk; the sidebar gets `mergeSearchers` from `searchLoader.ts`. Keep them out of the main chunk (490.9 kB of 500.1).
+- `makeSearcher` ranks all candidates before applying the limit; a per-index limit before ranking would make BT's split change results.
+- The golden harness ranks with no region and no visibility; BU wires the store's context into the sidebar only.
+- BT's invariance test can start from `tests/searchRank.test.ts` "merging doesn't depend on how the documents are split".
 - The last M14 allowlist entry (`scripts/perf-load.ts`) goes in BZ.

@@ -345,6 +345,12 @@ export type LayerDescriptor = {
   depth?: DepthSpec;
   overlays?: readonly OverlaySpec[];
   tree?: TreeSpec;
+  /**
+   * Search's generic words for this layer beyond its first kind's noun (M14
+   * plan decision 3): words that never match alone and, next to another word,
+   * keep only this layer's results. None today.
+   */
+  searchStopWords?: readonly string[];
   kinds: readonly KindDescriptor[];
 };
 
