@@ -10,7 +10,7 @@
 // it replaces the entry instead (history.back() would leave the site).
 
 import { attachedBoneOf, attachedKey, groupLayer, isGroupKey } from "../content/groups";
-import { loadSoftTree } from "../content/softTreeLoader";
+import { loadTreeOf } from "../content/softTreeLoader";
 import { loadSoftContent } from "../content/softContentLoader";
 import { ALL_SHOWN_ANNOUNCEMENT, hiddenAnnouncement } from "../content/announce";
 import { hideTargets, isSoftId, softEntry, softLayerOf } from "../content/softRegistry";
@@ -124,10 +124,10 @@ export function chooseRegion(key: string | null, box: Box | null = null): void {
  * Isolate a whole group from the tree, the legend or a search result (plan
  * decision 5). A soft-tissue group (M9 plan decision 11) turns its layer On if
  * it is Off, as selecting a structure does, and is framed once that layer is
- * on screen. A soft group key not yet known loads the soft tree first.
+ * on screen. A soft group key not yet known loads its system's tree first.
  */
 export async function isolateGroup(key: string): Promise<void> {
-  if (!isGroupKey(key) && looksLikeTreeGroup(key)) await loadSoftTree();
+  if (!isGroupKey(key) && looksLikeTreeGroup(key)) await loadTreeOf(key);
   if (!isGroupKey(key)) return;
   const layer = groupLayer(key);
   if (layer !== null && attachedBoneOf(key) === null) {
@@ -477,13 +477,13 @@ export async function selectSoftFromUrl(id: string, hasCam: boolean): Promise<vo
 }
 
 /**
- * `grp=` naming a soft-tissue group (M9 plan decision 11): load the soft tree;
+ * `grp=` naming a soft-tissue group (M9 plan decision 11): load its system's tree;
  * if the group is real, isolate it (turning its layer on if Off), framed once
  * the layer shows unless the link carries a camera. An unknown key is dropped
  * from the URL, as for bone groups.
  */
 export async function softGroupFromUrl(key: string, hasCam: boolean): Promise<void> {
-  await loadSoftTree();
+  await loadTreeOf(key);
   const st = useViewer.getState();
   if (!isGroupKey(key)) {
     if (st.sel === null && st.grp === null) window.history.replaceState(window.history.state, "", urlWith({ grp: null }));
@@ -508,7 +508,7 @@ export function onPopState(): void {
   const rawGrp = new URLSearchParams(window.location.search).get("grp");
   if (rawGrp !== null && !isGroupKey(rawGrp) && looksLikeTreeGroup(rawGrp)) {
     const at = window.location.href;
-    void loadSoftTree().then(() => {
+    void loadTreeOf(rawGrp).then(() => {
       if (window.location.href === at && isGroupKey(rawGrp)) onPopState();
     });
     return;

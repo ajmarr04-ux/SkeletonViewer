@@ -1,16 +1,16 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
-import { ancestorsOf, groupAncestors, groupOf, softTree, softTreeVersion, subscribeSoftTree } from "../content/groups";
+import { ancestorsOf, groupAncestors, groupOf, softTreeVersion, subscribeSoftTree, treeLoaded } from "../content/groups";
 import type { SearchHit, Searcher } from "../content/search";
 import { loadLayerSearch, loadSearch, mergeSearchers } from "../content/searchLoader";
 import { isSoftId, softEntry } from "../content/softRegistry";
-import { loadSoftTree } from "../content/softTreeLoader";
-import { SOFT_ROOT_KEYS, TOP_KEYS, openable, treeKey, typeAhead, visibleRows, type TreeRow } from "../content/tree";
+import { loadTree } from "../content/softTreeLoader";
+import { TOP_KEYS, openable, sidebarRows, systemOfRowKey, systemRowKey, treeKey, typeAhead, type TreeRow } from "../content/tree";
 import { hasMesh, isolateGroup, selectAndFrame, selectLink } from "../state/selection";
 import { useViewer } from "../state/store";
 import { layerOfId } from "../content/index";
 import { isInRegion } from "../regions/index";
 import type { RankContext } from "../content/searchRank";
-import { EAGER_LAYER, LAYER_IDS, SYSTEMS, isLayerId, layerDescriptor, layerLabel, type LayerId, type SystemId } from "../systems/registry";
+import { EAGER_LAYER, EAGER_SYSTEM, LAYER_IDS, SYSTEMS, TREE_ROOTS, TREE_SYSTEMS, isLayerId, layerDescriptor, layerLabel, treeSystemOf, type LayerId, type SystemId } from "../systems/registry";
 import { focusCanvas } from "./canvasFocus";
 import { PHONE_QUERY, useMedia } from "./useMedia";
 
@@ -300,6 +300,9 @@ function Search({ onChosen, tree }: { onChosen: () => void; tree: React.ReactNod
   );
 }
 
+/** The system of a lazy root's row (`muscles` → musculoskeletal); undefined for any other row. */
+const rootSystem = (key: string): string | undefined => TREE_ROOTS.find((t) => t.key === key)?.system;
+
 /** Type-ahead resets after this pause (ms). */
 const TYPE_AHEAD_MS = 600;
 
@@ -312,16 +315,28 @@ const TYPE_AHEAD_MS = 600;
 function Tree({ onChosen }: { onChosen: () => void }) {
   const sel = useViewer((s) => s.sel);
   const grp = useViewer((s) => s.grp);
-  const [open, setOpen] = useState<ReadonlySet<string>>(() => new Set(TOP_KEYS));
+  const [groupsOpen, setOpen] = useState<ReadonlySet<string>>(() => new Set(TOP_KEYS));
   const [focusKey, setFocusKey] = useState<string>(TOP_KEYS[0] ?? "");
-  // The soft roots' rows arrive with the soft tree's lazy chunk (M9 plan decision 11).
+  // The system rows (M14 plan decision 6): open unless collapsed, shared with the Layers panel.
+  const collapsed = useViewer((s) => s.collapsedSystems);
+  const toggleSystem = useViewer((s) => s.toggleSystem);
+  const open = useMemo(
+    () => new Set([...groupsOpen, ...TREE_SYSTEMS.filter((t) => !collapsed.has(t.id)).map((t) => systemRowKey(t.id))]),
+    [groupsOpen, collapsed],
+  );
+  // A lazy root's rows arrive with its system's tree chunk (M9 plan decision 11; one per system, M14 decision 6).
   const treeVersion = useSyncExternalStore(subscribeSoftTree, softTreeVersion);
-  // treeVersion is a dependency on purpose (the rows read the registered soft tree).
-  const rows = useMemo(() => visibleRows(open), [open, treeVersion]);
-  const softLoading = softTree() === null && SOFT_ROOT_KEYS.some((k) => open.has(k));
+  // treeVersion is a dependency on purpose (the rows read the registered trees).
+  const rows = useMemo(() => sidebarRows(open), [open, treeVersion]);
+  /** The systems with an open lazy root whose tree hasn't loaded. */
+  const loadingSystems = useMemo(
+    () => [...new Set(TREE_ROOTS.filter((r) => open.has(r.key) && open.has(systemRowKey(r.system)) && !treeLoaded(r.system)).map((r) => r.system))],
+    // treeVersion: `treeLoaded` reads the registered trees.
+    [open, treeVersion],
+  );
   useEffect(() => {
-    if (softLoading) void loadSoftTree();
-  }, [softLoading]);
+    for (const system of loadingSystems) void loadTree(system);
+  }, [loadingSystems]);
   const moveFocus = useRef(false);
   const typed = useRef({ text: "", at: 0 });
 
@@ -329,12 +344,17 @@ function Tree({ onChosen }: { onChosen: () => void }) {
   const target = sel ?? grp;
   useEffect(() => {
     if (target === null) return;
-    // A soft structure (M9): its branch is known once the soft tree has loaded; a part opens its muscle too.
-    if (sel !== null && isSoftId(sel) && softTree() === null) void loadSoftTree();
+    // A soft structure (M9): its branch is known once its system's tree has loaded; a part opens its muscle too.
+    const layer = sel !== null && isSoftId(sel) ? layerOfId(sel) : null;
+    const system = layer === null ? EAGER_SYSTEM : layerDescriptor(layer).system;
+    if (layer !== null && !treeLoaded(system)) void loadTree(system);
     const parent = sel !== null ? (softEntry(sel)?.parent ?? null) : null;
     const branch = sel !== null ? [...ancestorsOf(sel), ...(parent ? [parent] : [])] : groupAncestors(target);
     if (branch.length === 0 && sel !== null) return;
     setOpen((o) => (branch.every((k) => o.has(k)) ? o : new Set([...o, ...branch])));
+    // Its system row opens too (a group's system: its root's, else the eager layer's).
+    const own = sel !== null ? system : (treeSystemOf(target) ?? EAGER_SYSTEM);
+    if (useViewer.getState().collapsedSystems.has(own)) toggleSystem(own);
     // A tooth-type group isn't in the tree's branches: its row sits under Teeth.
     setFocusKey(target);
   }, [target, sel, treeVersion]);
@@ -352,7 +372,12 @@ function Tree({ onChosen }: { onChosen: () => void }) {
   // If the focused row is hidden (its group closed), fall back to the first row.
   const tabKey = rows.some((r) => r.key === focusKey) ? focusKey : (rows[0]?.key ?? "");
 
-  const toggle = (key: string) =>
+  const toggle = (key: string) => {
+    const system = systemOfRowKey(key);
+    if (system !== null) toggleSystem(system);
+    else toggleGroup(key);
+  };
+  const toggleGroup = (key: string) =>
     setOpen((o) => {
       const n = new Set(o);
       if (n.has(key)) n.delete(key);
@@ -385,7 +410,7 @@ function Tree({ onChosen }: { onChosen: () => void }) {
       activate(row);
       return;
     }
-    if ((e.key === "i" || e.key === "I") && row.kind !== "leaf") {
+    if ((e.key === "i" || e.key === "I") && (row.kind === "group" || row.kind === "type")) {
       e.preventDefault();
       isolate(row.key);
       return;
@@ -395,7 +420,10 @@ function Tree({ onChosen }: { onChosen: () => void }) {
       e.preventDefault();
       if (move.kind === "focus") focusRow(move.key);
       else if (move.kind === "open" || move.kind === "close") toggle(move.key);
-      else if (move.kind === "openSiblings") setOpen((o) => new Set([...o, ...move.keys]));
+      else if (move.kind === "openSiblings") {
+        for (const k of move.keys) if (!open.has(k) && systemOfRowKey(k) !== null) toggle(k);
+        setOpen((o) => new Set([...o, ...move.keys.filter((k) => systemOfRowKey(k) === null)]));
+      }
       return;
     }
     if (e.key.length === 1 && /\S/.test(e.key)) {
@@ -424,7 +452,7 @@ function Tree({ onChosen }: { onChosen: () => void }) {
               aria-posinset={r.pos}
               aria-setsize={r.size}
               aria-expanded={openable(r) ? open.has(r.key) : undefined}
-              aria-busy={r.soft && r.level === 1 && open.has(r.key) && softLoading ? true : undefined}
+              aria-busy={open.has(r.key) && loadingSystems.some((sys) => sys === rootSystem(r.key)) ? true : undefined}
               aria-selected={selected}
               tabIndex={r.key === tabKey ? 0 : -1}
               className={`tree-row tree-${r.kind}`}
@@ -436,7 +464,7 @@ function Tree({ onChosen }: { onChosen: () => void }) {
                 activate(r);
               }}
             >
-              {r.kind === "group" && (
+              {(r.kind === "group" || r.kind === "system") && (
                 <span className="tree-chevron" aria-hidden="true">
                   {open.has(r.key) ? "▾" : "▸"}
                 </span>
@@ -458,10 +486,10 @@ function Tree({ onChosen }: { onChosen: () => void }) {
               )}
               <span className="tree-label">
                 {r.label}
-                {r.kind !== "leaf" && r.count !== null && <span className="tree-count"> ({r.count})</span>}
+                {(r.kind === "group" || r.kind === "type") && r.count !== null && <span className="tree-count"> ({r.count})</span>}
                 {r.kind === "leaf" && !(r.drawn ?? hasMesh(r.key)) && <span className="tree-count"> · no 3D model</span>}
               </span>
-              {r.kind !== "leaf" && (
+              {(r.kind === "group" || r.kind === "type") && (
                 <button
                   type="button"
                   tabIndex={-1}

@@ -6,45 +6,23 @@
 // files and their code load only when a layer is turned on. Its changes are
 // announced from the store (`src/ui/Announcer.tsx`), not here.
 
-import { useId, useState } from "react";
+import { useId } from "react";
 import { systemModeAnnouncement } from "../content/announce";
 import { applyLayerPreset, setLayerMode, setMuscleDepth, setSystemMode } from "../state/selection";
-import { SYSTEMS_KEY, useViewer, type LayerLoad } from "../state/store";
+import { useViewer, type LayerLoad } from "../state/store";
 import { type Layer, type LayerMode, type LayerModes, type MuscleDepth } from "../state/url";
 import { DEPTH_LAYER, depthStops, isLazyLayer, layerLabel, layersOfSystem, presetOf, PRESETS, SYSTEMS, systemMode, type LazyLayerId, type SystemId } from "../systems/registry";
-import { formatCollapsed, parseCollapsed, toggleCollapsed } from "./systemGroups";
 
 const MODE_LABELS: Record<LayerMode, string> = { on: "On", ghost: "Ghost", off: "Off" };
 const MODES = Object.keys(MODE_LABELS) as LayerMode[];
 
-function readCollapsed(): ReadonlySet<string> {
-  try {
-    return parseCollapsed(window.localStorage.getItem(SYSTEMS_KEY));
-  } catch {
-    return new Set();
-  }
-}
-
-function writeCollapsed(collapsed: ReadonlySet<string>): void {
-  try {
-    const v = formatCollapsed(collapsed);
-    if (v === null) window.localStorage.removeItem(SYSTEMS_KEY);
-    else window.localStorage.setItem(SYSTEMS_KEY, v);
-  } catch {
-    // Storage disabled: the groups open expanded next time.
-  }
-}
-
 export function LayersPanel() {
   const layers = useViewer((s) => s.layers);
   const debugView = useViewer((s) => s.debugLayersView);
-  const [collapsed, setCollapsed] = useState(readCollapsed);
+  // Shared with the sidebar's system rows (M14 plan decision 6).
+  const collapsed = useViewer((s) => s.collapsedSystems);
+  const toggle = useViewer((s) => s.toggleSystem);
   const preset = presetOf(layers);
-  const toggle = (system: SystemId) => {
-    const next = toggleCollapsed(collapsed, system);
-    writeCollapsed(next);
-    setCollapsed(next);
-  };
   return (
     <div className="layers-panel" data-testid="layers-panel">
       {debugView && (

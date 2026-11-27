@@ -308,3 +308,63 @@ test("search filter chips: one per system, a chip filters by system, All restore
   await expect(page.getByTestId("announcer")).toHaveText(/^Search in all systems\./);
   expect(errors).toEqual([]);
 });
+
+// M14 session BV (plan decision 6): one sidebar row per system, each system's
+// lazy roots in a tree chunk of its own, fetched only when one of its roots
+// opens (the roots' own rows come from the registry); a system row closes and
+// opens, and its state is the Layers panel's too.
+const TREE_CHUNK = /\/assets\/_fixture_virtual_skeleton-tree-(musculoskeletal|demo)-/;
+
+test("the sidebar has a row per system; the demo's tree chunk loads only when its root opens", async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  const fetched: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  page.on("request", (r) => {
+    const m = TREE_CHUNK.exec(r.url());
+    if (m) fetched.push(m[1]!);
+  });
+  await page.goto("./?lod=low&debug");
+  await bonesShown(page);
+  await page.getByTestId("sidebar-toggle").click();
+  const tree = page.getByTestId("tree");
+  const row = (key: string) => tree.locator(`[data-key="${key}"]`);
+  const ms = row("system:musculoskeletal");
+  const demo = row("system:demo");
+  for (const [r, label, pos] of [[ms, "Musculoskeletal", "1"], [demo, "Demo", "2"]] as const) {
+    await expect(r).toHaveAttribute("aria-level", "1");
+    await expect(r).toHaveAttribute("aria-posinset", pos);
+    await expect(r).toHaveAttribute("aria-setsize", "2");
+    await expect(r).toHaveAttribute("aria-expanded", "true");
+    await expect(r).toHaveText(new RegExp(`^.${label}$`));
+  }
+  await expect(row("axial")).toHaveAttribute("aria-level", "2");
+  await expect(row("widgets")).toHaveAttribute("aria-level", "2");
+  await expect(row("widgets")).toHaveAttribute("aria-expanded", "false");
+  await page.waitForTimeout(500);
+  expect(fetched).toEqual([]); // the roots' rows need no chunk
+
+  await row("widgets").click();
+  await expect(row("widgets.gear")).toBeVisible();
+  await expect(row("widgets")).toContainText("Widgets (12)");
+  expect(fetched).toEqual(["demo"]); // the musculoskeletal system's chunk isn't fetched
+  await expect(row("widgets.gear")).toHaveAttribute("aria-level", "3");
+
+  // The system row closes and opens by keys; Left from a root goes to it.
+  await row("widgets").focus();
+  await page.keyboard.press("ArrowLeft"); // closes the root
+  await page.keyboard.press("ArrowLeft"); // to the system row
+  await expect(demo).toBeFocused();
+  await page.keyboard.press("ArrowLeft");
+  await expect(demo).toHaveAttribute("aria-expanded", "false");
+  await expect(row("widgets")).toHaveCount(0);
+  // The Layers panel's Demo group is collapsed too (one stored state).
+  await openPanel(page);
+  await expect(page.getByTestId("system-demo-toggle")).toHaveAttribute("aria-expanded", "false");
+  await page.getByTestId("system-demo-toggle").click();
+  await page.keyboard.press("Escape");
+  await expect(demo).toHaveAttribute("aria-expanded", "true");
+  expect(await page.evaluate(() => window.localStorage.getItem("skeleton-viewer:systems"))).toBeNull();
+  expect(fetched).toEqual(["demo"]);
+  expect(errors).toEqual([]);
+});

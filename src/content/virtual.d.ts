@@ -52,8 +52,8 @@ declare module "virtual:skeleton-layer-importers" {
   const importers: Partial<Record<import("../systems/registry").LazyLayerId, () => Promise<{ default: import("./softCompile").SoftLayerContent }>>>;
   export default importers;
 }
-declare module "virtual:skeleton-soft-tree" {
-  /** The lazy layers' sidebar roots (src/tree/, built from their TreeSpecs; M9 plan decision 11, M12 plan decision 10). */
-  const tree: import("../tree/types").SoftTreeData;
-  export default tree;
+declare module "virtual:skeleton-tree-importers" {
+  /** System → its tree chunk's `import()` (`virtual:skeleton-tree-<system>`: that system's lazy roots and sets, src/tree/; M14 plan decision 6), generated from the registry. */
+  const importers: Partial<Record<string, () => Promise<{ default: import("../tree/types").SoftTreeData }>>>;
+  export default importers;
 }

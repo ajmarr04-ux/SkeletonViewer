@@ -64,7 +64,7 @@ import { resetAppGraph, tiers } from "../src/content/appGraph";
 import { relatedAt } from "../src/scene/isolation";
 import { panelModel, type SectionModel } from "../src/panel/model";
 import { nodeMembers, isSoftNode } from "../src/tree/types";
-import { EDGE_TYPES, REGIONS, TREE_ROOTS, hasTier, tierWording, type LazyLayerId } from "../src/systems/registry";
+import { EDGE_TYPES, REGIONS, TREE_ROOTS, TREE_SYSTEMS, hasTier, tierWording, treeSystemOf, type LazyLayerId } from "../src/systems/registry";
 
 // The fixture's IDs aren't in the real registry's literal types.
 const W = "widgets" as LayerId;
@@ -314,7 +314,38 @@ describe("the graph, tiers, panel and tree (M12 plan decision 14)", () => {
     // The sidebar's roots: the real ones in their order, then this one (the fixture build appends its built root to the
     // real tree, `fixtureTree` in ./fixtures/systems/vite.ts; tests/e2e/fixture.spec.ts opens it).
     expect(TREE_ROOTS.map((r) => r.key)).toEqual(["muscles", "ligaments", "cartilage", W]);
-    expect(TREE_ROOTS.at(-1)).toEqual({ key: W, label: "Widgets", name: "All widgets" });
+    expect(TREE_ROOTS.at(-1)).toEqual({ key: W, label: "Widgets", name: "All widgets", system: "demo" });
+  });
+
+  it("the sidebar has one row per system, each system's lazy roots in a chunk of its own (M14 plan decision 6)", async () => {
+    expect(TREE_SYSTEMS).toEqual([
+      { id: "musculoskeletal", label: "Musculoskeletal", eager: true, chunk: "virtual:skeleton-tree-musculoskeletal" },
+      { id: "demo", label: "Demo", eager: false, chunk: "virtual:skeleton-tree-demo" },
+    ]);
+    expect(treeSystemOf("widgets.gear.rear_train")).toBe("demo");
+    expect(treeSystemOf("muscles.upper_limb")).toBe("musculoskeletal");
+    expect(treeSystemOf("axial.skull")).toBeUndefined();
+    const { sidebarRows, systemRowKey } = await import("../src/content/tree");
+    const { resetSoftTree, registerSoftTree, treeLoaded } = await import("../src/content/groups");
+    resetSoftTree();
+    const all = new Set([systemRowKey("musculoskeletal"), systemRowKey("demo"), W]);
+    const rows = sidebarRows(all);
+    const tops = rows.filter((r) => r.level === 1);
+    expect(tops.map((r) => [r.key, r.pos, r.size])).toEqual([
+      ["system:musculoskeletal", 1, 2],
+      ["system:demo", 2, 2],
+    ]);
+    // The demo's row holds the widgets' root alone, at level 2, before its chunk loads.
+    expect(rows.slice(rows.indexOf(tops[1]!) + 1).map((r) => [r.key, r.level, r.parent, r.pos, r.size, r.count])).toEqual([[W, 2, "system:demo", 1, 1, null]]);
+    expect([treeLoaded("demo"), treeLoaded("musculoskeletal")]).toEqual([false, false]);
+    registerSoftTree({ roots: [widgetsTree(chunk)], sets: [] });
+    expect([treeLoaded("demo"), treeLoaded("musculoskeletal")]).toEqual([true, false]);
+    expect(sidebarRows(all).filter((r) => r.parent === W).map((r) => [r.key, r.level])).toEqual([
+      ["widgets.gear", 3],
+      ["widgets.spring", 3],
+      ["widgets.lever", 3],
+    ]);
+    resetSoftTree();
   });
 });
 

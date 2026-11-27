@@ -99,10 +99,19 @@ let softTreeData: SoftTreeData | null = null;
 const softListeners = new Set<() => void>();
 let softVersion = 0;
 
-/** Called by the soft tree's lazy chunk. Idempotent. */
-export function registerSoftTree(data: SoftTreeData): void {
-  if (softTreeData) return;
-  softTreeData = data;
+/**
+ * Called by each system's tree chunk (M14 plan decision 6; tests may pass every root at once). Idempotent per
+ * root: the roots already registered are skipped, the rest join in sidebar order.
+ */
+export function registerSoftTree(chunk: SoftTreeData): void {
+  const known = new Set(softTreeData?.roots.map((r) => r.key));
+  const data: SoftTreeData = { roots: chunk.roots.filter((r) => !known.has(r.key)), sets: chunk.sets.filter((s) => !known.has(s.root ?? "")) };
+  if (data.roots.length === 0) return;
+  const order = (k: string) => TREE_ROOTS.findIndex((r) => r.key === k);
+  softTreeData = {
+    roots: [...(softTreeData?.roots ?? []), ...data.roots].sort((a, b) => order(a.key) - order(b.key)),
+    sets: [...(softTreeData?.sets ?? []), ...data.sets],
+  };
   const walk = (n: SoftTreeNode, layer: LazyLayerId, parent: string | null, trail: string[]) => {
     const here = [...trail, n.label];
     SOFT_GROUPS.set(n.key, { key: n.key, label: n.label, name: n.name, trail: here, members: nodeMembers(n), parent, layer });
@@ -126,8 +135,11 @@ export function registerSoftTree(data: SoftTreeData): void {
   softVersion++;
   softListeners.forEach((l) => l());
 }
-/** The soft tree once loaded, else null. */
+/** The lazy roots registered so far (every system's whose chunk has loaded), else null. */
 export const softTree = (): SoftTreeData | null => softTreeData;
+/** Has this system's tree chunk registered (every lazy root of the system)? True for a system without lazy roots. */
+export const treeLoaded = (system: string): boolean =>
+  TREE_ROOTS.every((r) => r.system !== system || (softTreeData?.roots.some((x) => x.key === r.key) ?? false));
 /** For React (useSyncExternalStore): changes when the soft tree registers. */
 export const softTreeVersion = (): number => softVersion;
 export function subscribeSoftTree(l: () => void): () => void {

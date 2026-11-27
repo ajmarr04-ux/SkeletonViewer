@@ -49,6 +49,8 @@ export const isLazyLayer = (id: LayerId): id is LazyLayerId => !layerDescriptor(
 
 /** The one eager layer (its structures are the main chunk's `content/ids.json`). */
 export const EAGER_LAYER: EagerLayerId = REGISTRY.find((l) => l.models.eager)!.id as EagerLayerId;
+/** The eager layer's system (its tree sits under that system's sidebar row). */
+export const EAGER_SYSTEM: SystemId = REGISTRY.find((l) => l.models.eager)!.system as SystemId;
 
 /** The layer with a depth control. */
 export const DEPTH_LAYER: DepthLayerId = REGISTRY.find((l) => "depth" in l)!.id as DepthLayerId;
@@ -126,17 +128,31 @@ export const maxPartsOf = (id: LayerId): number =>
 export const NESTED_LAYER: LazyLayerId = REGISTRY.find((l) => hasNestedParts(l.id))!.id as LazyLayerId;
 
 /** The lazy layers with a sidebar root of their own (M12 plan decision 10), in sidebar order: key = the layer's ID. */
-export const TREE_ROOTS: readonly { key: LazyLayerId; label: string; name: string }[] = REGISTRY.flatMap((l) => {
+export const TREE_ROOTS: readonly { key: LazyLayerId; label: string; name: string; system: SystemId }[] = REGISTRY.flatMap((l) => {
   const t = (l as LayerDescriptor).tree as TreeSpec | undefined;
-  return t && t.builder !== "hierarchy" ? [{ key: l.id as LazyLayerId, label: t.root.label, name: t.root.name, order: t.root.order }] : [];
+  return t && t.builder !== "hierarchy" ? [{ key: l.id as LazyLayerId, label: t.root.label, name: t.root.name, order: t.root.order, system: l.system as SystemId }] : [];
 })
   .sort((a, b) => a.order - b.order)
-  .map(({ key, label, name }) => ({ key, label, name }));
+  .map(({ key, label, name, system }) => ({ key, label, name, system }));
+/** The lazy tree chunk of a system (M14 plan decision 6): its lazy layers' roots and sets. */
+export const treeChunk = (system: string): string => `virtual:skeleton-tree-${system}`;
+/**
+ * The sidebar's top-level rows (M14 plan decision 6): every system with a tree, in registry order. `eager`: the
+ * eager layer's tree sits under it (shipped in the main chunk); `chunk`: its lazy roots' chunk, if it has any.
+ */
+export const TREE_SYSTEMS: readonly { id: SystemId; label: string; eager: boolean; chunk: string | null }[] = SYSTEMS.flatMap((s) => {
+  const eager = EAGER_SYSTEM === s.id && EAGER_TREE_SPEC() !== undefined;
+  const lazy = TREE_ROOTS.some((r) => r.system === s.id);
+  return eager || lazy ? [{ id: s.id as SystemId, label: s.label, eager, chunk: lazy ? treeChunk(s.id) : null }] : [];
+});
+/** The system whose tree holds a lazy group key (`muscles.upper_limb` → its layer's system), if it looks like one. */
+export const treeSystemOf = (key: string): SystemId | undefined => TREE_ROOTS.find((r) => r.key === key.split(".", 1)[0])?.system;
 /** The eager layer's tree spec (its hierarchy file and type groups). */
-export const EAGER_TREE: HierarchyTreeSpec | undefined = (() => {
+function EAGER_TREE_SPEC(): HierarchyTreeSpec | undefined {
   const t = (layerDescriptor(EAGER_LAYER) as LayerDescriptor).tree;
   return t?.builder === "hierarchy" ? t : undefined;
-})();
+}
+export const EAGER_TREE: HierarchyTreeSpec | undefined = EAGER_TREE_SPEC();
 /** Is this a lazy layer's group key by its form (`<layer>` or `<layer>.<path>`)? Whether it exists is known once the tree has loaded. */
 export const looksLikeTreeGroup = (key: string): boolean => {
   const head = key.split(".", 1)[0]!;

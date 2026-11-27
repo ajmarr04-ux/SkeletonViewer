@@ -16,12 +16,12 @@ import { join } from "node:path";
 import { marked } from "marked";
 import type { Plugin } from "vite";
 import { compileContent } from "../../src/content/compile";
-import { LAYER_IDS, LAZY_LAYERS, NESTED_LAYER, layerDescriptor, type LayerId } from "../../src/systems/registry";
+import { LAYER_IDS, LAZY_LAYERS, NESTED_LAYER, TREE_SYSTEMS, layerDescriptor, type LayerId } from "../../src/systems/registry";
 import { layerContent } from "../../src/systems/registry.content";
 import { bonesDir, compileAllSoftFromDisk, readContentFiles, readEagerContentEdges, readEagerEdges, root, softDir } from "./content-files";
 import { readAllSearchData } from "./search-data";
 import type { SearchData } from "../../src/content/search";
-import { readSoftTree } from "./soft-tree-data";
+import { readSoftTree, systemTree } from "./soft-tree-data";
 
 const CONTENT = "virtual:skeleton-content";
 const RESOLVED_CONTENT = "\0" + CONTENT;
@@ -36,14 +36,19 @@ export function attributionHtml(markdown: string = readFileSync(attributionFile,
   return html.replace(/<a href="(https?:[^"]+)"/g, '<a href="$1" target="_blank" rel="noopener noreferrer"');
 }
 const synonymsFile = join(root, "content/synonyms.json");
-/** The soft tree (M9 plan decision 11): one lazy chunk. */
-const SOFT_TREE = "virtual:skeleton-soft-tree";
 /** The eager layer's edges (M12 plan decision 3), in the main chunk: imported by src/content/indexData.ts. */
 const GRAPH = "virtual:skeleton-graph";
+/** One lazy tree chunk per system (M14 plan decision 6; one soft tree chunk before). */
+const treeSystems = TREE_SYSTEMS.flatMap((s) => (s.chunk === null ? [] : [{ id: s.id, chunk: s.chunk }]));
 const softExtra = new Map<string, () => unknown>([
-  ["\0" + SOFT_TREE, readSoftTree],
+  ...treeSystems.map((s): [string, () => unknown] => ["\0" + s.chunk, () => systemTree(s.id, readSoftTree())]),
   ["\0" + GRAPH, readEagerEdges],
 ]);
+/** `{ <system>: () => import("virtual:skeleton-tree-<system>"), … }` for src/content/softTreeLoader.ts. */
+const TREE_IMPORTERS = "virtual:skeleton-tree-importers";
+const RESOLVED_TREE_IMPORTERS = "\0" + TREE_IMPORTERS;
+export const treeImportersModule = (systems: readonly { id: string; chunk: string }[] = treeSystems): string =>
+  `export default {\n${systems.map((s) => `  ${JSON.stringify(s.id)}: () => import(${JSON.stringify(s.chunk)}),\n`).join("")}};\n`;
 /** Each lazy layer's content chunk, by resolved ID. */
 const softModules = new Map(LAZY_LAYERS.map((l) => ["\0" + layerDescriptor(l).contentChunk!, l]));
 /** `{ <layer>: () => import("<contentChunk>"), … }` for src/content/softContentLoader.ts. */
@@ -81,7 +86,7 @@ export function contentPlugin(): Plugin {
         ? RESOLVED_CONTENT
         : id === ATTRIBUTION
           ? RESOLVED_ATTRIBUTION
-          : id === IMPORTERS || id === SEARCH_IMPORTERS || softModules.has("\0" + id) || softExtra.has("\0" + id) || searchModules.has("\0" + id)
+          : id === IMPORTERS || id === SEARCH_IMPORTERS || id === TREE_IMPORTERS || softModules.has("\0" + id) || softExtra.has("\0" + id) || searchModules.has("\0" + id)
             ? "\0" + id
             : null,
     buildStart() {
@@ -90,6 +95,7 @@ export function contentPlugin(): Plugin {
     load(id) {
       if (id === RESOLVED_IMPORTERS) return importersModule();
       if (id === RESOLVED_SEARCH_IMPORTERS) return searchImportersModule();
+      if (id === RESOLVED_TREE_IMPORTERS) return treeImportersModule();
       const searchLayer = searchModules.get(id);
       if (searchLayer) {
         this.addWatchFile(bonesDir);
