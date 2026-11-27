@@ -5,18 +5,20 @@
 //   3. the widgets' model files are served (dev) and emitted (build) at models/;
 //   4. (M12 plan decision 14) the widgets' content chunk (their entries and edges),
 //      the layer importers with it, and the sidebar tree with the widgets' root,
-//      each compiled by the app's own generic code (./demo/widgets/compile.ts).
-//      The content plugin runs in Node with the real registry, so the fixture
-//      serves these three modules itself, before it.
+//      and (M14 plan decision 4) the widgets' search index with the search
+//      importers, each compiled by the app's own generic code
+//      (./demo/widgets/compile.ts). The content plugin runs in Node with the real
+//      registry, so the fixture serves these five modules itself, before it.
 // Output goes to dist-fixture/, so the real dist/ is never touched.
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Plugin } from "vite";
-import { importersModule } from "../../../scripts/lib/content-plugin";
+import { importersModule, searchImportersModule } from "../../../scripts/lib/content-plugin";
 import { readSoftTree } from "../../../scripts/lib/soft-tree-data";
 import type { SoftTreeData } from "../../../src/tree/types";
-import { compileWidgets, widgetsTree } from "./demo/widgets/compile";
+import { compileWidgets, widgetsSearch, widgetsTree } from "./demo/widgets/compile";
 import { WIDGETS_DIR } from "./demo/widgets/content";
+import { FIXTURE_CONTENT } from "./registry.content";
 import { widgets } from "./demo/widgets/layer";
 import { REGISTRY } from "./registry";
 import { fixtureRegistry } from "./option";
@@ -62,12 +64,14 @@ export function fixtureTree(): SoftTreeData {
   return { ...real, roots: [...real.roots, widgetsTree()] };
 }
 
-/** The layer importers (every lazy layer of the test registry), the widgets' content chunk and the sidebar tree. */
+/** The layer importers (every lazy layer of the test registry), the widgets' content chunk, the sidebar tree, the search importers (every layer) and the widgets' search index. */
 function fixtureContent(): Plugin {
   const modules = new Map<string, () => string>([
     ["virtual:skeleton-layer-importers", () => importersModule(REGISTRY.filter((l) => !l.models.eager))],
     [widgets.contentChunk, () => `export default ${JSON.stringify(compileWidgets())};`],
     ["virtual:skeleton-soft-tree", () => `export default ${JSON.stringify(fixtureTree())};`],
+    ["virtual:skeleton-search-importers", () => searchImportersModule(REGISTRY.map((l) => ({ id: l.id, searchChunk: FIXTURE_CONTENT[l.id]!.searchChunk })))],
+    [FIXTURE_CONTENT[widgets.id]!.searchChunk, () => `export default ${JSON.stringify(widgetsSearch())};`],
   ]);
   return {
     name: "fixture-content",

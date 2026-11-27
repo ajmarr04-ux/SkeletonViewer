@@ -12,6 +12,7 @@ export const adjacentToothEdges = (_: readonly Edge[], ctx: GraphContext): Edge[
 
 export const bonesContent = defineLayerContent({
   folder: "bones",
+  searchChunk: "virtual:skeleton-search-bones",
   kinds: {
     bone: { schema: frontMatterSchema, bodyWords: BODY_WORDS },
     tooth: { schema: frontMatterSchema, bodyWords: BODY_WORDS },

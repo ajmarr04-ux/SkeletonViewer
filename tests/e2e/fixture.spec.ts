@@ -136,6 +136,46 @@ test("a widget's panel shows its links from the graph, its tiers follow its rule
   expect(errors).toEqual([]);
 });
 
+// M14 session BT (plan decision 4): the widgets have their own search index,
+// built from their kinds' `searchFields`; it's fetched while their layer isn't
+// Off, or on the first keystroke, and choosing a widget selects it and turns
+// its layer on.
+const WIDGET_SEARCH = /\/assets\/_fixture_virtual_skeleton-search-widgets-/;
+
+test("search finds a widget by name from its own index, loaded on the first keystroke or while its layer is on", async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  const fetched: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  page.on("request", (r) => WIDGET_SEARCH.test(r.url()) && fetched.push(r.url()));
+  await page.goto("./?lod=low&debug");
+  await bonesShown(page);
+  await page.keyboard.press("/");
+  const input = page.getByTestId("search-input");
+  await expect(input).toBeFocused();
+  await page.waitForTimeout(300);
+  expect(fetched).toEqual([]); // the layer is Off: its index waits for a keystroke
+
+  await input.fill("Spring 3");
+  const first = page.getByTestId("search-results").getByRole("option").first();
+  await expect(first.locator(".result-label")).toHaveText("Spring 3", { timeout: 15_000 });
+  expect(fetched).toHaveLength(1);
+  await page.keyboard.press("Enter");
+  await expect.poll(() => page.evaluate(() => window.__viewer!.state().sel), { timeout: 30_000 }).toBe("widget_spring_3");
+  await expect(page).toHaveURL(/layers=[^&]*w:on/);
+  expect(errors).toEqual([]);
+});
+
+test("with the widgets on, opening the sidebar fetches their search index before anything is typed", async ({ page }) => {
+  const fetched: string[] = [];
+  page.on("request", (r) => WIDGET_SEARCH.test(r.url()) && fetched.push(r.url()));
+  await page.goto("./?lod=low&debug&layers=b:on,w:on");
+  await bonesShown(page);
+  expect(fetched).toEqual([]); // nothing before the sidebar opens
+  await page.keyboard.press("/");
+  await expect.poll(() => fetched.length, { timeout: 15_000 }).toBe(1);
+});
+
 // M13 session BO (plan decisions 9 and 11): the widgets are chunked by coarse
 // body region (gears in the head, springs in the thorax, levers in the left
 // lower limb), and the loader fetches only the chunks a region needs, more as

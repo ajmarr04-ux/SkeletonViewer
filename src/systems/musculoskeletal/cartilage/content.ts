@@ -39,6 +39,7 @@ const check = jointStructureCheck("attachedTo", CARTILAGE_NO_JOINT);
 const words = { min: 40, max: 80 } as const;
 export const cartilageContent = defineLayerContent({
   folder: "cartilage",
+  searchChunk: "virtual:skeleton-search-cartilage",
   idsFile: "content/soft-ids.json",
   kinds: {
     cartilage: { schema: cartilageSchema, bodyWords: words, edges: cartilageEdges, validate: check },

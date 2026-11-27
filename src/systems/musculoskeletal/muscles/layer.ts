@@ -3,6 +3,7 @@ import type { KindTiers } from "../../../graph/types";
 import { defineLayer, type RolesSpec } from "../../types";
 import { MUSCLE_SECTIONS, PART_SECTIONS, muscleChrome } from "./panel";
 import { muscleRoles, patchIndex, type PatchIndex } from "./roles";
+import { STRUCTURE_SEARCH } from "../search";
 
 const LABEL = "Muscles";
 /** Tendons and aponeuroses get the lighter muscle colour (spec §6.3). */
@@ -92,6 +93,7 @@ export const muscles = defineLayer({
       label: "Muscle",
       noun: { one: "muscle", many: "muscles" },
       labelPriority: 0,
+      searchFields: STRUCTURE_SEARCH,
       // The most parts any muscle has (checked against content/soft-ids.json in tests/nestedSelection.test.ts).
       // A part's `alsoServes` is a `part_of` edge with meta `also`: not one of the muscle's parts.
       parentOf: { childKind: "muscle_part", selection: "nested", maxParts: 3, via: { type: "part_of", except: "also" } },
@@ -105,6 +107,7 @@ export const muscles = defineLayer({
       label: "Muscle part",
       noun: { one: "part", many: "parts" },
       labelPriority: 1,
+      searchFields: STRUCTURE_SEARCH,
       tiers: MUSCLE_TIERS,
       roles: ROLES,
       partTypes: PART_TYPES,

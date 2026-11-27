@@ -4,9 +4,10 @@ declare module "virtual:skeleton-content" {
   /** The edges between the eager layer and the lazy ones its panels read (M12 BD). */
   export const edges: import("../graph/codec").EdgeWire;
 }
-declare module "virtual:skeleton-search" {
-  const data: import("./search").SearchData;
-  export default data;
+declare module "virtual:skeleton-search-importers" {
+  /** One loader per layer, in registry order: its search index chunk (its content half's `searchChunk`; M14 plan decision 4). */
+  const importers: Readonly<Record<string, () => Promise<{ default: import("./search").SearchData }>>>;
+  export default importers;
 }
 declare module "virtual:skeleton-attribution" {
   const html: string;
@@ -55,9 +56,4 @@ declare module "virtual:skeleton-soft-tree" {
   /** The lazy layers' sidebar roots (src/tree/, built from their TreeSpecs; M9 plan decision 11, M12 plan decision 10). */
   const tree: import("../tree/types").SoftTreeData;
   export default tree;
-}
-declare module "virtual:skeleton-search-soft" {
-  /** The soft-tissue search index with the group synonyms (src/content/search.ts; M9 plan decision 12). */
-  const data: import("./search").SearchData;
-  export default data;
 }

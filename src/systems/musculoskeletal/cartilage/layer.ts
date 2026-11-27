@@ -2,6 +2,7 @@
 import { defineLayer } from "../../types";
 import { jointChrome, jointPanel } from "../jointPanel";
 import { jointTiers } from "../jointTiers";
+import { STRUCTURE_SEARCH } from "../search";
 
 const TIERS = jointTiers("attached_to");
 const PANEL = jointPanel("Attached to", "attached-to", "attached_to");
@@ -37,8 +38,8 @@ export const cartilage = defineLayer({
     nodeName: (kindLabel, jointLabel) => `${kindLabel}: ${jointLabel}`,
   },
   kinds: [
-    { id: "cartilage", label: "Cartilage", noun: { one: "cartilage", many: "cartilages" }, labelPriority: 3, tiers: TIERS, panel: PANEL, chrome: jointChrome("Cartilage", LABEL) },
-    { id: "disc", label: "Intervertebral disc", noun: { one: "disc", many: "discs" }, labelPriority: 4, tiers: TIERS, panel: PANEL, chrome: jointChrome("Intervertebral disc", LABEL) },
-    { id: "meniscus", label: "Meniscus", noun: { one: "meniscus", many: "menisci" }, labelPriority: 5, tiers: TIERS, panel: PANEL, chrome: jointChrome("Meniscus", LABEL) },
+    { id: "cartilage", label: "Cartilage", noun: { one: "cartilage", many: "cartilages" }, labelPriority: 3, searchFields: STRUCTURE_SEARCH, tiers: TIERS, panel: PANEL, chrome: jointChrome("Cartilage", LABEL) },
+    { id: "disc", label: "Intervertebral disc", noun: { one: "disc", many: "discs" }, labelPriority: 4, searchFields: STRUCTURE_SEARCH, tiers: TIERS, panel: PANEL, chrome: jointChrome("Intervertebral disc", LABEL) },
+    { id: "meniscus", label: "Meniscus", noun: { one: "meniscus", many: "menisci" }, labelPriority: 5, searchFields: STRUCTURE_SEARCH, tiers: TIERS, panel: PANEL, chrome: jointChrome("Meniscus", LABEL) },
   ],
 });

@@ -7,7 +7,8 @@ import { expect, test, type Page } from "@playwright/test";
 
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22a", "wcag22aa"];
 const SOFT_TREE = /\/assets\/_virtual_skeleton-soft-tree-/;
-const SOFT_SEARCH = /\/assets\/_virtual_skeleton-search-soft-/;
+// The lazy layers' search indexes (one per layer since M14 BT; one chunk, `search-soft`, before).
+const SOFT_SEARCH = /\/assets\/_virtual_skeleton-search-(muscles|ligaments|cartilage)-/;
 
 async function open(page: Page, query = "") {
   const errors: string[] = [];

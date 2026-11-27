@@ -48,6 +48,7 @@ export const ligamentEdges = (fm: LigamentFm): Edge[] => [
 
 export const ligamentsContent = defineLayerContent({
   folder: "ligaments",
+  searchChunk: "virtual:skeleton-search-ligaments",
   idsFile: "content/soft-ids.json",
   kinds: {
     ligament: { schema: ligamentSchema, bodyWords: { min: 40, max: 80 }, edges: ligamentEdges, validate: jointStructureCheck("connects", LIGAMENT_NO_JOINT) },

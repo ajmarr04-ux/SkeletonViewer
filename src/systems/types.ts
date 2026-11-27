@@ -2,8 +2,8 @@
 // small pure functions. This half is the runtime one and goes in the main
 // chunk, so nothing here may import zod, three.js or React. The authoring half
 // (`schema`, `bodyWords`, content folder) is `content.ts` in each layer folder
-// (AV); fields later milestones fill (`tiers`, `panel`, `searchFields`, the
-// tree builder) are optional until then.
+// (AV); fields later milestones fill (`tiers`, `panel`, the tree builder) are
+// optional until then (`searchFields` became required in M14 BT).
 
 import type { Graph } from "../graph/graph";
 import type { EdgeTypeDescriptor, KindTiers } from "../graph/types";
@@ -297,6 +297,13 @@ export type PartTypeSpec = {
   tendinous?: boolean;
 };
 
+/**
+ * A search document's fields (M14 plan decision 4): the name, the common name
+ * and the Latin name from the content, the curated synonyms (content/synonyms.json,
+ * written under the left or midline twin), and the FDI number (teeth: `tooth_36` → "36").
+ */
+export type SearchField = "name" | "common" | "synonyms" | "latin" | "fdi";
+
 export type KindDescriptor = {
   id: string;
   /** Its type badge ("Ligament", "Intervertebral disc"). */
@@ -312,6 +319,8 @@ export type KindDescriptor = {
    * in this order.
    */
   labelPriority: number;
+  /** The fields its search documents fill (M14 plan decision 4); the others stay empty. */
+  searchFields: readonly SearchField[];
   /**
    * Muscle → part: a click selects the parent first, then the part (spec §5.1); `maxParts` = the most parts any parent has (one outline each).
    * `via`: the parts are the structures with a `type` edge to the parent, except edges whose meta has `except` (M12: tier rules' parts expansion).

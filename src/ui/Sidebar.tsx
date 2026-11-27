@@ -1,12 +1,13 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 import { ancestorsOf, groupAncestors, groupOf, softTree, softTreeVersion, subscribeSoftTree } from "../content/groups";
 import type { SearchHit, Searcher } from "../content/search";
-import { loadSearch, loadSoftSearch, mergeSearchers } from "../content/searchLoader";
+import { loadLayerSearch, loadSearch, mergeSearchers } from "../content/searchLoader";
 import { isSoftId, softEntry } from "../content/softRegistry";
 import { loadSoftTree } from "../content/softTreeLoader";
 import { SOFT_ROOT_KEYS, TOP_KEYS, openable, treeKey, typeAhead, visibleRows, type TreeRow } from "../content/tree";
 import { hasMesh, isolateGroup, selectAndFrame, selectLink } from "../state/selection";
 import { useViewer } from "../state/store";
+import { EAGER_LAYER, LAYER_IDS, layerLabel, type LayerId } from "../systems/registry";
 import { focusCanvas } from "./canvasFocus";
 import { PHONE_QUERY, useMedia } from "./useMedia";
 
@@ -90,16 +91,6 @@ function SidebarPanel() {
     };
   }, [phone, setLeft]);
 
-  // The search index: its own chunk, fetched when the sidebar first opens.
-  const [searcher, setSearcher] = useState<Searcher | null>(null);
-  useEffect(() => {
-    let live = true;
-    void loadSearch().then((s) => live && setSearcher(() => s));
-    return () => {
-      live = false;
-    };
-  }, []);
-
   const onKeyDown = (e: KeyboardEvent<HTMLElement>) => {
     if (e.key === "Escape" && !e.defaultPrevented) {
       e.preventDefault();
@@ -143,27 +134,40 @@ function SidebarPanel() {
           <span aria-hidden="true">{phone ? "✕" : "‹"}</span>
         </button>
       </div>
-      <Search searcher={searcher} onChosen={done} tree={<Tree onChosen={done} />} />
+      <Search onChosen={done} tree={<Tree onChosen={done} />} />
     </aside>
   );
 }
 
-/** The search field (combobox) with its results (listbox); the tree shows while the field is empty. */
-function Search({ searcher: boneSearcher, onChosen, tree }: { searcher: Searcher | null; onChosen: () => void; tree: React.ReactNode }) {
+/** "a", "a and b", "a, b and c". */
+const listOf = (xs: readonly string[]): string => (xs.length < 2 ? (xs[0] ?? "") : `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}`);
+
+/**
+ * The search field (combobox) with its results (listbox); the tree shows while
+ * the field is empty. One index per layer (M14 plan decision 4): the eager
+ * layer's from the moment the sidebar opens, a lazy layer's while that layer
+ * isn't Off, every layer's from the first keystroke; results from an index
+ * still loading appear when it arrives.
+ */
+function Search({ onChosen, tree }: { onChosen: () => void; tree: React.ReactNode }) {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
-  // The soft-tissue index (M9 plan decision 12): fetched on the first keystroke, then merged with the bones'.
-  const [softSearcher, setSoftSearcher] = useState<Searcher | null>(null);
-  const wantSoft = query.trim() !== "";
+  const layers = useViewer((s) => s.layers);
+  const typed = query.trim() !== "";
+  const wanted = LAYER_IDS.filter((l) => typed || l === EAGER_LAYER || layers[l] !== "off").join(" ");
+  const [loaded, setLoaded] = useState<Partial<Record<LayerId, Searcher>>>({});
   useEffect(() => {
-    if (!wantSoft || softSearcher) return;
     let live = true;
-    void loadSoftSearch().then((s) => live && setSoftSearcher(() => s));
+    for (const l of wanted.split(" ") as LayerId[]) void loadLayerSearch(l).then((s) => live && setLoaded((m) => (m[l] ? m : { ...m, [l]: s })));
     return () => {
       live = false;
     };
-  }, [wantSoft, softSearcher]);
-  const searcher = useMemo(() => (boneSearcher && softSearcher ? mergeSearchers(boneSearcher, softSearcher) : boneSearcher), [boneSearcher, softSearcher]);
+  }, [wanted]);
+  const searcher = useMemo(() => {
+    const list = LAYER_IDS.flatMap((l) => loaded[l] ?? []);
+    return list.length === 0 ? null : list.length === 1 ? list[0]! : mergeSearchers(...list);
+  }, [loaded]);
+  const loading = LAYER_IDS.filter((l) => !loaded[l]);
   const hits: SearchHit[] = useMemo(() => (searcher && query.trim() ? searcher(query, 30) : []), [searcher, query]);
   useEffect(() => setActive(0), [hits]);
   const searching = query.trim() !== "";
@@ -199,8 +203,8 @@ function Search({ searcher: boneSearcher, onChosen, tree }: { searcher: Searcher
     ? ""
     : !searcher
       ? "Loading the search index…"
-      : hits.length === 0 && !softSearcher
-        ? "Searching muscles, ligaments and cartilage…"
+      : hits.length === 0 && loading.length > 0
+        ? `Searching ${listOf(loading.map((l) => layerLabel(l).toLowerCase()))}…`
         : hits.length === 0
           ? "No matches."
           : `${hits.length} ${hits.length === 1 ? "match" : "matches"}.`;

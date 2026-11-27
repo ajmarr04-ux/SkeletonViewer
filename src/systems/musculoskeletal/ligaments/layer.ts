@@ -2,6 +2,7 @@
 import { defineLayer } from "../../types";
 import { jointChrome, jointPanel } from "../jointPanel";
 import { jointTiers } from "../jointTiers";
+import { STRUCTURE_SEARCH } from "../search";
 
 const LABEL = "Ligaments";
 
@@ -36,6 +37,7 @@ export const ligaments = defineLayer({
       label: "Ligament",
       noun: { one: "ligament", many: "ligaments" },
       labelPriority: 2,
+      searchFields: STRUCTURE_SEARCH,
       tiers: jointTiers("connects"),
       panel: jointPanel("Connects", "connects", "connects"),
       chrome: jointChrome("Ligament", LABEL),

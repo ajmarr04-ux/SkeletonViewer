@@ -1,20 +1,18 @@
 // Search (spec §7, plan step 1): the documents, the minisearch options, the
 // side filter and the result shape. Pure, so Vitest builds the index straight
-// from the content files. The app gets a prebuilt index from the virtual module
-// `virtual:skeleton-search` (scripts/lib/content-plugin.ts), loaded lazily.
+// from the content files. The app gets one prebuilt index per layer (M14 plan
+// decision 4), each its layer's `searchChunk` (scripts/lib/content-plugin.ts),
+// loaded lazily (searchLoader.ts); the documents are built at build time
+// (searchDocuments.ts).
 
 import MiniSearch, { type AsPlainObject, type Options, type SearchResult as RawResult } from "minisearch";
-import type { CompiledContent } from "./compile";
 import { displayName } from "./names";
 import { layerOfId } from "./index";
 import { BAND, rankHits, type Band, type HitFacts, type RankContext } from "./searchRank";
 import { searchOrder } from "./searchMerge";
 import { REGISTRY } from "../systems/registry";
-import type { GroupSynonym, Synonyms } from "./schema";
-import type { SoftTreeData, SoftTreeNode } from "../tree/types";
 
-type Side = "left" | "right" | "midline";
-type IdEntry = { id: string; name: string; kind: string; side: Side };
+export type Side = "left" | "right" | "midline";
 
 /** One searchable object. `synonyms` is the curated list for the object (left terms reused on the right). */
 export type SearchDoc = {
@@ -95,80 +93,6 @@ export const SEARCH_OPTIONS: Options<SearchDoc> = {
     combineWith: "AND",
   },
 };
-
-/** FDI tooth number from the stable ID: tooth_36 → "36". */
-const fdiOf = (id: string): string => /^tooth_(\d\d)$/.exec(id)?.[1] ?? "";
-
-/**
- * One document per object. Synonyms are written under the left (or midline)
- * ID; `opposite` maps a right-side object to its left twin.
- */
-export function searchDocuments(
-  ids: readonly IdEntry[],
-  content: CompiledContent,
-  synonyms: Synonyms,
-  opposite: (id: string) => string | null,
-): SearchDoc[] {
-  return ids.map((e) => {
-    const c = content[e.id];
-    const key = e.side === "right" ? (opposite(e.id) ?? e.id) : e.id;
-    return {
-      id: e.id,
-      name: e.name,
-      latin: c?.latin ?? "",
-      common: c?.common ?? "",
-      synonyms: synonyms[key] ?? [],
-      fdi: fdiOf(e.id),
-      side: e.side,
-    };
-  });
-}
-
-type SoftSearchId = { id: string; name: string; side: Side; meshAvailable: boolean; parts?: string[]; latin?: string | null };
-
-/**
- * The soft-tissue documents (M9 plan decision 12): every structure (name, Latin
- * and common name from its content file, the synonyms of its left or midline
- * twin), and one document per group synonym, whose choosing isolates the group.
- */
-export function softSearchDocuments(
-  softIds: readonly SoftSearchId[],
-  frontMatter: (id: string) => { latin?: string | null; commonName?: string | null } | undefined,
-  synonyms: Synonyms,
-  groups: Readonly<Record<string, GroupSynonym>>,
-  tree: SoftTreeData,
-): SearchDoc[] {
-  const byId = new Map(softIds.map((e) => [e.id, e]));
-  const docs: SearchDoc[] = softIds.map((e) => {
-    const fm = frontMatter(e.id);
-    const left = e.side === "right" ? e.id.replace(/_right$/, "_left") : e.id;
-    return {
-      id: e.id,
-      name: e.name,
-      latin: fm?.latin ?? e.latin ?? "",
-      common: fm?.commonName ?? "",
-      synonyms: synonyms[left] ?? [],
-      fdi: "",
-      side: e.side,
-      label: e.side === "midline" ? e.name : `${e.name} (${e.side})`,
-      drawn: e.meshAvailable || (e.parts ?? []).some((p) => byId.get(p)?.meshAvailable === true),
-    };
-  });
-  const nodes = new Map<string, SoftTreeNode>();
-  const walk = (n: SoftTreeNode) => {
-    nodes.set(n.key, n);
-    n.children.forEach((c) => "key" in c && walk(c)); // isSoftNode, inlined: this module's chunk shares nothing with the tree
-  };
-  tree.roots.forEach(walk);
-  const sets = new Map(tree.sets.map((x) => [x.key, x]));
-  for (const [key, g] of Object.entries(groups)) {
-    const node = nodes.get(key);
-    const name = node?.name ?? sets.get(key)?.label;
-    if (name === undefined) continue;
-    docs.push({ id: key, name: node?.label ?? name, latin: "", common: "", synonyms: g.terms, fdi: "", side: "midline", label: name, drawn: true, group: true });
-  }
-  return docs;
-}
 
 export function buildIndex(docs: readonly SearchDoc[]): MiniSearch<SearchDoc> {
   const ms = new MiniSearch<SearchDoc>(SEARCH_OPTIONS);

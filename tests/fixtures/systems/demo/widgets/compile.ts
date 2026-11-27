@@ -1,11 +1,15 @@
-// The widgets' content chunk and sidebar root, compiled from the files next to
-// this one by the app's own generic code (M12 plan decision 14): the soft
-// compiler with the layer's content half, the graph compiler with the demo
-// system's registry, the shipping rule and the `byKind` tree builder. Node only
+// The widgets' content chunk, sidebar root and search index, compiled from the
+// files next to this one by the app's own generic code (M12 plan decision 14):
+// the soft compiler with the layer's content half, the graph compiler with the
+// demo system's registry, the shipping rule, the `byKind` tree builder and (M14
+// plan decision 4) the search document builder with the kinds' `searchFields`. Node only
 // (reads the disk): the fixture build (../../vite.ts) and tests/fixture.test.ts.
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { buildSearchData, type SearchData } from "../../../../../src/content/search";
+import type { SearchRow } from "../../../../../src/content/searchDocuments";
 import { compileSoftLayer, type SoftLayerContent } from "../../../../../src/content/softCompile";
+import { lazySearchDocuments } from "../../../../../scripts/lib/search-data";
 import { encodeEdges } from "../../../../../src/graph/codec";
 import { shipEdges } from "../../../../../src/graph/ship";
 import type { CompiledGraph } from "../../../../../src/graph/compile";
@@ -55,4 +59,9 @@ export function compileWidgets(files: Map<string, string> = readWidgetFiles()): 
 export function widgetsTree(content: SoftLayerContent = compileWidgets()): SoftTreeNode {
   const fm = (id: string) => content.entries[id]?.fm as Record<string, unknown> | undefined;
   return buildSoftTrees({ entries: rows, readJson: noJson, field: (id, name) => fm(id)?.[name] ?? null, functionalJoints: [], jointNames: {} }, [], [widgets]).roots[0]!;
+}
+
+/** The layer's search index (its `searchChunk`): one document per widget, from its kind's `searchFields`. */
+export function widgetsSearch(content: SoftLayerContent = compileWidgets()): SearchData {
+  return buildSearchData(lazySearchDocuments(widgets, ids as SearchRow[], content, { roots: [widgetsTree(content)], sets: [] }));
 }

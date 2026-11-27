@@ -50,7 +50,8 @@ import { WIDGET_IDS, widgets } from "./fixtures/systems/demo/widgets/layer";
 import { centres } from "./fixtures/systems/demo/widgets/generate";
 import { readChunkTable } from "../scripts/lib/index-plugin";
 import { chunkStem } from "../src/regions/chunks";
-import { compileWidgets, readWidgetFiles, widgetGraph, widgetsTree } from "./fixtures/systems/demo/widgets/compile";
+import { compileWidgets, readWidgetFiles, widgetGraph, widgetsSearch, widgetsTree } from "./fixtures/systems/demo/widgets/compile";
+import { GENERIC_WORDS, loadSearcher, mergeSearchers } from "../src/content/search";
 import { DEMO_GRAPH_REGISTRY, FIXTURE_GRAPH_REGISTRY } from "./fixtures/systems/registry.content";
 import { DEMO_EDGES } from "./fixtures/systems/demo/edges";
 import { MUSCULOSKELETAL_EDGES } from "../src/systems/musculoskeletal/edges";
@@ -248,6 +249,19 @@ describe("the graph, tiers, panel and tree (M12 plan decision 14)", () => {
       expect(hasTier("lever", "t2")).toBe(true);
       expect(tierWording("gear", "t1")?.label).toBe("linked widgets");
       expect(tierWording("spring", "t2")?.button.text).toBe("Show the train");
+    });
+
+    it("search (M14 plan decision 4): its own index from its kinds' searchFields finds a widget by name; its noun is a generic word", () => {
+      const data = widgetsSearch(chunk);
+      expect(data.docs.map((d) => d.id)).toEqual([...WIDGET_IDS]);
+      expect(data.docs[0]).toEqual({ id: "widget_gear_1", name: "Gear 1", latin: "", common: "", synonyms: [], fdi: "", side: "midline", label: "Gear 1", drawn: true });
+      const search = mergeSearchers(loadSearcher(JSON.parse(JSON.stringify(data)) as typeof data));
+      expect(search("spring 3", 30)[0]).toMatchObject({ id: "widget_spring_3", label: "Spring 3", match: null, group: false, drawn: true });
+      expect(search("lev", 30).map((h) => h.id)).toEqual(["widget_lever_1", "widget_lever_2", "widget_lever_3", "widget_lever_4"]);
+      // "gear" is the layer's first kind's noun: alone it finds nothing; beside a word it keeps only widgets.
+      expect(GENERIC_WORDS.get("gear")).toBe(W);
+      expect(search("gear", 30)).toEqual([]);
+      expect(search("gear 2", 30).map((h) => h.id)).toEqual(["widget_gear_2", "widget_spring_2", "widget_lever_2"]);
     });
 
     it("the panel model gives its three sections, from its content and the graph", () => {

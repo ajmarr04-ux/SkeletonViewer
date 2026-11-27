@@ -57,11 +57,11 @@ describe.skipIf(!RUN)("search golden report", () => {
   it("writes the report", { timeout: 120_000 }, async () => {
     const { buildSearch } = await import("./golden/harness");
     await buildSearch(); // loads the content and both indexes
-    const { loadSearch, loadSoftSearch } = await import("../src/content/searchLoader");
+    const { loadAllSearch } = await import("../src/content/searchLoader");
     const { mergeSearchers } = await import("../src/content/searchMerge");
     const { layerOfId } = await import("../src/content/index");
     const { DEFAULT_MODES } = await import("../src/systems/registry");
-    const search = mergeSearchers(await loadSearch(), await loadSoftSearch());
+    const search = mergeSearchers(...(await loadAllSearch()));
     const { searchOrder } = await import("../src/content/searchMerge");
     const rank = searchOrder();
     const old = JSON.parse(readFileSync("tests/golden/search.json", "utf8")) as Record<string, string[]>;

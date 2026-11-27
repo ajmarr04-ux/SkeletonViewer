@@ -90,6 +90,8 @@ export type KindContent = {
 export type LayerContent = {
   /** `content/<folder>/<id>.md`. */
   folder: string;
+  /** The layer's search index, a lazy chunk of its own (virtual module name; M14 plan decision 4): `virtual:skeleton-search-<layer>`. */
+  searchChunk: string;
   /** One entry per kind of the layer's descriptor (checked by tests/registry.test.ts). */
   kinds: Readonly<Record<string, KindContent>>;
   /** A lazy layer's generated ID table (`[{ id, name, kind, layer, side, meshAvailable, … }]`, relative to the repository root); entries of other layers in the same file are left to those layers. */

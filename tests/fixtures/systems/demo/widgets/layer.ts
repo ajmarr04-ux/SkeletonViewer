@@ -49,7 +49,7 @@ const chrome = (label: string): PanelChrome => ({
 });
 
 const kind = <I extends string>(id: I, label: string, many: string, labelPriority: number) =>
-  ({ id, label, noun: { one: label.toLowerCase(), many }, labelPriority, tiers: TIERS, panel: PANEL, chrome: chrome(label) }) as const;
+  ({ id, label, noun: { one: label.toLowerCase(), many }, labelPriority, searchFields: ["name", "common"], tiers: TIERS, panel: PANEL, chrome: chrome(label) }) as const;
 
 export const widgets = defineLayer({
   id: "widgets",
