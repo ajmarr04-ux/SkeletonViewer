@@ -28,7 +28,7 @@ Session kinds: **design** = strong model; **routine** = Sonnet is fine. No subag
 | Session | Kind | Serial task (one sentence) | Fan-out | Inputs | Done when | Status |
 | --- | --- | --- | --- | --- | --- | --- |
 | (planning) | design | M13 → M14 handover and this plan (step 0) | none | `SPEC-platform.md` | `m13` frozen, `current` 14, plan written | **Done** (2026-11-26). See step 0 |
-| BS | design | The new search ranking: match bands, generic words, the context tie-breaks, on today's two indexes, and the `search.json` difference report (step 1) | none | decisions 1–3 | ranking unit tests; `REPORT-search-golden.md` lists every changed query; **gate: the user approves the differences**, then the golden is rewritten | **Built** (2026-11-27); **waiting on the gate**. See BS notes |
+| BS | design | The new search ranking: match bands, generic words, the context tie-breaks, on today's two indexes, and the `search.json` difference report (step 1) | none | decisions 1–3 | ranking unit tests; `REPORT-search-golden.md` lists every changed query; **gate: the user approves the differences**, then the golden is rewritten | **Done** (2026-11-27); gate approved. See BS notes |
 | BT | design | One lazy search index per layer, built from `searchFields`, loaded when its layer is on or a query is typed, plus the fixture's search (step 2) | none | decisions 4–5, BS | `search.json` as approved in BS, unchanged; fixture Vitest and e2e find widgets; chunk sizes recorded | |
 | BU | routine | Search filter chips and the region and visibility context wired from the store (step 3) | none | decision 5, BT | chips e2e on the fixture build; `sidebar` and `soft-sidebar` e2e pass; a11y pass | |
 | BV | routine | Sidebar roots grouped by system, each system's tree lazy (step 4) | none | decision 6 | `tree.json` unchanged; `sidebar`, `soft-sidebar`, `keyboard`, `a11y` e2e pass; fixture's system root lazy | |
@@ -205,7 +205,7 @@ Triggers: "begin session BS" to "begin session CA". Every session follows `docs/
 
 ## Approved golden differences
 
-None yet. BS's `search.json` differences go here once the user approves them.
+- **BS (2026-11-27), `search.json`:** the user approved all of it: (A) the 10 changed queries in `assets/build/REPORT-search-golden.md` (`vertebra`, `rib`, `pelvis`, `carpals`, `phalanx`, `deltoid`, `hamstrings`, `musculus`, `muscle`, `ligament`); (B) the visibility tie-break applies at the default layers too, as the spec says (BU: `trapezius` puts Trapezium above the trapezius's parts in the app; the golden stays region- and visibility-free); (C) a generic word alone returns nothing; and the seven departures from decisions 1–3 (layers' first-kind nouns only, `searchOrder` as the last tie-break, name length in words, prefix words, band-1 group first, a group's name as a term, the label that holds every typed word). Rewritten with `npm run golden -- --write --force`; `git diff --stat tests/golden`: `search.json` only, 10 lines.
 
 ## Session notes
 
