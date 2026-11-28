@@ -19,6 +19,17 @@ export type ColourSpec = {
   keyLabel?: string;
   /** Flat colour in M6's debug layer view (`?debug&layers=…`). */
   debug?: string;
+  /**
+   * Shades for subkinds (sRGB, M14 plan decision 7), by name: a part type's
+   * `shade` names one (the muscles' `tendon`, spec §6.3). Checked against every
+   * colour it can meet by tests/colourVision.test.ts.
+   */
+  shades?: Readonly<Record<string, string>>;
+  /**
+   * Layers this one is never visible with (M14 plan decision 7): the
+   * colour-vision test skips their pairs. None today.
+   */
+  neverWith?: readonly string[];
 };
 
 /** A model file's budget for one LOD (spec §5; M6 plan decision 8), checked by `npm run check-models`: size cap and triangle target (±15 %). */
@@ -293,8 +304,8 @@ export type PartTypeSpec = {
   id: string;
   /** In the type badge ("Muscle part: head"). */
   label: string;
-  /** Drawn in the layer's lighter tendon tint (spec §6.3). */
-  tendinous?: boolean;
+  /** Drawn in this shade of the layer's `colour.shades` (the muscles' tendons, spec §6.3). */
+  shade?: string;
 };
 
 /**

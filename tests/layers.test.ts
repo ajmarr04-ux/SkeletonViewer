@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { isTendinous, meshIdsOf, trimSoftIds, type RawSoftId } from "../src/layers/softIds";
+import { shadeOf, meshIdsOf, trimSoftIds, type RawSoftId } from "../src/layers/softIds";
 import { DEFAULT_MODES, LAYER_IDS, LAZY_LAYERS, layersOfSystem, presetDescriptor, presetModes, presetOf, PRESETS, REGISTRY, SYSTEMS, systemMode } from "../src/systems/registry";
 import { formatCollapsed, parseCollapsed, toggleCollapsed } from "../src/ui/systemGroups";
 import { modelSizes } from "../scripts/lib/model-versions-plugin";
@@ -24,9 +24,9 @@ describe("trimmed soft-tissue IDs (M7 plan decision 15)", () => {
     expect(meshIdsOf(table, "muscles")).toHaveLength(477);
   });
   it("marks tendons and aponeuroses (15 parts) for the lighter colour", () => {
-    expect(table.filter(isTendinous)).toHaveLength(15);
-    expect(isTendinous(table.find((e) => e.id === "linea_alba"))).toBe(true);
-    expect(isTendinous(table.find((e) => e.id === "triceps_brachii_long_head_left"))).toBe(false);
+    expect(table.filter((e) => shadeOf(e) !== undefined)).toHaveLength(15);
+    expect(shadeOf(table.find((e) => e.id === "linea_alba"))).toBe("#c18274");
+    expect(shadeOf(table.find((e) => e.id === "triceps_brachii_long_head_left"))).toBeUndefined();
   });
 });
 

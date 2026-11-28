@@ -6,13 +6,13 @@ import { muscleRoles, patchIndex, type PatchIndex } from "./roles";
 import { STRUCTURE_SEARCH } from "../search";
 
 const LABEL = "Muscles";
-/** Tendons and aponeuroses get the lighter muscle colour (spec §6.3). */
+/** Tendons and aponeuroses get the lighter muscle colour, the layer's `tendon` shade (spec §6.3). */
 const PART_TYPES = [
   { id: "head", label: "Head" },
   { id: "belly", label: "Belly" },
   { id: "portion", label: "Portion" },
-  { id: "tendon", label: "Tendon", tendinous: true },
-  { id: "aponeurosis", label: "Aponeurosis", tendinous: true },
+  { id: "tendon", label: "Tendon", shade: "tendon" },
+  { id: "aponeurosis", label: "Aponeurosis", shade: "tendon" },
 ] as const;
 
 const ATTACHMENTS = ["originates_on", "inserts_on"];
@@ -54,7 +54,8 @@ export const muscles = defineLayer({
   label: LABEL,
   ghostOrder: 3,
   // M10 session AL (M7: #a8483f): the old swatch was under 3:1 on the legend.
-  colour: { material: "#b44d43", debug: "#a8524c" },
+  // The tendon shade (M14 BW, from src/layers/colours.ts): M10 session AL (M7: #c98a7c) moved it off the thorax's region colour under protanopia.
+  colour: { material: "#b44d43", debug: "#a8524c", shades: { tendon: "#c18274" } },
   models: {
     file: "muscles",
     eager: false,

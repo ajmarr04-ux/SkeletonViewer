@@ -7,7 +7,7 @@ import type { Graph } from "../graph/graph";
 import type { TierContext } from "../graph/query";
 import { edgeTypeIndex } from "../graph/edgeTypes";
 import type { EdgeTypeDescriptor, TierWording } from "../graph/types";
-import type { HierarchyTreeSpec, KindDescriptor, LayerDescriptor, LayerMode, OverlaySpec, PresetDescriptor, RolesSpec, SystemDescriptor, TreeSpec } from "./types";
+import type { ColourSpec, HierarchyTreeSpec, KindDescriptor, LayerDescriptor, LayerMode, OverlaySpec, PresetDescriptor, RolesSpec, SystemDescriptor, TreeSpec } from "./types";
 
 export { REGIONS, REGISTRY, SYSTEMS };
 
@@ -172,9 +172,20 @@ export const SYNONYM_SETS: { prefix: string; memberKind: string | undefined; nou
 
 /** Every part type, in order (the content schema's enum). */
 export const PART_TYPES: readonly PartType[] = [...KIND.values()].flatMap((k) => (k.partTypes ?? []).map((t) => t.id as PartType));
-const TENDINOUS = new Set([...KIND.values()].flatMap((k) => (k.partTypes ?? []).filter((t) => t.tendinous).map((t) => t.id)));
-/** Drawn in the tendon tint (tendons and aponeuroses). */
-export const isTendinousType = (t: string | undefined): boolean => t !== undefined && TENDINOUS.has(t);
+const SHADE = new Map(
+  REGISTRY.flatMap((l) =>
+    (l.kinds as readonly KindDescriptor[]).flatMap((k) =>
+      (k.partTypes ?? []).flatMap((t) => {
+        if (t.shade === undefined) return [];
+        const c = (l.colour as ColourSpec).shades?.[t.shade];
+        if (!c) throw new Error(`part type ${t.id} names shade ${t.shade}, which layer ${l.id} lacks`);
+        return [[t.id, c] as const];
+      }),
+    ),
+  ),
+);
+/** A part type's shade colour (its layer's `colour.shades`), if it has one: tendons and aponeuroses. */
+export const partTypeShade = (t: string | undefined): string | undefined => (t === undefined ? undefined : SHADE.get(t));
 
 /** "bone" / "bones". */
 export const kindNoun = (kind: KindId, n = 1): string => (n === 1 ? kindDescriptor(kind).noun.one : kindDescriptor(kind).noun.many);
