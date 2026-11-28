@@ -37,7 +37,7 @@ Session kinds: **design** = strong model; **routine** = Sonnet is fine. No subag
 | BY | routine | Context dimming of other layers in the related set (step 7) | none | decision 9 | dimming unit and e2e tests; colour-vision test covers the dimmed colours; `tints`, `tiers`, `layers` e2e pass || **Done** (2026-11-28). See BY notes |
 | BZ | routine | Device-run prep: the three bench links, `perf-load` from the registry (the last M14 allowlist entry), the container parity table; then **gate: the user runs `?bench` on PC and iPhone** (step 8) | none | decision 11 | links in the plan; allowlist has no M14 entry; the user's figures recorded here | **Done** (2026-11-28; figures in; iPhone in Low Power Mode, 30 fps cap). See BZ notes |
 | CA | design | Pattern scale and motion, from the device runs: period × 3, and the pattern stops swimming when the camera moves (the user chose surface-locked marks, see BZ notes) | none | decision 8, BZ notes | `tints` e2e and pattern unit tests pass; legend and screenshot still match the shader; checked by the user on a device | **Built** (2026-11-28); waiting on the user's device check (needs a merge to `main`). See CA notes |
-| CB | routine | Wrap-up: goldens, parity table, full e2e in the background, docs, `/m14/` (step 9) | none | everything above | exit criteria ticked; `/m14/` live | |
+| CB | routine | Wrap-up: goldens, parity table, full e2e in the background, docs, `/m14/` (step 9) | none | everything above | exit criteria ticked; `/m14/` live | **Built** (2026-11-28); merge, CA's device check and the `m14` freeze follow (the user's choice). See CB notes |
 
 Triggers: "begin session BS" to "begin session CB". Every session follows `docs/WORKFLOW_NEW.md` §7: read `docs/HANDOFF.md` and this file, do the one serial task, end with `npm run check` and the e2e specs it touched, commit, push to the session branch, tick the row, write `docs/HANDOFF.md`, and stop.
 
@@ -56,14 +56,14 @@ Triggers: "begin session BS" to "begin session CB". Every session follows `docs/
 
 ## Exit criteria (from `SPEC-platform.md` §11, M14)
 
-- [ ] Per-layer search indexes, filter chips, new ranking; `golden/search.json` differences reviewed with the user (BS, BT, BU).
+- [x] Per-layer search indexes, filter chips, new ranking; `golden/search.json` differences reviewed with the user (BS, BT, BU).
 - [x] Lazy tree per system (BV).
 - [x] Colour model: registry-driven colour-vision test, pattern cue for role tints, context dimming (BW, BX, BY).
 - [x] The proposed future-system colours table, tested (BW).
 - [x] Real-device checks: the user runs `?bench` on PC and iPhone for: all layers solid; a region focus; a muscle tier 2 with antagonists and patterns (BZ; figures in BZ's notes; the iPhone ran in Low Power Mode, capped at 30 fps).
-- [ ] `tiers`, `panels`, `urls`, `tree` and `regions` goldens unchanged; `search` as approved; old URLs open the same view.
-- [ ] No regression: every existing unit and e2e test passes unchanged, except where a step lists why (spec §2.1). Performance parity with the new features off (bench, perf-load, main chunk ≤ 500.1 kB).
-- [ ] The allowlist has no M14 entry (M15 ×6 only).
+- [x] `tiers`, `panels`, `urls`, `tree` and `regions` goldens unchanged; `search` as approved; old URLs open the same view.
+- [x] No regression: every existing unit and e2e test passes unchanged, except where a step lists why (spec §2.1). Performance parity with the new features off (bench, perf-load, main chunk ≤ 500.1 kB).
+- [x] The allowlist has no M14 entry (M15 ×6 only).
 - [ ] **Hosted copy is live and linked below** (an extra requirement for every milestone).
 
 ---
@@ -362,4 +362,14 @@ Triggers: "begin session BS" to "begin session CB". Every session follows `docs/
 - **Main chunk** 494,550 B (+737 B; budget 500.1 kB, 5.5 kB left).
 - **Checks.** `npm run check`: pass (823 tests, 1 skipped). `tints` e2e: 8 passed.
 - **Gate:** the user checks the patterns on a device, which needs this branch on `main` (`/m14/` only rebuilds there). Asked before merging.
+
+### CB (2026-11-28): wrap-up
+
+- **Order changed (the user's choice).** CA's device check needs a merge; rather than merge CA alone and wait, CB ran now. `m14` is **not** frozen here: after CB merges, the user checks the patterns on `/m14/` (link 3), and a small follow-up applies any size change (`PATTERN_PERIOD_M` / `PATTERN_MIN_CSS`) and freezes `m14` at that merge.
+- **Goldens.** `npm run golden`: pass. `git diff --stat dc55686 -- tests/golden public/models content`: `search.json` (the BS approval, 20 lines) and the harness's imports only; `tiers`, `panels`, `urls`, `tree`, `regions` unchanged, so old URLs open the same view.
+- **Allowlist.** Six entries, all M15 (the Python build and mapping scripts).
+- **Full e2e** (two workers, 55.4 min): **200 of 205 passed.** The 5 failures were timing under load: `keyboard` ×3 (timeouts inside `tabTo`, as in BT and BV), `nested` (the hover tooltip not up within 5 s) and `polish`'s share link (the copied URL taken while the camera was still settling: `cam=` differed in the fourth decimal). Re-run alone, one worker: RERUN.
+- **Parity.** BZ's table against M13 stands for everything but CA's shader. Main chunk **494,550 B** (M13 490,914; +3.6 kB; budget 500.1 kB, 5.5 kB left). BENCH
+- **Docs.** `STATUS.md`: "Sidebar and search" rewritten for M14 (rows per system, per-layer indexes, bands, chips), a new "How colour works (M14)" (hue, patterns, dimming, the future table), the M14 device figures in §6, the main-chunk row, the allowlist and frozen-milestone lines. `CLAUDE.md`'s key-file rows were kept current by each session (ranker BS, search chunks BT, tree chunks BV, colours BW, patterns BX/CA, dimming BY); its status paragraph updated.
+- **Checks.** `npm run check`: pass (823 tests, 1 skipped).
 
