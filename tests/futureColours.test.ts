@@ -8,7 +8,10 @@ import { colourTable, deltaUnder, lowPairs, pairsOf, registryLayers, VISIONS, ty
 // tests/fixtures/future-colours.json). Each runs through the shipped table's
 // own pair rule (tests/lib/colourTable.ts) as if it were a registered layer,
 // in full, ghosted and dimmed form, against the current layers (full and
-// dimmed), the tints, the region colours, the marks and each other.
+// dimmed), the tints, the marks and each other. One rule is added (accepted by
+// the user in BW): colour-by-region pauses while another system's layer is on,
+// so the region colours never meet a future layer. With them in, no set near
+// the textbook hues passes (BW notes).
 
 type Future = {
   id: string;
@@ -16,15 +19,20 @@ type Future = {
   /** The textbook hue it started from. */
   seed: string;
   material: string;
+  /** Its context-dimming amount (plan decision 9), as a descriptor's `colour.dim`. */
+  dim: number;
   /** The nearest checked neighbour under each vision type, as recorded in the plan's BW notes. */
   nearest: Record<"normal" | "deuteranopia" | "protanopia", { pair: string; dE: number }>;
 };
 const FILE = JSON.parse(readFileSync(new URL("./fixtures/future-colours.json", import.meta.url), "utf8")) as { layers: Future[] };
-const FUTURE: LayerColours[] = FILE.layers.map((f) => ({ id: f.id, material: f.material }));
+const FUTURE: LayerColours[] = FILE.layers.map((f) => ({ id: f.id, material: f.material, dim: f.dim }));
 const LAYERS = [...registryLayers(), ...FUTURE];
 const TABLE = colourTable(LAYERS, { dimmed: true });
 const future = new Set(FUTURE.map((f) => f.id));
-const { checked } = pairsOf(LAYERS, TABLE);
+/** Proposed for the next spec: the region colours (bones only) pause while another system's layer is on. */
+const regionPaused = ([a, b]: readonly [Entry, Entry]) =>
+  (a.role === "region" && future.has(b.layer ?? "")) || (b.role === "region" && future.has(a.layer ?? ""));
+const checked = pairsOf(LAYERS, TABLE).checked.filter((p) => !regionPaused(p));
 /** The pairs a future colour takes part in (the current layers' own dimmed pairs are BY's, plan decision 9). */
 const touches = (id?: string) => (p: readonly [Entry, Entry]) => (id ? p[0].layer === id || p[1].layer === id : future.has(p[0].layer ?? "") || future.has(p[1].layer ?? ""));
 const mine = checked.filter(touches());

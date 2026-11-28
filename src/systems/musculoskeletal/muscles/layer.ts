@@ -55,7 +55,8 @@ export const muscles = defineLayer({
   ghostOrder: 3,
   // M10 session AL (M7: #a8483f): the old swatch was under 3:1 on the legend.
   // The tendon shade (M14 BW, from src/layers/colours.ts): M10 session AL (M7: #c98a7c) moved it off the thorax's region colour under protanopia.
-  colour: { material: "#b44d43", debug: "#a8524c", shades: { tendon: "#c18274" } },
+  // Dimmed 35 % (M14 BW): at the plan's 40 % it came within ΔE 7.5 of a bone ghost under protanopia.
+  colour: { material: "#b44d43", debug: "#a8524c", shades: { tendon: "#c18274" }, dim: 0.35 },
   models: {
     file: "muscles",
     eager: false,

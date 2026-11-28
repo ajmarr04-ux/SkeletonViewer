@@ -17,7 +17,7 @@ import { colourTable, drawnColourMode, hex, lowPairs, over, pairsOf, registryLay
 // fails, the colour changes, not the threshold.
 
 const LAYERS = registryLayers();
-const TABLE = colourTable(LAYERS);
+const TABLE = colourTable(LAYERS, { dimmed: true });
 const { all, checked, exemptWhy } = pairsOf(LAYERS, TABLE);
 const byName = Object.fromEntries(TABLE.map((e) => [e.name, e]));
 const ofRole = (role: string) => Object.fromEntries(TABLE.filter((e) => e.role === role).map((e) => [e.name, e.colour]));
@@ -32,6 +32,8 @@ describe("colour vision: every colour that can be on screen at once (M10 decisio
     const shades = LAYERS.reduce((n, l) => n + Object.keys(l.shades ?? {}).length, 0);
     expect(Object.keys(SOLID)).toHaveLength(LAYER_IDS.length + shades);
     expect(Object.keys(ofRole("ghost"))).toHaveLength(3 * LAYER_IDS.length);
+    // Dimmed rows for each layer with a `dim` amount (only the muscles today: their colour and the tendon shade).
+    expect(Object.keys(ofRole("dim"))).toHaveLength(LAYERS.filter((l) => l.dim).reduce((n, l) => n + 1 + Object.keys(l.shades ?? {}).length, 0));
     expect(Object.keys(TINTS)).toHaveLength(3);
     expect(Object.keys(REGION)).toHaveLength(7);
     expect(TABLE.filter((e) => e.role === "mark").map((e) => e.name)).toEqual(["accent", "outline", "hover", "background"]);

@@ -20,13 +20,13 @@ import { EAGER_LAYER, LAYER_IDS, layerDescriptor } from "../../src/systems/regis
 export { drawnColourMode };
 
 /** One layer's colours: from its descriptor, or a proposed future layer's from tests/fixtures/future-colours.json. */
-export type LayerColours = { id: string; material: string; shades?: Readonly<Record<string, string>>; neverWith?: readonly string[] };
+export type LayerColours = { id: string; material: string; shades?: Readonly<Record<string, string>>; dim?: number; neverWith?: readonly string[] };
 
 /** Every registered layer's colours, in registry order. */
 export const registryLayers = (): LayerColours[] =>
   LAYER_IDS.map((id) => {
     const c = layerDescriptor(id).colour;
-    return { id, material: c.material, shades: c.shades, neverWith: c.neverWith };
+    return { id, material: c.material, shades: c.shades, dim: c.dim, neverWith: c.neverWith };
   });
 
 export const hex = (c: Rgb): string => `#${c.map((x) => Math.round(Math.min(1, Math.max(0, x)) * 255).toString(16).padStart(2, "0")).join("")}`;
@@ -38,12 +38,11 @@ export const over = (fg: string, alpha: number, bg: string): string => {
 };
 
 /**
- * Context dimming (M14 plan decision 9, shipped in BY): mixed `amount` toward
- * its own luminance in linear space, so the brightness stays. BY moves this
- * into `src/` and the shipped table takes it from there.
+ * Context dimming (M14 plan decision 9, drawn from BY): mixed `amount` toward
+ * its own luminance in linear space, so the brightness stays. The amount is
+ * each layer's `colour.dim`. BY moves this into `src/`.
  */
-export const DIM_AMOUNT = 0.4;
-export function dim(c: string, amount = DIM_AMOUNT): string {
+export function dim(c: string, amount: number): string {
   const lin = parseHex(c).map(srgbToLinear) as Rgb;
   const y = 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
   return hex(lin.map((x) => linearToSrgb(x + (y - x) * amount)) as Rgb);
@@ -53,7 +52,7 @@ export type Role = "solid" | "shade" | "ghost" | "dim" | "tint" | "region" | "ma
 export type Entry = { name: string; colour: string; role: Role; layer?: string };
 
 export type TableOptions = {
-  /** Add each layer's dimmed solid and shades (plan decision 9; the shipped table from BY on). */
+  /** Add the dimmed solid and shades of each layer with a `dim` amount (plan decision 9). */
   dimmed?: boolean;
 };
 
@@ -70,8 +69,9 @@ export function colourTable(layers: readonly LayerColours[], opts: TableOptions 
       out.push({ name: `ghost:${l.id}@${o}`, colour: over(l.material, o, SCENE_BACKGROUND), role: "ghost", layer: l.id });
   if (opts.dimmed)
     for (const l of layers) {
-      out.push({ name: `dim:${l.id}`, colour: dim(l.material), role: "dim", layer: l.id });
-      for (const [s, c] of Object.entries(l.shades ?? {})) out.push({ name: `dim:${l.id}:${s}`, colour: dim(c), role: "dim", layer: l.id });
+      if (!l.dim) continue;
+      out.push({ name: `dim:${l.id}`, colour: dim(l.material, l.dim), role: "dim", layer: l.id });
+      for (const [s, c] of Object.entries(l.shades ?? {})) out.push({ name: `dim:${l.id}:${s}`, colour: dim(c, l.dim), role: "dim", layer: l.id });
     }
   for (const [r, c] of Object.entries(TINT_COLOURS)) out.push({ name: r, colour: c, role: "tint" });
   for (const r of REGIONS) if (r.region !== "teeth") out.push({ name: `region:${r.region}`, colour: regionColour(r.region), role: "region", layer: EAGER_LAYER });

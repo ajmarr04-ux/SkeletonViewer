@@ -32,7 +32,7 @@ Session kinds: **design** = strong model; **routine** = Sonnet is fine. No subag
 | BT | design | One lazy search index per layer, built from `searchFields`, loaded when its layer is on or a query is typed, plus the fixture's search (step 2) | none | decisions 4–5, BS | `search.json` as approved in BS, unchanged; fixture Vitest and e2e find widgets; chunk sizes recorded || **Done** (2026-11-27). See BT notes |
 | BU | routine | Search filter chips and the region and visibility context wired from the store (step 3) | none | decision 5, BT | chips e2e on the fixture build; `sidebar` and `soft-sidebar` e2e pass; a11y pass | **Done** (2026-11-27). See BU notes |
 | BV | routine | Sidebar roots grouped by system, each system's tree lazy (step 4) | none | decision 6 | `tree.json` unchanged; `sidebar`, `soft-sidebar`, `keyboard`, `a11y` e2e pass; fixture's system root lazy | **Done** (2026-11-27). See BV notes |
-| BW | design | The colour model's data and test: `ColourSpec` shades, the registry-driven colour-vision test, and the future-system colours table (step 5) | none | decisions 7, 10 | `colourVision.test.ts` builds its pairs from the registry; the table passes and is recorded here; no on-screen colour changes | **In progress**: registry test done; future table waits on the user. See BW notes |
+| BW | design | The colour model's data and test: `ColourSpec` shades, the registry-driven colour-vision test, and the future-system colours table (step 5) | none | decisions 7, 10 | `colourVision.test.ts` builds its pairs from the registry; the table passes and is recorded here; no on-screen colour changes | **Done** (2026-11-28). See BW notes |
 | BX | design | Pattern cue for the role tints: per-instance pattern on the batches and patches, legend swatches, screenshot (step 6) | none | decision 8 | `tints` e2e and screenshot tests pass; pattern unit tests; main chunk measured | |
 | BY | routine | Context dimming of other layers in the related set (step 7) | none | decision 9 | dimming unit and e2e tests; colour-vision test covers the dimmed colours; `tints`, `tiers`, `layers` e2e pass | |
 | BZ | routine | Device-run prep: the three bench links, `perf-load` from the registry (the last M14 allowlist entry), the container parity table; then **gate: the user runs `?bench` on PC and iPhone** (step 8) | none | decision 11 | links in the plan; allowlist has no M14 entry; the user's figures recorded here | |
@@ -58,7 +58,7 @@ Triggers: "begin session BS" to "begin session CA". Every session follows `docs/
 - [ ] Per-layer search indexes, filter chips, new ranking; `golden/search.json` differences reviewed with the user (BS, BT, BU).
 - [x] Lazy tree per system (BV).
 - [ ] Colour model: registry-driven colour-vision test, pattern cue for role tints, context dimming (BW, BX, BY).
-- [ ] The proposed future-system colours table, tested (BW).
+- [x] The proposed future-system colours table, tested (BW).
 - [ ] Real-device checks: the user runs `?bench` on PC and iPhone for: all layers solid; a region focus; a muscle tier 2 with antagonists and patterns (BZ).
 - [ ] `tiers`, `panels`, `urls`, `tree` and `regions` goldens unchanged; `search` as approved; old URLs open the same view.
 - [ ] No regression: every existing unit and e2e test passes unchanged, except where a step lists why (spec §2.1). Performance parity with the new features off (bench, perf-load, main chunk ≤ 500.1 kB).
@@ -130,6 +130,7 @@ Triggers: "begin session BS" to "begin session CA". Every session follows `docs/
    - With a focus structure selected and a tier showing, structures in the related set **on a layer other than the focus's** are drawn desaturated: mixed about 40 % toward their own luminance, in linear space, at the same brightness. Tinted structures are never dimmed (the tint is the point). Ghosts aren't dimmed further. The focus layer is the labels' `focusLayerOf`.
    - It is per instance (the batch colour), so it costs no draw calls. It turns off with no selection, at tier 0 and with colour-by-region (which is already bones-only).
    - The colour-vision test adds each layer's dimmed colour against its neighbours (decision 7).
+   - **Changed in BW (the user left it to legibility):** the amount is per layer, `ColourSpec.dim`: muscles **35 %**, the other three **not dimmed**. At 40 % (or even 15 %) the ivory and the pale cartilage fall within ΔE 8 of the grey ligaments and the hover outline; muscles at 40 % came to 7.5 from a bone ghost under protanopia. The muted layers gain little from dimming anyway; the muscle red is the colour that competes with a focus layer. The dimmed rows are already in `colourVision.test.ts`.
 
 10. **The future-system colours table** (spec §7.5): recorded, not shipped.
    - BW proposes base colours for **arteries, veins, nerves, lymph nodes and organs**, near the textbook hues (red, blue, yellow, green, a neutral organ tone), moved as little as needed. Each must pass the registry-driven test against the four current layers and the tints, **in full and dimmed form**, and against each other.
@@ -248,7 +249,7 @@ Triggers: "begin session BS" to "begin session CA". Every session follows `docs/
 - **Sizes.** Main chunk **492.2 kB** (`gzip -9`, `index` + modulepreloads; +0.7 kB over BU's 491.5: the system rows, the store's shared state and the per-system loader). Budget 500.1, 7.9 kB left. Musculoskeletal tree chunk 12,152 B (the old soft tree chunk, M10: 12.1 kB).
 
 
-### BW (2026-11-28): colour data and the registry-driven test (first half; stopped on the future table)
+### BW (2026-11-28): colour data, the registry-driven test, the future table
 
 - **Built (commit `27f5654`).** `ColourSpec.shades` (by name) and `ColourSpec.neverWith` (none set); `PartTypeSpec.shade` replaces `tendinous`; the tendon colour is the muscles' `colour.shades.tendon` (`#c18274`, unchanged) and `src/layers/colours.ts` is gone. Registry `partTypeShade` (throws if a part type names a shade its layer lacks); `src/layers/softIds.ts` `shadeOf` replaces `isTendinous`; `LayerScenes` tints per layer and shade. No shipped colour value changed.
 - **The test.** `tests/lib/colourTable.ts` builds the table from the registry (each layer's material and shades, three ghosts of each material: ghost batches have no instance colours, so a ghosted tendon is the muscle colour; tints, region colours, marks; `dimmed` adds each layer's dimmed form, `dim()` = decision 9's 40 % toward luminance in linear space), the drawing-rule `EXEMPT` list, `neverWith`, `STRONG` and `lowPairs`. `tests/colourVision.test.ts` uses it. **Its checked pairs are the old hand-written table's 313 exactly** (both dumped and compared), so no missed pair was found.
@@ -257,3 +258,15 @@ Triggers: "begin session BS" to "begin session CA". Every session follows `docs/
   - **With the shipped rule (region colours included): no order passes.** Alone, the nearest passes are arteries `#9b3755` (moved 17.4), veins `#1450af` (5.3), nerves `#5f5f5f` (46.9, grey), lymph `#28645f` (33.6), organs `#f08ca0` (23.7); together, one of nerves, lymph, organs or veins always fails. Yellow is blocked by the muscle red and tendon under CVD, the origin tint, the ivory and the yellow/orange region colours.
   - **Without region colours** (i.e. if colour-by-region paused whenever another system's layer is on): 87 of 107 orders pass; the best (total move 100): veins `#1450af`, nerves `#dc9600` (amber, 17.6), organs `#bea5a5` (13.8), arteries `#734164` (plum, 27.2), lymph `#afb4c8` (grey-lavender, 36.1), margins 0–0.8.
   - **Stopped for the user**: which rule the table is held to (shipped, or regions paused for other systems), and whether hues this far from textbook are acceptable, or the next spec relies on BX's patterns / a different cue for some systems. `docs/batches/BW/futureColours.test.ts.txt` is the fixture's test, ready to move to `tests/` once `tests/fixtures/future-colours.json` is chosen.
+- **The user's answers.** (1) The no-region set is accepted for now ("maybe we can figure out a better solution later"): the future test adds one rule, colour-by-region pauses while another system's layer is on, which the next spec must adopt if it keeps these colours. (2) Dimming left to legibility: per-layer `ColourSpec.dim` (decision 9 updated: muscles 35 %, bones, ligaments and cartilage not dimmed); `colourVision.test.ts` now runs with the dimmed rows and passes.
+- **The future table** (`tests/fixtures/future-colours.json`, `tests/futureColours.test.ts`; each in full, three ghosts and dimmed 40 %; nearest checked neighbour, ΔE2000):
+
+| System | Seed | Proposed | Normal | Deuteranopia | Protanopia |
+| --- | --- | --- | --- | --- | --- |
+| Arteries | `#c62828` | `#734164` plum | 8.6 (own ghost 0.5 / own dimmed) | 8.0 (lymph ghost 0.5) | 8.0 (own ghost 0.5 / own dimmed) |
+| Veins | `#2f5fbf` | `#1450af` | 9.2 (own ghost / own dimmed) | 8.1 (dimmed / insertion tint) | 8.8 (arteries / own ghost 0.5) |
+| Nerves | `#f2d12e` | `#dc9600` amber | 15.5 (dimmed / dimmed tendon) | 8.0 (ghost 0.5 / muscles) | 10.9 (dimmed / tendon) |
+| Lymph nodes | `#4caf50` | `#afb4c8` grey-lavender | 8.7 (dimmed / ligaments) | 8.0 (ghost 0.5 / arteries) | 8.1 (dimmed / dimmed organs) |
+| Organs | `#c9a07e` | `#bea5a5` | 10.0 (dimmed / dimmed lymph) | 8.8 (ghost 0.5 / dimmed arteries) | 8.1 (dimmed / dimmed lymph) |
+
+- **Checks.** `npm run check`: pass (797 tests, 1 skipped). No shipped colour value changed (the tendon hex moved files); nothing draws `dim` until BY.

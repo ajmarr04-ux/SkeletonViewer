@@ -26,6 +26,14 @@ export type ColourSpec = {
    */
   shades?: Readonly<Record<string, string>>;
   /**
+   * Context dimming (M14 plan decision 9, drawn from BY): how far the layer's
+   * colours are mixed toward their own luminance when it is in the related set
+   * of another layer's focus. Absent: never dimmed. Only the muscles are: the
+   * ivory, the pale cartilage and the grey ligaments are already muted, and
+   * dimming them makes them too like each other (BW notes).
+   */
+  dim?: number;
+  /**
    * Layers this one is never visible with (M14 plan decision 7): the
    * colour-vision test skips their pairs. None today.
    */
