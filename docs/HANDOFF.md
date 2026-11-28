@@ -1,8 +1,8 @@
 # Handoff — written 2026-11-28 at the end of M14 BZ
 
 ## Next session
-CA (design): pattern scale and motion, from the device runs. Make the period 3× (6 → 18 CSS px), and stop the pattern "swimming" when the camera zooms or pans, using the approach the user picks (BZ notes: (a) anchored screen space with the size snapping at rest, recommended; (b) surface-locked, world-space triplanar).
-Done when: `tints` e2e and the pattern unit tests pass; the legend swatch and the screenshot key still match the shader; main chunk measured; the user checks it on a device (the `/m14/` copy updates only on a merge to `main`, so ask before merging).
+CA (design): pattern scale and motion, from the device runs. Make the period 3× (6 → 18 CSS px), and stop the pattern "swimming" when the camera zooms or pans, with **surface-locked marks (the user chose option (b))**: laid out on the surface in world space (triplanar), so they stick to the structure through pan, zoom and orbit; anti-aliased and clamped when small; the legend shows the pattern's look, not its exact size.
+Done when: `tints` e2e and the pattern unit tests pass; the legend swatch and the screenshot key still show the same marks as the shader; main chunk measured; the user checks it on a device (the `/m14/` copy updates only on a merge to `main`, so ask before merging).
 Then CB: the wrap-up (was CA).
 
 ## State
@@ -12,9 +12,8 @@ Then CB: the wrap-up (was CA).
 - Open fan-out work: none
 
 ## Waiting on the user
-1. Pattern motion: approach (a) or (b), as above.
-2. iPhone: every link ran at exactly 30.3 / 29.4 FPS (M7 ran 58.8), even at 12,594 triangles, which points to a 30 fps cap. Is Low Power Mode on? Re-run link 1 with it off.
-3. The M10 check not yet answered: any visible LOD pop (the model switching from low to high detail)?
+1. iPhone: every link ran at exactly 30.3 / 29.4 FPS (M7 ran 58.8), even at 12,594 triangles, which points to a 30 fps cap. Is Low Power Mode on? Re-run link 1 with it off.
+2. The M10 check not yet answered: any visible LOD pop (the model switching from low to high detail)?
 
 ## Things the next session must know
 - The pattern is screen space: `gl_FragCoord / uPatternPeriod` in `PATTERN_FRAGMENT` (`src/scene/patterns.ts`); the period is one shared uniform set from the dpr. The legend (`patternPath`) and screenshot (`patternCells`) rasterise the same rule, so any change has to keep them in step.
