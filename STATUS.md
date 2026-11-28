@@ -1,6 +1,6 @@
 # Skeleton Viewer: project status
 
-Written 2026-11-19 after Milestone 5; brought up to date for Milestones 6 to 10 on 2026-11-24 (M10 session AQ); relationships (§4, §5) updated for M12's graph on 2026-11-25 (session BJ); body regions (§5, "How regions work") added for M13 on 2026-11-26 (session BR). This file is for whoever writes the next spec. It records what exists, how it works, what was measured, and where the build departs from the two specs.
+Written 2026-11-19 after Milestone 5; brought up to date for Milestones 6 to 10 on 2026-11-24 (M10 session AQ); relationships (§4, §5) updated for M12's graph on 2026-11-25 (session BJ); body regions (§5, "How regions work") added for M13 on 2026-11-26 (session BR); search, the sidebar and colours (§3, §5, "How colour works") and the M14 device figures (§6) updated on 2026-11-28 (session CB). This file is for whoever writes the next spec. It records what exists, how it works, what was measured, and where the build departs from the two specs.
 
 There are two specs. `SPEC (2).md` is the bone spec (it calls itself `SPEC.md`, but the file was never renamed) and covers M1–M5. `SPEC-musculoskeletal.md` extends it with muscle, ligament and cartilage layers and covers M6–M10; it wins where the two conflict. `/m1/` to `/m9/` are live and frozen on GitHub Pages (`README.md` has the links), and the main site at https://ajmarr04-ux.github.io/SkeletonViewer/ follows `main`.
 
@@ -139,7 +139,7 @@ Each node is named by its stable ID and has one unnamed child holding the quanti
 - **The view** (`src/scene/isolation.ts`): `sceneView` computes, per layer, a `LayerShow` of `{ solid: Set | null, rest: "ghost" | "hidden" }` from the layer modes (On / Ghost / Off), the isolation, the muscle depth peel and Hide; `applyLayerView` writes it to the batches. A structure is ghosted if its layer is Ghost or the isolation ghosts it. Depth peel and Hide make structures **hidden, not ghosted**, so whatever is under them can be clicked.
 - **Muscle depth** (M7, `content/muscle-depth.json`, `src/content/muscleDepth.ts`): 209 side-free keys with depth 1, 2 or 3 (67 superficial, 62 intermediate, 80 deep); parts inherit unless listed. Three stops: All · Hide superficial · Hide superficial + intermediate. The rules are `peeled`/`peeledAt` in `softRegistry.ts`.
 - **Hide** (M7): per structure (a muscle hides all its parts), by `X`, the panel, or the Tab cursor; the "N hidden · Show all" chip and `Shift+X` show them again; `hid=` in the URL keeps the first 100.
-- **Tints and patches** (M9, `src/scene/tints.ts`, `withTints`): at a muscle's tiers, origins are yellow, insertions blue and antagonists purple. A patch is drawn only where the content names its bone in that role; otherwise the whole structure is tinted. Tendons and aponeuroses are drawn in a lighter shade than muscle.
+- **Tints and patches** (M9, `src/scene/tints.ts`, `withTints`): at a muscle's tiers, origins are yellow, insertions blue and antagonists purple, each also marked by a **pattern** (M14, see "How colour works" in §5). A patch is drawn only where the content names its bone in that role; otherwise the whole structure is tinted. Tendons and aponeuroses are drawn in a lighter shade than muscle.
 - **Picking:** one ray against the solid batch of every layer that has one (`nearestPickable`, `CameraRig.tsx`, three-mesh-bvh per geometry); the nearest hit wins. Ghosts and hidden structures are never pickable. The tiny-object hit proxies (`src/scene/pick.ts`: radius under 2 cm, 22 px touch, 6 px mouse) apply to every layer.
 - **Outlines** are **inverted hulls** (`src/scene/outline.ts`) sharing the solid batch's buffers: 3 px selection, 1.5 px hover, one draw call each. A selected muscle outlines each of its parts (`MAX_PARTS`).
 - **Draw calls:** 2 for the full skeleton; 3 with a bone isolated; 4 with every layer solid; 2 with muscles ghosted over bones; **9** with every layer on, the long head of triceps at tier 2 and antagonists (8 at tier 1). Budget < 20.
@@ -458,8 +458,12 @@ How it behaves:
 ### Panels (M9; descriptor-driven since M12)
 Sections are data on each kind (`KindDescriptor.panel`), turned into a model by `src/panel/model.ts` and rendered section by section by `InfoPanel.tsx` (render types `text`, `list`, `links`, `grouped-links`, `actions`, and one `custom` section, `attachments`): muscles and parts show Parts / Part of, Origin, Insertion (inherited from the muscle when `inherit`), Actions, Synergists, Antagonists, Innervation, Clinical note; ligaments show Joint and Connects; cartilage, discs and menisci show Joint and Attached to; all show Functions. Every structure named is a link. Bones keep M4's sections plus the derived Origins/Insertions rows.
 
-### Sidebar and search (M9)
-Three soft roots beside the bone tree, loaded lazily (`virtual:skeleton-soft-tree`, 12 kB): Muscles by region → group → muscle → parts; Ligaments by joint; Cartilage by kind. Search merges two prebuilt minisearch indexes by score: bones (9 kB) and soft tissue (37 kB, fetched on the first keystroke).
+### Sidebar and search (M9; per layer and per system since M14)
+- **Sidebar rows** (M14 BV): one row per system (`sidebarRows`, `system:<id>`, `aria-level` 1, no count, no Isolate), its roots one level down: the bones' tree (eager), then Muscles by region → group → muscle → parts, Ligaments by joint, Cartilage by kind. Each system's lazy roots come from **one chunk per system** (`virtual:skeleton-tree-<system>` through `virtual:skeleton-tree-importers`; musculoskeletal 12.2 kB), fetched when one of its lazy roots opens or a `grp=`, search result or selection needs it, never merely because the sidebar opens. The collapsed systems are shared with the Layers panel (store `collapsedSystems`, `localStorage`).
+- **Indexes** (M14 BT): one prebuilt minisearch index per layer, its documents from each kind's `searchFields` (`layerSearchDocuments`, build time only), served as the content half's `searchChunk` (`virtual:skeleton-search-<layer>`): bones 9.1 kB, muscles 22.0, ligaments 12.6, cartilage 2.7. The eager layer's loads when the sidebar opens, a lazy layer's while that layer isn't Off, every layer's on the first keystroke. Group documents live in the index of the layer whose tree root holds the group.
+- **Ranking** (M14 BS, `src/content/searchRank.ts`, in the search chunk): no BM25 score, so splitting the index can't change the order (`tests/searchSplit.test.ts`: one index, one per layer and reversed give the same top 30). Bands: **0** the query is the name (or the FDI number), **1** a common name or synonym holds every word, **2** anything else; inside a band: in the current body region, then on a visible layer, then more exact words, prefix words, fewer words in the name, a group before its members, then the ID files' order (`searchOrder`). Each layer's first kind's noun ("muscle", "ligament", …) is a **generic word**: it narrows to that layer and alone returns nothing. Side words filter as before.
+- **Filter chips** (M14 BU): "All" plus one radio per system with a loaded index, shown only with two or more systems, so the app (one system) never shows them; the fixture build does. A chip merges only that system's indexes and is announced ("Search limited to Demo. 4 results."); not in the URL or `localStorage`.
+- **`golden/search.json`**: 10 of the 60 queries changed with the ranking, all approved by the user (plan M14 "Approved golden differences").
 
 ### Labels, announcements, keyboard (M10)
 - **Labels** (AK, `src/scene/labels.ts`): every kind drawn solid can be labelled. One label per muscle, at the union of its parts' bounding spheres; at the part level the parts are labelled. Priorities come from `relatedAt`; within a run of equal priority and radii within 10 %, the focus layer (the selection's, else the topmost On) goes first.
@@ -481,6 +485,18 @@ Three soft roots beside the bone tree, loaded lazily (`virtual:skeleton-soft-tre
 
   Counts are by kind; parts count as parts only for the focus's own muscle, otherwise once as their muscle.
 - **Keyboard** (AN, `src/camera/input.ts`): M5's keys plus `R` (tier 1), `E` (tier 2), `X` (hide the Tab cursor's structure, else the selection), `Shift+X` (show all hidden). The Tab cursor (`cursorStops`) visits layers in panel order (bones, cartilage, ligaments, muscles) and makes a muscle **one stop** until it or one of its parts is selected; then its parts are stops. The panel buttons and the hidden chip carry `aria-keyshortcuts`. axe-core (WCAG 2.2 A/AA, no rules disabled) runs on every UI state, including the Layers panel while loading, the depth control, a muscle tier with antagonists and every soft panel.
+
+### How colour works (M14)
+Each cue has one job: **hue** says which layer, a **pattern** says which relation role, and **dimming** keeps the focus layer's colours readable.
+
+| Piece | Where |
+| --- | --- |
+| Layer colours and shades: `ColourSpec.material`, `shades` (the tendon is the muscles' `shades.tendon`; part types name a `shade`), `neverWith`, `dim` | the layer descriptors in `src/systems/**`; registry `partTypeShade`; `shadeOf` (`src/layers/softIds.ts`) |
+| Colour-vision test: every pair that can meet, built from the registry (each material and shade, three ghost opacities, the dimmed forms, tints, region colours, marks); ΔE2000 ≥ 8 under normal vision, deuteranopia and protanopia; ≥ 20 for origin/insertion, origin/antagonist and tints against the selection accent | `tests/lib/colourTable.ts`, `tests/colourVision.test.ts` |
+| Role patterns: origin stripes, insertion dots, antagonist cross-hatch, marks 25 % darker in linear light. The pattern index rides in the alpha of each batch's colours texture (1 + index); `paint` writes colour and pattern together. **Surface-locked** (M14 CA): triplanar in world space, 22 mm period on the structure, anti-aliased, coarsened by octaves below 14 CSS px, so marks stick to the muscle through pan, orbit, zoom and Explode | `src/scene/patterns.ts` (GLSL and its JS twin `surfaceMark`), `paint` in `src/scene/isolation.ts`; debug `__viewer.instancePattern(id)` |
+| Legend and screenshot: the same key (`keyItems`), tint chips with SVG swatches at 7 px rasterised from the shader's rule (`patternCells`); the screenshot's key draws them too | `src/ui/Legend.tsx`, `src/scene/screenshot.ts` |
+| Context dimming: with a focus at tier 1 or 2, solid related structures on **another** layer with a `colour.dim` amount are desaturated at the same brightness. Only the muscles have one (35 %), so today it shows when a bone, ligament or cartilage is selected with the muscles on. Never the focus, a tint or a highlighted joint; off at tier 0 and while colour-by-region is drawn | `src/scene/dimming.ts`, `SceneView.dimmed`, `LayerBatches.dimmed`; debug `data-dimmed` |
+| Proposed colours for future systems (not shipped): arteries `#734164`, veins `#1450af`, nerves `#dc9600`, lymph nodes `#afb4c8`, organs `#bea5a5`. No textbook set passes with region colours in play, so the table assumes colour-by-region pauses while another system's layer is on; the next spec must adopt that rule if it keeps these colours | `tests/fixtures/future-colours.json`, `tests/futureColours.test.ts`; the search in plan M14, BW notes |
 
 ### How regions work (M13: body regions)
 
@@ -525,7 +541,9 @@ How it behaves:
 | M7, all layers solid | iPhone (low LOD) | 58.8 | 58.8 | 4 | vsync-limited; 449,623 triangles |
 | M7, muscles ghosted over bones (`?bench&layers=b:on,c:off,l:off,m:ghost`) | PC (high LOD) | 75.2 | 74.1 | 2 | vsync-limited; 1,299,731 triangles |
 | M7, muscles ghosted over bones | iPhone (low LOD) | 58.8 | 58.8 | 2 | vsync-limited; 379,713 triangles. No ghost fallback needed |
-| Muscle tier 2 with antagonists | PC / iPhone | *unmeasured* | | 9 (container) | AO's third bench link; AO was skipped |
+| M14, all layers solid | PC (high LOD) / iPhone (low LOD) | 75.2 / 30.3 | 74.6 / 29.4 | 4 | iPhone in Low Power Mode (iOS caps Safari at 30 fps): a floor, not the device's rate |
+| M14, all layers in `reg=forearm_left` | PC / iPhone | 75.2 / 30.3 | 74.6 / 29.4 | 3 | 38,827 / 12,594 triangles |
+| M14, `sel=flexor_carpi_radialis_left&tier=2&ant=1`, all layers (the muscle tier 2 bench) | PC / iPhone | 75.2 / 30.3 | 74.1 / 29.4 | 10 / 9 | PC p95 13.5 ms, one 178.6 ms frame; run on BX's screen-space patterns, before CA's surface-locked ones |
 
 **Click → highlight:** bones (M3, measured by the user) PC 10 ms, iPhone 55 ms, against budgets of 50 and 100 ms. For a muscle, a part and a ligament: *unmeasured* (AO).
 
@@ -565,10 +583,12 @@ With every layer off, the build loads no slower than M6, requests no layer file 
 | M8 | 460.8 kB |
 | M9 | 468.1 kB |
 | M10 (AR, final) | 470.1 kB: +2.1 over M9 (M10's budget +5), **+19.1 over M5** (spec budget +150) |
+| M13 | 490.9 kB |
+| M14 (CB) | 494.6 kB (494,550 B; +3.6 over M13; budget 500.1 kB) |
 
 Growth over M5 was measured in AR with the agreed method: M5, M9 and M10 built side by side from the same `node_modules`, every script `index.html` loads eagerly counted with `gzip -9` (one concatenated stream gives the same figures to 0.3 kB). **+19.1 kB against the spec's +150 kB**: the musculoskeletal programme added its content, search data, trees and layer code as lazy chunks, as spec §9 asks. All JavaScript in `dist/assets`, lazy chunks included: M5 518.2 kB, M9 925.5 kB, M10 927.6 kB. Lazy chunks (gzipped): bone content 42.1 kB, muscles content 127.1, ligaments 41.8, cartilage 8.5, bone search 9.1, soft search 36.8, soft tree 12.1, soft ID table 11.0, `LayerScenes` 3.0. Manifests are not shipped to the app except through `?debug`.
 
-**Not measured:** Firefox, Edge, Safari on the Mac and Chrome on Android (the browser table in `docs/PLAN-milestone-5.md`, step 12, is empty); FPS with labels and colour-by-region on a real phone; everything in the M10 budget table that needs a real device (layer load, soft click → highlight, the muscle tier 2 bench). Combinations of layers beyond "all solid" and "muscles ghosted" have not been benched.
+**Not measured:** Firefox, Edge, Safari on the Mac and Chrome on Android (the browser table in `docs/PLAN-milestone-5.md`, step 12, is empty); FPS with labels and colour-by-region on a real phone; layer load and soft click → highlight on a real device (the muscle tier 2 bench was run in M14 BZ); the iPhone without Low Power Mode since M7. Combinations of layers beyond "all solid" and "muscles ghosted" have not been benched.
 
 ---
 
@@ -692,7 +712,7 @@ Growth over M5 was measured in AR with the agreed method: M5, M9 and M10 built s
 - **Pickability.** Ghosts can't be picked, so at tier 0 another structure can't be clicked directly (see §7). Depth peel and Hide hide rather than ghost, so the layer underneath can be clicked.
 - **Explode direction.** Explode moves bones along the line between box centres, not along joint axes. It moves bones only.
 - **Label threshold.** Labels use a fixed 32 px size threshold with nothing isolated.
-- **Search scope.** Names, Latin names, common names, synonyms, group synonym sets and FDI numbers; not the summary text. Bone words now also match muscles ("femur" finds the femoris muscles).
-- **Layers are registry entries (M11).** Layer identity, codes, defaults, presets, colours, ghost order, depth, model files and kinds come from the descriptors in `src/systems/` (§9). What still names a layer or kind directly is listed, file by file with the milestone that removes it, in `tests/registry-allowlist.json` (24 files: M12 17, M14 1, M15 6).
+- **Search scope.** Each kind's `searchFields` (names, Latin names, common names, synonyms, FDI numbers for teeth) and group synonym sets; not the summary text. Bone words now also match muscles ("femur" finds the femoris muscles).
+- **Layers are registry entries (M11).** Layer identity, codes, defaults, presets, colours, ghost order, depth, model files and kinds come from the descriptors in `src/systems/` (§9). What still names a layer or kind directly is listed, file by file with the milestone that removes it, in `tests/registry-allowlist.json` (6 files since M14, all M15: the Python build and mapping scripts).
 - **Deploy.** The site deploys only from `main` through `.github/workflows/deploy.yml`. A second Pages workflow would overwrite it.
-- **Frozen milestones.** `deploy/pages.json` freezes `m1`–`m11` (`m10` at `317b445`, the merge of #23; `m11` at `a2709f6`, the merge of #25) and has `"current": null` until M12's planning sets it to 12. The live site keeps following `main`; `/m1/` to `/m11/` stay fixed.
+- **Frozen milestones.** `deploy/pages.json` freezes `m1`–`m13` (`m13` at `dc55686`, the merge of PR 29) with `"current": 14`; `m14` is frozen at M14's final merge, after the user's device check of the surface-locked patterns. The live site keeps following `main`; the frozen snapshots stay fixed.
