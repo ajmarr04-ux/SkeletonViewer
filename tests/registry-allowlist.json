@@ -23,10 +23,6 @@
     "scripts/mapping/generate_soft_ids.py": {
       "milestone": "M15",
       "reason": "Soft-tissue ID generator (layers, kinds); M15's per-system mapping."
-    },
-    "scripts/perf-load.ts": {
-      "milestone": "M14",
-      "reason": "Times turning on the largest layer (the muscles), named as the result field; M14's real-device and perf runs choose the layer from the registry (its budgets)."
     }
   },
   "otherVocabulary": [
