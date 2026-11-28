@@ -24,6 +24,8 @@ export type LayerBatches = {
   moreSelected: Outline[];
   /** A structure's own instance colour (white, or the tendon tint). */
   base: (id: string) => Color;
+  /** A structure's instance colour when context-dimmed (M14 BY). */
+  dimmed: (id: string) => Color;
   /** The instance colour of the selected structure in this layer's material. */
   accent: Color;
   /** Instance colours of the origin, insertion and antagonist tints in this layer's material (M9). */

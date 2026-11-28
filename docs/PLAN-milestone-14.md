@@ -34,7 +34,7 @@ Session kinds: **design** = strong model; **routine** = Sonnet is fine. No subag
 | BV | routine | Sidebar roots grouped by system, each system's tree lazy (step 4) | none | decision 6 | `tree.json` unchanged; `sidebar`, `soft-sidebar`, `keyboard`, `a11y` e2e pass; fixture's system root lazy | **Done** (2026-11-27). See BV notes |
 | BW | design | The colour model's data and test: `ColourSpec` shades, the registry-driven colour-vision test, and the future-system colours table (step 5) | none | decisions 7, 10 | `colourVision.test.ts` builds its pairs from the registry; the table passes and is recorded here; no on-screen colour changes | **Done** (2026-11-28). See BW notes |
 | BX | design | Pattern cue for the role tints: per-instance pattern on the batches and patches, legend swatches, screenshot (step 6) | none | decision 8 | `tints` e2e and screenshot tests pass; pattern unit tests; main chunk measured | **Done** (2026-11-28). See BX notes |
-| BY | routine | Context dimming of other layers in the related set (step 7) | none | decision 9 | dimming unit and e2e tests; colour-vision test covers the dimmed colours; `tints`, `tiers`, `layers` e2e pass | |
+| BY | routine | Context dimming of other layers in the related set (step 7) | none | decision 9 | dimming unit and e2e tests; colour-vision test covers the dimmed colours; `tints`, `tiers`, `layers` e2e pass || **Done** (2026-11-28). See BY notes |
 | BZ | routine | Device-run prep: the three bench links, `perf-load` from the registry (the last M14 allowlist entry), the container parity table; then **gate: the user runs `?bench` on PC and iPhone** (step 8) | none | decision 11 | links in the plan; allowlist has no M14 entry; the user's figures recorded here | |
 | CA | routine | Wrap-up: goldens, parity table, full e2e in the background, docs, `/m14/` (step 9) | none | everything above | exit criteria ticked; `/m14/` live | |
 
@@ -57,7 +57,7 @@ Triggers: "begin session BS" to "begin session CA". Every session follows `docs/
 
 - [ ] Per-layer search indexes, filter chips, new ranking; `golden/search.json` differences reviewed with the user (BS, BT, BU).
 - [x] Lazy tree per system (BV).
-- [ ] Colour model: registry-driven colour-vision test, pattern cue for role tints, context dimming (BW, BX, BY).
+- [x] Colour model: registry-driven colour-vision test, pattern cue for role tints, context dimming (BW, BX, BY).
 - [x] The proposed future-system colours table, tested (BW).
 - [ ] Real-device checks: the user runs `?bench` on PC and iPhone for: all layers solid; a region focus; a muscle tier 2 with antagonists and patterns (BZ).
 - [ ] `tiers`, `panels`, `urls`, `tree` and `regions` goldens unchanged; `search` as approved; old URLs open the same view.
@@ -281,3 +281,11 @@ Triggers: "begin session BS" to "begin session CA". Every session follows `docs/
 - **Colour-vision rule relaxed** (`tests/lib/colourTable.ts` `STRONG`): tint against layer (bones, cartilage, muscles) drops to ≥ 8; origin/insertion, origin/antagonist and the tints against the selection accent (a mark, not a layer) stay ≥ 20.
 - **Main chunk 493.5 kB** (493,543 B; +1.2 kB over BW's 492,317: the shader text, the pattern helpers, the legend swatch and the screenshot's key). Budget 500.1, 6.6 kB left.
 
+
+### BY (2026-11-28): context dimming
+
+- **Built.** `src/scene/dimming.ts` (pure): `dimAmount(layer)` (the descriptor's `colour.dim`, else 0), `desaturate` (mixed toward its own luminance in linear light, brightness kept), `dimHex` (the colour-vision table's rows: `tests/lib/colourTable.ts`'s `dim` is now this), `dimmedIn(view, focusLayer, layerOf, on)` and `dimTint(layer, target, material)` (the instance colour over the layer's material, cached). `SceneView.dimmed`: set in `viewOf` from the isolation after tints and joint; the focus layer is the selection's layer (= `focusLayerOf` with a selection). Off with no focus, at tier 0 and while colour-by-region is drawn (`drawnColourMode`, so a muscle's tints, which pause the regions, don't stop it); never the focus, a tint or a highlighted joint's structure; ghosts aren't solid so never dim. `viewOf`'s input gains `colourMode` (the store's).
+- **Drawing.** `applyLayerView` takes `dimmed?: BaseTint` and paints `view.dimmed` with `paint(…, "none")` after restoring the previous colours and before the tints, focus and joint (the sets don't overlap). `LayerBatches.dimmed` = `layerDimTint` (`LayerScenes.tsx`, lazy chunk: the structure's shade or material, dimmed); the bones get one only if the eager layer has an amount (none). `Isolation.tsx` adds last frame's dimmed IDs to `previous`, so they get their colour back. Debug: `data-dimmed` on the overlay.
+- **What dims today.** Only the muscles have an amount (BW), so dimming shows when a bone, ligament or cartilage is selected at tier 1 or 2 with the muscles on: its related muscles. A muscle's own tiers dim nothing (its bones, ligaments and cartilage have no amount).
+- **Tests.** `tests/dimming.test.ts` (9): the amounts; the femur at tiers 1 and 2 with every layer on dims exactly its solid muscles; a muscle at tiers 1 and 2 (antagonists on) dims nothing; a ligament's related muscles; off with no selection, tier 0, colour-by-region; focus, tints and joint never dim; luminance kept, saturation lower; instance colour × material = the dimmed colour (material and tendon); `applyLayerView` writes and restores. `tints.spec.ts` + 1: femur tier 1, `vastus_lateralis_left` in `data-dimmed`, pattern none; an uncovered 16 px square's mean saturation 0.505 dimmed against 0.642 with colour-by-region on (dimming off), mean luminance 92.3 against 86.8. `colourVision.test.ts` runs the dimmed rows through `src/`'s rule and passes.
+- **Main chunk 493.8 kB** (493,813 B; +0.3 kB over BX). Budget 500.1, 6.3 kB left.

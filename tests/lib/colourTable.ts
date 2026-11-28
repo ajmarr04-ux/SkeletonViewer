@@ -10,6 +10,7 @@
 // `region:<region>`, and the marks `accent`, `outline`, `hover`, `background`.
 
 import { drawnColourMode } from "../../src/scene/isolation";
+import { dimHex } from "../../src/scene/dimming";
 import { ACCENT_COLOUR, SCENE_BACKGROUND, SELECTION_OUTLINE_COLOUR } from "../../src/scene/material";
 import { OUTLINE } from "../../src/scene/outline";
 import { deltaE2000, linearToSrgb, parseHex, REGIONS, regionColour, simulateCvd, srgbToLinear, toLab, type Rgb } from "../../src/scene/regionColours";
@@ -37,16 +38,8 @@ export const over = (fg: string, alpha: number, bg: string): string => {
   return hex(f.map((x, i) => x * alpha + b[i]! * (1 - alpha)) as Rgb);
 };
 
-/**
- * Context dimming (M14 plan decision 9, drawn from BY): mixed `amount` toward
- * its own luminance in linear space, so the brightness stays. The amount is
- * each layer's `colour.dim`. BY moves this into `src/`.
- */
-export function dim(c: string, amount: number): string {
-  const lin = parseHex(c).map(srgbToLinear) as Rgb;
-  const y = 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
-  return hex(lin.map((x) => linearToSrgb(x + (y - x) * amount)) as Rgb);
-}
+/** Context dimming (M14 plan decision 9): the app's own rule, `src/scene/dimming.ts` (moved there in BY). */
+export const dim = dimHex;
 
 export type Role = "solid" | "shade" | "ghost" | "dim" | "tint" | "region" | "mark";
 export type Entry = { name: string; colour: string; role: Role; layer?: string };

@@ -8,7 +8,8 @@ import { applyBaseColours, applyLayerView, paint, boneAccent, drawnColourMode, i
 import { subscribeGraph } from "../content/appGraph";
 import { useLayerBatches, usePatchBatch, type LayerBatches, type PatchBatch } from "./layerRegistry";
 import { EAGER_LAYER, LAZY_LAYERS, type LazyLayerId } from "../systems/registry";
-import { tintFor } from "./material";
+import { BONE_COLOUR, tintFor } from "./material";
+import { dimAmount, dimTint } from "./dimming";
 import { TINT_COLOURS, TINT_ROLES, type TintRole } from "./tints";
 import { PATTERN_OF, setPatternPixelRatio } from "./patterns";
 import { REGIONS, regionColour, regionOf, type ColourMode, type Region } from "./regionColours";
@@ -27,6 +28,9 @@ export type SkeletonScene = {
 let boneTints: Record<TintRole, Color> | null = null;
 const boneTint = (): Record<TintRole, Color> =>
   (boneTints ??= Object.fromEntries(TINT_ROLES.map((r) => [r, tintFor(TINT_COLOURS[r])])) as Record<TintRole, Color>);
+
+/** The bones' dimmed instance colour, if the eager layer has a dim amount (none today: BW). */
+const boneDimmed: BaseTint | undefined = dimAmount(EAGER_LAYER) > 0 ? () => dimTint(EAGER_LAYER, BONE_COLOUR, BONE_COLOUR) : undefined;
 
 let regionTints: Map<Region, Color> | null = null;
 
@@ -73,6 +77,8 @@ export type IsolationStats = {
   patches: { origin: string[]; insertion: string[] };
   /** Structures with the origin-and-insertion outline, sorted. */
   both: string[];
+  /** Structures drawn context-dimmed (M14 BY), sorted. */
+  dimmed: string[];
 };
 
 function tintStats(v: SceneView | null): IsolationStats["tints"] {
@@ -131,6 +137,7 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
     let focusIds: readonly string[] = [];
     let joint: readonly string[] = [];
     let tinted: readonly string[] = [];
+    let dimmed: readonly string[] = [];
     let view: SceneView | null = null;
     let colour: ColourMode = "bone";
     let patchBatch: PatchBatch | null = null;
@@ -149,8 +156,8 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
         applyBaseColours(scene.skeleton, base);
         colour = mode;
       }
-      const previous = [...focusIds, ...joint, ...tinted];
-      applyLayerView(EAGER_LAYER, scene.skeleton, scene.ghost, view, previous, base, boneAccent(), boneTint());
+      const previous = [...focusIds, ...joint, ...tinted, ...dimmed];
+      applyLayerView(EAGER_LAYER, scene.skeleton, scene.ghost, view, previous, base, boneAccent(), boneTint(), boneDimmed);
       const batches = useLayerBatches.getState();
       for (const layer of LAZY_LAYERS) {
         const b = batches[layer];
@@ -160,7 +167,7 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
           applyBaseColours(b.solid, b.base);
           applied.add(b);
         }
-        counts[layer] = applyLayerView(layer, b.solid, b.ghost, view, previous, b.base, b.accent, b.tint);
+        counts[layer] = applyLayerView(layer, b.solid, b.ghost, view, previous, b.base, b.accent, b.tint, b.dimmed);
         b.ghost.mesh.material.opacity = st.ghostOpacity;
       }
       for (const b of applied) if (!Object.values(batches).includes(b)) applied.delete(b);
@@ -169,6 +176,7 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
       focusIds = view.focusIds;
       joint = view.joint;
       tinted = [...view.tints.keys()];
+      dimmed = [...view.dimmed];
       const ghostMaterial = scene.ghost.mesh.material as { opacity: number };
       ghostMaterial.opacity = st.ghostOpacity;
       // Outlines: on whichever layer's batch holds the target, off on the others.
@@ -261,6 +269,7 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
         tints: tintStats(view),
         patches: { origin: [...drawnPatches.origin].sort(), insertion: [...drawnPatches.insertion].sort() },
         both: scene.both.flatMap((o) => (o.target ? [o.target] : [])).sort(),
+        dimmed: view ? [...view.dimmed].sort() : [],
       });
     };
     apply();

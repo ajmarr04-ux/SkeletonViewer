@@ -20,6 +20,7 @@ import type { BatchedSkeleton } from "./batchSkeleton";
 import { usePatchBatch } from "./layerRegistry";
 import { accentTint as makeAccentTint } from "./material";
 import { PATTERN_OF, withPattern, type Pattern } from "./patterns";
+import { dimmedIn } from "./dimming";
 
 export type IsolationView = {
   /** True when a bone with a mesh is isolated (a wisdom tooth isolates nothing). */
@@ -243,6 +244,8 @@ export type SceneView = {
   patches: ReadonlyMap<string, Role>;
   /** Tinted origins that are also insertions (spec §5.3: plus an outline). */
   both: readonly string[];
+  /** Related structures on another layer than the focus's, drawn desaturated (M14 plan decision 9: `dimmedIn`). */
+  dimmed: ReadonlySet<string>;
 };
 
 const NO_IDS: ReadonlySet<string> = new Set();
@@ -295,6 +298,7 @@ export function sceneView(
     tints: iso.tints ?? NO_TINTS,
     patches: NO_PATCHES,
     both: iso.both ?? [],
+    dimmed: NO_IDS,
   };
   if (iso.patches && iso.patches.size > 0) {
     const patches = new Map<string, Role>();
@@ -339,6 +343,8 @@ export function viewOf(
     muscleDepth?: MuscleDepth;
     /** Layers held back by the budget's phone start (M13 decision 10): drawn as Off. */
     budgetHeld?: readonly string[];
+    /** The colour mode chosen (M14 BY: no context dimming while colour-by-region is drawn). */
+    colourMode?: ColourMode;
   },
   hasMesh: (id: string) => boolean,
   peel: (stop: MuscleDepth) => ReadonlySet<string> = peeledAt,
@@ -348,7 +354,11 @@ export function viewOf(
   const base = isolationView(st.sel, st.tier, st.ghostMode, hasMesh, st.grp, softParts, softParent, st.layers, region);
   const tinted = withTints(base, st.sel, st.tier, st.antagonists ?? false, hasMesh, st.layers, rolesOf, usePatchBatch.getState().failed);
   const iso = withJoint(tinted, st.joint, hasMesh);
-  return sceneView(iso, st.layers, withPeeled(st.hidden, peel(st.muscleDepth ?? 0)), region);
+  const view = sceneView(iso, st.layers, withPeeled(st.hidden, peel(st.muscleDepth ?? 0)), region);
+  // Context dimming (M14 plan decision 9): the focus layer is the selection's; off at tier 0 and with colour-by-region drawn.
+  const on = st.tier !== 0 && drawnColourMode(st.colourMode ?? "bone", view) !== "region";
+  view.dimmed = dimmedIn(iso, st.sel === null ? null : layerOfAny(st.sel), layerOfAny, on);
+  return view;
 }
 
 /**
@@ -431,7 +441,8 @@ export function boneAccent(): Color {
  * `accent`, a highlighted joint's bones their tint times `JOINT_GAIN`, and the
  * structures in `previous` (the last focus and joint) go back to their base
  * colour. With `tint`, structures in `view.tints` get their role's colour (M9);
- * a structure tinted before must be in `previous` to get its colour back.
+ * with `dimmed`, those in `view.dimmed` their dimmed colour (M14 BY). A
+ * structure tinted or dimmed before must be in `previous` to get its colour back.
  * Only visibility and colours change; nothing moves (spec §12).
  */
 export function applyLayerView(
@@ -443,6 +454,7 @@ export function applyLayerView(
   base: BaseTint,
   accent: Color,
   tint?: Readonly<Record<TintRole, Color>>,
+  dimmed?: BaseTint,
 ): { solid: number; ghost: number } {
   let nSolid = 0;
   let nGhost = 0;
@@ -465,6 +477,12 @@ export function applyLayerView(
     const i = solid.instanceOf.get(id);
     if (i !== undefined) paint(solid, i, base(id), "none");
   }
+  // Context dimming (M14 BY): never a tint, the focus or a joint's bone, so these writes don't overlap the ones below.
+  if (dimmed)
+    for (const id of view.dimmed) {
+      const i = solid.instanceOf.get(id);
+      if (i !== undefined) paint(solid, i, dimmed(id), "none");
+    }
   const own = (id: string): Color => {
     const t = tint && view.tints.get(id);
     return t ? tint[t] : base(id);

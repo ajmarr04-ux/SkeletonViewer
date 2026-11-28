@@ -234,3 +234,61 @@ test("the screenshot's legend shows the key with each tint's pattern", async ({ 
   expect(found.base).toBeGreaterThan(20);
   expect(found.marks).toBeGreaterThan(20);
 });
+
+// M14 BY (plan decision 9): context dimming. A bone at tier 1 with the muscles
+// on: its related muscles (another layer) are drawn less saturated, at the
+// same brightness; colour-by-region switches the dimming off.
+test("context dimming: a femur's tier-1 muscles are drawn desaturated; off with colour-by-region", async ({ page }) => {
+  test.setTimeout(180_000);
+  const MUSCLE = "vastus_lateralis_left";
+  await ready(page, "layers=b:on,m:on&sel=femur_left&tier=1");
+  await expect(debug(page)).toHaveAttribute("data-dimmed", new RegExp(`(^|,)${MUSCLE}(,|$)`), { timeout: 30_000 });
+  // The focus layer (bones) never dims; the dimmed colour carries no pattern.
+  expect(((await debug(page).getAttribute("data-dimmed")) ?? "").split(",").some((id) => id === "femur_left" || id === "tibia_left")).toBe(false);
+  expect(await page.evaluate((id) => window.__viewer!.instancePattern(id), MUSCLE)).toBe("none");
+
+  let p: { x: number; y: number } | null = null;
+  for (const from of ["right", "anterior", "left", "posterior"] as const) {
+    await page.evaluate(({ x, f }) => window.__viewer!.frameBone(x, f), { x: MUSCLE, f: from });
+    await page.waitForTimeout(300);
+    const q = await page.evaluate((x) => window.__viewer!.bone(x)!.client, MUSCLE);
+    if ((await page.evaluate(({ x, y }) => window.__viewer!.pick(x, y), q)) === MUSCLE) {
+      p = q;
+      break;
+    }
+  }
+  if (!p) throw new Error(`no uncovered point on ${MUSCLE}`);
+  const sample = async () => {
+    const png = await page.screenshot({ clip: { x: p!.x - 8, y: p!.y - 8, width: 16, height: 16 } });
+    return page.evaluate(async (b64) => {
+      const img = new Image();
+      img.src = `data:image/png;base64,${b64}`;
+      await img.decode();
+      const c = document.createElement("canvas");
+      c.width = img.width;
+      c.height = img.height;
+      const ctx = c.getContext("2d")!;
+      ctx.drawImage(img, 0, 0);
+      const d = ctx.getImageData(0, 0, c.width, c.height).data;
+      let sat = 0;
+      let lum = 0;
+      for (let i = 0; i < d.length; i += 4) {
+        const [r, g, b] = [d[i]!, d[i + 1]!, d[i + 2]!];
+        const max = Math.max(r, g, b);
+        sat += max === 0 ? 0 : (max - Math.min(r, g, b)) / max;
+        lum += 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      }
+      const n = d.length / 4;
+      return { sat: sat / n, lum: lum / n };
+    }, png.toString("base64"));
+  };
+  const dimmed = await sample();
+  await page.getByTestId("colour-toggle").click();
+  await expect(debug(page)).toHaveAttribute("data-colour", "region");
+  await expect(debug(page)).toHaveAttribute("data-dimmed", "");
+  await page.waitForTimeout(300);
+  const full = await sample();
+  console.log(`BY dimming sample: saturation ${dimmed.sat.toFixed(3)} dimmed, ${full.sat.toFixed(3)} full; luminance ${dimmed.lum.toFixed(1)}, ${full.lum.toFixed(1)}`);
+  expect(dimmed.sat).toBeLessThan(full.sat * 0.85);
+  expect(Math.abs(dimmed.lum - full.lum) / full.lum).toBeLessThan(0.15);
+});

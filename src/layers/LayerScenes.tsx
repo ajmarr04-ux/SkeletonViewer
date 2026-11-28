@@ -26,6 +26,7 @@ import { layerChunksOf } from "./urls";
 import { chunksFor, type LayerChunks } from "../regions/chunks";
 import { membersOf } from "../regions/index";
 import { shadeOf } from "./softIds";
+import { dimTint } from "../scene/dimming";
 import { lazyEntry } from "../content/index";
 
 /** `?debug`: one bounds report per layer (the overlay line). */
@@ -60,6 +61,14 @@ export function layerBaseTint(id: string): Color {
   let c = SHADE_TINTS.get(key);
   if (!c) SHADE_TINTS.set(key, (c = tintFor(shade, layerColour(e.layer))));
   return c;
+}
+
+/** Instance colour of a structure dimmed (M14 BY, plan decision 9): its own colour (material or shade) desaturated by its layer's amount. */
+export function layerDimTint(id: string): Color {
+  const e = lazyEntry(id);
+  if (!e) return WHITE;
+  const material = layerColour(e.layer);
+  return dimTint(e.layer, shadeOf(e) ?? material, material);
 }
 
 /**
@@ -295,7 +304,7 @@ function TissueLayerScene({
         const moreSelected = Array.from({ length: Math.max(0, maxPartsOf(layer) - 1) }, (_, i) =>
           createOutline(solid, OUTLINE.selected.colour, OUTLINE.selected.widthPx, `outline-selected-${layer}-${i + 2}`),
         );
-        const batches: LayerBatches = { lod, solid, ghost, outlines, moreSelected, base: layerBaseTint, accent: ACCENTS[layer]!, tint: TINTS[layer]! };
+        const batches: LayerBatches = { lod, solid, ghost, outlines, moreSelected, base: layerBaseTint, dimmed: layerDimTint, accent: ACCENTS[layer]!, tint: TINTS[layer]! };
         last = batches;
         setShown(batches);
         // Isolation (main chunk) applies the view to the new batches as soon as they are registered.
