@@ -9,21 +9,25 @@ import {
   PATTERN_FRAGMENT,
   PATTERN_INDEX,
   PATTERN_OF,
-  PATTERN_PERIOD_CSS,
-  PATTERN_PERIOD_UNIFORM,
+  PATTERN_FRAGMENT_PARS,
+  PATTERN_MIN_CSS,
+  PATTERN_MIN_PX_UNIFORM,
+  PATTERN_PERIOD_M,
+  PATTERN_VERTEX,
   patternAlpha,
   patternCells,
   patternMark,
   patternOfAlpha,
   patternPath,
   setPatternPixelRatio,
+  surfaceMark,
   withPattern,
   type Pattern,
 } from "../src/scene/patterns";
 import { TINT_ROLES } from "../src/scene/tints";
 import { DEFAULT_MODES } from "../src/systems/registry";
 
-// M14 BX (plan decision 8): the pattern cue on the role tints.
+// M14 BX (plan decision 8): the pattern cue on the role tints; M14 CA: surface-locked.
 
 const PATTERNS: Pattern[] = ["stripes", "dots", "hatch"];
 const share = (p: Pattern, n = 60) => {
@@ -72,11 +76,62 @@ describe("pattern marks (the shader's rule, in JS)", () => {
     const cells = PATTERNS.map((p) => JSON.stringify(patternCells(p, 12)));
     expect(new Set(cells).size).toBe(PATTERNS.length);
   });
-  it("the period follows the pixel ratio (about 6 CSS px on every screen)", () => {
+  it("the smallest on-screen period follows the pixel ratio (the same CSS px on every screen)", () => {
     setPatternPixelRatio(2);
-    expect(PATTERN_PERIOD_UNIFORM.value).toBe(2 * PATTERN_PERIOD_CSS);
+    expect(PATTERN_MIN_PX_UNIFORM.value).toBe(2 * PATTERN_MIN_CSS);
     setPatternPixelRatio(1);
-    expect(PATTERN_PERIOD_UNIFORM.value).toBe(PATTERN_PERIOD_CSS);
+    expect(PATTERN_MIN_PX_UNIFORM.value).toBe(PATTERN_MIN_CSS);
+  });
+});
+
+// M14 CA: the marks are on the surface (world space, triplanar), not the screen.
+describe("surface-locked marks (the shader's rule, in JS)", () => {
+  const P = PATTERN_PERIOD_M;
+  const sharp = P / 1000; // a close view: one device pixel is a thousandth of a period
+  it("seen squarely and close, they are the legend's marks on the plane the surface faces", () => {
+    for (const p of PATTERNS)
+      for (let y = 0; y < 12; y++)
+        for (let x = 0; x < 12; x++) {
+          const [u, v] = [(x + 0.37) / 12, (y + 0.41) / 12];
+          const want = patternMark(p, u, v, 1) ? 1 : 0;
+          expect(surfaceMark(p, [u * P, v * P, 0.3 * P], [0, 0, 1], sharp).mark).toBeCloseTo(want, 3); // front: x, y
+          expect(surfaceMark(p, [0.3 * P, u * P, v * P], [-1, 0, 0], sharp).mark).toBeCloseTo(want, 3); // side: y, z
+          expect(surfaceMark(p, [v * P, 0.3 * P, u * P], [0, 1, 0], sharp).mark).toBeCloseTo(want, 3); // top: z, x
+        }
+  });
+  it("stay on the surface: the same point gives the same mark whatever the camera, until the octave changes", () => {
+    // Pan and orbit change neither the point nor (much) the pixel footprint; zoom changes only the footprint.
+    for (const p of PATTERNS)
+      for (const px of [P / 200, P / 40, P / 20]) {
+        const a = surfaceMark(p, [0.0031, 0.0017, 0], [0, 0, 1], px);
+        expect(a.lod).toBe(0);
+        expect(surfaceMark(p, [0.0031 + P, 0.0017 - P, 0], [0, 0, 1], px).mark).toBeCloseTo(a.mark, 6);
+      }
+  });
+  it("never smaller than the smallest period on screen: zoomed out they coarsen by octaves, cross-faded", () => {
+    for (const zoomOut of [1, 2, 3, 8, 50]) {
+      const px = (P / PATTERN_MIN_CSS) * zoomOut; // metres per device pixel
+      const { lod } = surfaceMark("dots", [0, 0, 0], [0, 0, 1], px);
+      expect(lod).toBeCloseTo(Math.log2(zoomOut), 6);
+      // The coarser octave drawn spans at least the smallest period on screen.
+      expect((P * 2 ** Math.ceil(lod)) / px).toBeGreaterThanOrEqual(PATTERN_MIN_CSS - 1e-9);
+    }
+    // Continuous across an octave boundary (no pop while zooming).
+    const at = (px: number) => surfaceMark("stripes", [0.0023, 0.0041, 0], [0, 0, 1], px).mark;
+    const edge = (P / PATTERN_MIN_CSS) * 2;
+    expect(Math.abs(at(edge * 0.9999) - at(edge * 1.0001))).toBeLessThan(0.01);
+  });
+  it("anti-aliased: a mark's edge ramps over about a pixel, not a hard step", () => {
+    const px = P / 18; // the default framing: 18 device px per period
+    const ramp = Array.from({ length: 40 }, (_, i) => surfaceMark("stripes", [(i / 40) * P, 0, 0], [0, 0, 1], px).mark);
+    expect(ramp.some((m) => m > 0.05 && m < 0.95)).toBe(true);
+    expect(ramp.filter((m) => m > 0.05 && m < 0.95).length).toBeLessThanOrEqual(6);
+  });
+  it("blend between the planes where the surface faces none of them squarely", () => {
+    const n: [number, number, number] = [1, 1, 0];
+    const m = surfaceMark("stripes", [0.001, 0.002, 0.003], n, sharp).mark;
+    expect(m).toBeGreaterThanOrEqual(0);
+    expect(m).toBeLessThanOrEqual(1);
   });
 });
 
@@ -85,15 +140,20 @@ describe("the shader", () => {
     const m = createBoneMaterial();
     const shader = {
       fragmentShader: "#include <common>\nvoid main() {\n#include <color_fragment>\n}",
-      vertexShader: "#include <common>\nvoid main() {\n#include <color_vertex>\n}",
+      vertexShader: "#include <common>\nvoid main() {\n#include <color_vertex>\n#include <project_vertex>\n}",
       uniforms: {} as Record<string, unknown>,
     };
     m.onBeforeCompile(shader as never, undefined as never);
     expect(AO_COLOR_FRAGMENT).toContain(PATTERN_FRAGMENT);
     expect(AO_COLOR_FRAGMENT.indexOf("vTint.rgb")).toBeLessThan(AO_COLOR_FRAGMENT.indexOf("vTint.a"));
-    expect(shader.fragmentShader).toContain("uniform float uPatternPeriod;");
-    expect(shader.uniforms.uPatternPeriod).toBe(PATTERN_PERIOD_UNIFORM);
-    expect(PATTERN_FRAGMENT).toContain("gl_FragCoord"); // screen space: static, nothing animates
+    expect(shader.fragmentShader).toContain(PATTERN_FRAGMENT_PARS);
+    expect(shader.fragmentShader).toContain("uniform float uPatternMinPx;");
+    expect(shader.uniforms.uPatternMinPx).toBe(PATTERN_MIN_PX_UNIFORM);
+    // Surface-locked (M14 CA): world-space position from the vertex shader, never the screen's.
+    expect(shader.vertexShader).toContain(PATTERN_VERTEX);
+    expect(shader.vertexShader.indexOf("vPatPos =")).toBeLessThan(shader.vertexShader.indexOf("#include <project_vertex>"));
+    expect(PATTERN_FRAGMENT).not.toContain("gl_FragCoord");
+    expect(PATTERN_FRAGMENT).toContain(PATTERN_PERIOD_M.toFixed(3));
     expect(PATTERN_FRAGMENT).toContain(`1.0 - ${PATTERN_DARKEN.toFixed(3)} * mark`);
   });
 });

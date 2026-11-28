@@ -1,6 +1,6 @@
 import { Color, MeshStandardMaterial } from "three";
 import { EAGER_LAYER, layerColour } from "../systems/registry";
-import { PATTERN_FRAGMENT, PATTERN_PERIOD_UNIFORM, PATTERN_UNIFORM_DECL } from "./patterns";
+import { PATTERN_FRAGMENT, PATTERN_FRAGMENT_PARS, PATTERN_MIN_PX_UNIFORM, PATTERN_VERTEX, PATTERN_VERTEX_PARS } from "./patterns";
 
 /**
  * Baked AO (COLOR_0, 1 = unoccluded) is remapped to [AO_FLOOR, 1] before it
@@ -102,13 +102,14 @@ export function createBoneMaterial(colour: string = BONE_COLOUR, name = "bone"):
   m.name = name;
   m.onBeforeCompile = (shader) => {
     shader.fragmentShader = replaceChunk(shader.fragmentShader, "color_fragment", AO_COLOR_FRAGMENT, "fragment");
-    shader.fragmentShader = replaceChunk(shader.fragmentShader, "common", `#include <common>${VARYING}${PATTERN_UNIFORM_DECL}`, "fragment");
-    shader.uniforms.uPatternPeriod = PATTERN_PERIOD_UNIFORM;
+    shader.fragmentShader = replaceChunk(shader.fragmentShader, "common", `#include <common>${VARYING}${PATTERN_FRAGMENT_PARS}`, "fragment");
+    shader.uniforms.uPatternMinPx = PATTERN_MIN_PX_UNIFORM;
     shader.vertexShader = replaceChunk(shader.vertexShader, "color_vertex", TINT_VERTEX, "vertex");
-    shader.vertexShader = replaceChunk(shader.vertexShader, "common", `#include <common>${VARYING}`, "vertex");
+    shader.vertexShader = replaceChunk(shader.vertexShader, "project_vertex", `${PATTERN_VERTEX}#include <project_vertex>`, "vertex");
+    shader.vertexShader = replaceChunk(shader.vertexShader, "common", `#include <common>${VARYING}${PATTERN_VERTEX_PARS}`, "vertex");
   };
   // Every material compiled with this hook shares one program.
-  m.customProgramCacheKey = () => `bone-ao-tint-pattern-${AO_FLOOR}`;
+  m.customProgramCacheKey = () => `bone-ao-tint-pattern-surface-${AO_FLOOR}`;
   return m;
 }
 

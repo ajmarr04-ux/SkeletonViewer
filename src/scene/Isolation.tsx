@@ -118,7 +118,7 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
     ];
     for (const o of outlines) setOutlineViewport(o, size.width, size.height, dpr);
   }, [scene, tissue, size.width, size.height, dpr]);
-  // The tints' patterns too: about 6 CSS px per period on every screen (M14 BX).
+  // The tints' patterns too: the smallest period is the same in CSS px on every screen (M14 CA).
   useEffect(() => setPatternPixelRatio(dpr), [dpr]);
 
   // Compile the ghost and outline programs now, while loading, not on the first click.

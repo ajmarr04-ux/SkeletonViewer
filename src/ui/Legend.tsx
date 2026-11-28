@@ -3,7 +3,7 @@ import { useGraphVersion } from "../content/appGraph";
 import { viewOf } from "../scene/isolation";
 import { usePatchBatch } from "../scene/layerRegistry";
 import { REGIONS, regionColour } from "../scene/regionColours";
-import { markColour, PATTERN_OF, PATTERN_PERIOD_CSS, patternPath, type Pattern } from "../scene/patterns";
+import { markColour, PATTERN_OF, PATTERN_SWATCH_CSS, patternPath, type Pattern } from "../scene/patterns";
 import { TINT_COLOURS, TINT_NAMES, TINT_ROLES, type TintRole } from "../scene/tints";
 import { hasMesh, isMuscleKind, isolateGroup } from "../state/selection";
 import { useViewer, type ViewerState } from "../state/store";
@@ -49,11 +49,11 @@ export function keyItems(s: KeyState, version: number, failed: boolean): KeyItem
   ];
 }
 
-/** A swatch: the colour, and over it the pattern's marks in the darker shade, at the shader's period. */
+/** A swatch: the colour, and over it the pattern's marks in the darker shade, at the swatch period (the pattern's look; its size on screen depends on the zoom). */
 function Swatch({ item }: { item: KeyItem }) {
   if (item.pattern === "none") return <span className="legend-swatch" style={{ background: item.colour }} aria-hidden="true" />;
   const id = `legend-pattern-${item.pattern}`;
-  const s = PATTERN_PERIOD_CSS;
+  const s = PATTERN_SWATCH_CSS;
   return (
     <svg className="legend-swatch" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" data-pattern={item.pattern} style={{ background: item.colour }}>
       <defs>

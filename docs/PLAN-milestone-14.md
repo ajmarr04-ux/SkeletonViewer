@@ -35,16 +35,17 @@ Session kinds: **design** = strong model; **routine** = Sonnet is fine. No subag
 | BW | design | The colour model's data and test: `ColourSpec` shades, the registry-driven colour-vision test, and the future-system colours table (step 5) | none | decisions 7, 10 | `colourVision.test.ts` builds its pairs from the registry; the table passes and is recorded here; no on-screen colour changes | **Done** (2026-11-28). See BW notes |
 | BX | design | Pattern cue for the role tints: per-instance pattern on the batches and patches, legend swatches, screenshot (step 6) | none | decision 8 | `tints` e2e and screenshot tests pass; pattern unit tests; main chunk measured | **Done** (2026-11-28). See BX notes |
 | BY | routine | Context dimming of other layers in the related set (step 7) | none | decision 9 | dimming unit and e2e tests; colour-vision test covers the dimmed colours; `tints`, `tiers`, `layers` e2e pass || **Done** (2026-11-28). See BY notes |
-| BZ | routine | Device-run prep: the three bench links, `perf-load` from the registry (the last M14 allowlist entry), the container parity table; then **gate: the user runs `?bench` on PC and iPhone** (step 8) | none | decision 11 | links in the plan; allowlist has no M14 entry; the user's figures recorded here | Prep **done** (2026-11-28); **gate waiting on the user**. See BZ notes |
-| CA | routine | Wrap-up: goldens, parity table, full e2e in the background, docs, `/m14/` (step 9) | none | everything above | exit criteria ticked; `/m14/` live | |
+| BZ | routine | Device-run prep: the three bench links, `perf-load` from the registry (the last M14 allowlist entry), the container parity table; then **gate: the user runs `?bench` on PC and iPhone** (step 8) | none | decision 11 | links in the plan; allowlist has no M14 entry; the user's figures recorded here | **Done** (2026-11-28; figures in; iPhone in Low Power Mode, 30 fps cap). See BZ notes |
+| CA | design | Pattern scale and motion, from the device runs: period × 3, and the pattern stops swimming when the camera moves (the user chose surface-locked marks, see BZ notes) | none | decision 8, BZ notes | `tints` e2e and pattern unit tests pass; legend and screenshot still match the shader; checked by the user on a device | **Built** (2026-11-28); waiting on the user's device check (needs a merge to `main`). See CA notes |
+| CB | routine | Wrap-up: goldens, parity table, full e2e in the background, docs, `/m14/` (step 9) | none | everything above | exit criteria ticked; `/m14/` live | **Built** (2026-11-28); merge, CA's device check and the `m14` freeze follow (the user's choice). See CB notes |
 
-Triggers: "begin session BS" to "begin session CA". Every session follows `docs/WORKFLOW_NEW.md` §7: read `docs/HANDOFF.md` and this file, do the one serial task, end with `npm run check` and the e2e specs it touched, commit, push to the session branch, tick the row, write `docs/HANDOFF.md`, and stop.
+Triggers: "begin session BS" to "begin session CB". Every session follows `docs/WORKFLOW_NEW.md` §7: read `docs/HANDOFF.md` and this file, do the one serial task, end with `npm run check` and the e2e specs it touched, commit, push to the session branch, tick the row, write `docs/HANDOFF.md`, and stop.
 
 **Order:**
 - BS → BT → BU. BS's gate must be answered before BT starts, because BT's acceptance is "unchanged from the approved golden".
 - BV needs nothing from BS–BU and can run any time (it touches the sidebar too, so not in parallel with BU).
 - BW → BX → BY.
-- BZ after BX and BY (the third device view uses the patterns). Its gate waits on the user; CA starts after the figures come back.
+- BZ after BX and BY (the third device view uses the patterns). Its gate waits on the user; CA (pattern scale and motion, added from the device feedback) starts after the figures come back, then CB (wrap-up).
 
 **User checkpoints**
 - **Decisions 1 to 12 below.** Sessions build them as written unless the user says otherwise. Decisions 3 (generic words), 5 (chips hidden with one system) and 6 (the sidebar header) are the ones most worth a look.
@@ -55,14 +56,14 @@ Triggers: "begin session BS" to "begin session CA". Every session follows `docs/
 
 ## Exit criteria (from `SPEC-platform.md` §11, M14)
 
-- [ ] Per-layer search indexes, filter chips, new ranking; `golden/search.json` differences reviewed with the user (BS, BT, BU).
+- [x] Per-layer search indexes, filter chips, new ranking; `golden/search.json` differences reviewed with the user (BS, BT, BU).
 - [x] Lazy tree per system (BV).
 - [x] Colour model: registry-driven colour-vision test, pattern cue for role tints, context dimming (BW, BX, BY).
 - [x] The proposed future-system colours table, tested (BW).
-- [ ] Real-device checks: the user runs `?bench` on PC and iPhone for: all layers solid; a region focus; a muscle tier 2 with antagonists and patterns (BZ).
-- [ ] `tiers`, `panels`, `urls`, `tree` and `regions` goldens unchanged; `search` as approved; old URLs open the same view.
-- [ ] No regression: every existing unit and e2e test passes unchanged, except where a step lists why (spec §2.1). Performance parity with the new features off (bench, perf-load, main chunk ≤ 500.1 kB).
-- [ ] The allowlist has no M14 entry (M15 ×6 only).
+- [x] Real-device checks: the user runs `?bench` on PC and iPhone for: all layers solid; a region focus; a muscle tier 2 with antagonists and patterns (BZ; figures in BZ's notes; the iPhone ran in Low Power Mode, capped at 30 fps).
+- [x] `tiers`, `panels`, `urls`, `tree` and `regions` goldens unchanged; `search` as approved; old URLs open the same view.
+- [x] No regression: every existing unit and e2e test passes unchanged, except where a step lists why (spec §2.1). Performance parity with the new features off (bench, perf-load, main chunk ≤ 500.1 kB).
+- [x] The allowlist has no M14 entry (M15 ×6 only).
 - [ ] **Hosted copy is live and linked below** (an extra requirement for every milestone).
 
 ---
@@ -197,7 +198,7 @@ Triggers: "begin session BS" to "begin session CA". Every session follows `docs/
 - The container parity table against M13 (`dc55686`), built side by side from the same `node_modules` (as M13 BR): triangles, draw calls, `?bench` FPS and label times, `perf-load`, main chunk, every lazy chunk (the new search and tree chunks against the old).
 - **Gate:** the user runs the three links on PC and iPhone. Session ends; CA starts after the figures are in BZ's notes.
 
-## Step 9 (CA): wrap-up
+## Step 9 (CB): wrap-up (was CA; CA is now the pattern session, added after BZ's device runs)
 
 - Goldens: `tiers`, `panels`, `urls`, `tree`, `regions` unchanged; `search` as approved.
 - Full e2e in the background with a log file, then a grep for failures.
@@ -327,6 +328,57 @@ Triggers: "begin session BS" to "begin session CA". Every session follows `docs/
 | `LayerScenes` / `DebugLayers` / `RegionPicker` | 3,494 / 4,686 / 4,086 B | 3,547 / 4,688 / 4,086 B |
 
   FPS and label times are within run-to-run spread. The first `perf-load` pair put M14's phone muscles 1.9 s behind; the second put it 0.5 s ahead, so it is spread (main-thread time, about 16 s blocked on the software GPU in both builds). The muscles layer misses its 3 s / 5 s budget in both builds, as in every container run since M7 (STATUS §6): recorded, not fixed (decision 11).
-- **Hosting finding (for the gate).** Pages builds the live site and `/m14/` only from `main` (`deploy.yml` on push to `main`), which is still M13. So none of M14 is hosted yet; links 1 and 2 already run on M13's site, but link 3's patterns and BS–BY's work don't. Asked the user how to reach this branch on the devices (merge now, run locally over the LAN, or split the runs).
+- **Hosting finding (for the gate).** Pages builds the live site and `/m14/` only from `main` (`deploy.yml` on push to `main`), which is still M13. So none of M14 is hosted yet; links 1 and 2 already run on M13's site, but link 3's patterns and BS–BY's work don't. Asked the user how to reach this branch on the devices (merge now, run locally over the LAN, or split the runs). **Answer: merge now.** PR #30 merged at `ab33337` (2026-11-28) for the device runs; CA merges again and freezes `m14` at that final merge.
 - **Checks.** `npm run check`: pass (818 tests, 1 skipped). No e2e run: no app code changed (scripts and tests only).
+
+#### BZ gate: the user's device runs (2026-11-28, on `/m14/` at `ab33337`)
+
+| Link | Device | Median / 5th pct FPS | Draw calls | Triangles | Notes |
+| --- | --- | --- | --- | --- | --- |
+| 1. all four layers | PC (high LOD) | 75.2 / 74.6 | 4 | 1,499,634 | vsync (75 Hz); p95 13.4 ms, max 20.0 ms |
+| 2. left forearm | PC | 75.2 / 74.6 | 3 | 38,827 | p95 13.4 ms |
+| 3. FCR tier 2, antagonists | PC | 75.2 / 74.1 | 10 | 1,421,926 | p95 13.5 ms; one 178.6 ms frame (max) |
+| 1. all four layers | iPhone (low LOD) | 30.3 / 29.4 | 4 | 449,623 | |
+| 2. left forearm | iPhone | 30.3 / 29.4 | 3 | 12,594 | |
+| 3. FCR tier 2, antagonists | iPhone | 30.3 / 29.4 | 9 | 449,927 | |
+
+- **PC:** vsync-limited on every link, as at M7; the M10 muscle-tier-2 bench is now measured. Labels were off (the panel says so), so no label times. Link 3 drew 10 calls and 1,421,926 triangles against the container's 9 and 1,344,915; the bench panel counts what is drawn during the orbit, and the PC's run reports "ghosts" in its isolation line (the ghosted rest of the body), so the figures differ by view rather than by build. The single 178.6 ms frame is probably the high LOD or a lazy chunk arriving mid-orbit; not repeated in the medians.
+- **iPhone: an exact 30.3 / 29.4 on all three links**, from 449,623 triangles down to 12,594. At M7 the same link 1 ran at 58.8. A flat figure that ignores a 35× change in load is a frame-rate cap, not the GPU: most likely iOS Low Power Mode (which caps Safari at 30 fps) or a 30 Hz display setting. **Asked the user** to re-run link 1 with Low Power Mode off; recorded as is until then, not treated as a regression. **Confirmed by the user: Low Power Mode was on.** So 30 fps is iOS's cap; the iPhone figures are a floor, not the device's rate (M7's 58.8 was without it). A re-run with it off is optional.
+- **The M10 checks:** "the shading visually looks alright" (AO on a real GPU: pass). **LOD pop: none seen** (the user: "it shows the bones briefly then loads the model", i.e. the eager bones draw first and the lazy layers arrive after, which is the intended load order, not a low → high swap). The M10 gate's checks are closed.
+- **The user's feedback on the patterns** (screenshot: the extensor digitorum and extensor carpi ulnaris heads hatched, PC at dpr 1):
+  1. **Too small: scale the period by about 3×** (6 → 18 CSS px).
+  2. **They "swim" when zooming or panning** ("spastic", "annoying"). Cause: the marks are laid out in screen space (`gl_FragCoord`, BX decision 8), so the pattern stays still on the screen while the surface slides under it (the "shower door" effect), and a 6 px period on a dpr 1 screen also shimmers. The user asked whether the pattern could snap to a new size when the camera stops. A new session **CA** (design) does both; the wrap-up moves to **CB**. Approaches put to the user:
+     - **(a) Anchored screen space (recommended):** keep the screen-space marks, but offset them by the projected position of an anchor (the selection's centre) so they move with the model while panning, and keep their size fixed while the camera moves, snapping to the new zoom when it stops (the user's idea). Cheap (two uniforms), and the legend still matches the on-screen size exactly. While orbiting the marks still slide a little.
+     - **(b) Surface-locked:** the marks are laid out on the surface in world space (triplanar), so they stick to the muscle like a texture through every move. Most natural, but bigger: the mark size changes with zoom (it needs anti-aliasing when small and a clamp), and the legend can only show the pattern's look, not its exact size.
+  - **The user chose (b), surface-locked** (2026-11-28). CA builds it: world-space marks, an anti-aliasing and size clamp for zoomed-out views, the legend showing the pattern's look; period about 3× today's at the default framing.
+
+### CA (2026-11-28): surface-locked patterns (design)
+
+- **Where the marks are.** On the surface, not the screen: the vertex shader passes each vertex's offset from its instance's origin and its normal, in world orientation and metres (`mat3(modelMatrix) * mat3(batchingMatrix)`, `PATTERN_VERTEX` before `project_vertex`; the batch matrix carries gltfpack's quantisation scale, and leaving out its translation means Explode carries the marks along). The fragment lays the 2D rule out triplanar (planes yz, zx, xy, weights `|n|^8`), so a front view's surface uses x and y, matching the legend's orientation. Pan, orbit and zoom no longer move the marks on the structure.
+- **Size.** `PATTERN_PERIOD_M` = 22 mm on the surface: measured 8.16 px/cm at link 3's tier-2 framing (1280 × 800, dpr 1), so about 18 px there, the user's 3×. Closer, the marks grow with the structure (about 34 px with the extensor digitorum framed alone).
+- **Clamp and anti-aliasing.** The shader measures periods per device pixel (`fwidth` of the pattern coordinate, taken outside the branch) and, when a period would be smaller than `PATTERN_MIN_CSS` = 14 CSS px (uniform `uPatternMinPx`, × dpr, replaces BX's `uPatternPeriod`), draws the next octave (2×, 4×, … up to 8), cross-faded by the fractional level so zooming never pops. Edges are smoothsteps over about a pixel (`skvBand` for stripes and hatch lines, the dot's radius).
+- **Legend and screenshot.** They show the pattern's look at `PATTERN_SWATCH_CSS` = 7 px (two periods in the 14 px chip), rasterised from the same `patternMark` rule; the on-screen size now depends on the zoom (the user accepted this with option (b)).
+- **Tests.** `surfaceMark`, the JS twin of the new shader: close and square-on it equals `patternMark` on each of the three planes (so the legend's cells are the shader's); a point keeps its mark through pan and zoom within an octave; the drawn period never falls below the minimum, octaves continuous at the boundary; edges ramp over a few samples. The shader test checks the vertex chunk, the uniform and that `gl_FragCoord` is gone. `tints.spec.ts`'s pixel sample now measures the spread of shades in a 40 px square (darkest tenth vs brightest), since 18 px anti-aliased marks rarely jump between neighbours: antagonist 0.498, focus 0.023. Program cache key `bone-ao-tint-pattern-surface-0.4`.
+- **Main chunk** 494,550 B (+737 B; budget 500.1 kB, 5.5 kB left).
+- **Checks.** `npm run check`: pass (823 tests, 1 skipped). `tints` e2e: 8 passed.
+- **Gate:** the user checks the patterns on a device, which needs this branch on `main` (`/m14/` only rebuilds there). Asked before merging.
+
+### CB (2026-11-28): wrap-up
+
+- **Order changed (the user's choice).** CA's device check needs a merge; rather than merge CA alone and wait, CB ran now. `m14` is **not** frozen here: after CB merges, the user checks the patterns on `/m14/` (link 3), and a small follow-up applies any size change (`PATTERN_PERIOD_M` / `PATTERN_MIN_CSS`) and freezes `m14` at that merge.
+- **Goldens.** `npm run golden`: pass. `git diff --stat dc55686 -- tests/golden public/models content`: `search.json` (the BS approval, 20 lines) and the harness's imports only; `tiers`, `panels`, `urls`, `tree`, `regions` unchanged, so old URLs open the same view.
+- **Allowlist.** Six entries, all M15 (the Python build and mapping scripts).
+- **Full e2e** (two workers, 55.4 min): **200 of 205 passed.** The 5 failures were timing under load: `keyboard` ×3 (timeouts inside `tabTo`, as in BT and BV), `nested` (the hover tooltip not up within 5 s) and `polish`'s share link (the copied URL taken while the camera was still settling: `cam=` differed in the fourth decimal). Re-run alone, one worker: **5 passed** (10.3 min).
+- **Parity.** BZ's table against M13 stands for everything but CA's shader. Main chunk **494,550 B** (M13 490,914; +3.6 kB; budget 500.1 kB, 5.5 kB left).
+- **CA's shader costs frame rate in the container, with no pattern drawn.** `DEVICE=1 npm run bench-container`, BZ's head (`93671ba`, scratch worktree, same `node_modules`) against CB's, alternated, four rounds of three runs each, medians of median FPS:
+
+| Link | BZ (`93671ba`) | CB (with CA) |
+| --- | --- | --- |
+| 1. all four layers | 0.7, 0.6, 0.6, 0.7 | 0.6, 0.5, 0.5*, 0.6* |
+| 2. left forearm (no pattern drawn) | 5.1, 5.1, 4.7, 4.9 | 4.1, 3.8, 3.7*, 4.1* |
+| 3. FCR tier 2, antagonists | 0.6, 0.5, 0.6, 0.6 | 0.6, 0.5, 0.6*, 0.6* |
+
+  (* with the experiment below.) The container ran slower today than on BZ's day (BZ's own link 2: 7.5 then, about 5 now), so only the side-by-side figures compare. Link 2 is **15–25 % slower**, and it draws no pattern: every fragment pays for the two new varyings (`vPatPos`, `vPatNrm`), the per-vertex matrices and the `fwidth`. SwiftShader shades on the CPU, so per-fragment work shows there in full; on a real GPU the PC was vsync-limited on all three links at BZ. **Tried:** taking `fwidth` inside the pattern branch (the index is per instance): no measurable gain (the * rounds), so reverted. Not fixed here: removing the cost means giving up the surface lock or the anti-aliasing, which is the user's call. Left for the device check: if the PC stays at 75 fps and the iPhone (Low Power Mode off) at 60, it is a container-only cost; otherwise a cheaper variant (e.g. one projected plane instead of three) is a follow-up.
+- **Docs.** `STATUS.md`: "Sidebar and search" rewritten for M14 (rows per system, per-layer indexes, bands, chips), a new "How colour works (M14)" (hue, patterns, dimming, the future table), the M14 device figures in §6, the main-chunk row, the allowlist and frozen-milestone lines. `CLAUDE.md`'s key-file rows were kept current by each session (ranker BS, search chunks BT, tree chunks BV, colours BW, patterns BX/CA, dimming BY); its status paragraph updated.
+- **Checks.** `npm run check`: pass (823 tests, 1 skipped).
 

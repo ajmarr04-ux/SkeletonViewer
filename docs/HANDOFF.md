@@ -1,24 +1,22 @@
-# Handoff — written 2026-11-28 at the end of M14 BZ (prep); the device gate is open
+# Handoff — written 2026-11-28 at the end of M14 CB
 
 ## Next session
-Still BZ, gate only: record the user's PC and iPhone `?bench` figures in BZ's notes (`docs/PLAN-milestone-14.md`), tick the "Real-device checks" exit criterion, then CA (wrap-up: goldens, full e2e, docs, `/m14/`).
-Done when: the figures for the three links on both devices are in BZ's notes, with any miss against STATUS §6 recorded (not fixed unless the user asks).
+Not a numbered session: the M14 close-out, after the user's device check.
+1. The user merges the CB PR (or asks Claude to), the Deploy run rebuilds `/m14/`, and the user checks the surface-locked patterns on a device with link 3: `/m14/?layers=b:on,c:on,l:on,m:on&sel=flexor_carpi_radialis_left&tier=2&ant=1`, orbiting to the back of the forearm, then panning, zooming and orbiting. Ideally also `?bench` on links 1–3 (plan BZ notes) with the iPhone's Low Power Mode **off**, because of the container finding below.
+2. A small follow-up PR: any size change (`PATTERN_PERIOD_M` / `PATTERN_MIN_CSS` in `src/scene/patterns.ts`; the unit tests follow the constants), then freeze `m14` in `deploy/pages.json` at the merge commit of the CB PR (or of the follow-up, if it changes code), tick "Hosted copy is live" in the plan, mark M14 live in `README.md`, update `CLAUDE.md`'s status. `current` goes to 15 in M15's planning.
 
 ## State
-- Last commit: M14 BZ: device-run prep, parity table, the gate
-- `npm run check`: pass
+- Last commit: M14 CB: wrap-up (plan, STATUS, handoff)
+- `main` = PR #30 (`ab33337`, M14 up to BZ); CA and CB are on `claude/keen-clarke-32a10a`
+- `npm run check`: pass (823 tests, 1 skipped); goldens unchanged but the approved `search.json`
+- Full e2e: 200/205 with two workers; the 5 timing failures (`keyboard` ×3, `nested`, `polish` share link) pass alone
 - Open fan-out work: none
 
 ## Waiting on the user
-1. **How to reach this branch on the devices.** Pages builds `/m14/` and the live site only from `main` (still M13), so link 3's patterns aren't hosted anywhere. Options: (a) merge the branch to `main` now (the live site and `/m14/` become M14 before CA's wrap-up; CA merges again at the end, and freezes then); (b) the user runs `npm run build` then `npx vite preview --host` on the PC and opens the links on the iPhone over the same Wi-Fi; (c) links 1 and 2 now on the M13 site, link 3 after CA's merge.
-2. **The runs.** On a PC browser and an iPhone, open each link (base + query), wait for the bench panel, paste median and 5th-percentile FPS, draw calls, triangles and label times:
-   1. `?bench&layers=b:on,c:on,l:on,m:on`
-   2. `?bench&layers=b:on,c:on,l:on,m:on&reg=forearm_left`
-   3. `?bench&layers=b:on,c:on,l:on,m:on&sel=flexor_carpi_radialis_left&tier=2&ant=1`
-   Plus the M10 gate's checks: does the AO look right on a real GPU, and is there a visible LOD pop?
+- Merge, then the device verdict on the patterns: size, the zoomed-out octaves, the look in the legend, and whether the frame rate holds.
 
 ## Things the next session must know
-- Kill stale `vite preview` servers before a Playwright run (`pkill -f "vite preview"`).
-- `DEVICE=1 npm run bench-container` runs the three links in the container (the reference table is in BZ's notes).
-- `perf-load` now times `largestLazyLayer()` (`scripts/lib/model-checks.ts`); the allowlist has no M14 entry.
-- Main chunk 493,813 B (budget 500.1 kB, 6.3 kB left). Measure: index + modulepreloads, `gzip -9`.
+- **CA's shader is 15–25 % slower in the container with no pattern drawn** (link 2, side by side against BZ; table in the CB notes). Moving `fwidth` into the branch didn't help (reverted). If the devices show a drop, the follow-up is a cheaper variant (one projected plane rather than triplanar, or dropping a varying); if not, record it as a SwiftShader-only cost.
+- The container is slower today than on BZ's day: compare only builds benched side by side.
+- Kill stale `vite preview` servers before a Playwright run (`pkill -f "vite preview"`); bench runs of all three device links take about 6 min per build, so use a long timeout.
+- Main chunk 494,550 B (budget 500.1 kB, 5.5 kB left).

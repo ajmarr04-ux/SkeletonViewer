@@ -105,7 +105,7 @@ describe("bone material", () => {
     expect(m.vertexColors).toBe(true);
     const shader = {
       fragmentShader: "#include <common>\nvoid main() {\n#include <color_fragment>\n}",
-      vertexShader: "#include <common>\nvoid main() {\n#include <color_vertex>\n}",
+      vertexShader: "#include <common>\nvoid main() {\n#include <color_vertex>\n#include <project_vertex>\n}",
       uniforms: {},
     };
     m.onBeforeCompile(shader as never, undefined as never);
@@ -117,7 +117,7 @@ describe("bone material", () => {
     const m = createBoneMaterial();
     const shader = {
       fragmentShader: "#include <common>\nvoid main() {\n#include <color_fragment>\n}",
-      vertexShader: "#include <common>\nvoid main() {\n#include <color_vertex>\n}",
+      vertexShader: "#include <common>\nvoid main() {\n#include <color_vertex>\n#include <project_vertex>\n}",
       uniforms: {},
     };
     m.onBeforeCompile(shader as never, undefined as never);
