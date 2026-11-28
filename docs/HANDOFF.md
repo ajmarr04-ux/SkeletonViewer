@@ -6,14 +6,13 @@ Done when: `tints` e2e and the pattern unit tests pass; the legend swatch and th
 Then CB: the wrap-up (was CA).
 
 ## State
-- Last commit: M14 BZ: device figures, CA added for the patterns
+- Last commit: M14 BZ: device gate closed
 - `main` = PR #30 (`ab33337`), M14 up to BZ, deployed to `/m14/` (not frozen; CB freezes at its own merge)
 - `npm run check`: pass (818 tests, 1 skipped)
 - Open fan-out work: none
 
 ## Waiting on the user
-1. iPhone: every link ran at exactly 30.3 / 29.4 FPS (M7 ran 58.8), even at 12,594 triangles, which points to a 30 fps cap. Is Low Power Mode on? Re-run link 1 with it off.
-2. The M10 check not yet answered: any visible LOD pop (the model switching from low to high detail)?
+Nothing before CA. (Device gate closed: the iPhone's 30 fps was Low Power Mode, confirmed; no LOD pop seen.)
 
 ## Things the next session must know
 - The pattern is screen space: `gl_FragCoord / uPatternPeriod` in `PATTERN_FRAGMENT` (`src/scene/patterns.ts`); the period is one shared uniform set from the dpr. The legend (`patternPath`) and screenshot (`patternCells`) rasterise the same rule, so any change has to keep them in step.
