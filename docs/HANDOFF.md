@@ -1,24 +1,22 @@
-# Handoff — written 2026-11-28 at the end of M14 BZ (prep); the device gate is open
+# Handoff — written 2026-11-28 at the end of M14 BZ
 
 ## Next session
-Still BZ, gate only: record the user's PC and iPhone `?bench` figures in BZ's notes (`docs/PLAN-milestone-14.md`), tick the "Real-device checks" exit criterion, then CA (wrap-up: goldens, full e2e, docs, `/m14/`).
-Done when: the figures for the three links on both devices are in BZ's notes, with any miss against STATUS §6 recorded (not fixed unless the user asks).
+CA (design): pattern scale and motion, from the device runs. Make the period 3× (6 → 18 CSS px), and stop the pattern "swimming" when the camera zooms or pans, using the approach the user picks (BZ notes: (a) anchored screen space with the size snapping at rest, recommended; (b) surface-locked, world-space triplanar).
+Done when: `tints` e2e and the pattern unit tests pass; the legend swatch and the screenshot key still match the shader; main chunk measured; the user checks it on a device (the `/m14/` copy updates only on a merge to `main`, so ask before merging).
+Then CB: the wrap-up (was CA).
 
 ## State
-- Last commit: M14 BZ: device-run prep, parity table, the gate
-- `npm run check`: pass
+- Last commit: M14 BZ: device figures, CA added for the patterns
+- `main` = PR #30 (`ab33337`), M14 up to BZ, deployed to `/m14/` (not frozen; CB freezes at its own merge)
+- `npm run check`: pass (818 tests, 1 skipped)
 - Open fan-out work: none
 
 ## Waiting on the user
-1. **Hosting: done.** The user chose to merge now: PR #30 merged at `ab33337` (2026-11-28); its Deploy run puts M14 at `/m14/` and the live site. CA merges again at the end and freezes `m14` at that later merge commit, not `ab33337`.
-2. **The runs.** On a PC browser and an iPhone, open each link (base `https://ajmarr04-ux.github.io/SkeletonViewer/m14/` + query), wait for the bench panel, paste median and 5th-percentile FPS, draw calls, triangles and label times:
-   1. `?bench&layers=b:on,c:on,l:on,m:on`
-   2. `?bench&layers=b:on,c:on,l:on,m:on&reg=forearm_left`
-   3. `?bench&layers=b:on,c:on,l:on,m:on&sel=flexor_carpi_radialis_left&tier=2&ant=1`
-   Plus the M10 gate's checks: does the AO look right on a real GPU, and is there a visible LOD pop?
+1. Pattern motion: approach (a) or (b), as above.
+2. iPhone: every link ran at exactly 30.3 / 29.4 FPS (M7 ran 58.8), even at 12,594 triangles, which points to a 30 fps cap. Is Low Power Mode on? Re-run link 1 with it off.
+3. The M10 check not yet answered: any visible LOD pop (the model switching from low to high detail)?
 
 ## Things the next session must know
+- The pattern is screen space: `gl_FragCoord / uPatternPeriod` in `PATTERN_FRAGMENT` (`src/scene/patterns.ts`); the period is one shared uniform set from the dpr. The legend (`patternPath`) and screenshot (`patternCells`) rasterise the same rule, so any change has to keep them in step.
 - Kill stale `vite preview` servers before a Playwright run (`pkill -f "vite preview"`).
-- `DEVICE=1 npm run bench-container` runs the three links in the container (the reference table is in BZ's notes).
-- `perf-load` now times `largestLazyLayer()` (`scripts/lib/model-checks.ts`); the allowlist has no M14 entry.
 - Main chunk 493,813 B (budget 500.1 kB, 6.3 kB left). Measure: index + modulepreloads, `gzip -9`.
