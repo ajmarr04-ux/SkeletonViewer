@@ -1,0 +1,58 @@
+import { it } from "vitest"; import { writeFileSync as W, appendFileSync as A } from "node:fs";
+import { colourTable, pairsOf, registryLayers, need, hex, dim, over, type LayerColours, type Entry } from "./lib/colourTable";
+import { parseHex, toLab, deltaE2000, simulateCvd } from "../src/scene/regionColours";
+import { GHOST_OPACITY } from "../src/state/store";
+import { SCENE_BACKGROUND } from "../src/scene/material";
+const V = [null, "deuteranopia", "protanopia"] as const;
+const labs = (c: string) => V.map((k) => toLab(k ? simulateCvd(parseHex(c), k) : parseHex(c)));
+const seeds: Record<string, string> = JSON.parse(process.env.SEEDS ?? '{"arteries":"#c62828","veins":"#2f5fbf","nerves":"#f2d12e","lymph_nodes":"#4caf50","organs":"#c9a07e"}');
+const OP = [GHOST_OPACITY.min, GHOST_OPACITY.default, GHOST_OPACITY.max];
+const vkeys = (id: string) => [id, "dim:" + id, ...OP.map((o) => "ghost:" + id + "@" + o)];
+const vcols = (c: string) => [c, dim(c), ...OP.map((o) => over(c, o, SCENE_BACKGROUND))];
+type Cand = { c: string; v: ReturnType<typeof labs>[] };
+const grid: Cand[] = [];
+for (let r = 0; r < 256; r += 5) for (let g = 0; g < 256; g += 5) for (let b = 0; b < 256; b += 5) { const c = hex([r/255, g/255, b/255]); grid.push({ c, v: vcols(c).map(labs) }); }
+function run(order: string[], L: LayerColours[]) {
+  const chosen: LayerColours[] = []; const res: any[] = []; let total = 0;
+  for (const id of order) {
+    const layers = [...L, ...chosen, { id, material: "#808080" }];
+    const { checked } = pairsOf(layers, colourTable(layers, { dimmed: true }));
+    const keys = vkeys(id);
+    const mine = checked.filter(([a, b]) => a.layer === id || b.layer === id).map(([a, b]) => (a.layer === id ? [a, b] : [b, a]) as [Entry, Entry]);
+    const self = mine.filter(([, b]) => b.layer === id).map(([a, b]) => [keys.indexOf(a.name), keys.indexOf(b.name)]);
+    const others = mine.filter(([, b]) => b.layer !== id && !(process.env.NOREGION && b.role === "region")).map(([a, b]) => ({ a: keys.indexOf(a.name), bl: labs(b.colour), need: need(a.name, b.name) }));
+    const sl = toLab(parseHex(seeds[id]!));
+    const sorted = grid.map((x) => ({ x, d: deltaE2000(sl, x.v[0]![0]!) })).filter((y) => y.d < Number(process.env.R ?? 45)).sort((p, q) => p.d - q.d);
+    let best: any;
+    for (const { x, d } of sorted) {
+      let ok = true, margin = 99;
+      for (const o of others) { for (let k = 0; k < 3; k++) { const e = deltaE2000(x.v[o.a]![k]!, o.bl[k]!); if (e < o.need) { ok = false; break; } margin = Math.min(margin, e - o.need); } if (!ok) break; }
+      if (ok) for (const [a, b] of self) { for (let k = 0; k < 3; k++) if (deltaE2000(x.v[a]![k]!, x.v[b]![k]!) < 8) { ok = false; break; } if (!ok) break; }
+      if (ok) { best = { id, seed: seeds[id], c: x.c, moved: +d.toFixed(1), margin: +margin.toFixed(1) }; break; }
+    }
+    if (!best) { res.push({ id, none: true }); return { res, total: 1e9 }; }
+    res.push(best); total += best.moved; chosen.push({ id, material: best.c });
+  }
+  return { res, total: +total.toFixed(1) };
+}
+function blockers(id: string, L: LayerColours[], radius: number) {
+  const layers = [...L, { id, material: "#808080" }];
+  const { checked } = pairsOf(layers, colourTable(layers, { dimmed: true }));
+  const keys = vkeys(id);
+  const mine = checked.filter(([a, b]) => a.layer === id || b.layer === id).map(([a, b]) => (a.layer === id ? [a, b] : [b, a]) as [Entry, Entry]).filter(([, b]) => b.layer !== id);
+  const others = mine.map(([a, b]) => ({ n: a.name + "~" + b.name, a: keys.indexOf(a.name), bl: labs(b.colour), need: need(a.name, b.name) }));
+  const sl = toLab(parseHex(seeds[id]!));
+  const tally: Record<string, number> = {}; let n = 0; const only: Record<string, number> = {};
+  for (const x of grid) { const d = deltaE2000(sl, x.v[0]![0]!); if (d > radius) continue; n++;
+    const f = new Set<string>(); for (const o of others) for (let k = 0; k < 3; k++) if (deltaE2000(x.v[o.a]![k]!, o.bl[k]!) < o.need) f.add(process.env.BYVAR ? o.n.split("~")[0]!.replace(/@.*/, "") : o.n.split("~")[1]!);
+    for (const b of f) tally[b] = (tally[b] ?? 0) + 1; if (f.size === 1) { const b = [...f][0]!; only[b] = (only[b] ?? 0) + 1; } }
+  return { id, n, tally: Object.entries(tally).sort((a, b) => b[1] - a[1]).slice(0, 12), only };
+}
+it("search", () => {
+  if (process.env.BLOCK) { const L = registryLayers(); W(process.env.OUT ?? "/tmp/claude-0/-home-user-SkeletonViewer/ca5a7d1a-02b2-48d0-b4ad-a666c76fe957/scratchpad/block.txt", Object.keys(seeds).map((id) => JSON.stringify(blockers(id, L, Number(process.env.BLOCK)))).join("\n")); }
+  const L = registryLayers();
+  const perms = (a: string[]): string[][] => a.length <= 1 ? [a] : a.flatMap((x, i) => perms([...a.slice(0, i), ...a.slice(i + 1)]).map((p) => [x, ...p]));
+  const orders: string[][] = process.env.ORDERS === "all" ? perms(Object.keys(seeds)) : JSON.parse(process.env.ORDERS ?? "[]");
+  W(process.env.OUT ?? "/tmp/claude-0/-home-user-SkeletonViewer/ca5a7d1a-02b2-48d0-b4ad-a666c76fe957/scratchpad/search.txt", "");
+  for (const o of orders) A(process.env.OUT ?? "/tmp/claude-0/-home-user-SkeletonViewer/ca5a7d1a-02b2-48d0-b4ad-a666c76fe957/scratchpad/search.txt", JSON.stringify(run(o, L)) + "\n");
+}, 3600000);

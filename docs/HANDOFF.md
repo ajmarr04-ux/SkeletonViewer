@@ -1,19 +1,16 @@
-# Handoff — written 2026-11-27 at the end of M14 BV
+# Handoff — written 2026-11-28, M14 BW (stopped for the user)
 
 ## Next session
-BW (design): the colour model's data and test (plan step 5, decisions 7 and 10): `ColourSpec.shades` (tendon moves into the muscles descriptor, `src/layers/colours.ts` goes), `tests/colourVision.test.ts` builds its pairs from the registry, and the future-system colours table.
-Done when: `colourVision.test.ts` builds its pairs from the registry; the table passes and is recorded in the plan; no on-screen colour changes. **If the rewritten test finds a pair the old table missed, stop and ask** (it would mean a colour change).
+Finish BW once the user answers: write `tests/fixtures/future-colours.json` (ids arteries, veins, nerves, lymph_nodes, organs; `label`, `seed`, `material`, `nearest` per vision) and move `docs/batches/BW/futureColours.test.ts.txt` to `tests/futureColours.test.ts`; record the table in the plan; tick BW. Then BX.
+
+## Waiting on the user (see the plan's BW notes)
+1. The future colours: no set near the textbook hues passes the shipped pair rule in any order. Without region colours in the rule a set passes (veins `#1450af`, nerves `#dc9600`, organs `#bea5a5`, arteries `#734164`, lymph `#afb4c8`). Which rule, and are those hues acceptable?
+2. For BY: the current layers' dimmed colours (40 %) fail five pairs (ligaments against dimmed bone/cartilage, dimmed cartilage against hover, protanopia dimmed muscle against a bone ghost).
 
 ## State
-- Last commit: M14 BV: sidebar rows per system, a lazy tree chunk per system
-- `npm run check`: pass (790 tests, 1 skipped)
-- Open fan-out work: none
-
-## Waiting on the user
-Nothing. Decisions 5–12 in the plan stand unless the user says otherwise.
+- Last commit: M14 BW: tendon shade in the muscles descriptor, colour-vision pairs from the registry (`27f5654`); this handoff after it.
+- `npx tsc --noEmit` clean; `npx vitest run` 792 passed, 1 skipped. `npm run check`: pass.
 
 ## Things the next session must know
-- The sidebar now has one `system` row per system (`sidebarRows`, key `system:<id>`); `visibleRows` is still the layer forest alone (the tree golden reads it).
-- Collapsed systems live in the store (`collapsedSystems`, `toggleSystem`), shared by the Layers panel and the sidebar.
-- Tree chunks: `virtual:skeleton-tree-<system>` (registry `TREE_SYSTEMS`, `treeChunk`); the fixture serves its two itself (`tests/fixtures/systems/vite.ts`).
-- Main chunk 492.2 kB of 500.1.
+- `tests/lib/colourTable.ts` is the one pair rule (`colourTable`, `pairsOf`, `lowPairs`, `dim`); `dimmed: true` adds the dimmed rows (BY turns it on in `colourVision.test.ts` and moves `dim` into `src/`).
+- The search harness (`docs/batches/BW/search-future-colours.test.ts.txt`) runs as a Vitest file under `tests/` (env `ORDERS=all|[[...]]`, `R` radius, `NOREGION=1`, `OUT`, `BLOCK`/`BYVAR` for blocker tallies; it writes to a hard-coded scratchpad path — change it). About 15 min for all 120 orders.
