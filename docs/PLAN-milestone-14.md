@@ -35,7 +35,7 @@ Session kinds: **design** = strong model; **routine** = Sonnet is fine. No subag
 | BW | design | The colour model's data and test: `ColourSpec` shades, the registry-driven colour-vision test, and the future-system colours table (step 5) | none | decisions 7, 10 | `colourVision.test.ts` builds its pairs from the registry; the table passes and is recorded here; no on-screen colour changes | **Done** (2026-11-28). See BW notes |
 | BX | design | Pattern cue for the role tints: per-instance pattern on the batches and patches, legend swatches, screenshot (step 6) | none | decision 8 | `tints` e2e and screenshot tests pass; pattern unit tests; main chunk measured | **Done** (2026-11-28). See BX notes |
 | BY | routine | Context dimming of other layers in the related set (step 7) | none | decision 9 | dimming unit and e2e tests; colour-vision test covers the dimmed colours; `tints`, `tiers`, `layers` e2e pass || **Done** (2026-11-28). See BY notes |
-| BZ | routine | Device-run prep: the three bench links, `perf-load` from the registry (the last M14 allowlist entry), the container parity table; then **gate: the user runs `?bench` on PC and iPhone** (step 8) | none | decision 11 | links in the plan; allowlist has no M14 entry; the user's figures recorded here | |
+| BZ | routine | Device-run prep: the three bench links, `perf-load` from the registry (the last M14 allowlist entry), the container parity table; then **gate: the user runs `?bench` on PC and iPhone** (step 8) | none | decision 11 | links in the plan; allowlist has no M14 entry; the user's figures recorded here | Prep **done** (2026-11-28); **gate waiting on the user**. See BZ notes |
 | CA | routine | Wrap-up: goldens, parity table, full e2e in the background, docs, `/m14/` (step 9) | none | everything above | exit criteria ticked; `/m14/` live | |
 
 Triggers: "begin session BS" to "begin session CA". Every session follows `docs/WORKFLOW_NEW.md` §7: read `docs/HANDOFF.md` and this file, do the one serial task, end with `npm run check` and the e2e specs it touched, commit, push to the session branch, tick the row, write `docs/HANDOFF.md`, and stop.
@@ -290,3 +290,43 @@ Triggers: "begin session BS" to "begin session CA". Every session follows `docs/
 - **Tests.** `tests/dimming.test.ts` (9): the amounts; the femur at tiers 1 and 2 with every layer on dims exactly its solid muscles; a muscle at tiers 1 and 2 (antagonists on) dims nothing; a ligament's related muscles; off with no selection, tier 0, colour-by-region; focus, tints and joint never dim; luminance kept, saturation lower; instance colour × material = the dimmed colour (material and tendon); `applyLayerView` writes and restores. `tints.spec.ts` + 1: femur tier 1, `vastus_lateralis_left` in `data-dimmed`, pattern none; an uncovered 16 px square's mean saturation 0.505 dimmed against 0.642 with colour-by-region on (dimming off), mean luminance 92.3 against 86.8. `colourVision.test.ts` runs the dimmed rows through `src/`'s rule and passes.
 - **e2e** `tints`, `tiers`, `layers`: 29/29 pass (two workers, 11.8 min). Also `fixture`, `keyboard`, `nested`, `polish`, `regions`, `related`, `select`, `sidebar`, `viewer`: 91/91 pass (16.9 min).
 - **Main chunk 493.8 kB** (493,813 B; +0.3 kB over BX). Budget 500.1, 6.3 kB left.
+
+### BZ (2026-11-28): device-run prep (the gate is open)
+
+- **`perf-load` from the registry.** `scripts/perf-load.ts` times turning on `largestLazyLayer()` (`scripts/lib/model-checks.ts`: the lazy layer with the largest high-LOD budget, `targetTris` then `maxMiB`; the muscles today), its test ID, row and `<file>-low.glb` from the descriptor. The `scripts/perf-load.ts` entry is gone from `tests/registry-allowlist.json`: **no M14 entry is left** (only the M15 Python files). Test: `tests/model-checks.test.ts` +2.
+- **`DEVICE=1 npm run bench-container`** runs the three device links (labels on). Link 3's muscle is the **left flexor carpi radialis**: at tier 2 with `ant=1` the extensor carpi ulnaris heads and extensor digitorum are hatched (`instancePattern`), the origin and insertion patches are drawn, and the legend shows the three tint chips.
+- **The three links** (add each to the hosted base, e.g. `https://ajmarr04-ux.github.io/SkeletonViewer/m14/`):
+  1. `?bench&layers=b:on,c:on,l:on,m:on`: all four layers On, whole body;
+  2. `?bench&layers=b:on,c:on,l:on,m:on&reg=forearm_left`: the same in the left forearm;
+  3. `?bench&layers=b:on,c:on,l:on,m:on&sel=flexor_carpi_radialis_left&tier=2&ant=1`: a forearm muscle at tier 2 with antagonists and patterns.
+- **Container reference** (SwiftShader, 1280 × 800, labels on, medians of 3):
+
+| Link | Median / 5th pct FPS | Draw calls | Triangles | Label layout median (candidates) |
+| --- | --- | --- | --- | --- |
+| 1. all four layers | 0.7 / 0.6 | 4 | 1,499,634 | 1.2 ms (60) |
+| 2. left forearm | 7.5 / 6.2 | 3 | 38,827 | 0.5 ms (27) |
+| 3. FCR tier 2, antagonists | 0.8 / 0.6 | 9 | 1,344,915 | 0.6 ms (31) |
+
+- **Parity table against M13** (`dc55686` in a scratch worktree, same `node_modules`, the same scripts, back to back; `LABELS=1` bench, `perf-load` twice per build):
+
+| Measure | M13 (`dc55686`) | M14 BZ head |
+| --- | --- | --- |
+| Triangles, bones only / all four layers / `reg=thorax` | 499,981 / 1,499,634 / 628,779 | identical |
+| Draw calls, bones only / all four layers | 1 / 4 | 1 / 4 |
+| `?bench` bones only, median / 5th pct FPS | 2.5 / 2.1 | 2.4 / 2.2 |
+| `?bench` all four layers | 0.7 / 0.7 | 0.7 / 0.6 |
+| `?bench` all four layers in `reg=thorax` | 1.0 / 0.8 | 0.9 / 0.8 |
+| Label layout median: bones / all layers / thorax (candidates) | 0.6 / 1.0 / 0.8 ms (42 / 60 / 60) | 0.6 / 0.9 / 1.0 ms (42 / 60 / 60) |
+| `perf-load` desktop: skeleton / full detail / muscles (run 1; run 2) | 2.01 / 5.99 / 8.74 s; 2.10 / 6.34 / 9.30 s | 2.14 / 6.42 / 9.26 s; 2.10 / 6.21 / 9.09 s |
+| `perf-load` phone: same | 2.12 / 6.15 / 9.29 s; 2.15 / 6.49 / 10.46 s | 2.29 / 6.78 / 11.23 s; 2.10 / 6.38 / 9.97 s |
+| Main chunk, `gzip -9` index + modulepreloads | 490,914 B | **493,813 B** (+2.9 kB; budget 500.1 kB) |
+| Content chunks: bones / muscles / ligaments / cartilage | 40,027 / 114,051 / 40,478 / 8,860 B | identical |
+| Search indexes | bones 9,061; soft 36,846 B | bones 9,067; muscles 22,047; ligaments 12,561; cartilage 2,730 B (soft three 37,338) |
+| Search code chunk | 6,907 B | 7,422 B |
+| Tree chunk | soft tree 12,141 B | `tree-musculoskeletal` 12,152 B |
+| `LayerScenes` / `DebugLayers` / `RegionPicker` | 3,494 / 4,686 / 4,086 B | 3,547 / 4,688 / 4,086 B |
+
+  FPS and label times are within run-to-run spread. The first `perf-load` pair put M14's phone muscles 1.9 s behind; the second put it 0.5 s ahead, so it is spread (main-thread time, about 16 s blocked on the software GPU in both builds). The muscles layer misses its 3 s / 5 s budget in both builds, as in every container run since M7 (STATUS §6): recorded, not fixed (decision 11).
+- **Hosting finding (for the gate).** Pages builds the live site and `/m14/` only from `main` (`deploy.yml` on push to `main`), which is still M13. So none of M14 is hosted yet; links 1 and 2 already run on M13's site, but link 3's patterns and BS–BY's work don't. Asked the user how to reach this branch on the devices (merge now, run locally over the LAN, or split the runs).
+- **Checks.** `npm run check`: pass (818 tests, 1 skipped). No e2e run: no app code changed (scripts and tests only).
+
