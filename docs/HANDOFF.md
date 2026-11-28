@@ -2,12 +2,12 @@
 
 ## Next session
 Not a numbered session: the M14 close-out, after the user's device check.
-1. The user merges the CB PR (or asks Claude to), the Deploy run rebuilds `/m14/`, and the user checks the surface-locked patterns on a device with link 3: `/m14/?layers=b:on,c:on,l:on,m:on&sel=flexor_carpi_radialis_left&tier=2&ant=1`, orbiting to the back of the forearm, then panning, zooming and orbiting. Ideally also `?bench` on links 1–3 (plan BZ notes) with the iPhone's Low Power Mode **off**, because of the container finding below.
+1. **Done:** PR #31 merged at `6118b64` (`6118b64e34b72fb6cfdc649a3f29c444847f9871`), Deploy run 37 started. The user checks the surface-locked patterns on a device with link 3: `/m14/?layers=b:on,c:on,l:on,m:on&sel=flexor_carpi_radialis_left&tier=2&ant=1`, orbiting to the back of the forearm, then panning, zooming and orbiting. Ideally also `?bench` on links 1–3 (plan BZ notes) with the iPhone's Low Power Mode **off**, because of the container finding below.
 2. A small follow-up PR: any size change (`PATTERN_PERIOD_M` / `PATTERN_MIN_CSS` in `src/scene/patterns.ts`; the unit tests follow the constants), then freeze `m14` in `deploy/pages.json` at the merge commit of the CB PR (or of the follow-up, if it changes code), tick "Hosted copy is live" in the plan, mark M14 live in `README.md`, update `CLAUDE.md`'s status. `current` goes to 15 in M15's planning.
 
 ## State
 - Last commit: M14 CB: wrap-up (plan, STATUS, handoff)
-- `main` = PR #30 (`ab33337`, M14 up to BZ); CA and CB are on `claude/keen-clarke-32a10a`
+- `main` = PR #31 (`6118b64`), all of M14; the freeze candidate for `m14` if the follow-up changes no code
 - `npm run check`: pass (823 tests, 1 skipped); goldens unchanged but the approved `search.json`
 - Full e2e: 200/205 with two workers; the 5 timing failures (`keyboard` ×3, `nested`, `polish` share link) pass alone
 - Open fan-out work: none
