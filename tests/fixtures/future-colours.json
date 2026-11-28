@@ -1,0 +1,110 @@
+{
+  "note": "M14 plan decision 10: proposed base colours for future systems, recorded for the next spec and not shipped (nothing in src/ reads this). Checked by tests/futureColours.test.ts against the shipped pair rule, with colour-by-region paused while another system's layer is on (accepted by the user in BW). Hues to revisit later.",
+  "layers": [
+    {
+      "id": "arteries",
+      "label": "Arteries",
+      "seed": "#c62828",
+      "material": "#734164",
+      "dim": 0.4,
+      "nearest": {
+        "normal": {
+          "pair": "ghost:arteries@0.5/dim:arteries",
+          "dE": 8.6
+        },
+        "deuteranopia": {
+          "pair": "arteries/ghost:lymph_nodes@0.5",
+          "dE": 8
+        },
+        "protanopia": {
+          "pair": "ghost:arteries@0.5/dim:arteries",
+          "dE": 8
+        }
+      }
+    },
+    {
+      "id": "veins",
+      "label": "Veins",
+      "seed": "#2f5fbf",
+      "material": "#1450af",
+      "dim": 0.4,
+      "nearest": {
+        "normal": {
+          "pair": "ghost:veins@0.5/dim:veins",
+          "dE": 9.2
+        },
+        "deuteranopia": {
+          "pair": "dim:veins/insertion",
+          "dE": 8.1
+        },
+        "protanopia": {
+          "pair": "arteries/ghost:veins@0.5",
+          "dE": 8.8
+        }
+      }
+    },
+    {
+      "id": "nerves",
+      "label": "Nerves",
+      "seed": "#f2d12e",
+      "material": "#dc9600",
+      "dim": 0.4,
+      "nearest": {
+        "normal": {
+          "pair": "dim:muscles:tendon/dim:nerves",
+          "dE": 15.5
+        },
+        "deuteranopia": {
+          "pair": "muscles/ghost:nerves@0.5",
+          "dE": 8
+        },
+        "protanopia": {
+          "pair": "muscles:tendon/dim:nerves",
+          "dE": 10.9
+        }
+      }
+    },
+    {
+      "id": "lymph_nodes",
+      "label": "Lymph nodes",
+      "seed": "#4caf50",
+      "material": "#afb4c8",
+      "dim": 0.4,
+      "nearest": {
+        "normal": {
+          "pair": "ligaments/dim:lymph_nodes",
+          "dE": 8.7
+        },
+        "deuteranopia": {
+          "pair": "arteries/ghost:lymph_nodes@0.5",
+          "dE": 8
+        },
+        "protanopia": {
+          "pair": "dim:lymph_nodes/dim:organs",
+          "dE": 8.1
+        }
+      }
+    },
+    {
+      "id": "organs",
+      "label": "Organs",
+      "seed": "#c9a07e",
+      "material": "#bea5a5",
+      "dim": 0.4,
+      "nearest": {
+        "normal": {
+          "pair": "dim:lymph_nodes/dim:organs",
+          "dE": 10
+        },
+        "deuteranopia": {
+          "pair": "ghost:organs@0.5/dim:arteries",
+          "dE": 8.8
+        },
+        "protanopia": {
+          "pair": "dim:lymph_nodes/dim:organs",
+          "dE": 8.1
+        }
+      }
+    }
+  ]
+}

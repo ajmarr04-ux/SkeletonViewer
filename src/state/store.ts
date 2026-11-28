@@ -8,6 +8,7 @@ import { LAZY_LAYERS, type LayerId, type LazyLayerId, type SystemId } from "../s
 import type { LodSource } from "../scene/budget";
 import type { ColourMode } from "../scene/regionColours";
 import type { PlacedLabel } from "../scene/labels";
+import { formatCollapsed, parseCollapsed, toggleCollapsed } from "../ui/systemGroups";
 
 /** Floating labels on or off (plan decision 7): localStorage, not the URL. */
 export const LABELS_KEY = "skeleton-viewer:labels";
@@ -95,6 +96,9 @@ export type ViewerState = {
   /** Colour-by-region or plain bone (plan decision 8): URL `color=region` and localStorage. */
   colourMode: ColourMode;
   setColourMode: (mode: ColourMode) => void;
+  /** Collapsed systems, shared by the Layers panel's groups and the sidebar's system rows (M14 plan decision 6): `SYSTEMS_KEY`. */
+  collapsedSystems: ReadonlySet<string>;
+  toggleSystem: (system: string) => void;
   /** Floating labels on or off (plan decision 7). */
   labelsOn: boolean;
   setLabelsOn: (on: boolean) => void;
@@ -225,7 +229,7 @@ export type BudgetState = {
   over: boolean;
 };
 
-export const useViewer = create<ViewerState>()((set) => ({
+export const useViewer = create<ViewerState>()((set, get) => ({
   camera: null,
   lodSetting: "auto",
   lodActive: null,
@@ -241,6 +245,18 @@ export const useViewer = create<ViewerState>()((set) => ({
   ghostOpacity: typeof window === "undefined" ? GHOST_OPACITY.default : storedGhostOpacity(),
   colourMode: "bone",
   setColourMode: (colourMode) => set({ colourMode }),
+  collapsedSystems: typeof window === "undefined" ? new Set() : storedCollapsed(),
+  toggleSystem: (system) => {
+    const next = toggleCollapsed(get().collapsedSystems, system);
+    set({ collapsedSystems: next });
+    try {
+      const v = formatCollapsed(next);
+      if (v === null) window.localStorage.removeItem(SYSTEMS_KEY);
+      else window.localStorage.setItem(SYSTEMS_KEY, v);
+    } catch {
+      // Storage disabled: the groups open expanded next time.
+    }
+  },
   labelsOn: typeof window === "undefined" ? false : storedFlag(LABELS_KEY),
   setLabelsOn: (labelsOn) => {
     set({ labelsOn });
@@ -362,6 +378,15 @@ export function watchReducedMotion(): () => void {
   update();
   mq.addEventListener("change", update);
   return () => mq.removeEventListener("change", update);
+}
+
+/** The stored collapsed systems; anything unreadable: all expanded. */
+function storedCollapsed(): ReadonlySet<string> {
+  try {
+    return parseCollapsed(window.localStorage.getItem(SYSTEMS_KEY));
+  } catch {
+    return new Set();
+  }
 }
 
 /** A stored on/off flag ("1" means on). */

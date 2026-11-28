@@ -3,11 +3,15 @@
 // preserved), then the labels, the legend and the attribution strip are drawn
 // over it with the 2D canvas API, so the picture matches the screen.
 
+import { graphVersion } from "../content/appGraph";
 import { leaderEnd } from "../scene/labels";
+import { usePatchBatch } from "../scene/layerRegistry";
+import { markColour, PATTERN_PERIOD_CSS, patternCells, type Pattern } from "../scene/patterns";
 import { REGIONS, regionColour } from "../scene/regionColours";
 import { ATTRIBUTION_STAMP, screenshotFileName, stripBox } from "../scene/screenshot";
 import { useViewer } from "../state/store";
 import { LABEL_FONT } from "./Labels";
+import { keyItems, type KeyItem } from "./Legend";
 
 type FrameGrabber = () => HTMLCanvasElement | null;
 let grabber: FrameGrabber | null = null;
@@ -37,7 +41,11 @@ export async function renderScreenshot(): Promise<{ blob: Blob; name: string } |
   ctx.translate(-rect.left, -rect.top);
   if (st.labelsOn) drawLabels(ctx, st.labelLayout, st.sel);
   ctx.restore();
-  if (st.colourMode === "region") drawLegend(ctx, scale, out.height);
+  const key = keyItems(st, graphVersion(), usePatchBatch.getState().failed);
+  // As on screen: the regions in colour-by-region (paused while tints are drawn), then the key chips with their patterns (M14 BX).
+  const regions = st.colourMode === "region" && !key.some((k) => k.pattern !== "none");
+  const rows: LegendRow[] = [...(regions ? REGIONS.map((r) => ({ name: r.name, colour: regionColour(r.region), pattern: "none" as const })) : []), ...key];
+  if (rows.length > 0) drawLegend(ctx, scale, out.height, rows);
   drawStrip(ctx, out.width, out.height, scale);
   const blob = await new Promise<Blob | null>((resolve) => out.toBlob(resolve, "image/png"));
   return blob ? { blob, name: screenshotFileName(st.sel, st.grp) } : null;
@@ -68,24 +76,46 @@ function drawLabels(ctx: CanvasRenderingContext2D, layout: ReturnType<typeof use
   }
 }
 
-function drawLegend(ctx: CanvasRenderingContext2D, scale: number, imageH: number): void {
+type LegendRow = Pick<KeyItem, "name" | "colour" | "pattern">;
+
+/** A canvas pattern of a tint's marks at the shader's period in image pixels (`scale` = the canvas's pixel ratio). */
+function marksPattern(ctx: CanvasRenderingContext2D, p: Pattern, colour: string, scale: number): CanvasPattern | null {
+  const n = Math.max(2, Math.round(PATTERN_PERIOD_CSS * scale));
+  const tile = document.createElement("canvas");
+  tile.width = tile.height = n;
+  const t = tile.getContext("2d");
+  if (!t) return null;
+  t.fillStyle = markColour(colour);
+  patternCells(p, n).forEach((row, y) => row.forEach((on, x) => on && t.fillRect(x, y, 1, 1)));
+  const pattern = ctx.createPattern(tile, "repeat");
+  // The context is scaled by `scale` when the swatch is drawn; undo it so a tile cell is one image pixel.
+  pattern?.setTransform(new DOMMatrix().scale(1 / scale));
+  return pattern;
+}
+
+function drawLegend(ctx: CanvasRenderingContext2D, scale: number, imageH: number, rows: readonly LegendRow[]): void {
   ctx.save();
   ctx.scale(scale, scale);
   ctx.font = `13px ${FONT_FAMILY}`;
   ctx.textBaseline = "middle";
   const row = 22;
   const pad = 8;
-  const w = pad * 2 + 22 + Math.max(...REGIONS.map((r) => ctx.measureText(r.name).width));
-  const h = pad * 2 + row * REGIONS.length;
+  const w = pad * 2 + 22 + Math.max(...rows.map((r) => ctx.measureText(r.name).width));
+  const h = pad * 2 + row * rows.length;
   const x = 12;
   const y = imageH / scale - 40 - h;
   ctx.fillStyle = "rgba(32,35,40,0.9)";
   roundRect(ctx, x, y, w, h, 8);
   ctx.fill();
-  REGIONS.forEach((r, i) => {
+  rows.forEach((r, i) => {
     const ry = y + pad + i * row + row / 2;
-    ctx.fillStyle = regionColour(r.region);
+    ctx.fillStyle = r.colour;
     ctx.fillRect(x + pad, ry - 7, 14, 14);
+    const marks = r.pattern === "none" ? null : marksPattern(ctx, r.pattern, r.colour, scale);
+    if (marks) {
+      ctx.fillStyle = marks;
+      ctx.fillRect(x + pad, ry - 7, 14, 14);
+    }
     ctx.fillStyle = "#e8eaed";
     ctx.fillText(r.name, x + pad + 22, ry);
   });

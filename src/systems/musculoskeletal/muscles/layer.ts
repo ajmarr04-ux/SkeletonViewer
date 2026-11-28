@@ -3,15 +3,16 @@ import type { KindTiers } from "../../../graph/types";
 import { defineLayer, type RolesSpec } from "../../types";
 import { MUSCLE_SECTIONS, PART_SECTIONS, muscleChrome } from "./panel";
 import { muscleRoles, patchIndex, type PatchIndex } from "./roles";
+import { STRUCTURE_SEARCH } from "../search";
 
 const LABEL = "Muscles";
-/** Tendons and aponeuroses get the lighter muscle colour (spec §6.3). */
+/** Tendons and aponeuroses get the lighter muscle colour, the layer's `tendon` shade (spec §6.3). */
 const PART_TYPES = [
   { id: "head", label: "Head" },
   { id: "belly", label: "Belly" },
   { id: "portion", label: "Portion" },
-  { id: "tendon", label: "Tendon", tendinous: true },
-  { id: "aponeurosis", label: "Aponeurosis", tendinous: true },
+  { id: "tendon", label: "Tendon", shade: "tendon" },
+  { id: "aponeurosis", label: "Aponeurosis", shade: "tendon" },
 ] as const;
 
 const ATTACHMENTS = ["originates_on", "inserts_on"];
@@ -53,7 +54,9 @@ export const muscles = defineLayer({
   label: LABEL,
   ghostOrder: 3,
   // M10 session AL (M7: #a8483f): the old swatch was under 3:1 on the legend.
-  colour: { material: "#b44d43", debug: "#a8524c" },
+  // The tendon shade (M14 BW, from src/layers/colours.ts): M10 session AL (M7: #c98a7c) moved it off the thorax's region colour under protanopia.
+  // Dimmed 35 % (M14 BW): at the plan's 40 % it came within ΔE 7.5 of a bone ghost under protanopia.
+  colour: { material: "#b44d43", debug: "#a8524c", shades: { tendon: "#c18274" }, dim: 0.35 },
   models: {
     file: "muscles",
     eager: false,
@@ -92,6 +95,7 @@ export const muscles = defineLayer({
       label: "Muscle",
       noun: { one: "muscle", many: "muscles" },
       labelPriority: 0,
+      searchFields: STRUCTURE_SEARCH,
       // The most parts any muscle has (checked against content/soft-ids.json in tests/nestedSelection.test.ts).
       // A part's `alsoServes` is a `part_of` edge with meta `also`: not one of the muscle's parts.
       parentOf: { childKind: "muscle_part", selection: "nested", maxParts: 3, via: { type: "part_of", except: "also" } },
@@ -105,6 +109,7 @@ export const muscles = defineLayer({
       label: "Muscle part",
       noun: { one: "part", many: "parts" },
       labelPriority: 1,
+      searchFields: STRUCTURE_SEARCH,
       tiers: MUSCLE_TIERS,
       roles: ROLES,
       partTypes: PART_TYPES,

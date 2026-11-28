@@ -15,6 +15,7 @@ import {
   type PerspectiveCamera,
 } from "three";
 import { ensureBoundsTrees, instanceWorldBounds, type BatchedSkeleton } from "../scene/batchSkeleton";
+import { patternOfAlpha, type Pattern } from "../scene/patterns";
 import { nearestPickable, PROXY_RADIUS_PX, pickWithProxies, tinyObjects, type Proxy, type RealHit } from "../scene/pick";
 import ids from "../../content/ids.json";
 import { displayName } from "../content/names";
@@ -184,6 +185,8 @@ export type ViewerDebugApi = {
   boneNow: (id: string) => Vec3 | null;
   /** A bone's instance colour in the solid batch (linear RGB), for the colour-by-region tests. */
   instanceColour: (id: string) => [number, number, number] | null;
+  /** The role pattern on a structure's instance in the solid batch (M14 BX), or null if not loaded. */
+  instancePattern: (id: string) => Pattern | null;
   /** Is the structure drawn in its layer's solid batch right now (batch on and instance visible)? Null if not loaded. */
   solidNow: (id: string) => boolean | null;
   /** How many candidates the last label layout was given, after thinning (M13 plan decision 12). */
@@ -957,6 +960,12 @@ export function CameraRig({ skeleton, debug, bench = null }: Props) {
           if (!sk || i === undefined) return null;
           const c = sk.mesh.getColorAt(i, new Color());
           return [c.r, c.g, c.b];
+        },
+        instancePattern: (id) => {
+          const sk = [live.current.skeleton, ...live.current.layerGeoms.map((g) => g.batch)].find((b) => b?.instanceOf.has(id));
+          const i = sk?.instanceOf.get(id);
+          if (!sk || i === undefined) return null;
+          return patternOfAlpha(sk.mesh.getColorAt(i, new Vector4()).w);
         },
         solidNow: (id) => {
           const sk = [live.current.skeleton, ...live.current.layerGeoms.map((g) => g.batch)].find((b) => b?.instanceOf.has(id));

@@ -20,13 +20,13 @@ import { layerOfId } from "../state/selection";
 import { createOutline, disposeOutline, OUTLINE } from "../scene/outline";
 import { useViewer } from "../state/store";
 import { LAZY_LAYERS, layerColour, layerDescriptor, maxPartsOf, OVERLAYS, type LazyLayerId } from "../systems/registry";
-import { TENDON_COLOUR } from "./colours";
 import { loadSoftContent } from "../content/softContentLoader";
 import { loadLayerParts } from "./loadLayer";
 import { layerChunksOf } from "./urls";
 import { chunksFor, type LayerChunks } from "../regions/chunks";
 import { membersOf } from "../regions/index";
-import { isTendinous } from "./softIds";
+import { shadeOf } from "./softIds";
+import { dimTint } from "../scene/dimming";
 import { lazyEntry } from "../content/index";
 
 /** `?debug`: one bounds report per layer (the overlay line). */
@@ -46,8 +46,8 @@ function createMaterials(opacity: number): Materials {
   return out;
 }
 
-/** Instance colour of a structure in its layer: white, or the tendon tint (a lighter muscle colour) for tendons and aponeuroses. */
-const TENDON_TINTS = Object.fromEntries(LAZY_LAYERS.map((l) => [l, tintFor(TENDON_COLOUR, layerColour(l))])) as Record<LazyLayerId, Color>;
+/** Instance colour of a structure in its layer: white, or its shade's tint (the tendons' lighter muscle colour) over the layer's material. */
+const SHADE_TINTS = new Map<string, Color>();
 const WHITE = new Color(1, 1, 1);
 const ACCENTS = Object.fromEntries(LAZY_LAYERS.map((l) => [l, accentTint(layerColour(l))])) as Record<LazyLayerId, Color>;
 const TINTS = Object.fromEntries(
@@ -55,7 +55,20 @@ const TINTS = Object.fromEntries(
 ) as Record<LazyLayerId, Record<TintRole, Color>>;
 export function layerBaseTint(id: string): Color {
   const e = lazyEntry(id);
-  return e && isTendinous(e) ? TENDON_TINTS[e.layer] : WHITE;
+  const shade = e && shadeOf(e);
+  if (!e || !shade) return WHITE;
+  const key = `${e.layer}:${shade}`;
+  let c = SHADE_TINTS.get(key);
+  if (!c) SHADE_TINTS.set(key, (c = tintFor(shade, layerColour(e.layer))));
+  return c;
+}
+
+/** Instance colour of a structure dimmed (M14 BY, plan decision 9): its own colour (material or shade) desaturated by its layer's amount. */
+export function layerDimTint(id: string): Color {
+  const e = lazyEntry(id);
+  if (!e) return WHITE;
+  const material = layerColour(e.layer);
+  return dimTint(e.layer, shadeOf(e) ?? material, material);
 }
 
 /**
@@ -291,7 +304,7 @@ function TissueLayerScene({
         const moreSelected = Array.from({ length: Math.max(0, maxPartsOf(layer) - 1) }, (_, i) =>
           createOutline(solid, OUTLINE.selected.colour, OUTLINE.selected.widthPx, `outline-selected-${layer}-${i + 2}`),
         );
-        const batches: LayerBatches = { lod, solid, ghost, outlines, moreSelected, base: layerBaseTint, accent: ACCENTS[layer]!, tint: TINTS[layer]! };
+        const batches: LayerBatches = { lod, solid, ghost, outlines, moreSelected, base: layerBaseTint, dimmed: layerDimTint, accent: ACCENTS[layer]!, tint: TINTS[layer]! };
         last = batches;
         setShown(batches);
         // Isolation (main chunk) applies the view to the new batches as soon as they are registered.

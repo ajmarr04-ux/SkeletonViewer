@@ -50,7 +50,8 @@ import { WIDGET_IDS, widgets } from "./fixtures/systems/demo/widgets/layer";
 import { centres } from "./fixtures/systems/demo/widgets/generate";
 import { readChunkTable } from "../scripts/lib/index-plugin";
 import { chunkStem } from "../src/regions/chunks";
-import { compileWidgets, readWidgetFiles, widgetGraph, widgetsTree } from "./fixtures/systems/demo/widgets/compile";
+import { compileWidgets, readWidgetFiles, widgetGraph, widgetsSearch, widgetsTree } from "./fixtures/systems/demo/widgets/compile";
+import { GENERIC_WORDS, loadSearcher, mergeSearchers } from "../src/content/search";
 import { DEMO_GRAPH_REGISTRY, FIXTURE_GRAPH_REGISTRY } from "./fixtures/systems/registry.content";
 import { DEMO_EDGES } from "./fixtures/systems/demo/edges";
 import { MUSCULOSKELETAL_EDGES } from "../src/systems/musculoskeletal/edges";
@@ -63,7 +64,7 @@ import { resetAppGraph, tiers } from "../src/content/appGraph";
 import { relatedAt } from "../src/scene/isolation";
 import { panelModel, type SectionModel } from "../src/panel/model";
 import { nodeMembers, isSoftNode } from "../src/tree/types";
-import { EDGE_TYPES, REGIONS, TREE_ROOTS, hasTier, tierWording, type LazyLayerId } from "../src/systems/registry";
+import { EDGE_TYPES, REGIONS, TREE_ROOTS, TREE_SYSTEMS, hasTier, tierWording, treeSystemOf, type LazyLayerId } from "../src/systems/registry";
 
 // The fixture's IDs aren't in the real registry's literal types.
 const W = "widgets" as LayerId;
@@ -250,6 +251,19 @@ describe("the graph, tiers, panel and tree (M12 plan decision 14)", () => {
       expect(tierWording("spring", "t2")?.button.text).toBe("Show the train");
     });
 
+    it("search (M14 plan decision 4): its own index from its kinds' searchFields finds a widget by name; its noun is a generic word", () => {
+      const data = widgetsSearch(chunk);
+      expect(data.docs.map((d) => d.id)).toEqual([...WIDGET_IDS]);
+      expect(data.docs[0]).toEqual({ id: "widget_gear_1", name: "Gear 1", latin: "", common: "", synonyms: [], fdi: "", side: "midline", label: "Gear 1", drawn: true });
+      const search = mergeSearchers(loadSearcher(JSON.parse(JSON.stringify(data)) as typeof data));
+      expect(search("spring 3", 30)[0]).toMatchObject({ id: "widget_spring_3", label: "Spring 3", match: null, group: false, drawn: true });
+      expect(search("lev", 30).map((h) => h.id)).toEqual(["widget_lever_1", "widget_lever_2", "widget_lever_3", "widget_lever_4"]);
+      // "gear" is the layer's first kind's noun: alone it finds nothing; beside a word it keeps only widgets.
+      expect(GENERIC_WORDS.get("gear")).toBe(W);
+      expect(search("gear", 30)).toEqual([]);
+      expect(search("gear 2", 30).map((h) => h.id)).toEqual(["widget_gear_2", "widget_spring_2", "widget_lever_2"]);
+    });
+
     it("the panel model gives its three sections, from its content and the graph", () => {
       const m = panelModel("widget_gear_2", { content: (l) => (l === W ? chunk : null), opposite: () => null })!;
       expect(m).not.toBeNull();
@@ -300,7 +314,38 @@ describe("the graph, tiers, panel and tree (M12 plan decision 14)", () => {
     // The sidebar's roots: the real ones in their order, then this one (the fixture build appends its built root to the
     // real tree, `fixtureTree` in ./fixtures/systems/vite.ts; tests/e2e/fixture.spec.ts opens it).
     expect(TREE_ROOTS.map((r) => r.key)).toEqual(["muscles", "ligaments", "cartilage", W]);
-    expect(TREE_ROOTS.at(-1)).toEqual({ key: W, label: "Widgets", name: "All widgets" });
+    expect(TREE_ROOTS.at(-1)).toEqual({ key: W, label: "Widgets", name: "All widgets", system: "demo" });
+  });
+
+  it("the sidebar has one row per system, each system's lazy roots in a chunk of its own (M14 plan decision 6)", async () => {
+    expect(TREE_SYSTEMS).toEqual([
+      { id: "musculoskeletal", label: "Musculoskeletal", eager: true, chunk: "virtual:skeleton-tree-musculoskeletal" },
+      { id: "demo", label: "Demo", eager: false, chunk: "virtual:skeleton-tree-demo" },
+    ]);
+    expect(treeSystemOf("widgets.gear.rear_train")).toBe("demo");
+    expect(treeSystemOf("muscles.upper_limb")).toBe("musculoskeletal");
+    expect(treeSystemOf("axial.skull")).toBeUndefined();
+    const { sidebarRows, systemRowKey } = await import("../src/content/tree");
+    const { resetSoftTree, registerSoftTree, treeLoaded } = await import("../src/content/groups");
+    resetSoftTree();
+    const all = new Set([systemRowKey("musculoskeletal"), systemRowKey("demo"), W]);
+    const rows = sidebarRows(all);
+    const tops = rows.filter((r) => r.level === 1);
+    expect(tops.map((r) => [r.key, r.pos, r.size])).toEqual([
+      ["system:musculoskeletal", 1, 2],
+      ["system:demo", 2, 2],
+    ]);
+    // The demo's row holds the widgets' root alone, at level 2, before its chunk loads.
+    expect(rows.slice(rows.indexOf(tops[1]!) + 1).map((r) => [r.key, r.level, r.parent, r.pos, r.size, r.count])).toEqual([[W, 2, "system:demo", 1, 1, null]]);
+    expect([treeLoaded("demo"), treeLoaded("musculoskeletal")]).toEqual([false, false]);
+    registerSoftTree({ roots: [widgetsTree(chunk)], sets: [] });
+    expect([treeLoaded("demo"), treeLoaded("musculoskeletal")]).toEqual([true, false]);
+    expect(sidebarRows(all).filter((r) => r.parent === W).map((r) => [r.key, r.level])).toEqual([
+      ["widgets.gear", 3],
+      ["widgets.spring", 3],
+      ["widgets.lever", 3],
+    ]);
+    resetSoftTree();
   });
 });
 

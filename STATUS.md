@@ -78,7 +78,7 @@ There are two specs. `SPEC (2).md` is the bone spec (it calls itself `SPEC.md`, 
 │  ├─ main.tsx, App.tsx, styles.css
 │  ├─ scene/                 Viewer, loading, BatchedMesh, isolation and layer view, outlines, tints, labels,
 │  │                         explode, screenshot, bench, layer registry, debug layer view
-│  ├─ layers/                (lazy chunk) LayerScenes, loadLayer, hashed URLs, soft ID table, layer colours
+│  ├─ layers/                (lazy chunk) LayerScenes, loadLayer, hashed URLs, soft ID table
 │  ├─ camera/                CameraRig (camera-controls + own pan/zoom), pure maths, input helpers
 │  ├─ state/                 zustand store, URL parse/serialise, isolation reducer, history wiring
 │  ├─ content/               schemas, validation, compilers, relations, soft tiers, roles, derive, search,
@@ -144,7 +144,7 @@ Each node is named by its stable ID and has one unnamed child holding the quanti
 - **Outlines** are **inverted hulls** (`src/scene/outline.ts`) sharing the solid batch's buffers: 3 px selection, 1.5 px hover, one draw call each. A selected muscle outlines each of its parts (`MAX_PARTS`).
 - **Draw calls:** 2 for the full skeleton; 3 with a bone isolated; 4 with every layer solid; 2 with muscles ghosted over bones; **9** with every layer on, the long head of triceps at tier 2 and antagonists (8 at tier 1). Budget < 20.
 - **Lighting:** one key light, three's `RoomEnvironment`, baked AO remapped by `AO_FLOOR` (`src/scene/material.ts`). No shadows.
-- **Colours** (`src/layers/colours.ts`, checked as one table in `tests/colourVision.test.ts`): bone ivory, muscles `#b44d43`, tendon/aponeurosis `#c18274`, ligaments `#cccccc`, cartilage `#c5dfee`, focus accent `#a7caf2`, hover outline `#f1f3f4`, plus the three tints and seven region colours. M10 AL moved the four layer colours (see §7).
+- **Colours** (the layer descriptors' `colour`; the tendon shade is the muscles' `colour.shades.tendon` since M14 BW; checked as one table in `tests/colourVision.test.ts`, built from the registry): bone ivory, muscles `#b44d43`, tendon/aponeurosis `#c18274`, ligaments `#cccccc`, cartilage `#c5dfee`, focus accent `#a7caf2`, hover outline `#f1f3f4`, plus the three tints and seven region colours. M10 AL moved the four layer colours (see §7).
 - **Missing meshes.** The 4 wisdom teeth have content and tree rows and show a "No 3D model" note. Of the soft IDs with no mesh, the 58 muscles with parts are drawn as their parts; the patellar ligament and articularis genus (each side) show the same note.
 - **Debug view.** M6's `?debug&layers=all` (`src/scene/debugLayers.ts`) still draws every layer and patch in fixed debug colours, beside the real layers.
 

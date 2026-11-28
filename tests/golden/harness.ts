@@ -175,12 +175,12 @@ export const SEARCH_QUERIES = [
   "left", "muscle", "ligament",
 ] as const;
 
-/** For each query, the top 10 through the sidebar's merge (bone index then soft index, asked for 30 as the sidebar does). */
+/** For each query, the top 10 through the sidebar's merge (every layer's index, asked for 30 as the sidebar does). */
 export async function buildSearch(): Promise<Golden> {
   await loadEverything();
-  const { loadSearch, loadSoftSearch } = await import("../../src/content/searchLoader");
+  const { loadAllSearch } = await import("../../src/content/searchLoader");
   const { mergeSearchers } = await import("../../src/content/searchMerge");
-  const search = mergeSearchers(await loadSearch(), await loadSoftSearch());
+  const search = mergeSearchers(...(await loadAllSearch()));
   const out: Golden = {};
   for (const q of SEARCH_QUERIES)
     out[q] = search(q, 30)

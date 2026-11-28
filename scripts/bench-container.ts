@@ -10,6 +10,10 @@
 // LABELS=1 turns the floating labels on and adds a body-region link (M13 BQ):
 // the label layout median and max per link. LABELMAX=<n> runs with
 // `labelmax=<n>` (the thinning cap; 0 = none), as BQ measured N.
+//
+// DEVICE=1 runs instead the three real-device links of M14 BZ (plan decision
+// 11), with labels on: all four layers On; the same in a dense fine region;
+// a forearm muscle at tier 2 with antagonists (and so the role patterns).
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
@@ -17,13 +21,20 @@ import { chromium } from "playwright";
 
 const RUNS = Number(process.argv[2] ?? 3);
 const ROOT = join(process.cwd(), process.argv[3] ?? "dist");
-const LABELS = process.env.LABELS === "1";
+const LABELS = process.env.LABELS === "1" || process.env.DEVICE === "1";
 const LABELMAX = process.env.LABELMAX;
-const LINKS = [
+const DEVICE = process.env.DEVICE === "1";
+const ALL = "layers=b:on,c:on,l:on,m:on";
+const DEVICE_LINKS = [
+  { name: "1. all four layers on", query: `?bench&${ALL}` },
+  { name: "2. all four layers on, left forearm", query: `?bench&${ALL}&reg=forearm_left` },
+  { name: "3. flexor carpi radialis (left), tier 2, antagonists", query: `?bench&${ALL}&sel=flexor_carpi_radialis_left&tier=2&ant=1` },
+];
+const LINKS = (DEVICE ? DEVICE_LINKS.map((l) => ({ ...l, query: l.query.replace("?bench", "?debug&bench") })) : [
   { name: "bones only", query: "?debug&bench" },
   { name: "all four layers on", query: "?debug&bench&layers=b:on,c:on,l:on,m:on" },
   ...(LABELS ? [{ name: "all four layers on, thorax", query: "?debug&bench&layers=b:on,c:on,l:on,m:on&reg=thorax" }] : []),
-].map((l) => ({ ...l, query: LABELMAX === undefined ? l.query : `${l.query}&labelmax=${LABELMAX}` }));
+]).map((l) => ({ ...l, query: LABELMAX === undefined ? l.query : `${l.query}&labelmax=${LABELMAX}` }));
 const TYPES: Record<string, string> = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".glb": "model/gltf-binary", ".md": "text/markdown", ".svg": "image/svg+xml", ".wasm": "application/wasm" };
 
 function serve(): Promise<{ url: string; close: () => void }> {

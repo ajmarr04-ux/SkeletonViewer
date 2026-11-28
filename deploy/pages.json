@@ -1,6 +1,6 @@
 {
   "repo": "SkeletonViewer",
-  "current": 13,
+  "current": 14,
   "frozen": {
     "m1": "b1392fa5c58c16debe20696c288822ad8a4bb167",
     "m2": "eb3e8ff58b3b5b4a4b71d419c82707fa456782e9",
@@ -13,6 +13,7 @@
     "m9": "ef6ee75629dec7b254dd41ef583ecc749cdec739",
     "m10": "317b445dc8deac9665572af542094d9b4dafe109",
     "m11": "a2709f651851f41233a602adb23bb0fc0877f506",
-    "m12": "3d8adef208d0e7efc5add4b025b33ec3b1bf71ab"
+    "m12": "3d8adef208d0e7efc5add4b025b33ec3b1bf71ab",
+    "m13": "dc5568630b5a7f61d64e4edc4519d4cbb1af5c2d"
   }
 }

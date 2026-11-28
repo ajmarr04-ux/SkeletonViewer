@@ -1,7 +1,9 @@
+import { useMemo } from "react";
 import { useGraphVersion } from "../content/appGraph";
 import { viewOf } from "../scene/isolation";
 import { usePatchBatch } from "../scene/layerRegistry";
 import { REGIONS, regionColour } from "../scene/regionColours";
+import { markColour, PATTERN_OF, PATTERN_PERIOD_CSS, patternPath, type Pattern } from "../scene/patterns";
 import { TINT_COLOURS, TINT_NAMES, TINT_ROLES, type TintRole } from "../scene/tints";
 import { hasMesh, isMuscleKind, isolateGroup } from "../state/selection";
 import { useViewer, type ViewerState } from "../state/store";
@@ -32,6 +34,38 @@ export function tintsInUse(s: Pick<ViewerState, "sel" | "tier" | "antagonists" |
   return out;
 }
 
+/** One colour-key chip: a layer or a tint (with its pattern, M14 BX). */
+export type KeyItem = { key: string; name: string; colour: string; pattern: Pattern };
+
+type KeyState = Parameters<typeof tintsInUse>[0] & Pick<ViewerState, "layers">;
+
+/** The colour key's chips: the layers when more than one is showing, then the tints in use. The legend and the screenshot both draw these. */
+export function keyItems(s: KeyState, version: number, failed: boolean): KeyItem[] {
+  const shown = LAYER_IDS.filter((l) => s.layers[l] !== "off");
+  const tints = tintsInUse(s, version, failed);
+  return [
+    ...(shown.length > 1 ? shown.map((l) => ({ key: `layer-${l}`, ...layerKey(l), pattern: "none" as const })) : []),
+    ...((tints ? tints.split(",") : []) as TintRole[]).map((r) => ({ key: `tint-${r}`, name: TINT_NAMES[r], colour: TINT_COLOURS[r], pattern: PATTERN_OF[r] })),
+  ];
+}
+
+/** A swatch: the colour, and over it the pattern's marks in the darker shade, at the shader's period. */
+function Swatch({ item }: { item: KeyItem }) {
+  if (item.pattern === "none") return <span className="legend-swatch" style={{ background: item.colour }} aria-hidden="true" />;
+  const id = `legend-pattern-${item.pattern}`;
+  const s = PATTERN_PERIOD_CSS;
+  return (
+    <svg className="legend-swatch" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" data-pattern={item.pattern} style={{ background: item.colour }}>
+      <defs>
+        <pattern id={id} width={s} height={s} patternUnits="userSpaceOnUse">
+          <path d={patternPath(item.pattern, s)} fill={markColour(item.colour)} />
+        </pattern>
+      </defs>
+      <rect width="14" height="14" fill={`url(#${id})`} />
+    </svg>
+  );
+}
+
 /**
  * The colour key (spec §7): the regions in colour-by-region (plan decision 8 of
  * M5; each entry also isolates its region as a group), the layer colours when
@@ -45,13 +79,9 @@ export function Legend() {
   const failed = usePatchBatch((p) => p.failed);
   const tints = useViewer((s) => tintsInUse(s, version, failed));
   const layers = useViewer((s) => LAYER_IDS.filter((l) => s.layers[l] !== "off").join(","));
-  const shownLayers = (layers ? layers.split(",") : []) as Layer[];
   const tintRoles = (tints ? tints.split(",") : []) as TintRole[];
-  const keyItems = [
-    ...(shownLayers.length > 1 ? shownLayers.map((l) => ({ key: `layer-${l}`, ...layerKey(l) })) : []),
-    ...tintRoles.map((r) => ({ key: `tint-${r}`, name: TINT_NAMES[r], colour: TINT_COLOURS[r] })),
-  ];
-  if (!regions && keyItems.length === 0) return null;
+  const items = useMemo(() => keyItems(useViewer.getState(), version, failed), [tints, layers, version, failed]);
+  if (!regions && items.length === 0) return null;
   return (
     <section className="legend" aria-label={regions ? "Colour key: regions" : "Colour key"} data-testid="legend">
       {regions && tintRoles.length > 0 && (
@@ -82,13 +112,13 @@ export function Legend() {
           </ul>
         </>
       )}
-      {keyItems.length > 0 && (
+      {items.length > 0 && (
         <>
           {regions && <h2 className="legend-title">Key</h2>}
           <ul className="legend-key" data-testid="legend-key">
-            {keyItems.map((k) => (
+            {items.map((k) => (
               <li key={k.key} className="legend-chip" data-key={k.key}>
-                <span className="legend-swatch" style={{ background: k.colour }} aria-hidden="true" />
+                <Swatch item={k} />
                 {k.name}
               </li>
             ))}

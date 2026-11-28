@@ -15,17 +15,23 @@
 // phone ≤ 5 s and ≤ 12 s. Both profiles load both LODs (?lod=both), so "full
 // detail" is the high LOD even where the automatic choice would stop at low.
 //
-// M7 step 9: after full detail, each run turns the muscles layer (the largest)
-// on from the Layers panel and times the change to its low LOD on screen
-// (lazy chunk, soft-ID table and file included). Budget: 3 s desktop, 5 s
-// phone. The skeleton figures are taken first, with every layer off, so
-// they compare directly with M6's. PERF_SETTLE=<ms> waits that long after
-// full detail before turning the muscles on (diagnosis).
+// M7 step 9: after full detail, each run turns the largest lazy layer on from
+// the Layers panel and times the change to its low LOD on screen (lazy chunk,
+// soft-ID table and file included). Budget: 3 s desktop, 5 s phone. The
+// skeleton figures are taken first, with every layer off, so they compare
+// directly with M6's. PERF_SETTLE=<ms> waits that long after full detail
+// before turning the layer on (diagnosis).
+//
+// M14 BZ: "largest" is read from the registry, the lazy layer with the
+// largest high-LOD budget (`models.budgets.high.targetTris`, then `maxMiB`),
+// so this script names no layer.
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import { extname, join, normalize } from "node:path";
 import { createGzip } from "node:zlib";
 import { chromium, devices, type BrowserContextOptions } from "playwright";
+import { layerDescriptor, layerLabel } from "../src/systems/registry";
+import { largestLazyLayer } from "./lib/model-checks";
 
 const TYPES: Record<string, string> = {
   ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json",
@@ -63,6 +69,9 @@ const profiles: { name: string; ctx: BrowserContextOptions; first: number; full:
   { name: "phone", ctx: { ...devices["iPhone 13"], defaultBrowserType: undefined } as BrowserContextOptions, first: 5000, full: 12000, layer: 5000 },
 ];
 
+const LAYER = largestLazyLayer();
+const LAYER_FILE = layerDescriptor(LAYER).models.file;
+
 const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]!;
 
 async function main() {
@@ -72,7 +81,7 @@ async function main() {
   const browser = await chromium.launch();
   let ok = true;
   for (const p of profiles) {
-    const rows: { low: number; high: number; lowBytes: number; highBytes: number; blocked: number; muscles: number }[] = [];
+    const rows: { low: number; high: number; lowBytes: number; highBytes: number; blocked: number; layer: number }[] = [];
     let renderer = "";
     for (let i = 0; i < RUNS; i++) {
       const context = await browser.newContext(p.ctx);
@@ -117,7 +126,7 @@ async function main() {
       renderer = t.renderer;
       // Let the work that follows full detail finish (raycasting trees, at idle), as a user would.
       await page.waitForTimeout(Number(process.env.PERF_SETTLE ?? 0));
-      // Turn the muscles on from the Layers panel ("More" on the phone), timing from the change event.
+      // Turn the layer on from the Layers panel ("More" on the phone), timing from the change event.
       await page.evaluate(() => {
         const w = window as unknown as { __layerOnAt?: number };
         document.addEventListener("change", () => (w.__layerOnAt ??= performance.now()), { capture: true });
@@ -125,15 +134,15 @@ async function main() {
       const direct = page.getByRole("button", { name: "Layers", exact: true });
       if (await direct.isVisible()) await direct.click();
       else await page.getByRole("button", { name: "More", exact: true }).click();
-      await page.getByTestId("layer-muscles-on").check();
-      const row = page.locator(".layer-row[data-layer=muscles]:not([data-shown-low=''])");
+      await page.getByTestId(`layer-${LAYER}-on`).check();
+      const row = page.locator(`.layer-row[data-layer=${LAYER}]:not([data-shown-low=''])`);
       await row.waitFor({ timeout: 120_000 });
       const shown = Number(await row.getAttribute("data-shown-low"));
       const onAt = await page.evaluate(() => (window as unknown as { __layerOnAt: number }).__layerOnAt);
-      const muscles = shown - onAt;
-      const mt = await page.evaluate((from) => {
+      const layer = shown - onAt;
+      const mt = await page.evaluate(([from, lowFile]) => {
         const res = performance.getEntriesByType("resource") as PerformanceResourceTiming[];
-        const file = res.find((r) => r.name.includes("muscles-low.glb"));
+        const file = res.find((r) => r.name.includes(lowFile));
         const chunks = res.filter((r) => /\/assets\/LayerScenes-/.test(r.name));
         const tasks = (window as unknown as { __longTasks: [number, number][] }).__longTasks;
         return {
@@ -141,25 +150,25 @@ async function main() {
           chunks: Math.max(...chunks.map((r) => r.responseEnd)) - from,
           blocked: tasks.filter(([s]) => s >= from).reduce((a, [, d]) => a + d, 0),
         };
-      }, onAt);
-      rows.push({ low, high, ...t, muscles });
+      }, [onAt, `${LAYER_FILE}-low.glb`] as const);
+      rows.push({ low, high, ...t, layer });
       console.log(
         `${p.name} run ${i + 1}: skeleton ${low} ms, full detail ${high} ms ` +
           `(low file received ${Math.round(t.lowBytes)} ms, high file ${Math.round(t.highBytes)} ms; ` +
           `main thread blocked ${Math.round(t.blocked)} ms before the skeleton); ` +
-          `muscles on → low LOD shown ${Math.round(muscles)} ms (layer chunks received ${Math.round(mt.chunks)} ms, ` +
+          `${LAYER} on → low LOD shown ${Math.round(layer)} ms (layer chunks received ${Math.round(mt.chunks)} ms, ` +
           `file ${Math.round(mt.file)} ms; main thread blocked ${Math.round(mt.blocked)} ms meanwhile)`,
       );
       await context.close();
     }
     const f = median(rows.map((r) => r.low));
     const h = median(rows.map((r) => r.high));
-    const m = median(rows.map((r) => r.muscles));
+    const m = median(rows.map((r) => r.layer));
     const pass = f <= p.first && h <= p.full && m <= p.layer;
     ok &&= pass;
     console.log(
       `${p.name}: median skeleton ${(f / 1000).toFixed(2)} s (≤ ${p.first / 1000} s), full detail ${(h / 1000).toFixed(2)} s (≤ ${p.full / 1000} s), ` +
-        `muscles layer ${(m / 1000).toFixed(2)} s (≤ ${p.layer / 1000} s): ${pass ? "PASS" : "FAIL"}`,
+        `${layerLabel(LAYER).toLowerCase()} layer ${(m / 1000).toFixed(2)} s (≤ ${p.layer / 1000} s): ${pass ? "PASS" : "FAIL"}`,
     );
     if (/swiftshader|llvmpipe|software/i.test(renderer)) {
       console.log(

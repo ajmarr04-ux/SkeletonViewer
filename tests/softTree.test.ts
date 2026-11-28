@@ -19,7 +19,9 @@ import {
 import { buildIndex, makeSearcher, mergeSearchers } from "../src/content/search";
 import { looksLikeTreeGroup as looksLikeSoftGroup } from "../src/systems/registry";
 import { isSoftNode, nodeMembers, type SoftTreeItem, type SoftTreeNode } from "../src/tree/types";
-import { SOFT_ROOT_KEYS, TOP_KEYS, treeKey, visibleRows } from "../src/content/tree";
+import { SOFT_ROOT_KEYS, TOP_KEYS, sidebarRows, systemRowKey, treeKey, visibleRows } from "../src/content/tree";
+import { systemTree } from "../scripts/lib/soft-tree-data";
+import { TREE_SYSTEMS } from "../src/systems/registry";
 import { groupView } from "../src/scene/isolation";
 import { parseUrlState, serialiseUrlState } from "../src/state/url";
 
@@ -154,6 +156,29 @@ describe("soft groups, registered", () => {
     expect(treeKey(rows2, opened, "triceps_brachii_long_head_left", "ArrowLeft")).toEqual({ kind: "focus", key: "triceps_brachii_left" });
     expect(rows2.find((r) => r.key === "muscles")!.count).toBe(nodeMembers(tree.roots[0]!).length);
     expect(SOFT_ROOT_KEYS).toEqual(["muscles", "ligaments", "cartilage"]);
+  });
+  it("sidebar rows (M14 plan decision 6): one system row, the same forest one level down", () => {
+    const [ms] = TREE_SYSTEMS;
+    expect(TREE_SYSTEMS).toHaveLength(1);
+    expect(ms).toMatchObject({ label: "Musculoskeletal", eager: true, chunk: `virtual:skeleton-tree-${ms!.id}` });
+    const sys = systemRowKey(ms!.id);
+    const open = new Set([sys, ...TOP_KEYS, "muscles", "muscles.upper_limb", "muscles.upper_limb.arm", "muscles.upper_limb.arm.arm_posterior", "triceps_brachii_left"]);
+    const forest = visibleRows(open);
+    const rows = sidebarRows(open);
+    expect(rows[0]).toEqual({ key: sys, kind: "system", label: "Musculoskeletal", level: 1, parent: null, pos: 1, size: 1, count: null });
+    expect(rows.slice(1).map((r) => r.key)).toEqual(forest.map((r) => r.key));
+    rows.slice(1).forEach((r, i) => expect(r).toEqual({ ...forest[i]!, level: forest[i]!.level + 1, parent: forest[i]!.parent ?? sys }));
+    expect(rows.find((r) => r.key === "triceps_brachii_long_head_left")!.level).toBe(7);
+    // Left from a layer root goes to the system row; the system row closes.
+    expect(treeKey(rows, open, "muscles", "ArrowLeft")).toEqual({ kind: "close", key: "muscles" });
+    expect(treeKey(rows, open, TOP_KEYS[0]!, "ArrowUp")).toEqual({ kind: "focus", key: sys });
+    expect(treeKey(rows, new Set(), "ligaments", "ArrowLeft")).toEqual({ kind: "focus", key: sys });
+    expect(treeKey(rows, open, sys, "ArrowLeft")).toEqual({ kind: "close", key: sys });
+    // Collapsed: the system row alone.
+    expect(sidebarRows(new Set(TOP_KEYS)).map((r) => r.key)).toEqual([sys]);
+    // Its chunk holds every lazy root and set (one system today).
+    expect(systemTree(ms!.id, tree)).toEqual(tree);
+    expect(systemTree("other", tree)).toEqual({ roots: [], sets: [] });
   });
   it("a soft group key round-trips through the URL", () => {
     const q = serialiseUrlState({ grp: "muscles.upper_limb.shoulder.rotator_cuff" }, "");

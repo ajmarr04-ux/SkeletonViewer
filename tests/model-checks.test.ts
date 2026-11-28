@@ -8,6 +8,7 @@ import {
   expectedLayerNodeNames,
   fileStem,
   layerBudget,
+  largestLazyLayer,
   lodBudget,
   type SoftIdEntry,
   type LayerFile,
@@ -59,6 +60,15 @@ describe("budgets", () => {
     expect(checkTriangles("high", 500_000 * 0.85, LOD_BUDGETS.high)).toEqual([]);
     expect(checkTriangles("low", 150_000 * 1.2, LOD_BUDGETS.low)).toHaveLength(1);
     expect(checkTriangles("low", 100_000, LOD_BUDGETS.low)).toHaveLength(1);
+  });
+});
+
+describe("largestLazyLayer (perf-load's layer, M14 BZ)", () => {
+  it("picks the lazy layer with the largest high-LOD budget: the muscles today", () => {
+    expect(largestLazyLayer()).toBe("muscles");
+  });
+  it("chooses among the layers it is given", () => {
+    expect(largestLazyLayer(["cartilage", "ligaments"])).toBe(lodBudget("ligaments", "high").targetTris >= lodBudget("cartilage", "high").targetTris ? "ligaments" : "cartilage");
   });
 });
 

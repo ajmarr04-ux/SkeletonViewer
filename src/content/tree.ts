@@ -1,12 +1,14 @@
 // The sidebar's tree (plan step 2): content/hierarchy.json as rows, plus the
 // eager layer's type groups ("All molars" under Teeth), then the lazy layers'
 // roots (M9 plan decision 11; registry `TREE_ROOTS`, M12 plan decision 10),
-// whose rows come from the soft tree's lazy chunk once it has loaded. Pure: which rows are
-// visible for a set of open groups, and where each tree key goes (WAI-ARIA
-// tree pattern). The component is src/ui/Sidebar.tsx.
+// whose rows come from their system's lazy tree chunk once it has loaded. Since
+// M14 (plan decision 6) the sidebar shows one row per system above them
+// (`sidebarRows`); `visibleRows` is the layer forest alone, as before (the tree
+// golden). Pure: which rows are visible for a set of open groups, and where each
+// tree key goes (WAI-ARIA tree pattern). The component is src/ui/Sidebar.tsx.
 
 import hierarchy from "../../content/hierarchy.json";
-import { TREE_ROOTS } from "../systems/registry";
+import { EAGER_SYSTEM, TREE_ROOTS, TREE_SYSTEMS } from "../systems/registry";
 import type { HierarchyNode } from "../tree/hierarchy";
 import { isSoftNode, type SoftTreeData, type SoftTreeItem, type SoftTreeLeaf } from "../tree/types";
 import { GROUPS, TYPE_GROUPS, groupOf, softTree } from "./groups";
@@ -15,9 +17,10 @@ import { displayName } from "./names";
 /**
  * - `group`: an inner node; opens and closes, and can be isolated;
  * - `type`: a type group ("All molars"); no children shown, can be isolated;
- * - `leaf`: an object; selecting it is the same as clicking the bone.
+ * - `leaf`: an object; selecting it is the same as clicking the bone;
+ * - `system`: a system's header row (M14 plan decision 6); opens and closes, isn't a group.
  */
-export type RowKind = "group" | "type" | "leaf";
+export type RowKind = "group" | "type" | "leaf" | "system";
 
 export type TreeRow = {
   /** Group key, or the object's ID for a leaf. */
@@ -44,7 +47,12 @@ export type TreeRow = {
 };
 
 /** A row that opens and closes: a group, or a muscle with parts. */
-export const openable = (r: Pick<TreeRow, "kind" | "expandable">): boolean => r.kind === "group" || r.expandable === true;
+export const openable = (r: Pick<TreeRow, "kind" | "expandable">): boolean => r.kind === "group" || r.kind === "system" || r.expandable === true;
+
+/** A system row's key (never a group key or an ID: those have no colon but `attached:`). */
+export const systemRowKey = (system: string): string => `system:${system}`;
+/** The system a system row's key names, else null. */
+export const systemOfRowKey = (key: string): string | null => (key.startsWith("system:") ? key.slice("system:".length) : null);
 
 type Node = { row: Omit<TreeRow, "pos" | "size">; children: Node[] };
 
@@ -82,31 +90,53 @@ function softItem(i: SoftTreeItem, level: number, parent: string): Node {
   };
 }
 /** The soft roots: the three rows alone until the tree has loaded, then with their children. */
-function softRoots(data: SoftTreeData | null): Node[] {
+function softRoots(data: SoftTreeData | null): (Node & { system: string })[] {
   return TREE_ROOTS.map((r) => {
     const n = data?.roots.find((x) => x.key === r.key);
     return {
       row: { key: r.key, kind: "group", label: r.label, level: 1, parent: null, count: n ? (groupOf(r.key)?.members.length ?? null) : null, soft: true },
       children: n ? n.children.map((c) => softItem(c, 2, r.key)) : [],
+      system: r.system,
     };
   });
 }
-let softCache: { data: SoftTreeData | null; nodes: Node[] } = { data: null, nodes: softRoots(null) };
-function softNodes(): Node[] {
+let softCache: { data: SoftTreeData | null; nodes: (Node & { system: string })[] } = { data: null, nodes: softRoots(null) };
+function softNodes(): (Node & { system: string })[] {
   const data = softTree();
   if (softCache.data !== data) softCache = { data, nodes: softRoots(data) };
   return softCache.nodes;
 }
 
-/** The rows shown when the groups in `open` are open, in order. */
-export function visibleRows(open: ReadonlySet<string>): TreeRow[] {
+/** The roots of a system's forest (every system's when none is given): the eager layer's groups, then the lazy roots. */
+const forest = (system?: string): Node[] => [
+  ...(system === undefined || system === EAGER_SYSTEM ? ROOTS : []),
+  ...softNodes().filter((n) => system === undefined || n.system === system),
+];
+
+function walkRows(nodes: Node[], open: ReadonlySet<string>, out: TreeRow[], shift = 0, top: string | null = null): TreeRow[] {
+  nodes.forEach((n, i) => {
+    out.push({ ...n.row, level: n.row.level + shift, parent: n.row.parent ?? top, pos: i + 1, size: nodes.length });
+    if (openable(n.row) && open.has(n.row.key)) walkRows(n.children, open, out, shift, top);
+  });
+  return out;
+}
+
+/** The layer forest's rows shown when the groups in `open` are open, in order (a system's alone when given); its roots at level 1. */
+export function visibleRows(open: ReadonlySet<string>, system?: string): TreeRow[] {
+  return walkRows(forest(system), open, []);
+}
+
+/**
+ * The sidebar's rows (M14 plan decision 6): one row per system (`systemRowKey`, open when its key is in `open`),
+ * its layers' forest under it, one level down. Keys and group keys are the forest's own.
+ */
+export function sidebarRows(open: ReadonlySet<string>): TreeRow[] {
   const out: TreeRow[] = [];
-  const walk = (nodes: Node[]) =>
-    nodes.forEach((n, i) => {
-      out.push({ ...n.row, pos: i + 1, size: nodes.length });
-      if (openable(n.row) && open.has(n.row.key)) walk(n.children);
-    });
-  walk([...ROOTS, ...softNodes()]);
+  TREE_SYSTEMS.forEach((s, i) => {
+    const key = systemRowKey(s.id);
+    out.push({ key, kind: "system", label: s.label, level: 1, parent: null, pos: i + 1, size: TREE_SYSTEMS.length, count: null });
+    if (open.has(key)) walkRows(forest(s.id), open, out, 1, key);
+  });
   return out;
 }
 

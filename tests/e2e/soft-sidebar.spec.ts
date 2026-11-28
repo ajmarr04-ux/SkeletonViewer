@@ -6,8 +6,10 @@ import { expect, test, type Page } from "@playwright/test";
 // group synonyms (decision 12).
 
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22a", "wcag22aa"];
-const SOFT_TREE = /\/assets\/_virtual_skeleton-soft-tree-/;
-const SOFT_SEARCH = /\/assets\/_virtual_skeleton-search-soft-/;
+// The musculoskeletal system's lazy tree (one chunk per system since M14 BV; `soft-tree` before).
+const SOFT_TREE = /\/assets\/_virtual_skeleton-tree-musculoskeletal-/;
+// The lazy layers' search indexes (one per layer since M14 BT; one chunk, `search-soft`, before).
+const SOFT_SEARCH = /\/assets\/_virtual_skeleton-search-(muscles|ligaments|cartilage)-/;
 
 async function open(page: Page, query = "") {
   const errors: string[] = [];
@@ -60,7 +62,7 @@ test("tree: Muscles → Upper limb → … → triceps → long head; the soft t
   await expect(tri).toHaveAttribute("aria-expanded", "true");
   const long = row(page, "triceps_brachii_long_head_left");
   await expect(long).toHaveText(/^Long head/);
-  await expect(long).toHaveAttribute("aria-level", "6");
+  await expect(long).toHaveAttribute("aria-level", "7"); // under the system row since M14 BV (6 before)
   await expect(param(page, "layers")).toBeNull(); // opening the tree turns nothing on
 
   // A part chosen from the tree is selected exactly (via its muscle in the history), its layer turned on.

@@ -271,6 +271,11 @@ dialog.manual-share form { margin-top: 12px; text-align: right; }
 }
 .search-input::placeholder { color: #9aa0a6; }
 .search-input:focus-visible { outline: 2px solid #8ab4f8; outline-offset: 1px; }
+.search-chips { display: flex; flex-wrap: wrap; gap: 6px; border: 0; margin: 6px 0 0; padding: 0; }
+.search-chips label { position: relative; display: inline-flex; align-items: center; min-height: 32px; padding: 0 12px; border: 1px solid #9aa0a6; border-radius: 16px; cursor: pointer; }
+.search-chips label:has(:checked) { background: #8ab4f8; border-color: #8ab4f8; color: #202124; }
+.search-chips label:has(:focus-visible) { outline: 2px solid #8ab4f8; outline-offset: 2px; }
+.search-chips input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
 .search-status { min-height: 1.4em; margin: 4px 2px; font-size: 13px; }
 .search-results { flex: 1; overflow-y: auto; margin: 0; padding: 0 8px 12px; list-style: none; }
 .search-result {

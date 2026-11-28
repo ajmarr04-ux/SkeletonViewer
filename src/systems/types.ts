@@ -2,8 +2,8 @@
 // small pure functions. This half is the runtime one and goes in the main
 // chunk, so nothing here may import zod, three.js or React. The authoring half
 // (`schema`, `bodyWords`, content folder) is `content.ts` in each layer folder
-// (AV); fields later milestones fill (`tiers`, `panel`, `searchFields`, the
-// tree builder) are optional until then.
+// (AV); fields later milestones fill (`tiers`, `panel`, the tree builder) are
+// optional until then (`searchFields` became required in M14 BT).
 
 import type { Graph } from "../graph/graph";
 import type { EdgeTypeDescriptor, KindTiers } from "../graph/types";
@@ -19,6 +19,25 @@ export type ColourSpec = {
   keyLabel?: string;
   /** Flat colour in M6's debug layer view (`?debug&layers=…`). */
   debug?: string;
+  /**
+   * Shades for subkinds (sRGB, M14 plan decision 7), by name: a part type's
+   * `shade` names one (the muscles' `tendon`, spec §6.3). Checked against every
+   * colour it can meet by tests/colourVision.test.ts.
+   */
+  shades?: Readonly<Record<string, string>>;
+  /**
+   * Context dimming (M14 plan decision 9, drawn from BY): how far the layer's
+   * colours are mixed toward their own luminance when it is in the related set
+   * of another layer's focus. Absent: never dimmed. Only the muscles are: the
+   * ivory, the pale cartilage and the grey ligaments are already muted, and
+   * dimming them makes them too like each other (BW notes).
+   */
+  dim?: number;
+  /**
+   * Layers this one is never visible with (M14 plan decision 7): the
+   * colour-vision test skips their pairs. None today.
+   */
+  neverWith?: readonly string[];
 };
 
 /** A model file's budget for one LOD (spec §5; M6 plan decision 8), checked by `npm run check-models`: size cap and triangle target (±15 %). */
@@ -293,9 +312,16 @@ export type PartTypeSpec = {
   id: string;
   /** In the type badge ("Muscle part: head"). */
   label: string;
-  /** Drawn in the layer's lighter tendon tint (spec §6.3). */
-  tendinous?: boolean;
+  /** Drawn in this shade of the layer's `colour.shades` (the muscles' tendons, spec §6.3). */
+  shade?: string;
 };
+
+/**
+ * A search document's fields (M14 plan decision 4): the name, the common name
+ * and the Latin name from the content, the curated synonyms (content/synonyms.json,
+ * written under the left or midline twin), and the FDI number (teeth: `tooth_36` → "36").
+ */
+export type SearchField = "name" | "common" | "synonyms" | "latin" | "fdi";
 
 export type KindDescriptor = {
   id: string;
@@ -312,6 +338,8 @@ export type KindDescriptor = {
    * in this order.
    */
   labelPriority: number;
+  /** The fields its search documents fill (M14 plan decision 4); the others stay empty. */
+  searchFields: readonly SearchField[];
   /**
    * Muscle → part: a click selects the parent first, then the part (spec §5.1); `maxParts` = the most parts any parent has (one outline each).
    * `via`: the parts are the structures with a `type` edge to the parent, except edges whose meta has `except` (M12: tier rules' parts expansion).
@@ -345,6 +373,12 @@ export type LayerDescriptor = {
   depth?: DepthSpec;
   overlays?: readonly OverlaySpec[];
   tree?: TreeSpec;
+  /**
+   * Search's generic words for this layer beyond its first kind's noun (M14
+   * plan decision 3): words that never match alone and, next to another word,
+   * keep only this layer's results. None today.
+   */
+  searchStopWords?: readonly string[];
   kinds: readonly KindDescriptor[];
 };
 

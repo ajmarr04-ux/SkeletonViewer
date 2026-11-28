@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import ids from "../fixtures/systems/demo/widgets/ids.json" with { type: "json" };
 
@@ -136,6 +137,46 @@ test("a widget's panel shows its links from the graph, its tiers follow its rule
   expect(errors).toEqual([]);
 });
 
+// M14 session BT (plan decision 4): the widgets have their own search index,
+// built from their kinds' `searchFields`; it's fetched while their layer isn't
+// Off, or on the first keystroke, and choosing a widget selects it and turns
+// its layer on.
+const WIDGET_SEARCH = /\/assets\/_fixture_virtual_skeleton-search-widgets-/;
+
+test("search finds a widget by name from its own index, loaded on the first keystroke or while its layer is on", async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  const fetched: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  page.on("request", (r) => WIDGET_SEARCH.test(r.url()) && fetched.push(r.url()));
+  await page.goto("./?lod=low&debug");
+  await bonesShown(page);
+  await page.keyboard.press("/");
+  const input = page.getByTestId("search-input");
+  await expect(input).toBeFocused();
+  await page.waitForTimeout(300);
+  expect(fetched).toEqual([]); // the layer is Off: its index waits for a keystroke
+
+  await input.fill("Spring 3");
+  const first = page.getByTestId("search-results").getByRole("option").first();
+  await expect(first.locator(".result-label")).toHaveText("Spring 3", { timeout: 15_000 });
+  expect(fetched).toHaveLength(1);
+  await page.keyboard.press("Enter");
+  await expect.poll(() => page.evaluate(() => window.__viewer!.state().sel), { timeout: 30_000 }).toBe("widget_spring_3");
+  await expect(page).toHaveURL(/layers=[^&]*w:on/);
+  expect(errors).toEqual([]);
+});
+
+test("with the widgets on, opening the sidebar fetches their search index before anything is typed", async ({ page }) => {
+  const fetched: string[] = [];
+  page.on("request", (r) => WIDGET_SEARCH.test(r.url()) && fetched.push(r.url()));
+  await page.goto("./?lod=low&debug&layers=b:on,w:on");
+  await bonesShown(page);
+  expect(fetched).toEqual([]); // nothing before the sidebar opens
+  await page.keyboard.press("/");
+  await expect.poll(() => fetched.length, { timeout: 15_000 }).toBe(1);
+});
+
 // M13 session BO (plan decisions 9 and 11): the widgets are chunked by coarse
 // body region (gears in the head, springs in the thorax, levers in the left
 // lower limb), and the loader fetches only the chunks a region needs, more as
@@ -224,5 +265,106 @@ test("budget governor (M13 BP) with a chunked layer: the bones are capped, the w
   await expect(page.getByTestId("debug")).toHaveAttribute("data-lod", "low");
   expect(files.filter((f) => f.startsWith("widgets")).sort()).toEqual(["widgets-head-high", "widgets-head-low"]);
   expect(files).not.toContain("skeleton-high");
+  expect(errors).toEqual([]);
+});
+
+// M14 session BU (plan decision 5): with two systems, filter chips under the
+// search box: a radio group, "All" by default; a chip keeps that system's
+// results only and is announced; "All" restores. axe on the row.
+test("search filter chips: one per system, a chip filters by system, All restores", async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("./?lod=low&debug");
+  await bonesShown(page);
+  await page.keyboard.press("/");
+  const chips = page.getByTestId("search-chips");
+  await expect(chips).toHaveCount(0); // only the bones' index so far: one system
+  await page.getByTestId("search-input").fill("2");
+  await expect(chips).toBeVisible({ timeout: 15_000 });
+  await expect(chips.getByRole("radio")).toHaveCount(3);
+  await expect(page.getByTestId("search-chip-all")).toBeChecked();
+  const ids = () => page.getByTestId("search-results").getByRole("option").evaluateAll((els) => els.map((e) => e.getAttribute("data-id")!));
+  const isWidget = (id: string) => id.startsWith("widget") || id.startsWith("widgets.");
+  await expect.poll(async () => (await ids()).some(isWidget)).toBe(true);
+  const before = await ids();
+  expect(before.some((id) => !isWidget(id))).toBe(true);
+
+  await page.getByTestId("search-chip-demo").check();
+  await expect.poll(async () => (await ids()).every(isWidget)).toBe(true);
+  const n = (await ids()).length;
+  await expect(page.getByTestId("announcer")).toHaveText(`Search limited to Demo. ${n} ${n === 1 ? "result" : "results"}.`);
+  // Keyboard: the arrows move within the group.
+  await page.getByTestId("search-chip-demo").focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.getByTestId("search-chip-musculoskeletal")).toBeChecked();
+  await expect.poll(async () => (await ids()).some(isWidget)).toBe(false);
+
+  const result = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22a", "wcag22aa"]).analyze();
+  expect(result.violations.map((v) => `${v.id}: ${v.nodes.map((x) => x.target.join(" ")).join(", ")}`)).toEqual([]);
+
+  await page.getByTestId("search-chip-all").check();
+  await expect.poll(ids).toEqual(before);
+  await expect(page.getByTestId("announcer")).toHaveText(/^Search in all systems\./);
+  expect(errors).toEqual([]);
+});
+
+// M14 session BV (plan decision 6): one sidebar row per system, each system's
+// lazy roots in a tree chunk of its own, fetched only when one of its roots
+// opens (the roots' own rows come from the registry); a system row closes and
+// opens, and its state is the Layers panel's too.
+const TREE_CHUNK = /\/assets\/_fixture_virtual_skeleton-tree-(musculoskeletal|demo)-/;
+
+test("the sidebar has a row per system; the demo's tree chunk loads only when its root opens", async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  const fetched: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  page.on("request", (r) => {
+    const m = TREE_CHUNK.exec(r.url());
+    if (m) fetched.push(m[1]!);
+  });
+  await page.goto("./?lod=low&debug");
+  await bonesShown(page);
+  await page.getByTestId("sidebar-toggle").click();
+  const tree = page.getByTestId("tree");
+  const row = (key: string) => tree.locator(`[data-key="${key}"]`);
+  const ms = row("system:musculoskeletal");
+  const demo = row("system:demo");
+  for (const [r, label, pos] of [[ms, "Musculoskeletal", "1"], [demo, "Demo", "2"]] as const) {
+    await expect(r).toHaveAttribute("aria-level", "1");
+    await expect(r).toHaveAttribute("aria-posinset", pos);
+    await expect(r).toHaveAttribute("aria-setsize", "2");
+    await expect(r).toHaveAttribute("aria-expanded", "true");
+    await expect(r).toHaveText(new RegExp(`^.${label}$`));
+  }
+  await expect(row("axial")).toHaveAttribute("aria-level", "2");
+  await expect(row("widgets")).toHaveAttribute("aria-level", "2");
+  await expect(row("widgets")).toHaveAttribute("aria-expanded", "false");
+  await page.waitForTimeout(500);
+  expect(fetched).toEqual([]); // the roots' rows need no chunk
+
+  await row("widgets").click();
+  await expect(row("widgets.gear")).toBeVisible();
+  await expect(row("widgets")).toContainText("Widgets (12)");
+  expect(fetched).toEqual(["demo"]); // the musculoskeletal system's chunk isn't fetched
+  await expect(row("widgets.gear")).toHaveAttribute("aria-level", "3");
+
+  // The system row closes and opens by keys; Left from a root goes to it.
+  await row("widgets").focus();
+  await page.keyboard.press("ArrowLeft"); // closes the root
+  await page.keyboard.press("ArrowLeft"); // to the system row
+  await expect(demo).toBeFocused();
+  await page.keyboard.press("ArrowLeft");
+  await expect(demo).toHaveAttribute("aria-expanded", "false");
+  await expect(row("widgets")).toHaveCount(0);
+  // The Layers panel's Demo group is collapsed too (one stored state).
+  await openPanel(page);
+  await expect(page.getByTestId("system-demo-toggle")).toHaveAttribute("aria-expanded", "false");
+  await page.getByTestId("system-demo-toggle").click();
+  await page.keyboard.press("Escape");
+  await expect(demo).toHaveAttribute("aria-expanded", "true");
+  expect(await page.evaluate(() => window.localStorage.getItem("skeleton-viewer:systems"))).toBeNull();
+  expect(fetched).toEqual(["demo"]);
   expect(errors).toEqual([]);
 });

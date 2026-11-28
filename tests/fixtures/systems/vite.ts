@@ -4,21 +4,24 @@
 //   2. the index plugin reads the test registry, so the widgets' IDs are in the ID index;
 //   3. the widgets' model files are served (dev) and emitted (build) at models/;
 //   4. (M12 plan decision 14) the widgets' content chunk (their entries and edges),
-//      the layer importers with it, and the sidebar tree with the widgets' root,
-//      each compiled by the app's own generic code (./demo/widgets/compile.ts).
-//      The content plugin runs in Node with the real registry, so the fixture
-//      serves these three modules itself, before it.
+//      the layer importers with it, and the sidebar trees (one chunk per system
+//      since M14 plan decision 6, the demo's holding the widgets' root),
+//      and (M14 plan decision 4) the widgets' search index with the search
+//      importers, each compiled by the app's own generic code
+//      (./demo/widgets/compile.ts). The content plugin runs in Node with the real
+//      registry, so the fixture serves these modules itself, before it.
 // Output goes to dist-fixture/, so the real dist/ is never touched.
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Plugin } from "vite";
-import { importersModule } from "../../../scripts/lib/content-plugin";
-import { readSoftTree } from "../../../scripts/lib/soft-tree-data";
+import { importersModule, searchImportersModule, treeImportersModule } from "../../../scripts/lib/content-plugin";
+import { readSoftTree, systemTree } from "../../../scripts/lib/soft-tree-data";
 import type { SoftTreeData } from "../../../src/tree/types";
-import { compileWidgets, widgetsTree } from "./demo/widgets/compile";
+import { compileWidgets, widgetsSearch, widgetsTree } from "./demo/widgets/compile";
 import { WIDGETS_DIR } from "./demo/widgets/content";
+import { FIXTURE_CONTENT } from "./registry.content";
 import { widgets } from "./demo/widgets/layer";
-import { REGISTRY } from "./registry";
+import { REGISTRY, SYSTEMS } from "./registry";
 import { fixtureRegistry } from "./option";
 
 const here = import.meta.dirname;
@@ -61,13 +64,20 @@ export function fixtureTree(): SoftTreeData {
   const real = readSoftTree();
   return { ...real, roots: [...real.roots, widgetsTree()] };
 }
+/** Each root's system in the test registry (the widgets' is `demo`). */
+const fixtureRoots = REGISTRY.flatMap((l) => (l.tree && l.tree.builder !== "hierarchy" ? [{ key: l.id, system: l.system }] : []));
+/** The systems with lazy roots, each with its tree chunk (M14 plan decision 6): `musculoskeletal` and `demo`. */
+const fixtureTreeSystems = SYSTEMS.filter((s) => fixtureRoots.some((r) => r.system === s.id)).map((s) => ({ id: s.id, chunk: `virtual:skeleton-tree-${s.id}` }));
 
-/** The layer importers (every lazy layer of the test registry), the widgets' content chunk and the sidebar tree. */
+/** The layer importers (every lazy layer of the test registry), the widgets' content chunk, the sidebar tree, the search importers (every layer) and the widgets' search index. */
 function fixtureContent(): Plugin {
   const modules = new Map<string, () => string>([
     ["virtual:skeleton-layer-importers", () => importersModule(REGISTRY.filter((l) => !l.models.eager))],
     [widgets.contentChunk, () => `export default ${JSON.stringify(compileWidgets())};`],
-    ["virtual:skeleton-soft-tree", () => `export default ${JSON.stringify(fixtureTree())};`],
+    ["virtual:skeleton-tree-importers", () => treeImportersModule(fixtureTreeSystems)],
+    ...fixtureTreeSystems.map((t): [string, () => string] => [t.chunk, () => `export default ${JSON.stringify(systemTree(t.id, fixtureTree(), fixtureRoots))};`]),
+    ["virtual:skeleton-search-importers", () => searchImportersModule(REGISTRY.map((l) => ({ id: l.id, searchChunk: FIXTURE_CONTENT[l.id]!.searchChunk })))],
+    [FIXTURE_CONTENT[widgets.id]!.searchChunk, () => `export default ${JSON.stringify(widgetsSearch())};`],
   ]);
   return {
     name: "fixture-content",

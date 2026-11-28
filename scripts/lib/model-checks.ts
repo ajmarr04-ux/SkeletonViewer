@@ -31,6 +31,15 @@ export function lodBudget(name: LayerId | OverlayId, lod: Lod): LodBudget {
 }
 
 /**
+ * The lazy layer with the largest high-LOD budget (target triangles, then
+ * size): the one `scripts/perf-load.ts` times turning on (M14 BZ).
+ */
+export function largestLazyLayer(layers: readonly LazyLayerId[] = LAZY_LAYERS): LazyLayerId {
+  const size = (id: LazyLayerId) => layerDescriptor(id).models.budgets.high;
+  return [...layers].sort((a, b) => size(b).targetTris - size(a).targetTris || size(b).maxMiB - size(a).maxMiB)[0]!;
+}
+
+/**
  * A layer's budget with the triangle target capped at the source total:
  * a layer with less geometry than its target keeps all of it (decision 8).
  */

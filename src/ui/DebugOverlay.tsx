@@ -79,6 +79,7 @@ export function DebugOverlay(p: Props) {
       data-patches-origin={iso ? iso.patches.origin.join(",") : ""}
       data-patches-insertion={iso ? iso.patches.insertion.join(",") : ""}
       data-outlines-both={iso ? iso.both.join(",") : ""}
+      data-dimmed={iso ? iso.dimmed.join(",") : ""}
       data-colour={iso?.colour ?? ""}
       data-explode={explode}
       data-highlight-ms={iso?.highlightMs != null ? iso.highlightMs.toFixed(1) : ""}

@@ -29,6 +29,7 @@
     "search-index": "tsx scripts/build-search-index.ts",
     "perf-load": "tsx scripts/perf-load.ts",
     "golden": "tsx scripts/golden.ts",
+    "search:report": "SEARCH_REPORT=1 vitest run tests/searchGoldenReport.test.ts",
     "bench-container": "tsx scripts/bench-container.ts",
     "regions:volumes": "tsx scripts/regions/volumes.ts",
     "regions:membership": "tsx scripts/regions/membership.ts",

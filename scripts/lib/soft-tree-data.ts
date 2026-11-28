@@ -3,7 +3,7 @@
 // the search index, validate-content and the tests.
 import { splitFrontMatter } from "../../src/content/frontmatter";
 import { splitSynonyms, type SynonymsFile } from "../../src/content/schema";
-import { LAZY_LAYERS } from "../../src/systems/registry";
+import { LAZY_LAYERS, TREE_ROOTS } from "../../src/systems/registry";
 import { buildSoftTrees } from "../../src/tree/build";
 import type { FunctionalJoint, TreeEntry } from "../../src/tree/leaves";
 import type { SoftSet, SoftTreeData } from "../../src/tree/types";
@@ -39,4 +39,13 @@ export function readSoftTree(): SoftTreeData {
     },
     readSoftSets(),
   );
+}
+
+/**
+ * One system's tree chunk (M14 plan decision 6, `virtual:skeleton-tree-<system>`): its lazy roots and the sets
+ * under them. `roots` names each root's system (the registry's `TREE_ROOTS`; the fixture passes its own).
+ */
+export function systemTree(system: string, data: SoftTreeData, roots: readonly { key: string; system: string }[] = TREE_ROOTS): SoftTreeData {
+  const mine = new Set(roots.filter((r) => r.system === system).map((r) => r.key));
+  return { roots: data.roots.filter((r) => mine.has(r.key)), sets: data.sets.filter((s) => s.root !== undefined && mine.has(s.root)) };
 }

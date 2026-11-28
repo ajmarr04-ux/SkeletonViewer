@@ -1,18 +1,38 @@
-// The search indexes, loaded on demand (plan decision 2): the bone index and
-// minisearch itself are their own chunks, fetched when the sidebar first opens
-// or the search field gets focus. The soft-tissue index (M9 plan decision 12)
-// is a second chunk, fetched when the search field gets its first keystroke.
+// The search indexes, loaded on demand: one chunk per layer (M14 plan decision
+// 4), named by its content half's `searchChunk` and imported through
+// `virtual:skeleton-search-importers` (generated from the registry), with
+// minisearch, the merge and the ranking in the search chunk. The sidebar asks
+// for the eager layer's index when it opens or the field gets focus (Milestone 5
+// plan decision 2), for a lazy layer's while that layer isn't Off, and for
+// every layer's once a query is typed.
+import importers from "virtual:skeleton-search-importers";
+import { EAGER_LAYER, LAYER_IDS, type LayerId } from "../systems/registry";
 import type { Searcher } from "./search";
 
-let pending: Promise<Searcher> | null = null;
-let pendingSoft: Promise<Searcher> | null = null;
+const pending = new Map<LayerId, Promise<Searcher>>();
+let mod: typeof import("./search") | null = null;
+const searchModule = () => import("./search").then((m) => (mod = m));
 
-export function loadSearch(): Promise<Searcher> {
-  pending ??= Promise.all([import("virtual:skeleton-search"), import("./search")]).then(([data, search]) => search.loadSearcher(data.default));
-  return pending;
+/** A layer's searcher (fetched once). */
+export function loadLayerSearch(layer: LayerId): Promise<Searcher> {
+  let p = pending.get(layer);
+  if (!p) {
+    const load = importers[layer];
+    if (!load) throw new Error(`no search index for layer ${layer}`);
+    p = Promise.all([load(), searchModule()]).then(([data, search]) => search.loadSearcher(data.default));
+    pending.set(layer, p);
+  }
+  return p;
 }
 
-export function loadSoftSearch(): Promise<Searcher> {
-  pendingSoft ??= Promise.all([import("virtual:skeleton-search-soft"), import("./search")]).then(([data, search]) => search.loadSearcher(data.default));
-  return pendingSoft;
-}
+/** The eager layer's searcher: the one the sidebar fetches first. */
+export const loadSearch = (): Promise<Searcher> => loadLayerSearch(EAGER_LAYER);
+
+/** Every layer's searcher, in registry order. */
+export const loadAllSearch = (): Promise<Searcher[]> => Promise.all(LAYER_IDS.map(loadLayerSearch));
+
+/** The searchers' results as one ranked list (`mergeSearchers`, searchMerge.ts). Only for searchers these loaders gave, so the search chunk is loaded. */
+export const mergeSearchers =
+  (...searchers: Searcher[]): Searcher =>
+  (query, limit, context) =>
+    mod!.mergeSearchers(...searchers)(query, limit, context);

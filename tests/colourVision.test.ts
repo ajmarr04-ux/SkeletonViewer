@@ -1,128 +1,62 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { TENDON_COLOUR } from "../src/layers/colours";
-import { LAZY_LAYERS, layerColour } from "../src/systems/registry";
-import { drawnColourMode } from "../src/scene/isolation";
-import { ACCENT_COLOUR, BONE_COLOUR, SCENE_BACKGROUND, SELECTION_OUTLINE_COLOUR } from "../src/scene/material";
+import { EAGER_LAYER, LAYER_IDS } from "../src/systems/registry";
+import { ACCENT_COLOUR, BONE_COLOUR, SCENE_BACKGROUND } from "../src/scene/material";
 import { OUTLINE } from "../src/scene/outline";
-import { contrastRatio, deltaE2000, parseHex, REGIONS, regionColour, simulateCvd, toLab, type Rgb } from "../src/scene/regionColours";
-import { TINT_COLOURS } from "../src/scene/tints";
-import { GHOST_OPACITY } from "../src/state/store";
+import { contrastRatio, parseHex, type Rgb } from "../src/scene/regionColours";
+import { colourTable, drawnColourMode, hex, lowPairs, over, pairsOf, registryLayers, VISIONS } from "./lib/colourTable";
 
-// M10 plan decision 3 (session AL): one table of every colour that can be on
-// screen at once, and every pair of them that can actually meet, checked with
-// the existing colour-vision rule: ΔE2000 ≥ 8 under normal vision,
-// deuteranopia and protanopia (spec §6.3, M5's colour-by-region rule), ≥ 20
-// for the tints' neighbours (M9 plan decision 8). Pairs that never meet, or
-// that earlier milestones already test, are listed in EXEMPT with the reason.
-// If a pair fails, the colour changes, not the threshold.
+// M10 plan decision 3 (session AL), rebuilt from the registry in M14 BW (plan
+// decision 7): every colour that can be on screen at once, and every pair of
+// them that can actually meet, checked with the colour-vision rule: ΔE2000 ≥ 8
+// under normal vision, deuteranopia and protanopia (spec §6.3, M5's
+// colour-by-region rule), ≥ 20 for the tints' neighbours (M9 plan decision 8).
+// The colours and which layers can meet come from the descriptors
+// (`colour.material`, `colour.shades`, `colour.neverWith`); the pair rule and
+// the drawing-rule exemptions are in tests/lib/colourTable.ts. If a pair
+// fails, the colour changes, not the threshold.
 
-const hex = (c: Rgb): string => `#${c.map((x) => Math.round(Math.min(1, Math.max(0, x)) * 255).toString(16).padStart(2, "0")).join("")}`;
-/** `fg` at `alpha` over `bg` (sRGB, as the browser composites). */
-const over = (fg: string, alpha: number, bg: string): string => {
-  const f = parseHex(fg);
-  const b = parseHex(bg);
-  return hex(f.map((x, i) => x * alpha + b[i]! * (1 - alpha)) as Rgb);
-};
+const LAYERS = registryLayers();
+const TABLE = colourTable(LAYERS, { dimmed: true });
+const { all, checked, exemptWhy } = pairsOf(LAYERS, TABLE);
+const byName = Object.fromEntries(TABLE.map((e) => [e.name, e]));
+const ofRole = (role: string) => Object.fromEntries(TABLE.filter((e) => e.role === role).map((e) => [e.name, e.colour]));
 
-/** The lazy layers' colours, from the registry (M11; the full colour model is M14's). */
-const LAYER_COLOURS: Record<string, string> = Object.fromEntries(LAZY_LAYERS.map((l) => [l, layerColour(l)]));
+/** Solid structures: every layer's material and shades (the bone ivory is also the teeth's). */
+const SOLID = { ...ofRole("solid"), ...ofRole("shade") };
+const TINTS = ofRole("tint");
+const REGION = ofRole("region");
 
-/** Solid structures: the bone ivory (also the teeth) and the layers' colours. */
-const SOLID: Record<string, string> = {
-  bone: BONE_COLOUR,
-  ...LAYER_COLOURS,
-  tendon: TENDON_COLOUR,
-};
-const TINTS: Record<string, string> = { ...TINT_COLOURS };
-const REGION: Record<string, string> = Object.fromEntries(REGIONS.filter((r) => r.region !== "teeth").map((r) => [`region:${r.region}`, regionColour(r.region)]));
-/** Ghosts: each layer's colour at the lowest, default and highest ghost opacity over the background (no AO, spec §6). */
-const GHOST: Record<string, string> = Object.fromEntries(
-  Object.entries({ bone: BONE_COLOUR, ...LAYER_COLOURS }).flatMap(([name, c]) =>
-    [GHOST_OPACITY.min, GHOST_OPACITY.default, GHOST_OPACITY.max].map((o) => [`ghost:${name}@${o}`, over(c, o, SCENE_BACKGROUND)]),
-  ),
-);
-const MARKS: Record<string, string> = {
-  accent: ACCENT_COLOUR,
-  outline: SELECTION_OUTLINE_COLOUR,
-  hover: OUTLINE.hover.colour,
-  background: SCENE_BACKGROUND,
-};
-const ALL: Record<string, string> = { ...SOLID, ...TINTS, ...REGION, ...GHOST, ...MARKS };
-
-const isA = (group: Record<string, string>) => (n: string) => n in group;
-const solid = isA(SOLID);
-const tint = isA(TINTS);
-const region = isA(REGION);
-const ghost = isA(GHOST);
-
-/** Pairs that never meet on screen, or are tested elsewhere: the first rule that matches gives the reason. */
-const EXEMPT: { test: (a: string, b: string) => boolean; why: string }[] = [
-  { test: (a, b) => region(a) && region(b), why: "two region colours: tests/regionColours.test.ts (M5)" },
-  { test: (a, b) => (region(a) && b === "bone") || (a === "bone" && region(b)), why: "the teeth keep the ivory in colour-by-region: tests/regionColours.test.ts (M5)" },
-  {
-    test: (a, b) => (region(a) && tint(b)) || (tint(a) && region(b)),
-    why: "colour-by-region pauses while any tint or patch is drawn (drawnColourMode, tested below)",
-  },
-  {
-    test: (a, b) => (a === "accent" && (b === "bone" || region(b))) || ((a === "bone" || region(a)) && b === "accent"),
-    why: "the pale accent on ivory and the region colours: the selection outline carries the selection (M3; outline/bone and outline/regions are checked)",
-  },
-  { test: (a, b) => (a === "accent" && b === "outline") || (a === "outline" && b === "accent"), why: "the outline is drawn around the accent on purpose: two cues for one selection (M3)" },
-  { test: (a, b) => [a, b].includes("hover") && [a, b].includes("accent"), why: "the hover outline is never drawn on the focus (Isolation.tsx: hover skips focusIds)" },
-  { test: (a, b) => [a, b].includes("hover") && [a, b].includes("outline"), why: "the hover outline and the selection outline are never on the same structure; the joint partner's outline uses the selection blue on purpose" },
-  {
-    test: (a, b) => (ghost(a) || a === "background") && (ghost(b) || b === "background"),
-    why: "ghosts are faint context, not told apart by colour: the Layers panel names which layer is ghosted",
-  },
-  { test: (a, b) => [a, b].includes("accent") && (ghost(a) || ghost(b) || a === "background" || b === "background"), why: "the focus against ghosts and the background is outlined (outline/ghost and outline/background are checked)" },
-];
-
-/** Pairs that sit side by side and need the stronger ≥ 20 (M9 plan decision 8). */
-const STRONG = new Set(
-  [
-    ["origin", "insertion"],
-    ["bone", "origin"],
-    ["bone", "insertion"],
-    ["cartilage", "origin"],
-    ["cartilage", "insertion"],
-    ["muscles", "antagonist"],
-    ["origin", "antagonist"],
-    ["accent", "origin"],
-    ["accent", "insertion"],
-  ].map(([a, b]) => `${a}/${b}`),
-);
-
-const names = Object.keys(ALL);
-const pairs = names.flatMap((a, i) => names.slice(i + 1).map((b) => [a, b] as const));
-const exemptWhy = (a: string, b: string) => EXEMPT.find((e) => e.test(a, b))?.why;
-const checked = pairs.filter(([a, b]) => exemptWhy(a, b) === undefined);
-const need = (a: string, b: string) => (STRONG.has(`${a}/${b}`) || STRONG.has(`${b}/${a}`) ? 20 : 8);
-
-describe("colour vision: every colour that can be on screen at once (M10 decision 3)", () => {
-  it("the table and its exemptions are what the plan lists", () => {
-    // The layer colours with the bone, the tendon shade, the focus/hover/outline marks, three tints, seven region colours, ghosts
-    // (four layers in M10: 5 solids, 12 ghosts; counted from the registry so tests/fixture.test.ts can re-run this table with a fifth).
-    expect(Object.keys(SOLID)).toHaveLength(LAZY_LAYERS.length + 2);
+describe("colour vision: every colour that can be on screen at once (M10 decision 3, from the registry since M14 BW)", () => {
+  it("the table is the registry's layers, shades and ghosts, the tints, the region colours and the marks", () => {
+    const shades = LAYERS.reduce((n, l) => n + Object.keys(l.shades ?? {}).length, 0);
+    expect(Object.keys(SOLID)).toHaveLength(LAYER_IDS.length + shades);
+    expect(Object.keys(ofRole("ghost"))).toHaveLength(3 * LAYER_IDS.length);
+    // Dimmed rows for each layer with a `dim` amount (only the muscles today: their colour and the tendon shade).
+    expect(Object.keys(ofRole("dim"))).toHaveLength(LAYERS.filter((l) => l.dim).reduce((n, l) => n + 1 + Object.keys(l.shades ?? {}).length, 0));
+    expect(Object.keys(TINTS)).toHaveLength(3);
     expect(Object.keys(REGION)).toHaveLength(7);
-    expect(Object.keys(GHOST)).toHaveLength(3 * (LAZY_LAYERS.length + 1));
-    // Every pair a solid structure takes part in with another solid, a tint or a region colour is checked.
-    for (const [a, b] of pairs) if (a !== "bone" && ((solid(a) && (solid(b) || tint(b) || region(b))) || (solid(b) && (tint(a) || region(a))))) expect(exemptWhy(a, b), `${a}/${b}`).toBeUndefined();
+    expect(TABLE.filter((e) => e.role === "mark").map((e) => e.name)).toEqual(["accent", "outline", "hover", "background"]);
+    expect(byName[EAGER_LAYER]!.colour).toBe(BONE_COLOUR);
+  });
+
+  it("every layer meets every other (no descriptor declares neverWith today) and is checked against it", () => {
+    for (const l of LAYERS) expect(l.neverWith ?? [], l.id).toEqual([]);
+    // Every pair a solid structure (not the ivory, which the accent and region rules cover) takes part in with another solid, a tint or a region colour is checked.
+    const solidish = (n: string) => n in SOLID;
+    for (const [a, b] of all) {
+      const [x, y] = [a.name, b.name];
+      if (x === EAGER_LAYER || y === EAGER_LAYER) continue;
+      if ((solidish(x) && (solidish(y) || y in TINTS || y in REGION)) || (solidish(y) && (x in TINTS || x in REGION))) expect(exemptWhy(a, b), `${x}/${y}`).toBeUndefined();
+    }
     // Every pair with the selection outline is checked, except with the accent it surrounds and the hover outline.
-    for (const n of names) if (n !== "outline" && n !== "accent" && n !== "hover") expect(exemptWhy("outline", n), n).toBeUndefined();
+    for (const e of TABLE) if (!["outline", "accent", "hover"].includes(e.name)) expect(exemptWhy(byName.outline!, e), e.name).toBeUndefined();
     expect(checked.length).toBeGreaterThan(150);
   });
 
-  for (const kind of [null, "deuteranopia", "protanopia"] as const) {
+  for (const kind of VISIONS) {
     it(`ΔE2000 ≥ 8 (≥ 20 for the tints' neighbours) for every pair that can meet${kind ? ` under ${kind}` : ""}`, () => {
-      const lab = (n: string) => {
-        const c = parseHex(ALL[n]!);
-        return toLab(kind ? simulateCvd(c, kind) : c);
-      };
-      const low = checked
-        .map(([a, b]) => ({ pair: `${a}/${b}`, d: Math.round(deltaE2000(lab(a), lab(b)) * 10) / 10, need: need(a, b) }))
-        .filter((p) => p.d < p.need);
-      expect(low).toEqual([]);
+      expect(lowPairs(checked, kind)).toEqual([]);
     });
   }
 
@@ -160,7 +94,7 @@ describe("legend chips and label boxes (M10 decision 3)", () => {
   const legend = over(legendBg, legendAlpha, SCENE_BACKGROUND);
 
   it("every legend swatch keeps 3:1 against the legend background (WCAG 1.4.11)", () => {
-    const swatches: Record<string, string> = { bone: BONE_COLOUR, ...LAYER_COLOURS, ...TINTS, ...REGION };
+    const swatches: Record<string, string> = { ...ofRole("solid"), ...TINTS, ...REGION };
     const low = Object.entries(swatches)
       .map(([n, c]) => ({ n, r: Math.round(contrastRatio(parseHex(c), parseHex(legend)) * 100) / 100 }))
       .filter((x) => x.r < 3);

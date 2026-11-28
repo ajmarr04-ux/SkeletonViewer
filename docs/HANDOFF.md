@@ -1,21 +1,24 @@
-# Handoff — written 2026-11-26 at the end of M13 session BR
+# Handoff — written 2026-11-28 at the end of M14 BZ (prep); the device gate is open
 
 ## Next session
-BR follow-up (short), once the user has merged the M13 PR: freeze `m13` in `deploy/pages.json` at the PR's merge commit (from `git log origin/main`), set `"current": null` (until M14's planning sets 14), update `README.md`'s M13 row and `CLAUDE.md`'s status paragraph (M13 done, frozen SHAs list), check the Deploy run, and open the freeze PR.
-Done when: `m13` frozen, `/m13/` confirmed live by the user, "Hosted copy is live" ticked in `docs/PLAN-milestone-13.md`. Then M14 planning.
+Still BZ, gate only: record the user's PC and iPhone `?bench` figures in BZ's notes (`docs/PLAN-milestone-14.md`), tick the "Real-device checks" exit criterion, then CA (wrap-up: goldens, full e2e, docs, `/m14/`).
+Done when: the figures for the three links on both devices are in BZ's notes, with any miss against STATUS §6 recorded (not fixed unless the user asks).
 
 ## State
-- Last commit: see `git log` (M13 BR: parity table, docs, phone-start fix)
-- `npm run check`: pass (764 tests; the six goldens unchanged, no approved differences)
-- Full e2e: 193/196 under load, the 3 failures pass alone (step 8 notes)
+- Last commit: M14 BZ: device-run prep, parity table, the gate
+- `npm run check`: pass
 - Open fan-out work: none
 
 ## Waiting on the user
-Merge the M13 PR to `main` (link in the session's last message), then confirm https://ajmarr04-ux.github.io/SkeletonViewer/m13/ is live after the Deploy run.
+1. **How to reach this branch on the devices.** Pages builds `/m14/` and the live site only from `main` (still M13), so link 3's patterns aren't hosted anywhere. Options: (a) merge the branch to `main` now (the live site and `/m14/` become M14 before CA's wrap-up; CA merges again at the end, and freezes then); (b) the user runs `npm run build` then `npx vite preview --host` on the PC and opens the links on the iPhone over the same Wi-Fi; (c) links 1 and 2 now on the M13 site, link 3 after CA's merge.
+2. **The runs.** On a PC browser and an iPhone, open each link (base + query), wait for the bench panel, paste median and 5th-percentile FPS, draw calls, triangles and label times:
+   1. `?bench&layers=b:on,c:on,l:on,m:on`
+   2. `?bench&layers=b:on,c:on,l:on,m:on&reg=forearm_left`
+   3. `?bench&layers=b:on,c:on,l:on,m:on&sel=flexor_carpi_radialis_left&tier=2&ant=1`
+   Plus the M10 gate's checks: does the AO look right on a real GPU, and is there a visible LOD pop?
 
 ## Things the next session must know
-- BR fixed BP's phone start: it now holds layers only on Auto LOD (an explicit `?lod=high|both` or Settings → High held the bones on a bones-only page). Plan step 8 has the details.
-- The freeze must use the real merge commit, never a placeholder: `scripts/build-pages.sh` fails otherwise.
-- `bench-container` against an older build: run it from that build's directory with `dist` (it joins the path to the working directory).
-- Main chunk 490.9 kB `gzip -9` (budget 500.1), measured the same way as M12's 486.1.
-- Goldens: never `--write --force` without the user's approval.
+- Kill stale `vite preview` servers before a Playwright run (`pkill -f "vite preview"`).
+- `DEVICE=1 npm run bench-container` runs the three links in the container (the reference table is in BZ's notes).
+- `perf-load` now times `largestLazyLayer()` (`scripts/lib/model-checks.ts`); the allowlist has no M14 entry.
+- Main chunk 493,813 B (budget 500.1 kB, 6.3 kB left). Measure: index + modulepreloads, `gzip -9`.

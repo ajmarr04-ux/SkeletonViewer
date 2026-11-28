@@ -36,6 +36,7 @@ const kind = (k: string) => ({ schema: schema(k), bodyWords: { min: 1, max: 40 }
 
 export const widgetsContent = defineLayerContent({
   folder: "widgets",
+  searchChunk: "virtual:skeleton-search-widgets",
   idsFile: "tests/fixtures/systems/demo/widgets/ids.json",
   kinds: { gear: kind("gear"), spring: kind("spring"), lever: kind("lever") },
 });
