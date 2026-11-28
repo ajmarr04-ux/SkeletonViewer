@@ -6,7 +6,7 @@ BZ (routine): device-run prep (plan step 8, decision 11): the three `?bench` lin
 ## State
 - Last commit: M14 BY: context dimming
 - `npm run check`: pass (816 tests, 1 skipped)
-- e2e `tints`, `tiers`, `layers`: see the BY notes in the plan
+- e2e `tints`, `tiers`, `layers`: 29/29 pass
 - Open fan-out work: none
 
 ## Waiting on the user
