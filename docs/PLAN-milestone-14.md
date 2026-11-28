@@ -368,8 +368,17 @@ Triggers: "begin session BS" to "begin session CB". Every session follows `docs/
 - **Order changed (the user's choice).** CA's device check needs a merge; rather than merge CA alone and wait, CB ran now. `m14` is **not** frozen here: after CB merges, the user checks the patterns on `/m14/` (link 3), and a small follow-up applies any size change (`PATTERN_PERIOD_M` / `PATTERN_MIN_CSS`) and freezes `m14` at that merge.
 - **Goldens.** `npm run golden`: pass. `git diff --stat dc55686 -- tests/golden public/models content`: `search.json` (the BS approval, 20 lines) and the harness's imports only; `tiers`, `panels`, `urls`, `tree`, `regions` unchanged, so old URLs open the same view.
 - **Allowlist.** Six entries, all M15 (the Python build and mapping scripts).
-- **Full e2e** (two workers, 55.4 min): **200 of 205 passed.** The 5 failures were timing under load: `keyboard` ×3 (timeouts inside `tabTo`, as in BT and BV), `nested` (the hover tooltip not up within 5 s) and `polish`'s share link (the copied URL taken while the camera was still settling: `cam=` differed in the fourth decimal). Re-run alone, one worker: RERUN.
-- **Parity.** BZ's table against M13 stands for everything but CA's shader. Main chunk **494,550 B** (M13 490,914; +3.6 kB; budget 500.1 kB, 5.5 kB left). BENCH
+- **Full e2e** (two workers, 55.4 min): **200 of 205 passed.** The 5 failures were timing under load: `keyboard` ×3 (timeouts inside `tabTo`, as in BT and BV), `nested` (the hover tooltip not up within 5 s) and `polish`'s share link (the copied URL taken while the camera was still settling: `cam=` differed in the fourth decimal). Re-run alone, one worker: **5 passed** (10.3 min).
+- **Parity.** BZ's table against M13 stands for everything but CA's shader. Main chunk **494,550 B** (M13 490,914; +3.6 kB; budget 500.1 kB, 5.5 kB left).
+- **CA's shader costs frame rate in the container, with no pattern drawn.** `DEVICE=1 npm run bench-container`, BZ's head (`93671ba`, scratch worktree, same `node_modules`) against CB's, alternated, four rounds of three runs each, medians of median FPS:
+
+| Link | BZ (`93671ba`) | CB (with CA) |
+| --- | --- | --- |
+| 1. all four layers | 0.7, 0.6, 0.6, 0.7 | 0.6, 0.5, 0.5*, 0.6* |
+| 2. left forearm (no pattern drawn) | 5.1, 5.1, 4.7, 4.9 | 4.1, 3.8, 3.7*, 4.1* |
+| 3. FCR tier 2, antagonists | 0.6, 0.5, 0.6, 0.6 | 0.6, 0.5, 0.6*, 0.6* |
+
+  (* with the experiment below.) The container ran slower today than on BZ's day (BZ's own link 2: 7.5 then, about 5 now), so only the side-by-side figures compare. Link 2 is **15–25 % slower**, and it draws no pattern: every fragment pays for the two new varyings (`vPatPos`, `vPatNrm`), the per-vertex matrices and the `fwidth`. SwiftShader shades on the CPU, so per-fragment work shows there in full; on a real GPU the PC was vsync-limited on all three links at BZ. **Tried:** taking `fwidth` inside the pattern branch (the index is per instance): no measurable gain (the * rounds), so reverted. Not fixed here: removing the cost means giving up the surface lock or the anti-aliasing, which is the user's call. Left for the device check: if the PC stays at 75 fps and the iPhone (Low Power Mode off) at 60, it is a container-only cost; otherwise a cheaper variant (e.g. one projected plane instead of three) is a follow-up.
 - **Docs.** `STATUS.md`: "Sidebar and search" rewritten for M14 (rows per system, per-layer indexes, bands, chips), a new "How colour works (M14)" (hue, patterns, dimming, the future table), the M14 device figures in §6, the main-chunk row, the allowlist and frozen-milestone lines. `CLAUDE.md`'s key-file rows were kept current by each session (ranker BS, search chunks BT, tree chunks BV, colours BW, patterns BX/CA, dimming BY); its status paragraph updated.
 - **Checks.** `npm run check`: pass (823 tests, 1 skipped).
 
