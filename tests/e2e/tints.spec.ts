@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import softIds from "../../content/soft-ids.json" with { type: "json" };
 
@@ -38,6 +39,9 @@ test("long head of triceps, tier 1: origin patch on the scapula, insertion patch
   await expect(debug(page)).toHaveAttribute("data-tint-origin", "");
   expect(await solid(page, ["scapula_left", "ulna_left"])).toEqual({ scapula_left: true, ulna_left: true });
   await expect(chips(page)).toHaveText(["Bone", "Muscles", "Origin", "Insertion"]);
+  // M14 BX: each tint chip shows its pattern; the layer chips have none.
+  await expect(chips(page).locator("svg")).toHaveCount(2);
+  expect(await chips(page).locator("svg").evaluateAll((els) => els.map((e) => e.getAttribute("data-pattern")))).toEqual(["stripes", "dots"]);
 
   // Back to tier 0: the patches and their chips go.
   await page.evaluate(() => window.__viewer!.back());
@@ -135,4 +139,98 @@ test("colour-by-region pauses while a muscle's tints are shown, and comes back a
   await expect(debug(page)).toHaveAttribute("data-colour", "region");
   await expect(page.getByTestId("legend-paused")).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Colour key: regions" }).getByRole("button")).toHaveCount(8);
+});
+
+// M14 BX (plan decision 8): the pattern cue. Within a small square on a tinted
+// structure, neighbouring pixels jump between two shades (the pattern's marks
+// are 25 % darker); on the untinted focus they don't.
+async function shadeJumps(page: Page, ids: string[], want: (picked: string | null) => boolean): Promise<{ picked: string; jumps: number }> {
+  // The first structure and view where the structure's centre is what a click there would pick (not covered).
+  let p: { x: number; y: number } | null = null;
+  let picked: string | null = null;
+  search: for (const id of ids)
+    for (const from of ["anterior", "left", "right", "posterior"] as const) {
+      await page.evaluate(({ x, f }) => window.__viewer!.frameBone(x, f), { x: id, f: from });
+      await page.waitForTimeout(300);
+      p = await page.evaluate((x) => window.__viewer!.bone(x)!.client, id);
+      picked = await page.evaluate(({ x, y }) => window.__viewer!.pick(x, y), p);
+      if (want(picked)) break search;
+      p = null;
+    }
+  if (!p || !picked) throw new Error(`no uncovered point on ${ids.join(", ")}`);
+  const png = await page.screenshot({ clip: { x: p.x - 12, y: p.y - 12, width: 24, height: 24 } });
+  const jumps = await page.evaluate(async (b64) => {
+    const img = new Image();
+    img.src = `data:image/png;base64,${b64}`;
+    await img.decode();
+    const c = document.createElement("canvas");
+    c.width = img.width;
+    c.height = img.height;
+    const ctx = c.getContext("2d")!;
+    ctx.drawImage(img, 0, 0);
+    const d = ctx.getImageData(0, 0, c.width, c.height).data;
+    const lum = (i: number) => 0.2126 * d[i]! + 0.7152 * d[i + 1]! + 0.0722 * d[i + 2]! + 1;
+    let n = 0;
+    let big = 0;
+    for (let y = 0; y < c.height; y++)
+      for (let x = 0; x + 1 < c.width; x++) {
+        const a = lum((y * c.width + x) * 4);
+        const b = lum((y * c.width + x + 1) * 4);
+        n++;
+        if (Math.min(a, b) / Math.max(a, b) < 0.88) big++;
+      }
+    return big / n;
+  }, png.toString("base64"));
+  return { picked, jumps };
+}
+
+test("the tints carry their pattern: cross-hatch on an antagonist, two shades on screen; none on the focus", async ({ page }) => {
+  test.setTimeout(180_000);
+  await ready(page, `layers=b:on,m:on&sel=${LONG}&tier=2&ant=1`);
+  await expect(debug(page)).toHaveAttribute("data-tint-antagonist", /(^|,)brachialis_left(,|$)/, { timeout: 30_000 });
+  expect(await page.evaluate(() => window.__viewer!.instancePattern("brachialis_left"))).toBe("hatch");
+  expect(await page.evaluate((id) => window.__viewer!.instancePattern(id), LONG)).toBe("none");
+  await expect(page.getByTestId("legend-key").locator("[data-key=tint-antagonist] svg")).toHaveAttribute("data-pattern", "hatch");
+
+  const antagonists = ((await debug(page).getAttribute("data-tint-antagonist")) ?? "").split(",");
+  const tinted = await shadeJumps(page, antagonists, (x) => x !== null && antagonists.includes(x));
+  expect(await page.evaluate((id) => window.__viewer!.instancePattern(id), tinted.picked)).toBe("hatch");
+  expect(tinted.jumps).toBeGreaterThan(0.15);
+  const focus = await shadeJumps(page, [LONG], (x) => x === LONG);
+  expect(focus.jumps).toBeLessThan(0.05);
+  console.log(`BX pattern sample: ${tinted.picked} ${tinted.jumps.toFixed(3)}, focus ${focus.jumps.toFixed(3)}`);
+});
+
+test("the screenshot's legend shows the key with each tint's pattern", async ({ page }) => {
+  test.setTimeout(180_000);
+  await ready(page, `layers=b:on,m:on&sel=${LONG}&tier=2&ant=1`);
+  await expect(debug(page)).toHaveAttribute("data-tint-antagonist", /(^|,)brachialis_left(,|$)/, { timeout: 30_000 });
+  await expect(chips(page)).toHaveText(["Bone", "Muscles", "Origin", "Insertion", "Antagonist"], { timeout: 60_000 });
+  const [download] = await Promise.all([page.waitForEvent("download"), page.getByTestId("screenshot").click()]);
+  const png = readFileSync((await download.path())!);
+  // The legend is drawn bottom left: in it, the antagonist's pink and the pattern's darker pink (25 % darker in linear light) both appear.
+  const found = await page.evaluate(async (b64) => {
+    const img = new Image();
+    img.src = `data:image/png;base64,${b64}`;
+    await img.decode();
+    const c = document.createElement("canvas");
+    c.width = img.width;
+    c.height = img.height;
+    const ctx = c.getContext("2d")!;
+    ctx.drawImage(img, 0, 0);
+    const d = ctx.getImageData(0, c.height - 200, 220, 200).data;
+    const k = Math.pow(0.75, 1 / 2.2);
+    const pink = [0xcc, 0x79, 0xa7];
+    const dark = pink.map((v) => Math.round(v * k));
+    const near = (i: number, t: number[]) => Math.abs(d[i]! - t[0]!) + Math.abs(d[i + 1]! - t[1]!) + Math.abs(d[i + 2]! - t[2]!) < 12;
+    let base = 0;
+    let marks = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      if (near(i, pink)) base++;
+      else if (near(i, dark)) marks++;
+    }
+    return { base, marks };
+  }, png.toString("base64"));
+  expect(found.base).toBeGreaterThan(20);
+  expect(found.marks).toBeGreaterThan(20);
 });

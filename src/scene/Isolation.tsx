@@ -4,12 +4,13 @@ import { hasMesh, layerOfId } from "../state/selection";
 import { useViewer } from "../state/store";
 import type { BatchedSkeleton } from "./batchSkeleton";
 import { Color } from "three";
-import { applyBaseColours, applyLayerView, boneAccent, drawnColourMode, isPickableIn, PLAIN, viewOf, visibleCount, type BaseTint, type SceneView } from "./isolation";
+import { applyBaseColours, applyLayerView, paint, boneAccent, drawnColourMode, isPickableIn, PLAIN, viewOf, visibleCount, type BaseTint, type SceneView } from "./isolation";
 import { subscribeGraph } from "../content/appGraph";
 import { useLayerBatches, usePatchBatch, type LayerBatches, type PatchBatch } from "./layerRegistry";
 import { EAGER_LAYER, LAZY_LAYERS, type LazyLayerId } from "../systems/registry";
 import { tintFor } from "./material";
 import { TINT_COLOURS, TINT_ROLES, type TintRole } from "./tints";
+import { PATTERN_OF, setPatternPixelRatio } from "./patterns";
 import { REGIONS, regionColour, regionOf, type ColourMode, type Region } from "./regionColours";
 import { OUTLINE, setOutlineColour, setOutlineTarget, setOutlineViewport, type Outline } from "./outline";
 
@@ -111,6 +112,8 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
     ];
     for (const o of outlines) setOutlineViewport(o, size.width, size.height, dpr);
   }, [scene, tissue, size.width, size.height, dpr]);
+  // The tints' patterns too: about 6 CSS px per period on every screen (M14 BX).
+  useEffect(() => setPatternPixelRatio(dpr), [dpr]);
 
   // Compile the ghost and outline programs now, while loading, not on the first click.
   useEffect(() => {
@@ -219,7 +222,7 @@ export function Isolation({ scene, onStats }: { scene: SkeletonScene | null; onS
         const on = role !== undefined;
         if (on) {
           drawnPatches[role].push(id);
-          pb.solid.mesh.setColorAt(i, pb.tint[role]);
+          paint(pb.solid, i, pb.tint[role], PATTERN_OF[role]);
         }
         if (pb.solid.mesh.getVisibleAt(i) !== on) pb.solid.mesh.setVisibleAt(i, on);
       });

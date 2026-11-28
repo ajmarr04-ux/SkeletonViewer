@@ -3,7 +3,7 @@
 // The view is pure; `applyIsolationView` writes it to the two BatchedMeshes.
 // Only visibility and colours change. No geometry moves or reloads (spec §12).
 
-import { Color } from "three";
+import { Color, Vector4 } from "three";
 import idsJson from "../../content/ids.json";
 import { groupOf } from "../content/groups";
 import { rolesOf, tiers, type TintRoles } from "../content/appGraph";
@@ -19,6 +19,7 @@ import { drawnModes } from "./budget";
 import type { BatchedSkeleton } from "./batchSkeleton";
 import { usePatchBatch } from "./layerRegistry";
 import { accentTint as makeAccentTint } from "./material";
+import { PATTERN_OF, withPattern, type Pattern } from "./patterns";
 
 export type IsolationView = {
   /** True when a bone with a mesh is isolated (a wisdom tooth isolates nothing). */
@@ -387,7 +388,13 @@ export const PLAIN: BaseTint = () => WHITE;
 
 /** Write every instance's base colour (on a colour-mode change); `applyIsolationView` then adds the accent. */
 export function applyBaseColours(solid: BatchedSkeleton, base: BaseTint): void {
-  solid.boneIds.forEach((id, i) => solid.mesh.setColorAt(i, base(id)));
+  solid.boneIds.forEach((id, i) => paint(solid, i, base(id), "none"));
+}
+
+const _rgba = new Vector4();
+/** Set an instance's colour and its pattern (M14 BX: the pattern rides in the colour's alpha, `patterns.ts`). */
+export function paint(b: BatchedSkeleton, i: number, colour: Color, pattern: Pattern): void {
+  b.mesh.setColorAt(i, withPattern(_rgba, colour, pattern));
 }
 
 /** Gain on a bone's tint while its joint is highlighted: brighter, same hue. */
@@ -456,7 +463,7 @@ export function applyLayerView(
   for (const id of previous) {
     if (view.focusIds.includes(id) || view.joint.includes(id) || (tint && view.tints.has(id))) continue;
     const i = solid.instanceOf.get(id);
-    if (i !== undefined) solid.mesh.setColorAt(i, base(id));
+    if (i !== undefined) paint(solid, i, base(id), "none");
   }
   const own = (id: string): Color => {
     const t = tint && view.tints.get(id);
@@ -465,18 +472,20 @@ export function applyLayerView(
   if (tint) {
     for (const [id, role] of view.tints) {
       const i = solid.instanceOf.get(id);
-      if (i !== undefined) solid.mesh.setColorAt(i, tint[role]);
+      if (i !== undefined) paint(solid, i, tint[role], PATTERN_OF[role]);
     }
   }
   for (const id of view.focusIds) {
     const i = solid.instanceOf.get(id);
-    if (i !== undefined) solid.mesh.setColorAt(i, accent);
+    if (i !== undefined) paint(solid, i, accent, "none");
   }
   for (const id of view.joint) {
     const i = solid.instanceOf.get(id);
     if (i === undefined) continue;
-    _tint.copy(view.focusIds.includes(id) ? accent : own(id)).multiplyScalar(JOINT_GAIN);
-    solid.mesh.setColorAt(i, _tint);
+    const focus = view.focusIds.includes(id);
+    const role = !focus && tint ? view.tints.get(id) : undefined;
+    _tint.copy(focus ? accent : own(id)).multiplyScalar(JOINT_GAIN);
+    paint(solid, i, _tint, role ? PATTERN_OF[role] : "none");
   }
   return { solid: nSolid, ghost: nGhost };
 }

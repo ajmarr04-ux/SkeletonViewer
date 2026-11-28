@@ -1,5 +1,6 @@
 import { Color, MeshStandardMaterial } from "three";
 import { EAGER_LAYER, layerColour } from "../systems/registry";
+import { PATTERN_FRAGMENT, PATTERN_PERIOD_UNIFORM, PATTERN_UNIFORM_DECL } from "./patterns";
 
 /**
  * Baked AO (COLOR_0, 1 = unoccluded) is remapped to [AO_FLOOR, 1] before it
@@ -50,14 +51,15 @@ export const SELECTION_OUTLINE_COLOUR = "#3d8bfd";
  * GLSL for the AO remap and the per-instance tint, kept separate so the
  * replacement can be checked in tests. three.js folds the BatchedMesh instance
  * colour into `vColor` along with the vertex colour, which would put the tint
- * through the AO remap; `TINT_VERTEX` keeps them apart (`vTint`).
+ * through the AO remap; `TINT_VERTEX` keeps them apart (`vTint`). The tint's
+ * alpha carries the role pattern (M14 BX, `patterns.ts`).
  */
 export const AO_COLOR_FRAGMENT = /* glsl */ `
 #if defined( USE_COLOR_ALPHA ) || defined( USE_COLOR )
   diffuseColor.rgb *= mix( vec3( ${AO_FLOOR.toFixed(3)} ), vec3( 1.0 ), vColor.rgb );
 #endif
   diffuseColor.rgb *= vTint.rgb;
-`;
+${PATTERN_FRAGMENT}`;
 
 export const TINT_VERTEX = /* glsl */ `
 #if defined( USE_COLOR ) || defined( USE_COLOR_ALPHA ) || defined( USE_INSTANCING_COLOR ) || defined( USE_BATCHING_COLOR )
@@ -100,12 +102,13 @@ export function createBoneMaterial(colour: string = BONE_COLOUR, name = "bone"):
   m.name = name;
   m.onBeforeCompile = (shader) => {
     shader.fragmentShader = replaceChunk(shader.fragmentShader, "color_fragment", AO_COLOR_FRAGMENT, "fragment");
-    shader.fragmentShader = replaceChunk(shader.fragmentShader, "common", `#include <common>${VARYING}`, "fragment");
+    shader.fragmentShader = replaceChunk(shader.fragmentShader, "common", `#include <common>${VARYING}${PATTERN_UNIFORM_DECL}`, "fragment");
+    shader.uniforms.uPatternPeriod = PATTERN_PERIOD_UNIFORM;
     shader.vertexShader = replaceChunk(shader.vertexShader, "color_vertex", TINT_VERTEX, "vertex");
     shader.vertexShader = replaceChunk(shader.vertexShader, "common", `#include <common>${VARYING}`, "vertex");
   };
   // Every material compiled with this hook shares one program.
-  m.customProgramCacheKey = () => `bone-ao-tint-${AO_FLOOR}`;
+  m.customProgramCacheKey = () => `bone-ao-tint-pattern-${AO_FLOOR}`;
   return m;
 }
 

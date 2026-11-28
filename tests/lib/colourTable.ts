@@ -126,15 +126,17 @@ export const EXEMPT: { test: (a: Entry, b: Entry) => boolean; why: string }[] = 
   },
 ];
 
-/** Pairs that sit side by side and need the stronger ≥ 20 (M9 plan decision 8): the tints against each other and their neighbours, by name. */
+/**
+ * Pairs that sit side by side and need the stronger ≥ 20 (M9 plan decision 8),
+ * by name. Since M14 BX the tints carry a pattern (stripes, dots, cross-hatch:
+ * `src/scene/patterns.ts`), so a tint against a layer colour needs only the
+ * ordinary ≥ 8 (SPEC-platform §7.2: role tints "only need to differ from each
+ * other, not from every layer colour"). The tints against each other stay ≥ 20,
+ * and so do the tints against the selection accent (a mark, not a layer).
+ */
 export const STRONG = new Set(
   [
     ["origin", "insertion"],
-    [EAGER, "origin"],
-    [EAGER, "insertion"],
-    ["cartilage", "origin"],
-    ["cartilage", "insertion"],
-    ["muscles", "antagonist"],
     ["origin", "antagonist"],
     ["accent", "origin"],
     ["accent", "insertion"],
