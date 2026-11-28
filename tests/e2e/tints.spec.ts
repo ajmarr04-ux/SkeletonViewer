@@ -141,10 +141,12 @@ test("colour-by-region pauses while a muscle's tints are shown, and comes back a
   await expect(page.getByRole("region", { name: "Colour key: regions" }).getByRole("button")).toHaveCount(8);
 });
 
-// M14 BX (plan decision 8): the pattern cue. Within a small square on a tinted
-// structure, neighbouring pixels jump between two shades (the pattern's marks
-// are 25 % darker); on the untinted focus they don't.
-async function shadeJumps(page: Page, ids: string[], want: (picked: string | null) => boolean): Promise<{ picked: string; jumps: number }> {
+// M14 BX (plan decision 8): the pattern cue. Within a square on a tinted
+// structure, two shades appear (the pattern's marks are 25 % darker); on the
+// untinted focus they don't. Since CA the marks are on the surface, anti-aliased
+// and about 18 px or more, so the square measures the spread of shades (the
+// darkest tenth against the brightest) rather than jumps between neighbours.
+async function shadeSpread(page: Page, ids: string[], want: (picked: string | null) => boolean): Promise<{ picked: string; spread: number }> {
   // The first structure and view where the structure's centre is what a click there would pick (not covered).
   let p: { x: number; y: number } | null = null;
   let picked: string | null = null;
@@ -158,8 +160,8 @@ async function shadeJumps(page: Page, ids: string[], want: (picked: string | nul
       p = null;
     }
   if (!p || !picked) throw new Error(`no uncovered point on ${ids.join(", ")}`);
-  const png = await page.screenshot({ clip: { x: p.x - 12, y: p.y - 12, width: 24, height: 24 } });
-  const jumps = await page.evaluate(async (b64) => {
+  const png = await page.screenshot({ clip: { x: p.x - 20, y: p.y - 20, width: 40, height: 40 } });
+  const spread = await page.evaluate(async (b64) => {
     const img = new Image();
     img.src = `data:image/png;base64,${b64}`;
     await img.decode();
@@ -169,19 +171,14 @@ async function shadeJumps(page: Page, ids: string[], want: (picked: string | nul
     const ctx = c.getContext("2d")!;
     ctx.drawImage(img, 0, 0);
     const d = ctx.getImageData(0, 0, c.width, c.height).data;
-    const lum = (i: number) => 0.2126 * d[i]! + 0.7152 * d[i + 1]! + 0.0722 * d[i + 2]! + 1;
-    let n = 0;
-    let big = 0;
-    for (let y = 0; y < c.height; y++)
-      for (let x = 0; x + 1 < c.width; x++) {
-        const a = lum((y * c.width + x) * 4);
-        const b = lum((y * c.width + x + 1) * 4);
-        n++;
-        if (Math.min(a, b) / Math.max(a, b) < 0.88) big++;
-      }
-    return big / n;
+    const lum: number[] = [];
+    for (let i = 0; i < d.length; i += 4) lum.push(0.2126 * d[i]! + 0.7152 * d[i + 1]! + 0.0722 * d[i + 2]! + 1);
+    lum.sort((a, b) => a - b);
+    const at = (q: number) => lum[Math.floor(q * (lum.length - 1))]!;
+    // 1 - darkest tenth / brightest tenth: the marks' 25 % (linear) darkening gives about 0.2 to 0.3.
+    return 1 - at(0.1) / at(0.9);
   }, png.toString("base64"));
-  return { picked, jumps };
+  return { picked, spread };
 }
 
 test("the tints carry their pattern: cross-hatch on an antagonist, two shades on screen; none on the focus", async ({ page }) => {
@@ -193,12 +190,12 @@ test("the tints carry their pattern: cross-hatch on an antagonist, two shades on
   await expect(page.getByTestId("legend-key").locator("[data-key=tint-antagonist] svg")).toHaveAttribute("data-pattern", "hatch");
 
   const antagonists = ((await debug(page).getAttribute("data-tint-antagonist")) ?? "").split(",");
-  const tinted = await shadeJumps(page, antagonists, (x) => x !== null && antagonists.includes(x));
+  const tinted = await shadeSpread(page, antagonists, (x) => x !== null && antagonists.includes(x));
   expect(await page.evaluate((id) => window.__viewer!.instancePattern(id), tinted.picked)).toBe("hatch");
-  expect(tinted.jumps).toBeGreaterThan(0.15);
-  const focus = await shadeJumps(page, [LONG], (x) => x === LONG);
-  expect(focus.jumps).toBeLessThan(0.05);
-  console.log(`BX pattern sample: ${tinted.picked} ${tinted.jumps.toFixed(3)}, focus ${focus.jumps.toFixed(3)}`);
+  expect(tinted.spread).toBeGreaterThan(0.12);
+  const focus = await shadeSpread(page, [LONG], (x) => x === LONG);
+  expect(focus.spread).toBeLessThan(tinted.spread / 2);
+  console.log(`BX pattern sample: ${tinted.picked} ${tinted.spread.toFixed(3)}, focus ${focus.spread.toFixed(3)}`);
 });
 
 test("the screenshot's legend shows the key with each tint's pattern", async ({ page }) => {

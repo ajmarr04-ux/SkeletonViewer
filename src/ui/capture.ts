@@ -6,7 +6,7 @@
 import { graphVersion } from "../content/appGraph";
 import { leaderEnd } from "../scene/labels";
 import { usePatchBatch } from "../scene/layerRegistry";
-import { markColour, PATTERN_PERIOD_CSS, patternCells, type Pattern } from "../scene/patterns";
+import { markColour, PATTERN_SWATCH_CSS, patternCells, type Pattern } from "../scene/patterns";
 import { REGIONS, regionColour } from "../scene/regionColours";
 import { ATTRIBUTION_STAMP, screenshotFileName, stripBox } from "../scene/screenshot";
 import { useViewer } from "../state/store";
@@ -78,9 +78,9 @@ function drawLabels(ctx: CanvasRenderingContext2D, layout: ReturnType<typeof use
 
 type LegendRow = Pick<KeyItem, "name" | "colour" | "pattern">;
 
-/** A canvas pattern of a tint's marks at the shader's period in image pixels (`scale` = the canvas's pixel ratio). */
+/** A canvas pattern of a tint's marks at the swatch period in image pixels (`scale` = the canvas's pixel ratio). */
 function marksPattern(ctx: CanvasRenderingContext2D, p: Pattern, colour: string, scale: number): CanvasPattern | null {
-  const n = Math.max(2, Math.round(PATTERN_PERIOD_CSS * scale));
+  const n = Math.max(2, Math.round(PATTERN_SWATCH_CSS * scale));
   const tile = document.createElement("canvas");
   tile.width = tile.height = n;
   const t = tile.getContext("2d");
